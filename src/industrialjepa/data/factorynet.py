@@ -76,6 +76,8 @@ EFFORT_PATTERNS = {
     "torque": [f"effort_torque_{i}" for i in range(MAX_DOF)],
     "current": [f"effort_current_{i}" for i in range(MAX_DOF)],
     "voltage": [f"effort_voltage_{i}" for i in range(MAX_DOF)],
+    # Velocity-based effort (RH20T uses this)
+    "velocity": [f"effort_vel_{i}" for i in range(MAX_DOF)],
     # Cartesian forces (for CNC/end-effector)
     "force": ["effort_force_x", "effort_force_y", "effort_force_z"],
 }
@@ -108,7 +110,8 @@ class FactoryNetConfig:
     # Column selection (semantic groups, not specific columns)
     # The loader will find whichever columns are available
     setpoint_signals: list[str] = field(default_factory=lambda: ["position", "velocity"])
-    effort_signals: list[str] = field(default_factory=lambda: ["torque", "current"])  # Try both
+    # Try effort signal types in order of preference
+    effort_signals: list[str] = field(default_factory=lambda: ["torque", "current", "velocity"])
 
     # Unified output dimensions (for cross-dataset training)
     # All outputs padded to these dims with validity masks
