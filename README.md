@@ -89,7 +89,7 @@ See [`paper/EXECUTION_PLAN.md`](paper/EXECUTION_PLAN.md) for the full experiment
 ```bibtex
 @article{industrialjepa2026,
   title={JEPA Learns Physics, Not Hardware: Causal Structure Enables Cross-Machine Transfer in Industrial Time Series},
-  author={Petersen, Jonas and Othman, Karim},
+  author={Petersen, Jonas},
   year={2026}
 }
 ```
