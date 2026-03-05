@@ -63,8 +63,8 @@ class MAE(BaselineModel):
             seq_len=config.seq_len,
         )
 
-        # Learnable mask token
-        self.mask_token = nn.Parameter(torch.randn(1, 1, config.hidden_dim) * 0.02)
+        # Learnable mask token (in decoder hidden dim since it's used after projection)
+        self.mask_token = nn.Parameter(torch.randn(1, 1, config.decoder_hidden_dim) * 0.02)
 
         # Decoder
         self.decoder_embed = nn.Linear(config.hidden_dim, config.decoder_hidden_dim)
@@ -204,11 +204,9 @@ class MAE(BaselineModel):
         L_vis = vis_patches.shape[1]
         L_mask = num_patches - L_vis
 
-        # Create mask tokens
+        # Create mask tokens (already in decoder hidden dim from mask_token parameter)
+        # mask_token is [1, 1, decoder_hidden_dim], expand to [B, L_mask, decoder_hidden_dim]
         mask_tokens = self.mask_token.expand(B, L_mask, -1)
-        mask_tokens = self.decoder_embed(
-            self.mask_token.expand(B, L_mask, self.config.hidden_dim)
-        )[:, :, :self.config.decoder_hidden_dim]
 
         # Unshuffle to original order
         # First, concatenate visible and mask tokens

@@ -415,3 +415,39 @@ class VariationalAutoencoder(Autoencoder):
             "recon_loss": recon_loss,
             "kl_loss": kl_loss,
         }
+
+    @torch.no_grad()
+    def compute_anomaly_score(
+        self,
+        setpoint: torch.Tensor,
+        effort: torch.Tensor,
+        setpoint_mask: Optional[torch.Tensor] = None,
+        effort_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """
+        Compute anomaly scores (reconstruction error).
+
+        For VAE, uses the mean (not sampled) latent for deterministic scoring.
+        """
+        self.eval()
+
+        # Encode - VAE returns tuple (latent, mu, logvar)
+        latent, _, _ = self.forward_encoder(setpoint, setpoint_mask)
+        effort_pred = self.forward_decoder(latent)
+
+        # Apply mask if provided
+        if effort_mask is not None:
+            effort_mask_expanded = effort_mask.unsqueeze(1)
+            effort_pred = effort_pred * effort_mask_expanded
+            effort = effort * effort_mask_expanded
+
+            # MSE per sample, normalized by valid dimensions
+            diff = (effort_pred - effort) ** 2
+            valid_count = effort_mask.sum(dim=-1) * effort.shape[1]
+            scores = diff.sum(dim=(1, 2)) / valid_count.clamp(min=1)
+        else:
+            scores = F.mse_loss(
+                effort_pred, effort, reduction='none'
+            ).mean(dim=(1, 2))
+
+        return scores
