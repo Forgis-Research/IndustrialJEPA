@@ -73,12 +73,16 @@ SETPOINT_PATTERNS = {
 # Effort signals - semantically equivalent (energy/force expended)
 # The model should learn that torque ≈ current × motor_constant
 EFFORT_PATTERNS = {
-    "torque": [f"effort_torque_{i}" for i in range(MAX_DOF)],
+    # Joint torques + Cartesian forces (for screwdriving, force_z is critical!)
+    "torque": [f"effort_torque_{i}" for i in range(MAX_DOF)] + [
+        "effort_force_x", "effort_force_y", "effort_force_z",
+        "effort_torque_x", "effort_torque_y", "effort_torque_z",
+    ],
     "current": [f"effort_current_{i}" for i in range(MAX_DOF)],
     "voltage": [f"effort_voltage_{i}" for i in range(MAX_DOF)],
     # Velocity-based effort (RH20T uses this)
     "velocity": [f"effort_vel_{i}" for i in range(MAX_DOF)],
-    # Cartesian forces (for CNC/end-effector)
+    # Cartesian forces only (for CNC/end-effector)
     "force": ["effort_force_x", "effort_force_y", "effort_force_z"],
 }
 
@@ -116,7 +120,8 @@ class FactoryNetConfig:
     # Unified output dimensions (for cross-dataset training)
     # All outputs padded to these dims with validity masks
     unified_setpoint_dim: int = MAX_DOF * 2  # pos + vel for 7 joints = 14
-    unified_effort_dim: int = MAX_DOF  # 7 effort signals
+    # Effort: 7 joint + 6 Cartesian (force_xyz + torque_xyz) = 13
+    unified_effort_dim: int = MAX_DOF + 6  # 13 effort signals
 
     # Data splits
     train_ratio: float = 0.8
