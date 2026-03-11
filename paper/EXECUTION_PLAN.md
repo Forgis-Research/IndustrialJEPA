@@ -38,7 +38,7 @@
 
 ---
 
-## 3. Q&A Tiers (Corrected)
+## 3. Q&A Tiers
 
 | Tier | Name | Question Type | Implementation | Difficulty |
 |------|------|---------------|----------------|------------|
