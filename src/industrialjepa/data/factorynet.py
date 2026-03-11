@@ -417,6 +417,8 @@ class FactoryNetDataset(Dataset):
 
         The full dataset has ctx_anomaly_label and other context columns directly
         in the data, so we extract episode metadata from there.
+
+        Uses groupby for O(n) instead of O(n*m) - single pass through data.
         """
         self.episode_metadata = {}
 
@@ -424,22 +426,24 @@ class FactoryNetDataset(Dataset):
             logger.warning("No episode_id column found")
             return
 
-        # Get unique episodes and their metadata
-        unique_episodes = self.df["episode_id"].unique()
-        logger.info(f"Extracting metadata from {len(unique_episodes)} episodes...")
-        for ep_id in tqdm(unique_episodes, desc="Loading episode metadata", unit="ep"):
-            ep_data = self.df[self.df["episode_id"] == ep_id].iloc[0]
+        # Get first row of each episode in ONE pass (O(m) instead of O(n*m))
+        # This is much faster than filtering for each episode separately
+        logger.info("Extracting episode metadata using groupby (single pass)...")
+        first_rows = self.df.groupby("episode_id").first()
+        logger.info(f"Processing {len(first_rows)} episodes...")
 
+        for ep_id, ep_data in tqdm(first_rows.iterrows(), total=len(first_rows),
+                                    desc="Building episode metadata", unit="ep"):
             # Extract fault/anomaly label
             fault_label = "normal"
-            if "ctx_anomaly_label" in self.df.columns:
+            if "ctx_anomaly_label" in first_rows.columns:
                 label = ep_data.get("ctx_anomaly_label")
                 if label and str(label).lower() not in ["none", "null", "nan", ""]:
                     fault_label = str(label)
 
             # Extract dataset source (machine type)
             dataset_source = None
-            if "dataset_source" in self.df.columns:
+            if "dataset_source" in first_rows.columns:
                 dataset_source = ep_data.get("dataset_source")
 
             # Determine if healthy
@@ -640,12 +644,23 @@ class FactoryNetDataset(Dataset):
         logger.info(f"Split '{self.split}': {len(self.split_episodes)} episodes")
 
     def _create_windows(self):
-        """Create sliding windows from episodes."""
+        """Create sliding windows from episodes.
+
+        Uses groupby for O(1) episode lookup instead of O(m) filtering.
+        """
         self.windows = []  # List of (episode_id, start_idx, end_idx)
 
         logger.info(f"Creating windows from {len(self.split_episodes)} episodes...")
+
+        # Pre-group data for O(1) lookups instead of O(m) filtering per episode
+        grouped = self.df.groupby("episode_id")
+
         for ep_id in tqdm(self.split_episodes, desc=f"Creating windows ({self.split})", unit="ep"):
-            ep_data = self.df[self.df["episode_id"] == ep_id]
+            try:
+                ep_data = grouped.get_group(ep_id)
+            except KeyError:
+                continue  # Episode not in data (shouldn't happen)
+
             ep_len = len(ep_data)
 
             # Skip episodes shorter than window size

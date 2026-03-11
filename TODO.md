@@ -23,7 +23,7 @@
 ---
 
 ### Memory: Episode metadata extraction is O(n²)
-**Status:** Partially fixed (added progress bar)
+**Status:** FIXED (uses groupby now)
 **Impact:** ~15min to extract metadata from 4k episodes in 6.2M rows
 
 **Root cause:** For each episode, we filter the entire DataFrame:
