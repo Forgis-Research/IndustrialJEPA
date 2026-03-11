@@ -3,7 +3,7 @@
 ## High Priority
 
 ### Memory: Dataset loaded 3x for train/val/test splits
-**Status:** Not fixed
+**Status:** FIXED
 **Impact:** OOM on 16GB machines with full AURSAD dataset (6.2M rows)
 **Symptoms:** Process killed after ~15min during validation dataset loading
 

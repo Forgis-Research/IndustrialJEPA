@@ -187,13 +187,22 @@ class FactoryNetDataset(Dataset):
         self,
         config: FactoryNetConfig,
         split: Literal["train", "val", "test"] = "train",
+        shared_data: dict = None,  # For memory efficiency: share loaded data between splits
     ):
         self.config = config
         self.split = split
 
-        # Load dataset from HuggingFace
-        logger.info(f"Loading FactoryNet from {config.dataset_name}")
-        self._load_data()
+        # Use shared data if provided (avoids loading 3x for train/val/test)
+        if shared_data is not None:
+            logger.info(f"Using shared data for split={split}")
+            self.df = shared_data['df']
+            self.episode_metadata = shared_data['episode_metadata']
+            self._is_shared = True
+        else:
+            # Load dataset from HuggingFace
+            logger.info(f"Loading FactoryNet from {config.dataset_name}")
+            self._load_data()
+            self._is_shared = False
 
         # Build column lists
         self._setup_columns()
@@ -210,6 +219,13 @@ class FactoryNetDataset(Dataset):
             f"FactoryNetDataset initialized: {len(self)} windows, "
             f"{len(self.episode_ids)} episodes, split={split}"
         )
+
+    def get_shared_data(self) -> dict:
+        """Get data that can be shared with other splits to save memory."""
+        return {
+            'df': self.df,
+            'episode_metadata': self.episode_metadata,
+        }
 
     def _load_data(self):
         """Load data from HuggingFace datasets.

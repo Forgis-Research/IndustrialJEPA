@@ -63,14 +63,16 @@ class WorldModelDataset(Dataset):
         self,
         config: WorldModelDataConfig,
         split: Literal["train", "val", "test"] = "train",
+        shared_data: dict = None,  # For memory efficiency: share loaded data between splits
     ):
         self.config = config
         self.split = split
 
-        # Load base dataset
+        # Load base dataset (with optional shared data)
         self.base_dataset = FactoryNetDataset(
             config.factorynet_config,
             split=split,
+            shared_data=shared_data,
         )
 
         # Store dimensions
@@ -79,6 +81,10 @@ class WorldModelDataset(Dataset):
 
         if config.cmd_mode == "setpoint_effort":
             self.cmd_dim += self.obs_dim
+
+    def get_shared_data(self) -> dict:
+        """Get data that can be shared with other splits to save memory."""
+        return self.base_dataset.get_shared_data()
 
     def __len__(self) -> int:
         return len(self.base_dataset)
@@ -160,9 +166,13 @@ def create_world_model_dataloaders(
     Returns:
         train_loader, val_loader, test_loader, info_dict
     """
+    # Load data ONCE for train split, then share with val/test
+    # This reduces memory usage by 3x for large datasets
     train_dataset = WorldModelDataset(config, split="train")
-    val_dataset = WorldModelDataset(config, split="val")
-    test_dataset = WorldModelDataset(config, split="test")
+    shared_data = train_dataset.get_shared_data()
+
+    val_dataset = WorldModelDataset(config, split="val", shared_data=shared_data)
+    test_dataset = WorldModelDataset(config, split="test", shared_data=shared_data)
 
     train_loader = DataLoader(
         train_dataset,
