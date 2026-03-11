@@ -43,6 +43,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from datasets import load_dataset
 from huggingface_hub import hf_hub_download
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -408,7 +409,9 @@ class FactoryNetDataset(Dataset):
             return
 
         # Get unique episodes and their metadata
-        for ep_id in self.df["episode_id"].unique():
+        unique_episodes = self.df["episode_id"].unique()
+        logger.info(f"Extracting metadata from {len(unique_episodes)} episodes...")
+        for ep_id in tqdm(unique_episodes, desc="Loading episode metadata", unit="ep"):
             ep_data = self.df[self.df["episode_id"] == ep_id].iloc[0]
 
             # Extract fault/anomaly label
@@ -619,7 +622,8 @@ class FactoryNetDataset(Dataset):
         """Create sliding windows from episodes."""
         self.windows = []  # List of (episode_id, start_idx, end_idx)
 
-        for ep_id in self.split_episodes:
+        logger.info(f"Creating windows from {len(self.split_episodes)} episodes...")
+        for ep_id in tqdm(self.split_episodes, desc=f"Creating windows ({self.split})", unit="ep"):
             ep_data = self.df[self.df["episode_id"] == ep_id]
             ep_len = len(ep_data)
 
