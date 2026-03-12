@@ -24,7 +24,7 @@ class BaselineConfig:
 
     # Input dimensions (from FactoryNet unified schema)
     setpoint_dim: int = 14  # 7 DOF x 2 (pos + vel)
-    effort_dim: int = 7  # 7 DOF max
+    effort_dim: int = 13  # 7 joint torques + 6 Cartesian (force_xyz + torque_xyz)
 
     # Sequence
     seq_len: int = 256
@@ -196,9 +196,9 @@ class BaselineModel(nn.Module, ABC):
 
         Args:
             setpoint: [B, T, 14] setpoint signals
-            effort: [B, T, 7] effort signals (target)
+            effort: [B, T, 13] effort signals (7 joint + 6 Cartesian)
             setpoint_mask: [B, 14] validity mask for setpoint
-            effort_mask: [B, 7] validity mask for effort
+            effort_mask: [B, 13] validity mask for effort
 
         Returns:
             Dict with 'loss' and other metrics
@@ -238,9 +238,9 @@ class BaselineModel(nn.Module, ABC):
 
         Args:
             setpoint: [B, T, 14] setpoint signals
-            effort: [B, T, 7] effort signals
+            effort: [B, T, 13] effort signals (7 joint + 6 Cartesian)
             setpoint_mask: [B, 14] validity mask
-            effort_mask: [B, 7] validity mask
+            effort_mask: [B, 13] validity mask
 
         Returns:
             [B] anomaly scores
@@ -255,7 +255,7 @@ class BaselineModel(nn.Module, ABC):
         """Save model checkpoint."""
         torch.save({
             "config": self.config,
-            "state_dict": self.state_dict(),
+            "model_state_dict": self.state_dict(),
         }, path)
 
     @classmethod
@@ -263,5 +263,5 @@ class BaselineModel(nn.Module, ABC):
         """Load model from checkpoint."""
         checkpoint = torch.load(path, map_location=device)
         model = cls(checkpoint["config"])
-        model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(checkpoint["model_state_dict"])
         return model.to(device)

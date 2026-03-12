@@ -150,11 +150,16 @@ def create_dataloaders(args) -> tuple:
         train_ratio=0.8,
         val_ratio=0.1,
         test_ratio=0.1,
+        # Data source filter for full FactoryNet (avoids schema mismatch)
+        data_source=getattr(args, 'data_source', None),
     )
 
-    # Create datasets
+    # Create datasets with shared_data optimization to avoid OOM
+    # (loads 6M+ row dataset only once instead of 3x)
     train_ds = FactoryNetDataset(data_config, split="train")
-    val_ds = FactoryNetDataset(data_config, split="val")
+    shared_data = train_ds.get_shared_data()
+    val_ds = FactoryNetDataset(data_config, split="val", shared_data=shared_data)
+    test_ds = FactoryNetDataset(data_config, split="test", shared_data=shared_data)
 
     # Create dataloaders
     train_loader = DataLoader(
@@ -176,7 +181,16 @@ def create_dataloaders(args) -> tuple:
         collate_fn=collate_fn,
     )
 
-    return train_loader, val_loader
+    test_loader = DataLoader(
+        test_ds,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        collate_fn=collate_fn,
+    )
+
+    return train_loader, val_loader, test_loader
 
 
 def train_epoch(
@@ -338,8 +352,13 @@ def main():
         help="Dataset to use",
     )
     parser.add_argument(
-        "--dataset-name", type=str, default="Forgis/factorynet-hackathon",
+        "--dataset-name", type=str, default="Forgis/FactoryNet_Dataset",
         help="HuggingFace dataset name",
+    )
+    parser.add_argument(
+        "--data-source", type=str, default="aursad",
+        choices=["aursad", "voraus", "cnc", "hackathon", None],
+        help="Data source filter for full FactoryNet (avoids schema mismatch)",
     )
     parser.add_argument(
         "--aursad-phase", type=str, default="both",
@@ -448,9 +467,9 @@ def main():
         json.dump(asdict(config), f, indent=2)
 
     # Create dataloaders
-    logger.info(f"Loading {args.dataset} dataset...")
-    train_loader, val_loader = create_dataloaders(args)
-    logger.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
+    logger.info(f"Loading {args.dataset} dataset (source: {args.data_source})...")
+    train_loader, val_loader, test_loader = create_dataloaders(args)
+    logger.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}, Test batches: {len(test_loader)}")
 
     # Optimizer
     optimizer = torch.optim.AdamW(
@@ -497,6 +516,26 @@ def main():
 
     # Save final model
     model.save_pretrained(str(output_dir / "final_model.pt"))
+
+    # Test set evaluation
+    logger.info("Running test set evaluation...")
+    test_metrics = validate(model, test_loader, args.device, args.epochs, wandb_run)
+    logger.info(f"Test loss: {test_metrics['loss']:.4f}")
+    logger.info(f"Test anomaly score (mean±std): {test_metrics['anomaly_score_mean']:.4f} ± {test_metrics['anomaly_score_std']:.4f}")
+
+    # Save final results
+    results = {
+        "best_val_loss": best_val_loss,
+        "test_loss": test_metrics["loss"],
+        "test_anomaly_score_mean": test_metrics["anomaly_score_mean"],
+        "test_anomaly_score_std": test_metrics["anomaly_score_std"],
+        "epochs": args.epochs,
+        "model": args.model,
+        "dataset": args.dataset,
+        "data_source": args.data_source,
+    }
+    with open(output_dir / "results.json", "w") as f:
+        json.dump(results, f, indent=2)
 
     # Finish wandb
     if wandb_run is not None:

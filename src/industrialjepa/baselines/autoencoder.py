@@ -68,7 +68,7 @@ class EffortAutoencoder(BaselineModel):
 
         # Effort patch embedding (NOT setpoint!)
         self.patch_embed = PatchEmbedding(
-            input_dim=config.effort_dim,  # 7, not 14
+            input_dim=config.effort_dim,  # 13 (7 joint + 6 Cartesian), not 14
             hidden_dim=config.hidden_dim,
             patch_size=config.patch_size,
             seq_len=config.seq_len,

@@ -313,6 +313,7 @@ class FactoryNetDataset(Dataset):
         if is_full_dataset and self.config.subset and "dataset_source" in self.df.columns:
             subset_lower = self.config.subset.lower()
             # Map subset names to dataset_source values in full dataset
+            # Note: actual values may be uppercase (e.g., "AURSAD"), so we compare case-insensitively
             subset_mapping = {
                 "aursad": "aursad",
                 "voraus-ad": "voraus-ad",
@@ -325,7 +326,8 @@ class FactoryNetDataset(Dataset):
             }
             source_filter = subset_mapping.get(subset_lower, subset_lower)
             original_len = len(self.df)
-            self.df = self.df[self.df["dataset_source"] == source_filter].reset_index(drop=True)
+            # Case-insensitive comparison
+            self.df = self.df[self.df["dataset_source"].str.lower() == source_filter].reset_index(drop=True)
             logger.info(f"Filtered to {source_filter}: {len(self.df)} rows (from {original_len})")
 
         # Load metadata JSON for fault labels (only for hackathon dataset)
