@@ -264,32 +264,14 @@ class FactoryNetDataset(Dataset):
                 # Full FactoryNet uses config-based loading (normalized/raw)
                 config_name = self.config.config_name or "normalized"
 
-                # Check if we need to filter by data source (to avoid schema mismatch)
-                data_files = None
-                if self.config.data_source:
-                    source_lower = self.config.data_source.lower()
-                    if source_lower in DATA_SOURCE_PATTERNS:
-                        data_files = DATA_SOURCE_PATTERNS[source_lower]
-                        logger.info(f"Filtering to data source: {source_lower} ({data_files})")
-                    else:
-                        logger.warning(f"Unknown data source: {source_lower}, loading all data")
-
+                # Load normalized config (data_files patterns don't work with newer fsspec)
+                # We'll filter by data_source after loading
                 logger.info(f"Loading {self.config.dataset_name} config={config_name}")
-
-                if data_files:
-                    # Load specific files only (avoids schema mismatch between sources)
-                    self.hf_dataset = load_dataset(
-                        self.config.dataset_name,
-                        data_files=data_files,
-                        split="train",
-                    )
-                else:
-                    # Load all data (may fail if schemas don't match)
-                    self.hf_dataset = load_dataset(
-                        self.config.dataset_name,
-                        config_name,
-                        split="train",
-                    )
+                self.hf_dataset = load_dataset(
+                    self.config.dataset_name,
+                    config_name,
+                    split="train",
+                )
             else:
                 # Hackathon dataset uses data_dir based loading
                 logger.info(f"Loading {self.config.dataset_name}" + (f" subset={data_dir}" if data_dir else ""))
