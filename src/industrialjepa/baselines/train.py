@@ -152,6 +152,8 @@ def create_dataloaders(args) -> tuple:
         test_ratio=0.1,
         # Data source filter for full FactoryNet (avoids schema mismatch)
         data_source=getattr(args, 'data_source', None),
+        # Memory optimization
+        max_episodes=getattr(args, 'max_episodes', None),
     )
 
     # Create datasets with shared_data optimization to avoid OOM
@@ -364,6 +366,10 @@ def main():
         "--aursad-phase", type=str, default="both",
         choices=["both", "tightening_only", "merge"],
         help="AURSAD phase handling",
+    )
+    parser.add_argument(
+        "--max-episodes", type=int, default=None,
+        help="Max episodes to load (memory optimization). None = use all.",
     )
     parser.add_argument(
         "--norm-mode", type=str, default="global",

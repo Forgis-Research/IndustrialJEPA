@@ -59,6 +59,10 @@ def main():
         "--dry-run", action="store_true",
         help="Print commands without executing",
     )
+    parser.add_argument(
+        "--max-episodes", type=int, default=None,
+        help="Max episodes to load (memory optimization). None = use all.",
+    )
     args = parser.parse_args()
 
     # Create output directory
@@ -85,6 +89,9 @@ def main():
 
         if args.wandb:
             cmd.append("--wandb")
+
+        if args.max_episodes is not None:
+            cmd.extend(["--max-episodes", str(args.max_episodes)])
 
         # Model-specific flags
         if model == "temporal":

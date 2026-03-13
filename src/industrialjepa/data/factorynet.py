@@ -161,6 +161,9 @@ class FactoryNetConfig:
     # For fault detection: only train on healthy data
     train_healthy_only: bool = True
 
+    # Memory optimization: limit number of episodes (None = use all)
+    max_episodes: Optional[int] = None
+
     # AURSAD-specific: How to handle loosening/tightening phases
     # The dataset has paired operations: loosening (prepare) → tightening (screw in)
     # Options:
@@ -308,6 +311,35 @@ class FactoryNetDataset(Dataset):
         # Convert to pandas for easier manipulation
         self.df = self.hf_dataset.to_pandas()
         logger.info(f"Loaded {len(self.df)} rows, columns: {list(self.df.columns)[:10]}...")
+
+        # === MEMORY OPTIMIZATION ===
+        # 1. Identify columns we actually need (reduces 105 cols to ~25)
+        essential_cols = {"episode_id", "dataset_source", "ctx_anomaly_label"}
+        signal_cols = set()
+        available = set(self.df.columns)
+
+        # Add setpoint columns
+        for pattern_list in SETPOINT_PATTERNS.values():
+            for col in pattern_list:
+                if col in available:
+                    signal_cols.add(col)
+
+        # Add effort columns
+        for pattern_list in EFFORT_PATTERNS.values():
+            for col in pattern_list:
+                if col in available:
+                    signal_cols.add(col)
+
+        keep_cols = list((essential_cols | signal_cols) & available)
+        original_cols = len(self.df.columns)
+        self.df = self.df[keep_cols]
+        logger.info(f"Memory optimization: kept {len(keep_cols)}/{original_cols} columns")
+
+        # 2. Convert float64 to float32 (halves memory usage)
+        float64_cols = self.df.select_dtypes(include=['float64']).columns
+        if len(float64_cols) > 0:
+            self.df[float64_cols] = self.df[float64_cols].astype('float32')
+            logger.info(f"Converted {len(float64_cols)} columns from float64 to float32")
 
         # Filter by subset if using full dataset (has dataset_source column)
         if is_full_dataset and self.config.subset and "dataset_source" in self.df.columns:
@@ -576,6 +608,12 @@ class FactoryNetDataset(Dataset):
                 logger.info(
                     f"Using both phases: {loosening_count} loosening + {tightening_count} tightening"
                 )
+
+        # Limit episodes for memory optimization
+        if self.config.max_episodes is not None and len(self.episode_ids) > self.config.max_episodes:
+            logger.info(f"Limiting to {self.config.max_episodes} episodes (from {len(self.episode_ids)})")
+            np.random.seed(42)
+            self.episode_ids = list(np.random.choice(self.episode_ids, self.config.max_episodes, replace=False))
 
         # Get fault labels from metadata (preferred) or fallback to column
         self.episode_labels = {}
