@@ -108,10 +108,10 @@ METADATA_COLS = ["dataset_source", "machine_type", "episode_id", "ctx_anomaly_la
 # Each source has a different schema, so we can only load one at a time
 # Using exact file prefixes to avoid glob pattern issues with fsspec
 DATA_SOURCE_PREFIXES = {
-    "aursad": "data/normalized/aursad_",
-    "voraus": "data/normalized/voraus_",
-    "cnc": "data/normalized/cnc_",
-    "hackathon": "data/normalized/ur3_hackathon_",
+    "aursad": "data/raw/aursad_",
+    "voraus": "data/raw/voraus_",
+    "cnc": "data/raw/cnc_",
+    "hackathon": "data/raw/ur3_hackathon_",
 }
 
 
@@ -277,15 +277,15 @@ class FactoryNetDataset(Dataset):
             logger.error(f"Failed to list repo files: {e}")
             raise
 
-        # Filter to normalized parquet files for the requested data source
+        # Filter to parquet files for the requested data source
         if data_source and data_source.lower() in DATA_SOURCE_PREFIXES:
             prefix = DATA_SOURCE_PREFIXES[data_source.lower()]
             parquet_files = [f for f in all_files if f.startswith(prefix) and f.endswith('.parquet')]
             logger.info(f"Found {len(parquet_files)} parquet files for {data_source}")
         else:
-            # Load all normalized parquet files
-            parquet_files = [f for f in all_files if f.startswith('data/normalized/') and f.endswith('.parquet')]
-            logger.info(f"Found {len(parquet_files)} normalized parquet files")
+            # Load all raw parquet files
+            parquet_files = [f for f in all_files if f.startswith('data/raw/') and f.endswith('.parquet')]
+            logger.info(f"Found {len(parquet_files)} parquet files")
 
         if not parquet_files:
             raise ValueError(f"No parquet files found for data_source={data_source}")
