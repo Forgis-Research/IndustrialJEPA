@@ -82,9 +82,10 @@ Thumbs.db
 
 # Project-specific
 checkpoints/
-data/
+/data/
 wandb/
 outputs/
-*.pt
+results/*/final_model.pt
+results/*/best_model.pt
 *.pth
 *.ckpt
