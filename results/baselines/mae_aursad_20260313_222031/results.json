@@ -1,0 +1,10 @@
+{
+  "best_val_loss": 0.09126757719276245,
+  "test_loss": 0.09047870035133054,
+  "test_anomaly_score_mean": 0.3965669572353363,
+  "test_anomaly_score_std": 0.335997998714447,
+  "epochs": 20,
+  "model": "mae",
+  "dataset": "aursad",
+  "data_source": "aursad"
+}
