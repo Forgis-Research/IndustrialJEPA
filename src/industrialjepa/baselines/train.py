@@ -17,6 +17,7 @@ Usage:
 
 import argparse
 import os
+import sys
 import json
 import logging
 from pathlib import Path
@@ -450,14 +451,27 @@ def main():
     if args.wandb:
         try:
             import wandb
-            wandb_run = wandb.init(
-                project=args.wandb_project,
-                entity=args.wandb_entity,
-                name=run_name,
-                config=vars(args),
-            )
         except ImportError:
-            logger.warning("WandB not installed, skipping logging")
+            logger.error("=" * 60)
+            logger.error("ERROR: --wandb flag passed but wandb is not installed!")
+            logger.error("Run: pip install wandb && wandb login")
+            logger.error("=" * 60)
+            sys.exit(1)
+
+        if wandb.api.api_key is None:
+            logger.error("=" * 60)
+            logger.error("ERROR: --wandb flag passed but not logged in!")
+            logger.error("Run: wandb login")
+            logger.error("=" * 60)
+            sys.exit(1)
+
+        wandb_run = wandb.init(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            name=run_name,
+            config=vars(args),
+        )
+        logger.info(f"Wandb initialized: {wandb_run.url}")
 
     # Create model
     logger.info(f"Creating {args.model} model...")

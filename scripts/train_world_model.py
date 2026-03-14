@@ -478,21 +478,33 @@ def main():
     # Initialize wandb if requested
     use_wandb = False
     if args.wandb:
-        if WANDB_AVAILABLE:
-            run_name = args.wandb_run_name or f"{args.subset or 'full'}_{timestamp}"
-            wandb.init(
-                project=args.wandb_project,
-                entity=args.wandb_entity,
-                name=run_name,
-                config=config_dict,
-                dir=str(output_dir),
-            )
-            # Log code
-            wandb.run.log_code(".")
-            use_wandb = True
-            logger.info(f"Wandb initialized: {wandb.run.url}")
-        else:
-            logger.warning("wandb requested but not installed. Run: pip install wandb")
+        if not WANDB_AVAILABLE:
+            logger.error("=" * 60)
+            logger.error("ERROR: --wandb flag passed but wandb is not installed!")
+            logger.error("Run: pip install wandb && wandb login")
+            logger.error("=" * 60)
+            sys.exit(1)
+
+        # Check if logged in
+        if wandb.api.api_key is None:
+            logger.error("=" * 60)
+            logger.error("ERROR: --wandb flag passed but not logged in!")
+            logger.error("Run: wandb login")
+            logger.error("=" * 60)
+            sys.exit(1)
+
+        run_name = args.wandb_run_name or f"{run_name}_{timestamp}"
+        wandb.init(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            name=run_name,
+            config=config_dict,
+            dir=str(output_dir),
+        )
+        # Log code
+        wandb.run.log_code(".")
+        use_wandb = True
+        logger.info(f"Wandb initialized: {wandb.run.url}")
 
     # Train
     trainer = WorldModelTrainer(
