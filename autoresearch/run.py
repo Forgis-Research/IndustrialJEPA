@@ -16,7 +16,7 @@ Usage:
     python run.py --single
 
     # Run with Claude Code (overnight)
-    # In terminal: claude "Run autoresearch loop, improve val_loss"
+    ./start.sh "Run autoresearch loop, improve val_loss"
 
 Manual overnight mode:
     python run.py --loop --max-iterations 50
@@ -27,8 +27,19 @@ import subprocess
 import sys
 import json
 import time
+import os
 from pathlib import Path
 from datetime import datetime
+
+# Load .env file
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                os.environ.setdefault(key, value)
 
 
 def run_experiment():
