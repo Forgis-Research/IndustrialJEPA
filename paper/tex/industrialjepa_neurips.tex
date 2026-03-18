@@ -16,7 +16,7 @@
 \usepackage{xcolor}
 \usepackage{graphicx}
 
-\title{KH-JEPA: Physics-Informed Foundation Model\\for Industrial Time Series}
+\title{KH-JEPA: A World Model for Physical Time Series\\via Learned Koopman Dynamics}
 
 \author{
   Anonymous Authors \\
@@ -28,11 +28,11 @@
 \maketitle
 
 \begin{abstract}
-Time series foundation models treat all sequences equally, ignoring the fundamental distinction between \emph{physical systems} governed by differential equations and \emph{adversarial processes} like financial markets. We argue this is a missed opportunity: physical systems are provably linearizable in a lifted space (Koopman operator theory), suggesting a principled inductive bias for representation learning.
+We introduce \textbf{KH-JEPA}, a world model for physical time series that learns transferable dynamics rather than optimizing forecasting metrics. Our key insight: physical systems (motors, robots, turbines) are governed by differential equations and thus Koopman-linearizable—a property not shared by adversarial processes like financial markets. This motivates learning a \emph{Koopman predictor} ($\mathbf{z}_{t+k} = \mathbf{K}^k \mathbf{z}_t$) that captures underlying physics.
 
-We introduce \textbf{KH-JEPA}, a foundation model for industrial time series combining: (1) a \emph{Koopman predictor} learning linear dynamics $\mathbf{z}_{t+k} = \mathbf{K}^k \mathbf{z}_t$ for O(1) any-horizon prediction, (2) \emph{SIGReg} (Sketched Isotropic Gaussian Regularization) providing provable collapse prevention without EMA, and (3) hierarchical multi-resolution encoding capturing micro-to-macro time scales.
+Unlike forecasting models (Chronos, TimesFM) that minimize next-step error, KH-JEPA learns latent dynamics for \textbf{cross-machine transfer}: a model trained on one robot type transfers zero-shot to another, achieving [Z]\% of supervised performance—demonstrating that learned Koopman operators encode shared physics across machines.
 
-On industrial benchmarks, KH-JEPA achieves [X] MSE on ETTh1, [Y] RMSE on C-MAPSS turbofan RUL prediction, and demonstrates cross-machine transfer: a model trained on UR3e robots transfers to Yu-Cobot with [Z]\% of supervised performance zero-shot—demonstrating that learned Koopman operators capture shared physics across machines.
+We combine JEPA's latent prediction with SIGReg~\cite{lejepa2024} for provable collapse prevention. On benchmarks, we achieve competitive forecasting ([X] MSE on ETTh1) while excelling at transfer and anomaly detection—tasks where learned dynamics matter more than reconstruction accuracy.
 \end{abstract}
 
 %=============================================================================
@@ -51,9 +51,9 @@ This is not true for financial time series, which are better modeled as adversar
 
 \paragraph{Contributions.}
 \begin{enumerate}
-    \item \textbf{KH-JEPA}: First Koopman-based time series foundation model with provable training stability via SIGReg~\cite{lejepa2024}.
-    \item \textbf{Cross-machine transfer}: Zero-shot transfer from UR3e to Yu-Cobot at [Z]\% of supervised performance, demonstrating physics-based generalization.
-    \item \textbf{Industrial benchmark suite}: Unified evaluation across forecasting, RUL prediction, and anomaly detection.
+    \item \textbf{Cross-machine transfer (hero result)}: Zero-shot transfer from UR3e to Yu-Cobot at [Z]\% of supervised performance, demonstrating that learned Koopman dynamics encode shared physics.
+    \item \textbf{World model, not forecaster}: We learn transferable dynamics (via Koopman) rather than optimizing forecasting MSE—a different goal than Chronos/TimesFM.
+    \item \textbf{Provable training}: SIGReg~\cite{lejepa2024} provides collapse prevention with theoretical guarantees, unlike heuristic approaches (VICReg, EMA).
 \end{enumerate}
 
 %=============================================================================
@@ -243,19 +243,45 @@ General FM (Chronos) & — & [Y]\% \\
 \section{Related Work}
 %=============================================================================
 
-\paragraph{Time Series Foundation Models.} Chronos~\cite{chronos}, TimesFM, Moirai~\cite{moirai}, Toto treat time series as token sequences. We argue physical systems deserve physics-informed architecture.
+\paragraph{Time Series Foundation Models.}
+Recent models treat forecasting as sequence modeling:
+\textbf{Chronos}~\cite{chronos} (Amazon, 710M params) tokenizes values into quantile bins and uses T5;
+\textbf{TimesFM} (Google, 200M params) uses decoder-only transformers;
+\textbf{Moirai}~\cite{moirai} handles any-variate inputs via masked encoding;
+\textbf{Timer} (1B params) unifies multiple pretraining objectives.
+These optimize next-step prediction accuracy. We instead learn \emph{dynamics} for transfer.
 
-\paragraph{JEPA.} I-JEPA~\cite{ijepa}, V-JEPA~\cite{vjepa} predict in latent space. C-JEPA~\cite{cjepa} adds VICReg. LeJEPA~\cite{lejepa2024} provides provable collapse prevention via SIGReg—we build on this.
+\paragraph{Supervised Forecasting.}
+\textbf{iTransformer}~\cite{itransformer} inverts attention to operate across variates;
+\textbf{PatchTST}~\cite{patchtst} introduces patching with channel independence;
+\textbf{TimeMixer} uses multi-scale decomposition.
+These achieve strong MSE but don't transfer across domains.
 
-\paragraph{Koopman for Time Series.} Prior work uses Koopman for control~\cite{brunton2021modern} and forecasting~\cite{lusch2018deep}. We are the first to combine Koopman with JEPA for foundation models.
+\paragraph{Joint Embedding Predictive Architectures.}
+\textbf{I-JEPA}~\cite{ijepa} and \textbf{V-JEPA}~\cite{vjepa} predict masked patches in latent space, avoiding pixel-level reconstruction.
+\textbf{C-JEPA}~\cite{cjepa} adds VICReg for stability.
+\textbf{LeJEPA}~\cite{lejepa2024} replaces heuristics with SIGReg—provable collapse prevention via Cramér-Wold theorem. We adopt SIGReg.
+
+\paragraph{Koopman Operators for Dynamics.}
+Koopman theory~\cite{koopman1931,brunton2021modern} shows nonlinear dynamics become linear in a lifted space.
+\textbf{LRAN}~\cite{lusch2018deep} learns Koopman eigenfunctions via autoencoders;
+\textbf{DeepKoopman} extends to control.
+We are the first to combine Koopman with JEPA for transfer-focused world models.
+
+\paragraph{Positioning.}
+Foundation models (Chronos, TimesFM) $\rightarrow$ optimize forecasting MSE.
+World models (ours) $\rightarrow$ learn dynamics for transfer.
+These are \emph{different goals}; we don't claim forecasting SOTA.
 
 %=============================================================================
 \section{Conclusion}
 %=============================================================================
 
-We introduced KH-JEPA, a physics-informed foundation model for industrial time series. Key innovations: (1) Koopman predictor for interpretable linear dynamics, (2) SIGReg for provable collapse prevention, (3) hierarchical encoding for multi-scale phenomena. Cross-machine transfer results demonstrate that learned Koopman operators capture shared physics—a foundation model that generalizes via physical principles, not just statistical patterns.
+We introduced KH-JEPA, a world model for physical time series that learns transferable Koopman dynamics rather than optimizing forecasting metrics. Our hero result—cross-machine transfer at [Z]\% zero-shot performance—demonstrates that learned dynamics encode shared physics.
 
-\paragraph{Limitations.} Koopman assumption may not hold for highly nonlinear transient events. Future work: adaptive Koopman for regime changes.
+Key insight: JEPA + Koopman + SIGReg enables a \emph{different kind} of foundation model—one that transfers via physics, not statistics. We don't beat Chronos on MSE; we do something Chronos cannot: zero-shot deployment on new machines.
+
+\paragraph{Limitations.} Koopman linearization may fail during transient events (startup, faults). Action-conditioning for true world model capabilities remains future work.
 
 \bibliographystyle{plain}
 \bibliography{references}

@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 """
-KH-JEPA: Koopman-Hierarchical Joint Embedding Predictive Architecture
-======================================================================
+KH-JEPA: World Model for Physical Time Series
+==============================================
 
-A world-class time series foundation model architecture combining:
-1. JEPA: Predict in latent space, not observation space
-2. Koopman: Linear dynamics for physical systems (optional)
-3. SIGReg: Provable collapse prevention (LeJEPA, 2024)
-4. Hierarchy: Multi-resolution captures different time scales
-5. Cross-Variate: Captures sensor dependencies
+Goal: Learn TRANSFERABLE DYNAMICS, not minimize forecasting MSE.
 
-Target: Beat TTT (0.358 MSE) on ETTh1 horizon-96
+A world model learns the underlying physics of a system, enabling:
+- Cross-machine transfer (train on Robot A → deploy on Robot B)
+- Anomaly detection (deviation from learned dynamics)
+- What-if analysis (action-conditioned prediction)
+- Interpretability (Koopman eigenvalues = system health)
 
-Architecture toggles allow systematic ablation studies.
+This is NOT a forecasting model competing with Chronos/TimesFM.
+ETTh1 MSE is a SANITY CHECK, not the optimization target.
 
-Key Innovation (from LeJEPA):
-- SIGReg replaces VICReg with provable guarantees
-- Optional EMA-free mode (LeJEPA-style) for simpler training
-- Koopman retained for industrial systems (eigenvalue interpretability)
+HERO METRIC: Cross-machine transfer performance
+
+Architecture:
+- JEPA: Predict in latent space (filters noise, learns dynamics)
+- SIGReg: Provable collapse prevention (LeJEPA, 2024)
+- Koopman: Linear dynamics for physical interpretability (optional)
 
 References:
 - LeJEPA (Balestriero & LeCun, 2024): Provable JEPA training
-- I-JEPA (Meta, 2023): Joint embedding predictive architecture
-- Koopman (Nature Comms 2018): Linear dynamics in lifted space
-- iTransformer (ICLR 2024): Cross-variate attention
+- Koopman (Brunton et al.): Linear dynamics in lifted space
 """
 
 import sys
@@ -43,10 +43,48 @@ from torch.optim.lr_scheduler import CosineAnnealingLR, OneCycleLR
 from prepare import get_dataloaders
 
 # ============================================================================
-# HYPERPARAMETERS - Agent can modify these
+# RECIPES: 3 Configurations, Not 512
+# ============================================================================
+# Choose ONE recipe. Don't mix flags randomly.
+
+RECIPE = "jepa"  # Options: "baseline", "jepa", "world_model"
+
+RECIPES = {
+    # Recipe 1: Baseline (PatchTST-style direct prediction)
+    # Use for: Sanity check, comparison baseline
+    "baseline": {
+        "USE_JEPA": False,
+        "USE_KOOPMAN": False,
+        "USE_SIGREG": False,
+        "USE_CROSS_VARIATE": False,
+        "USE_HIERARCHY": False,
+    },
+
+    # Recipe 2: JEPA with SIGReg (LeJEPA-style)
+    # Use for: Learning representations, anomaly detection
+    "jepa": {
+        "USE_JEPA": True,
+        "USE_KOOPMAN": False,
+        "USE_SIGREG": True,
+        "USE_CROSS_VARIATE": False,
+        "USE_HIERARCHY": False,
+    },
+
+    # Recipe 3: Full World Model (JEPA + Koopman)
+    # Use for: Cross-machine transfer, interpretable dynamics
+    "world_model": {
+        "USE_JEPA": True,
+        "USE_KOOPMAN": True,
+        "USE_SIGREG": True,
+        "USE_CROSS_VARIATE": False,  # Add if multivariate matters
+        "USE_HIERARCHY": False,       # Add if multi-scale matters
+    },
+}
+
+# ============================================================================
+# TRAINING CONFIG
 # ============================================================================
 
-# Training
 EPOCHS = 10
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-3
@@ -54,64 +92,67 @@ WEIGHT_DECAY = 0.01
 WARMUP_EPOCHS = 2
 GRADIENT_CLIP = 1.0
 
-# Sequence lengths (CRITICAL: SOTA uses 512)
-SEQ_LEN = 96            # Input context length (try 512 for SOTA)
-PRED_LEN = 96           # Prediction horizon (96, 192, 336, 720)
+# Sequence lengths
+SEQ_LEN = 96
+PRED_LEN = 96
 
 # Model architecture
-D_MODEL = 256           # Model dimension
-N_HEADS = 8             # Attention heads
-E_LAYERS = 3            # Encoder layers
-D_FF = 512              # Feedforward dimension
+D_MODEL = 256
+N_HEADS = 8
+E_LAYERS = 3
+D_FF = 512
 DROPOUT = 0.1
 
-# Patch configuration
+# Patches (always use)
 USE_PATCHES = True
 PATCH_LEN = 16
-STRIDE = 8              # Non-overlapping: stride = patch_len
+STRIDE = 8
 
-# =========================
-# KH-JEPA ARCHITECTURE FLAGS
-# =========================
-
-# Core JEPA
-USE_JEPA = True
+# Latent space
 LATENT_DIM = 128
-EMA_MOMENTUM = 0.996    # Higher = more stable target (0.996 standard)
-EMA_WARMUP = True       # Gradually increase momentum
+EMA_MOMENTUM = 0.996
+EMA_WARMUP = True
 
-# Innovation #1: Koopman Predictor
-USE_KOOPMAN = False     # Replace MLP predictor with Koopman operator
-KOOPMAN_RANK = 64       # Rank of Koopman approximation (< LATENT_DIM for efficiency)
-KOOPMAN_STABLE = True   # Constrain eigenvalues to unit disk
+# Koopman config (when enabled)
+KOOPMAN_RANK = 64
+KOOPMAN_STABLE = True
 
-# Innovation #2: Collapse Prevention
-# Option A: VICReg (heuristic, from C-JEPA)
-USE_VICREG = False      # Variance-Invariance-Covariance regularization
-VICREG_VAR_WEIGHT = 0.04
-VICREG_COV_WEIGHT = 0.04
+# SIGReg config (when enabled)
+SIGREG_WEIGHT = 0.1
+SIGREG_NUM_SLICES = 256
 
-# Option B: SIGReg (provable, from LeJEPA - RECOMMENDED)
-USE_SIGREG = True       # Sketched Isotropic Gaussian Regularization
-SIGREG_WEIGHT = 0.1     # Weight for SIGReg loss
-SIGREG_NUM_SLICES = 256 # Number of random projections for sketching
+# Cross-variate config (when enabled)
+CROSS_VARIATE_LAYERS = 2
 
-# LeJEPA Mode: No EMA, just SIGReg for collapse prevention
-USE_LEJEPA_MODE = False  # If True: no target encoder, no EMA (simpler)
+# Hierarchy config (when enabled)
+HIERARCHY_FACTORS = [1, 4, 16]
 
-# Innovation #3: Cross-Variate Attention
-USE_CROSS_VARIATE = False   # Attention across channels (iTransformer style)
-CROSS_VARIATE_LAYERS = 2    # Number of cross-variate attention layers
+# ============================================================================
+# APPLY RECIPE (Don't edit below unless you know what you're doing)
+# ============================================================================
 
-# Innovation #4: Hierarchy
-USE_HIERARCHY = False       # Multi-resolution latent spaces
-HIERARCHY_LEVELS = 3        # Number of resolution levels
-HIERARCHY_FACTORS = [1, 4, 16]  # Downsampling factors per level
+_recipe = RECIPES[RECIPE]
+USE_JEPA = _recipe["USE_JEPA"]
+USE_KOOPMAN = _recipe["USE_KOOPMAN"]
+USE_SIGREG = _recipe["USE_SIGREG"]
+USE_CROSS_VARIATE = _recipe["USE_CROSS_VARIATE"]
+USE_HIERARCHY = _recipe["USE_HIERARCHY"]
 
-# Loss configuration
-USE_HUBER_LOSS = False      # Huber loss (robust to outliers)
-HUBER_DELTA = 1.0
-MULTI_HORIZON_LOSS = False  # Loss at multiple prediction steps
+# Derived settings
+USE_LEJEPA_MODE = USE_JEPA and USE_SIGREG and not USE_KOOPMAN
+USE_VICREG = False  # Deprecated, use SIGReg
+
+# ============================================================================
+# EVALUATION THRESHOLDS (Sanity checks, not goals)
+# ============================================================================
+
+THRESHOLDS = {
+    "mse_broken": 0.50,      # Above this = config is broken
+    "mse_sane": 0.45,        # Below this = proceed to Tier 2
+    "mse_good": 0.40,        # Below this = promising
+    "z_collapsed": 0.1,      # Latent std below this = collapsed
+    "K_unstable": 1.0,       # Eigenvalue above this = unstable
+}
 
 
 # ============================================================================
@@ -1167,6 +1208,60 @@ class KHJEPAForecaster(nn.Module):
 
 
 # ============================================================================
+# QUICK DIAGNOSTICS (Tier 1 - Run Every Epoch)
+# ============================================================================
+
+@torch.no_grad()
+def quick_diagnostics(model: nn.Module, loader, device) -> Dict[str, float]:
+    """
+    Tier 1 diagnostics: Fast checks for collapse, stability, sanity.
+
+    Run every epoch. If these fail, abort early.
+    """
+    model.eval()
+    batch = next(iter(loader))
+    x = batch['x'].to(device)
+
+    # Encode to get latent
+    z = model.encode(model.revin(x, 'norm'))
+
+    diagnostics = {
+        # Collapse detection
+        'z_std': z.std(dim=0).mean().item(),
+        'z_mean_abs': z.abs().mean().item(),
+        'z_max': z.abs().max().item(),
+    }
+
+    # Koopman diagnostics (if enabled)
+    if hasattr(model, 'predictor') and hasattr(model.predictor, 'get_koopman_matrix'):
+        try:
+            K = model.predictor.get_koopman_matrix()
+            eigvals = torch.linalg.eigvals(K)
+            diagnostics['K_max_eigval'] = eigvals.abs().max().item()
+            diagnostics['K_mean_eigval'] = eigvals.abs().mean().item()
+            diagnostics['K_stable'] = float(eigvals.abs().max().item() < 1.0)
+        except Exception:
+            pass
+
+    return diagnostics
+
+
+def check_health(diagnostics: Dict[str, float], epoch: int) -> Tuple[bool, str]:
+    """
+    Check if training is healthy. Returns (is_healthy, message).
+    """
+    # Check collapse
+    if diagnostics.get('z_std', 1.0) < THRESHOLDS['z_collapsed']:
+        return False, f"COLLAPSED: z_std={diagnostics['z_std']:.4f} < {THRESHOLDS['z_collapsed']}"
+
+    # Check Koopman stability
+    if diagnostics.get('K_max_eigval', 0.0) > THRESHOLDS['K_unstable']:
+        return False, f"UNSTABLE: K_max_eigval={diagnostics['K_max_eigval']:.4f} > {THRESHOLDS['K_unstable']}"
+
+    return True, "OK"
+
+
+# ============================================================================
 # TRAINING
 # ============================================================================
 
@@ -1250,16 +1345,13 @@ def main():
 
     # Configuration summary
     print("\n" + "=" * 60)
-    print("KH-JEPA Configuration (LeJEPA-enhanced)")
+    print("KH-JEPA: World Model for Physical Time Series")
     print("=" * 60)
+    print(f"  RECIPE: {RECIPE}")
+    print(f"  Goal: Learn transferable dynamics (not MSE optimization)")
+    print("-" * 60)
     print(f"  SEQ_LEN: {SEQ_LEN}, PRED_LEN: {PRED_LEN}")
-    print(f"  USE_JEPA: {USE_JEPA}")
-    print(f"  USE_LEJEPA_MODE: {USE_LEJEPA_MODE} (no EMA)")
-    print(f"  USE_KOOPMAN: {USE_KOOPMAN}")
-    print(f"  USE_SIGREG: {USE_SIGREG} (LeJEPA, provable)")
-    print(f"  USE_VICREG: {USE_VICREG} (legacy, heuristic)")
-    print(f"  USE_CROSS_VARIATE: {USE_CROSS_VARIATE}")
-    print(f"  USE_HIERARCHY: {USE_HIERARCHY}")
+    print(f"  JEPA: {USE_JEPA}, Koopman: {USE_KOOPMAN}, SIGReg: {USE_SIGREG}")
     print("=" * 60)
 
     # Load data
@@ -1331,6 +1423,10 @@ def main():
     use_onecycle = WARMUP_EPOCHS > 0
 
     print(f"\nTraining for {EPOCHS} epochs...")
+    print("(Remember: MSE is sanity check, not goal. Goal = transferable dynamics)")
+    print()
+
+    aborted = False
     for epoch in range(1, EPOCHS + 1):
         train_loss, train_mse = train_epoch(
             model, train_loader, optimizer, device, epoch, EPOCHS,
@@ -1339,21 +1435,30 @@ def main():
         )
         val_mse, val_mae = evaluate(model, val_loader, device)
 
+        # Quick diagnostics (Tier 1)
+        diag = quick_diagnostics(model, val_loader, device)
+        healthy, health_msg = check_health(diag, epoch)
+
         # Step scheduler per epoch (for CosineAnnealingLR)
         if not use_onecycle:
             scheduler.step()
 
-        # Logging
-        log_str = f"Epoch {epoch}: train_mse={train_mse:.4f}, val_mse={val_mse:.4f}"
-        if USE_SIGREG:
-            log_str += " [SIGReg]"
-        elif USE_VICREG:
-            log_str += " [VICReg]"
-        if USE_KOOPMAN:
-            log_str += " [Koopman]"
-        if USE_LEJEPA_MODE:
-            log_str += " [LeJEPA]"
+        # Logging with diagnostics
+        log_str = f"Epoch {epoch}: mse={val_mse:.4f}, z_std={diag['z_std']:.3f}"
+        if 'K_max_eigval' in diag:
+            log_str += f", K_eig={diag['K_max_eigval']:.3f}"
+        log_str += f" [{RECIPE}]"
         print(log_str)
+
+        # Early abort if unhealthy
+        if not healthy:
+            print(f"  ABORT: {health_msg}")
+            aborted = True
+            break
+
+        # Check if MSE is sane (but don't optimize for it)
+        if val_mse > THRESHOLDS['mse_broken']:
+            print(f"  WARNING: MSE > {THRESHOLDS['mse_broken']} - config may be broken")
 
         if val_mse < best_val_mse:
             best_val_mse = val_mse
@@ -1369,62 +1474,53 @@ def main():
     print("\n" + "=" * 60)
     print("RESULTS")
     print("=" * 60)
-    print(f"val_mse: {best_val_mse:.6f}")
+    print(f"Recipe: {RECIPE}")
     print(f"test_mse: {test_mse:.6f}")
     print(f"test_mae: {test_mae:.6f}")
     print(f"elapsed_seconds: {elapsed:.1f}")
     print(f"parameters: {n_params:,}")
-    print("=" * 60)
 
-    # SOTA comparison
-    print("\nSOTA Comparison (ETTh1, horizon 96):")
-    print(f"  TTT:          0.358 MSE (target)")
-    print(f"  iTransformer: 0.386 MSE")
-    print(f"  PatchTST:     0.414 MSE")
-    print(f"  Ours:         {test_mse:.3f} MSE", end="")
-    if test_mse < 0.358:
-        print(" ** NEW SOTA! **")
-    elif test_mse < 0.386:
-        print(" (beats iTransformer)")
-    elif test_mse < 0.414:
-        print(" (beats PatchTST)")
+    # Sanity check (not goal)
+    print("\n--- Sanity Check (NOT the goal) ---")
+    if test_mse < THRESHOLDS['mse_sane']:
+        print(f"  MSE {test_mse:.3f} < {THRESHOLDS['mse_sane']} -> SANE, proceed to Tier 2")
+    elif test_mse < THRESHOLDS['mse_broken']:
+        print(f"  MSE {test_mse:.3f} -> MARGINAL, investigate")
     else:
-        print("")
-    print("=" * 60)
+        print(f"  MSE {test_mse:.3f} > {THRESHOLDS['mse_broken']} -> BROKEN, fix config")
 
-    # Architecture summary
-    print("\nArchitecture used:")
-    print(f"  JEPA: {USE_JEPA}")
-    print(f"  LeJEPA Mode: {USE_LEJEPA_MODE}")
-    print(f"  Koopman: {USE_KOOPMAN}")
-    print(f"  SIGReg: {USE_SIGREG} (provable)")
-    print(f"  VICReg: {USE_VICREG} (legacy)")
-    print(f"  Cross-Variate: {USE_CROSS_VARIATE}")
-    print(f"  Hierarchy: {USE_HIERARCHY}")
+    # Final diagnostics
+    final_diag = quick_diagnostics(model, test_loader, device)
+    print(f"\n--- Latent Health ---")
+    print(f"  z_std: {final_diag['z_std']:.4f} (target: ~1.0)")
+    if 'K_max_eigval' in final_diag:
+        print(f"  K_max_eigval: {final_diag['K_max_eigval']:.4f} (target: < 1.0)")
+
+    print("\n--- Next Steps ---")
+    if test_mse < THRESHOLDS['mse_sane']:
+        print("  1. Run cross-domain transfer: train h1 -> test h2")
+        print("  2. Run anomaly detection on AURSAD")
+        print("  3. If both pass, run full cross-machine transfer")
+    else:
+        print("  1. Debug: check data, learning rate, architecture")
     print("=" * 60)
 
     # Save results
     results = {
-        'val_mse': best_val_mse,
+        'recipe': RECIPE,
         'test_mse': test_mse,
         'test_mae': test_mae,
+        'is_sane': test_mse < THRESHOLDS['mse_sane'],
+        'diagnostics': final_diag,
         'elapsed_seconds': elapsed,
         'parameters': n_params,
         'config': {
+            'recipe': RECIPE,
             'epochs': EPOCHS,
-            'batch_size': BATCH_SIZE,
-            'learning_rate': LEARNING_RATE,
             'seq_len': SEQ_LEN,
             'pred_len': PRED_LEN,
             'd_model': D_MODEL,
             'latent_dim': LATENT_DIM,
-            'use_jepa': USE_JEPA,
-            'use_lejepa_mode': USE_LEJEPA_MODE,
-            'use_koopman': USE_KOOPMAN,
-            'use_sigreg': USE_SIGREG,
-            'use_vicreg': USE_VICREG,
-            'use_cross_variate': USE_CROSS_VARIATE,
-            'use_hierarchy': USE_HIERARCHY,
         },
         'timestamp': datetime.now().isoformat(),
     }
