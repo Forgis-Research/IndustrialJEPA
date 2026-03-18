@@ -343,7 +343,15 @@ class KoopmanPredictor(nn.Module):
         self.residual_weight = nn.Parameter(torch.tensor(0.1))
 
     def get_koopman_matrix(self) -> torch.Tensor:
-        """Construct Koopman matrix K = U @ diag(λ) @ V^T"""
+        """Construct Koopman matrix K = U @ diag(λ) @ V^T
+
+        For complex eigenvalues, we use 2x2 rotation blocks to preserve
+        oscillatory dynamics while keeping the matrix real-valued.
+
+        Complex eigenvalue λ = r*exp(iθ) maps to rotation block:
+        [r*cos(θ)  -r*sin(θ)]
+        [r*sin(θ)   r*cos(θ)]
+        """
         if self.use_complex:
             # Eigenvalues as complex numbers: λ = r * exp(iθ)
             if self.stable:
@@ -353,22 +361,43 @@ class KoopmanPredictor(nn.Module):
 
             theta = self.phase
 
-            # For real-valued output, use pairs of complex conjugate eigenvalues
-            # λ_k and λ_k* give real dynamics
-            real_part = r * torch.cos(theta)
-            imag_part = r * torch.sin(theta)
+            # For real-valued output, construct block-diagonal with 2x2 rotation matrices
+            # Each complex eigenvalue pair becomes a rotation block
+            cos_theta = torch.cos(theta)
+            sin_theta = torch.sin(theta)
 
-            # Construct block-diagonal with 2x2 rotation matrices
-            # For simplicity, we use the real part as diagonal
-            eigenvalues = real_part
+            # Build block-diagonal S matrix with 2x2 rotation blocks
+            # S is (rank, rank) with 2x2 blocks on diagonal
+            # For efficiency, we construct it explicitly
+            half_rank = self.rank // 2
+
+            # Each 2x2 block: [[r*cos, -r*sin], [r*sin, r*cos]]
+            # We'll construct the diagonal matrix differently:
+            # Use the eigenvalue diagonal but with rotation encoding
+            S = torch.zeros(self.rank, self.rank, device=r.device, dtype=r.dtype)
+
+            for i in range(half_rank):
+                rc = r[i] * cos_theta[i]
+                rs = r[i] * sin_theta[i]
+                S[2*i, 2*i] = rc
+                S[2*i, 2*i+1] = -rs
+                S[2*i+1, 2*i] = rs
+                S[2*i+1, 2*i+1] = rc
+
+            # Handle odd rank (last eigenvalue is real)
+            if self.rank % 2 == 1:
+                S[-1, -1] = r[-1]
+
+            # K = U @ S @ V^T
+            K = self.U @ S @ self.V.T
         else:
             if self.stable:
                 eigenvalues = torch.tanh(self.eigenvalues)  # ∈ (-1, 1)
             else:
                 eigenvalues = self.eigenvalues
 
-        # K = U @ diag(λ) @ V^T
-        K = self.U @ torch.diag(eigenvalues) @ self.V.T
+            # K = U @ diag(λ) @ V^T
+            K = self.U @ torch.diag(eigenvalues) @ self.V.T
         return K
 
     def forward(self, z: torch.Tensor, horizon: int = 1) -> torch.Tensor:
@@ -722,38 +751,140 @@ class KHJEPAForecaster(nn.Module):
             self.predictor = nn.Linear(d_model, num_features * pred_len)
 
     def _build_target_encoder(self, d_model, n_heads, d_ff, e_layers, dropout):
-        """Build target encoder as copy of online encoder (for EMA)."""
-        self.target_encoder = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(d_model, n_heads, d_ff, dropout,
-                                      activation='gelu', batch_first=True),
-            num_layers=e_layers
-        )
-        self.target_to_latent = nn.Linear(d_model, self.latent_dim)
+        """Build target encoder as copy of online encoder (for EMA).
 
-        # Initialize with online encoder weights
-        if hasattr(self, 'encoder') and isinstance(self.encoder, nn.TransformerEncoder):
+        CRITICAL: Target encoder must match online encoder architecture
+        to ensure valid JEPA comparisons.
+        """
+        if self.use_hierarchy:
+            # Match HierarchicalEncoder architecture
+            # For hierarchy mode, create a simplified target encoder
+            # that processes at full resolution only
+            self.target_encoder = nn.TransformerEncoder(
+                nn.TransformerEncoderLayer(d_model, n_heads, d_ff, dropout,
+                                          activation='gelu', batch_first=True),
+                num_layers=e_layers
+            )
+            self.target_input_proj = nn.Linear(self.num_features, d_model)
+            self.target_to_latent = nn.Linear(d_model, self.latent_dim)
+
+            # Initialize target_input_proj with first level's input_proj
+            if hasattr(self.encoder, 'input_projs'):
+                for p_online, p_target in zip(
+                    self.encoder.input_projs[0].parameters(),
+                    self.target_input_proj.parameters()
+                ):
+                    p_target.data.copy_(p_online.data)
+                    p_target.requires_grad = False
+
+            # Initialize encoder with first level's encoder
+            if hasattr(self.encoder, 'encoders'):
+                for p_online, p_target in zip(
+                    self.encoder.encoders[0].parameters(),
+                    self.target_encoder.parameters()
+                ):
+                    p_target.data.copy_(p_online.data)
+                    p_target.requires_grad = False
+
+            # Initialize to_latent with first level's to_latent
+            if hasattr(self.encoder, 'to_latents'):
+                for p_online, p_target in zip(
+                    self.encoder.to_latents[0].parameters(),
+                    self.target_to_latent.parameters()
+                ):
+                    p_target.data.copy_(p_online.data)
+                    p_target.requires_grad = False
+
+        elif self.use_cross_variate:
+            # Match CrossVariateEncoder architecture
+            self.target_encoder = CrossVariateEncoder(
+                d_model, n_heads, d_ff,
+                n_temporal_layers=e_layers,
+                n_cross_variate_layers=2,  # Use same as online
+                dropout=dropout
+            )
+            self.target_to_latent = nn.Linear(d_model, self.latent_dim)
+
+            # Initialize with online encoder weights
             for p_online, p_target in zip(self.encoder.parameters(), self.target_encoder.parameters()):
                 p_target.data.copy_(p_online.data)
                 p_target.requires_grad = False
 
-        if hasattr(self, 'to_latent'):
-            for p_online, p_target in zip(self.to_latent.parameters(), self.target_to_latent.parameters()):
-                p_target.data.copy_(p_online.data)
-                p_target.requires_grad = False
+            if hasattr(self, 'to_latent'):
+                for p_online, p_target in zip(self.to_latent.parameters(), self.target_to_latent.parameters()):
+                    p_target.data.copy_(p_online.data)
+                    p_target.requires_grad = False
+
+        else:
+            # Standard TransformerEncoder
+            self.target_encoder = nn.TransformerEncoder(
+                nn.TransformerEncoderLayer(d_model, n_heads, d_ff, dropout,
+                                          activation='gelu', batch_first=True),
+                num_layers=e_layers
+            )
+            self.target_to_latent = nn.Linear(d_model, self.latent_dim)
+
+            # Initialize with online encoder weights
+            if hasattr(self, 'encoder') and isinstance(self.encoder, nn.TransformerEncoder):
+                for p_online, p_target in zip(self.encoder.parameters(), self.target_encoder.parameters()):
+                    p_target.data.copy_(p_online.data)
+                    p_target.requires_grad = False
+
+            if hasattr(self, 'to_latent'):
+                for p_online, p_target in zip(self.to_latent.parameters(), self.target_to_latent.parameters()):
+                    p_target.data.copy_(p_online.data)
+                    p_target.requires_grad = False
 
     @torch.no_grad()
     def update_ema(self, momentum: float = None):
-        """Update target encoder with EMA of online encoder."""
+        """Update target encoder with EMA of online encoder.
+
+        Handles all encoder architectures (standard, cross-variate, hierarchical).
+        """
         if not self.use_jepa:
             return
 
         m = momentum if momentum is not None else self.ema_momentum
 
-        if hasattr(self, 'encoder') and isinstance(self.encoder, nn.TransformerEncoder):
+        if self.use_hierarchy:
+            # Update target encoder from first level's encoder
+            if hasattr(self.encoder, 'encoders'):
+                for p_online, p_target in zip(
+                    self.encoder.encoders[0].parameters(),
+                    self.target_encoder.parameters()
+                ):
+                    p_target.data = m * p_target.data + (1 - m) * p_online.data
+
+            if hasattr(self, 'target_input_proj') and hasattr(self.encoder, 'input_projs'):
+                for p_online, p_target in zip(
+                    self.encoder.input_projs[0].parameters(),
+                    self.target_input_proj.parameters()
+                ):
+                    p_target.data = m * p_target.data + (1 - m) * p_online.data
+
+            if hasattr(self.encoder, 'to_latents'):
+                for p_online, p_target in zip(
+                    self.encoder.to_latents[0].parameters(),
+                    self.target_to_latent.parameters()
+                ):
+                    p_target.data = m * p_target.data + (1 - m) * p_online.data
+
+        elif self.use_cross_variate:
+            # Update cross-variate target encoder
             for p_online, p_target in zip(self.encoder.parameters(), self.target_encoder.parameters()):
                 p_target.data = m * p_target.data + (1 - m) * p_online.data
 
-        if hasattr(self, 'to_latent'):
+            if hasattr(self, 'to_latent'):
+                for p_online, p_target in zip(self.to_latent.parameters(), self.target_to_latent.parameters()):
+                    p_target.data = m * p_target.data + (1 - m) * p_online.data
+
+        else:
+            # Standard TransformerEncoder
+            if hasattr(self, 'encoder') and isinstance(self.encoder, nn.TransformerEncoder):
+                for p_online, p_target in zip(self.encoder.parameters(), self.target_encoder.parameters()):
+                    p_target.data = m * p_target.data + (1 - m) * p_online.data
+
+        if hasattr(self, 'to_latent') and not self.use_hierarchy and not self.use_cross_variate:
             for p_online, p_target in zip(self.to_latent.parameters(), self.target_to_latent.parameters()):
                 p_target.data = m * p_target.data + (1 - m) * p_online.data
 
@@ -856,16 +987,28 @@ class KHJEPAForecaster(nn.Module):
             with torch.no_grad():
                 # Encode target with target encoder
                 y_norm = self.revin(y, 'norm')
-                if self.use_patches:
+
+                if self.use_hierarchy:
+                    # For hierarchy mode: use target encoder at full resolution
+                    y_proj = self.target_input_proj(y_norm)  # (B, pred_len, d_model)
+                    y_enc = self.target_encoder(y_proj)  # (B, pred_len, d_model)
+                    y_enc = y_enc.mean(dim=1)  # (B, d_model)
+
+                elif self.use_patches:
                     # Pad to match patch structure
                     if self.use_cross_variate:
-                        y_patches = self.patch_embed(
-                            F.pad(y_norm, (0, 0, self.seq_len - self.pred_len, 0))
-                        )
+                        y_padded = F.pad(y_norm, (0, 0, self.seq_len - self.pred_len, 0))
+                        y_patches = self.patch_embed(y_padded)
                         B, C, T, D = y_patches.shape
+
+                        # Apply positional encoding per channel
                         y_patches = y_patches.view(B * C, T, D)
                         y_enc = self.pos_embed(y_patches)
-                        y_enc = y_enc.view(B, C, T, D).mean(dim=(1, 2))
+                        y_enc = y_enc.view(B, C, T, D)
+
+                        # Encode with cross-variate target encoder
+                        y_enc = self.target_encoder(y_enc)  # (B, C, T, d_model)
+                        y_enc = y_enc.mean(dim=(1, 2))  # (B, d_model)
                     else:
                         y_padded = F.pad(y_norm, (0, 0, self.seq_len - self.pred_len, 0))
                         y_patches = self.patch_embed(y_padded)
@@ -904,8 +1047,14 @@ class KHJEPAForecaster(nn.Module):
 # TRAINING
 # ============================================================================
 
-def train_epoch(model: nn.Module, loader, optimizer, device, epoch: int, total_epochs: int):
-    """Train for one epoch with optional EMA warmup."""
+def train_epoch(model: nn.Module, loader, optimizer, device, epoch: int, total_epochs: int,
+                scheduler=None, step_scheduler_per_batch: bool = False):
+    """Train for one epoch with optional EMA warmup.
+
+    Args:
+        scheduler: Learning rate scheduler (optional)
+        step_scheduler_per_batch: If True, step scheduler after each batch (for OneCycleLR)
+    """
     model.train()
     total_loss = 0
     total_mse = 0
@@ -930,6 +1079,10 @@ def train_epoch(model: nn.Module, loader, optimizer, device, epoch: int, total_e
         losses['total'].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), GRADIENT_CLIP)
         optimizer.step()
+
+        # Step scheduler per batch (for OneCycleLR)
+        if scheduler is not None and step_scheduler_per_batch:
+            scheduler.step()
 
         if hasattr(model, 'update_ema'):
             model.update_ema(current_momentum)
@@ -1043,17 +1196,20 @@ def main():
     results_dir = Path('results')
     results_dir.mkdir(exist_ok=True)
 
+    # Determine scheduler stepping strategy
+    use_onecycle = WARMUP_EPOCHS > 0
+
     print(f"\nTraining for {EPOCHS} epochs...")
     for epoch in range(1, EPOCHS + 1):
         train_loss, train_mse = train_epoch(
-            model, train_loader, optimizer, device, epoch, EPOCHS
+            model, train_loader, optimizer, device, epoch, EPOCHS,
+            scheduler=scheduler if use_onecycle else None,
+            step_scheduler_per_batch=use_onecycle
         )
         val_mse, val_mae = evaluate(model, val_loader, device)
 
-        if WARMUP_EPOCHS > 0:
-            # OneCycleLR steps per batch, but we log per epoch
-            pass
-        else:
+        # Step scheduler per epoch (for CosineAnnealingLR)
+        if not use_onecycle:
             scheduler.step()
 
         # Logging
