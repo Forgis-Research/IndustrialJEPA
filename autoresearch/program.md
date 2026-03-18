@@ -2,125 +2,122 @@
 
 ## Objective
 
-Achieve **state-of-the-art MSE on ETTh1 benchmark** using JEPA architecture.
+Beat **iTransformer (0.386 MSE)** on ETTh1 benchmark using JEPA.
 
-| Target | MSE |
-|--------|-----|
-| SOTA (iTransformer) | 0.386 |
-| Competitive (PatchTST) | 0.414 |
-| **Our Goal** | < 0.386 |
+## Strategy: Focused Innovation
 
-## Dataset
+**Primary contribution**: JEPA + VICReg (stable latent prediction)
+**Secondary contribution**: Cross-channel attention (unlike channel-independent PatchTST)
 
-**ETTh1** (Electricity Transformer Temperature)
-- 7 variables, hourly data
-- Input: 96 timesteps, Output: 96 timesteps
-- Standard benchmark for long-term forecasting
+We test ONE change at a time. Keep what helps, discard what doesn't.
 
-## Your Task
+## Phase 1: Baseline (Current)
 
-1. **Run experiment**: `python run.py --single`
-2. **Analyze results**: Check test_mse vs SOTA
-3. **Modify train.py**: Try architecture/hyperparameter changes
-4. **Repeat**: Until MSE < 0.386 or time runs out
-
-## What You Can Modify
-
-Only modify `train.py`. Key sections:
-
-### Hyperparameters
-```python
-EPOCHS = 10             # More epochs = better convergence (but slower)
-BATCH_SIZE = 32         # Larger = faster, smaller = more stable
-LEARNING_RATE = 1e-3    # Try 1e-4 to 5e-3
-SEQ_LEN = 96            # Input length (try 192, 336)
-PRED_LEN = 96           # Prediction horizon
-```
-
-### Architecture
-```python
-D_MODEL = 256           # Model dimension (128, 256, 512)
-N_HEADS = 8             # Attention heads (4, 8, 16)
-E_LAYERS = 3            # Encoder depth (2, 3, 4, 6)
-D_FF = 512              # FFN dimension (2x or 4x d_model)
-DROPOUT = 0.1           # Regularization
-```
-
-### JEPA-Specific
-```python
-USE_JEPA = True         # Toggle JEPA vs direct prediction
-LATENT_DIM = 128        # Latent space size
-EMA_MOMENTUM = 0.99     # Target encoder momentum (0.99, 0.996, 0.999)
-```
-
-### Patch Encoding
-```python
-USE_PATCHES = True      # Patch-based (like PatchTST)
-PATCH_LEN = 16          # Patch length (8, 16, 24)
-STRIDE = 8              # Patch stride (patch_len // 2)
-```
-
-## Ideas to Try
-
-### Quick Wins
-1. Increase EPOCHS to 20 (more convergence)
-2. Lower LEARNING_RATE to 1e-4 (more stable)
-3. Increase SEQ_LEN to 192 or 336 (more context)
-
-### Architecture Changes
-1. Deeper encoder (E_LAYERS = 4 or 6)
-2. Wider model (D_MODEL = 512)
-3. Different patch sizes (PATCH_LEN = 8 or 24)
-4. Disable JEPA (USE_JEPA = False) as baseline
-
-### Advanced Ideas
-1. Add cross-channel attention (modify TransformerEncoder)
-2. Multi-scale patches (different patch sizes concatenated)
-3. Learnable positional encoding
-4. Layer normalization before/after attention
-5. Separate encoder for each channel (channel-independent)
-6. Add JEPA loss to total loss (weighted combination)
-
-## Constraints
-
-- Each run should complete in ~5 minutes
-- Keep model parameters < 50M (fits in GPU memory)
-- Don't modify prepare.py or run.py
-
-## Success Metrics
-
-| MSE | Status |
-|-----|--------|
-| > 0.50 | Poor |
-| 0.45-0.50 | Okay |
-| 0.414-0.45 | Good |
-| 0.386-0.414 | **Competitive** |
-| < 0.386 | **SOTA!** |
-
-## Example Workflow
-
+Run the baseline first to establish starting point:
 ```bash
-# Run baseline
 python run.py --single
-
-# Check result - suppose MSE = 0.52 (poor)
-# Hypothesis: need more epochs
-
-# Edit train.py: EPOCHS = 20
-python run.py --single
-
-# Check result - suppose MSE = 0.45 (good)
-# Hypothesis: need more capacity
-
-# Edit train.py: D_MODEL = 512, E_LAYERS = 4
-python run.py --single
-
-# Continue iterating...
 ```
 
-## Notes
+Record: `test_mse = ???`
 
-- RevIN is already implemented (handles distribution shift)
-- Patch embedding is already implemented (like PatchTST)
-- JEPA target encoder uses EMA (like BYOL/I-JEPA)
-- Results are logged to experiment_log.jsonl
+## Phase 2: Quick Wins
+
+Try these one at a time, in order:
+
+### 2.1 More Training
+```python
+EPOCHS = 20  # was 10
+```
+Expected: Better convergence, ~10-20% improvement
+
+### 2.2 Lower Learning Rate
+```python
+LEARNING_RATE = 1e-4  # was 1e-3
+```
+Expected: More stable training
+
+### 2.3 Longer Context
+```python
+SEQ_LEN = 336  # was 96
+```
+Expected: More information for prediction
+
+## Phase 3: Key Innovation #1 - VICReg
+
+**Why**: Prevents JEPA collapse (from C-JEPA, NeurIPS 2024)
+
+Add to the loss function in `train.py`:
+
+```python
+# After computing z_pred (the predicted latent)
+
+# Variance loss: prevent collapse to constant
+std = z_pred.std(dim=0)
+var_loss = F.relu(1 - std).mean()
+
+# Covariance loss: decorrelate dimensions
+z_centered = z_pred - z_pred.mean(dim=0)
+cov = (z_centered.T @ z_centered) / (z_pred.shape[0] - 1)
+off_diag = cov - torch.diag(torch.diag(cov))
+cov_loss = off_diag.pow(2).mean()
+
+# Combined loss
+total_loss = mse_loss + 0.04 * var_loss + 0.04 * cov_loss
+```
+
+Expected: More stable training, possibly better generalization
+
+## Phase 4: Key Innovation #2 - Cross-Channel Attention
+
+**Why**: iTransformer shows attention across variates helps (ICLR 2024)
+
+Modify the encoder to add cross-channel attention:
+
+```python
+# After patch embedding, before temporal attention:
+# (B, num_patches, d_model) -> transpose -> (B, num_features, d_model)
+# Apply attention across features, then transpose back
+```
+
+This captures sensor dependencies that PatchTST misses.
+
+## Phase 5: Architecture Tuning
+
+Only if Phases 2-4 don't reach SOTA:
+
+- `D_MODEL`: 256 → 512
+- `E_LAYERS`: 3 → 4 or 6
+- `PATCH_LEN`: 16 → 8 or 24
+- `USE_JEPA`: True → False (compare to direct prediction)
+
+## Success Criteria
+
+| MSE | Status | Action |
+|-----|--------|--------|
+| > 0.50 | Poor | Check for bugs |
+| 0.45-0.50 | Okay | Continue tuning |
+| 0.414-0.45 | Good | Phase 3-4 innovations |
+| 0.386-0.414 | **Competitive** | Fine-tune |
+| < 0.386 | **SOTA!** | Stop, document |
+
+## Rules
+
+1. **One change at a time** - Know what works
+2. **Keep what helps** - Don't revert improvements
+3. **Log everything** - Results go to experiment_log.jsonl
+4. **5 minutes max** - Fast iteration beats perfect runs
+5. **Don't overcomplicate** - Simple + working > complex + broken
+
+## Current Best
+
+| Run | MSE | Changes |
+|-----|-----|---------|
+| baseline | ??? | Initial config |
+| ... | ... | ... |
+
+## References
+
+- iTransformer: 0.386 MSE (our target)
+- PatchTST: 0.414 MSE
+- C-JEPA: VICReg for JEPA stability
+- TS-JEPA: JEPA works for time series
