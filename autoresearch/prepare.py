@@ -97,13 +97,14 @@ def prepare_data(
     # Columns: date, HUFL, HULL, MUFL, MULL, LUFL, LULL, OT
     data = df.drop('date', axis=1).values.astype(np.float32)
 
-    # Standard ETT split points
-    train_end = 12 * 30 * 24  # 12 months
-    val_end = train_end + 4 * 30 * 24  # +4 months
+    # Standard ETT split points (Informer convention: 12/4/4 months)
+    train_end = 12 * 30 * 24  # 12 months = 8640
+    val_end = train_end + 4 * 30 * 24  # +4 months = 11520
+    test_end = val_end + 4 * 30 * 24  # +4 months = 14400
 
     train_data = data[:train_end]
     val_data = data[train_end:val_end]
-    test_data = data[val_end:]
+    test_data = data[val_end:test_end]  # Fixed: use standard 2880 test set
 
     # Normalize using train statistics (important!)
     train_mean = train_data.mean(axis=0)
@@ -189,13 +190,14 @@ def get_dataloaders(batch_size: int = 32, seq_len: int = None, pred_len: int = N
     df = pd.read_csv(filepath)
     data = df.drop('date', axis=1).values.astype(np.float32)
 
-    # Standard ETT split
-    train_end = 12 * 30 * 24
-    val_end = train_end + 4 * 30 * 24
+    # Standard ETT split (Informer convention: 12/4/4 months)
+    train_end = 12 * 30 * 24  # 8640
+    val_end = train_end + 4 * 30 * 24  # 11520
+    test_end = val_end + 4 * 30 * 24  # 14400
 
     train_data = data[:train_end]
     val_data = data[train_end:val_end]
-    test_data = data[val_end:]
+    test_data = data[val_end:test_end]
 
     # Normalize using train statistics
     train_mean = train_data.mean(axis=0)

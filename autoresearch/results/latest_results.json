@@ -1,0 +1,41 @@
+{
+  "recipe": "jepa",
+  "test_mse": 0.403432272267098,
+  "test_mae": 0.4155960149886105,
+  "is_sane": true,
+  "diagnostics": {
+    "z_std": 0.10130210220813751,
+    "z_mean_abs": 0.09718792885541916,
+    "z_max": 0.5608826875686646
+  },
+  "elapsed_seconds": 121.24550199508667,
+  "parameters": 486254,
+  "transfer": {
+    "source_mse": 0.403432272267098,
+    "target_mse": 0.3023853998059736,
+    "transfer_ratio": 0.7495319861531932,
+    "transfer_success": true
+  },
+  "tier1_pass": true,
+  "tier2_pass": true,
+  "ready_for_hero_metric": true,
+  "config": {
+    "recipe": "jepa",
+    "epochs": 50,
+    "seq_len": 96,
+    "pred_len": 96,
+    "d_model": 128,
+    "latent_dim": 128
+  },
+  "timestamp": "2026-03-18T22:07:56.406450",
+  "tier3": {
+    "mse_96": 0.403,
+    "mse_192": 0.454,
+    "mse_336": 0.516,
+    "mse_720": 0.6,
+    "degradation_ratio": 1.49,
+    "stable_long_horizon": true
+  },
+  "tier3_pass": true,
+  "all_tiers_pass": true
+}

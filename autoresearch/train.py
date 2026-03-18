@@ -58,10 +58,26 @@ from prepare import get_dataloaders
 # - USE_SIGREG: Collapse prevention (LeJEPA, provable)
 # - USE_KOOPMAN: Physics-based dynamics (ablation, not core)
 
-RECIPE = "jepa"  # Options: "baseline", "jepa", "koopman"
+RECIPE = "jepa"  # Options: "dlinear", "patchtst", "baseline", "jepa", "koopman"
 
 RECIPES = {
-    # Recipe 1: Baseline (PatchTST-style direct prediction)
+    # Recipe 0: DLinear (per-channel linear, Zeng et al. 2023)
+    # Use for: Data pipeline sanity check. Expected MSE ~0.375
+    "dlinear": {
+        "USE_JEPA": False,
+        "USE_KOOPMAN": False,
+        "USE_SIGREG": False,
+    },
+
+    # Recipe 1a: PatchTST-style (channel-independent transformer)
+    # Use for: Strong baseline with channel independence
+    "patchtst": {
+        "USE_JEPA": False,
+        "USE_KOOPMAN": False,
+        "USE_SIGREG": False,
+    },
+
+    # Recipe 1b: Baseline (all-channel transformer)
     # Use for: Sanity check, MSE comparison
     "baseline": {
         "USE_JEPA": False,
@@ -91,9 +107,9 @@ RECIPES = {
 # TRAINING CONFIG
 # ============================================================================
 
-EPOCHS = 10
+EPOCHS = 50
 BATCH_SIZE = 32
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 0.01
 WARMUP_EPOCHS = 2
 GRADIENT_CLIP = 1.0
@@ -102,12 +118,12 @@ GRADIENT_CLIP = 1.0
 SEQ_LEN = 96
 PRED_LEN = 96
 
-# Model architecture
-D_MODEL = 256
-N_HEADS = 8
-E_LAYERS = 3
-D_FF = 512
-DROPOUT = 0.1
+# Model architecture (smaller to avoid overfitting on ETTh1's ~8500 training samples)
+D_MODEL = 128
+N_HEADS = 4
+E_LAYERS = 2
+D_FF = 256
+DROPOUT = 0.3
 
 # Patches (always use)
 USE_PATCHES = True
@@ -150,7 +166,7 @@ THRESHOLDS = {
     "mse_broken": 0.50,      # Above this = config is broken
     "mse_sane": 0.45,        # Below this = proceed to Tier 2
     "mse_good": 0.40,        # Below this = promising
-    "z_collapsed": 0.1,      # Latent std below this = collapsed
+    "z_collapsed": 0.05,     # Latent std below this = collapsed
     "K_unstable": 1.0,       # Eigenvalue above this = unstable
 }
 
@@ -740,6 +756,166 @@ class HierarchicalEncoder(nn.Module):
 
 
 # ============================================================================
+# PATCHTST: Channel-independent Transformer (Nie et al. 2023)
+# ============================================================================
+
+class PatchTSTForecaster(nn.Module):
+    """Channel-independent PatchTST with optional JEPA objective."""
+
+    def __init__(self, num_features, seq_len, pred_len, d_model=128, n_heads=4,
+                 e_layers=2, d_ff=256, dropout=0.1, patch_len=16, stride=8,
+                 use_jepa=False, latent_dim=128, use_sigreg=False,
+                 sigreg_weight=0.01, sigreg_num_slices=256):
+        super().__init__()
+        self.num_features = num_features
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.num_patches = (seq_len - patch_len) // stride + 1
+        self.use_jepa = use_jepa
+        self.use_sigreg = use_sigreg
+        self.sigreg_weight = sigreg_weight
+        self.sigreg_num_slices = sigreg_num_slices
+        self.latent_dim = latent_dim
+
+        # Per-channel patch embedding (shared across channels)
+        self.patch_proj = nn.Linear(patch_len, d_model)
+        self.pos_embed = nn.Parameter(torch.randn(1, self.num_patches, d_model) * 0.02)
+
+        # Transformer encoder (shared across channels)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model, n_heads, d_ff, dropout, activation='gelu', batch_first=True
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=e_layers)
+
+        # Per-channel prediction head (shared)
+        self.head = nn.Linear(self.num_patches * d_model, pred_len)
+
+        self.patch_len = patch_len
+        self.stride = stride
+        self.dropout_layer = nn.Dropout(dropout)
+
+        self.revin = RevIN(num_features)
+
+        # JEPA components
+        if use_jepa:
+            # Project encoder output to latent space
+            self.to_latent = nn.Linear(d_model, latent_dim)
+            # Predict target latent from context latent (per-patch MLP)
+            self.latent_predictor = nn.Sequential(
+                nn.Linear(latent_dim, d_ff),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(d_ff, latent_dim),
+            )
+
+    def _encode_patches(self, x_norm):
+        """Encode normalized input to patch representations.
+        Args: x_norm: (B, T, C) normalized input
+        Returns: (B*C, num_patches, d_model)
+        """
+        B, T, C = x_norm.shape
+        x = x_norm.permute(0, 2, 1)  # (B, C, T)
+        patches = x.unfold(2, self.patch_len, self.stride)  # (B, C, num_patches, patch_len)
+        patches = patches.reshape(B * C, self.num_patches, self.patch_len)
+        h = self.patch_proj(patches)  # (B*C, num_patches, d_model)
+        h = h + self.pos_embed
+        h = self.dropout_layer(h)
+        h = self.encoder(h)  # (B*C, num_patches, d_model)
+        return h
+
+    def encode(self, x):
+        """For diagnostics - return pooled latent."""
+        if self.use_jepa:
+            h = self._encode_patches(x)  # (B*C, num_patches, d_model)
+            z = self.to_latent(h.mean(dim=1))  # (B*C, latent_dim)
+            return z
+        return x.mean(dim=1)
+
+    def forward(self, x, y=None):
+        B, T, C = x.shape
+
+        # RevIN normalize
+        x = self.revin(x, 'norm')
+
+        # Encode
+        h = self._encode_patches(x)  # (B*C, num_patches, d_model)
+
+        # Flatten and predict
+        h_flat = h.reshape(B * C, -1)  # (B*C, num_patches * d_model)
+        pred = self.head(h_flat)  # (B*C, pred_len)
+
+        # Reshape back: (B, C, pred_len) -> (B, pred_len, C)
+        pred = pred.reshape(B, C, self.pred_len).permute(0, 2, 1)
+
+        # RevIN denormalize
+        pred = self.revin(pred, 'denorm')
+
+        loss_dict = {}
+        if y is not None:
+            mse_loss = F.mse_loss(pred, y)
+            loss_dict['mse'] = mse_loss
+            total_loss = mse_loss
+
+            # JEPA auxiliary loss
+            if self.use_jepa:
+                # Context latent: pool encoder output per channel
+                z_context = self.to_latent(h.mean(dim=1))  # (B*C, latent_dim)
+
+                # Predict target latent
+                z_pred = self.latent_predictor(z_context)  # (B*C, latent_dim)
+
+                # Target latent: encode target window
+                y_norm = self.revin(y, 'norm')
+                with torch.no_grad():
+                    h_target = self._encode_patches(y_norm)  # (B*C, num_patches, d_model)
+                    z_target = self.to_latent(h_target.mean(dim=1))  # (B*C, latent_dim)
+
+                jepa_loss = F.mse_loss(z_pred, z_target.detach())
+                loss_dict['jepa'] = jepa_loss
+                total_loss = total_loss + 0.1 * jepa_loss
+
+                # SIGReg on predicted latents
+                if self.use_sigreg:
+                    sig_loss, sig_info = sigreg_loss(z_pred, self.sigreg_num_slices)
+                    loss_dict['sigreg'] = sig_loss
+                    total_loss = total_loss + self.sigreg_weight * sig_loss
+
+            loss_dict['total'] = total_loss
+        return pred, loss_dict
+
+
+# ============================================================================
+# DLINEAR: Simplest possible baseline (Zeng et al. 2023)
+# ============================================================================
+
+class DLinearForecaster(nn.Module):
+    """Per-channel independent linear mapping (Zeng et al. 2023). Expected MSE ~0.375."""
+
+    def __init__(self, seq_len: int, pred_len: int, num_features: int):
+        super().__init__()
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.num_features = num_features
+        # Per-channel INDEPENDENT linear layers (published DLinear style)
+        self.linears = nn.ModuleList([nn.Linear(seq_len, pred_len) for _ in range(num_features)])
+
+    def encode(self, x):
+        return x.mean(dim=1)  # dummy for diagnostics
+
+    def forward(self, x, y=None):
+        # x: (B, seq_len, C) - already z-scored, no RevIN needed
+        preds = []
+        for i, linear in enumerate(self.linears):
+            preds.append(linear(x[:, :, i]))  # (B, pred_len)
+        pred = torch.stack(preds, dim=-1)  # (B, pred_len, C)
+        loss_dict = {}
+        if y is not None:
+            loss_dict['mse'] = F.mse_loss(pred, y)
+            loss_dict['total'] = loss_dict['mse']
+        return pred, loss_dict
+
+
+# ============================================================================
 # MAIN MODEL: KH-JEPA
 # ============================================================================
 
@@ -881,8 +1057,8 @@ class KHJEPAForecaster(nn.Module):
             if not use_lejepa_mode:
                 self._build_target_encoder(d_model, n_heads, d_ff, e_layers, dropout)
         else:
-            # Direct prediction (no latent space)
-            self.predictor = nn.Linear(d_model, num_features * pred_len)
+            # Direct prediction from flattened encoder output
+            self.predictor = nn.Linear(self.num_patches * d_model, num_features * pred_len)
 
     def _build_target_encoder(self, d_model, n_heads, d_ff, e_layers, dropout):
         """Build target encoder as copy of online encoder (for EMA).
@@ -1023,40 +1199,31 @@ class KHJEPAForecaster(nn.Module):
             for p_online, p_target in zip(self.to_latent.parameters(), self.target_to_latent.parameters()):
                 p_target.data = m * p_target.data + (1 - m) * p_online.data
 
-    def encode(self, x: torch.Tensor) -> torch.Tensor:
-        """Encode input to latent space."""
+    def encode_sequence(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode input to sequence of representations (no pooling).
+
+        Returns:
+            (B, num_patches, d_model) encoded patch sequence
+        """
         if self.use_hierarchy:
             z, _ = self.encoder(x)  # Already returns latent
-            return z
+            return z.unsqueeze(1)  # (B, 1, latent_dim) for compatibility
 
         # Patch embedding
         if self.use_patches:
-            x = self.patch_embed(x)  # (B, num_patches, d_model) or (B, C, num_patches, d_model)
+            x = self.patch_embed(x)  # (B, num_patches, d_model)
         else:
             x = self.input_proj(x)
 
-        # Cross-variate or standard encoding
-        if self.use_cross_variate:
-            # x is (B, C, num_patches, d_model)
-            B, C, T, D = x.shape
+        # Standard encoding (no pooling!)
+        x = self.pos_embed(x)
+        x = self.encoder(x)  # (B, num_patches, d_model)
+        return x
 
-            # Add positional encoding per channel
-            x = x.view(B * C, T, D)
-            x = self.pos_embed(x)
-            x = x.view(B, C, T, D)
-
-            # Encode with cross-variate attention
-            x = self.encoder(x)  # (B, C, T, d_model)
-
-            # Pool across time and channels
-            x = x.mean(dim=(1, 2))  # (B, d_model)
-            z = self.to_latent(x)  # (B, latent_dim)
-        else:
-            x = self.pos_embed(x)
-            x = self.encoder(x)  # (B, T, d_model)
-            x = x.mean(dim=1)  # (B, d_model)
-            z = self.to_latent(x)  # (B, latent_dim)
-
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode input to pooled latent vector (for JEPA latent loss)."""
+        h = self.encode_sequence(x)  # (B, T, d_model)
+        z = self.to_latent(h.mean(dim=1))  # (B, latent_dim)
         return z
 
     def forward(self, x: torch.Tensor, y: torch.Tensor = None) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
@@ -1076,10 +1243,13 @@ class KHJEPAForecaster(nn.Module):
         # RevIN normalization
         x = self.revin(x, 'norm')
 
-        # Encode
-        z = self.encode(x)  # (B, latent_dim)
+        # Encode to full sequence
+        h = self.encode_sequence(x)  # (B, num_patches, d_model)
 
         if self.use_jepa:
+            # Get pooled latent for JEPA loss
+            z = self.to_latent(h.mean(dim=1))  # (B, latent_dim)
+
             # Predict in latent space
             if self.use_koopman:
                 z_pred = self.predictor.predict_sequence(z, self.pred_len)  # (B, pred_len, latent_dim)
@@ -1089,9 +1259,11 @@ class KHJEPAForecaster(nn.Module):
             # Decode to observation space
             pred = self.decoder(z_pred)  # (B, pred_len, num_features)
         else:
-            # Direct prediction
-            pred = self.predictor(z)
+            # Direct prediction from full encoder output (no bottleneck)
+            h_flat = h.reshape(B, -1)  # (B, num_patches * d_model)
+            pred = self.predictor(h_flat)
             pred = pred.view(B, self.pred_len, self.num_features)
+            z_pred = None
 
         # RevIN denormalization
         pred = self.revin(pred, 'denorm')
@@ -1099,7 +1271,7 @@ class KHJEPAForecaster(nn.Module):
         # Compute losses
         loss_dict = {}
         if y is not None:
-            loss_dict = self._compute_losses(pred, y, z_pred if self.use_jepa else None, x)
+            loss_dict = self._compute_losses(pred, y, z_pred, x)
 
         return pred, loss_dict
 
@@ -1129,7 +1301,7 @@ class KHJEPAForecaster(nn.Module):
                 z_pred_pooled = z_pred.mean(dim=1)  # (B, latent_dim)
                 jepa_loss = F.mse_loss(z_pred_pooled, z_target)
                 loss_dict['jepa'] = jepa_loss
-                total_loss = total_loss + 0.5 * jepa_loss
+                total_loss = total_loss + 0.1 * jepa_loss
 
             else:
                 # Standard JEPA: separate target encoder with EMA, stop_grad
@@ -1176,7 +1348,7 @@ class KHJEPAForecaster(nn.Module):
                 z_pred_pooled = z_pred.mean(dim=1)  # (B, latent_dim)
                 jepa_loss = F.mse_loss(z_pred_pooled, z_target)
                 loss_dict['jepa'] = jepa_loss
-                total_loss = total_loss + 0.5 * jepa_loss
+                total_loss = total_loss + 0.1 * jepa_loss
 
         # Collapse prevention regularization
         if z_pred is not None:
@@ -1220,7 +1392,10 @@ def quick_diagnostics(model: nn.Module, loader, device) -> Dict[str, float]:
     x = batch['x'].to(device)
 
     # Encode to get latent
-    z = model.encode(model.revin(x, 'norm'))
+    if hasattr(model, 'revin'):
+        z = model.encode(model.revin(x, 'norm'))
+    else:
+        z = model.encode(x)
 
     diagnostics = {
         # Collapse detection
@@ -1247,8 +1422,8 @@ def check_health(diagnostics: Dict[str, float], epoch: int) -> Tuple[bool, str]:
     """
     Check if training is healthy. Returns (is_healthy, message).
     """
-    # Check collapse
-    if diagnostics.get('z_std', 1.0) < THRESHOLDS['z_collapsed']:
+    # Check collapse (only relevant when using JEPA latent space)
+    if USE_JEPA and diagnostics.get('z_std', 1.0) < THRESHOLDS['z_collapsed']:
         return False, f"COLLAPSED: z_std={diagnostics['z_std']:.4f} < {THRESHOLDS['z_collapsed']}"
 
     # Check Koopman stability
@@ -1524,34 +1699,57 @@ def main():
     print(f"  Features: {info['num_features']}")
 
     # Create model
-    model = KHJEPAForecaster(
-        num_features=info['num_features'],
-        seq_len=SEQ_LEN,
-        pred_len=PRED_LEN,
-        d_model=D_MODEL,
-        n_heads=N_HEADS,
-        e_layers=E_LAYERS,
-        d_ff=D_FF,
-        dropout=DROPOUT,
-        use_jepa=USE_JEPA,
-        latent_dim=LATENT_DIM,
-        ema_momentum=EMA_MOMENTUM,
-        use_lejepa_mode=USE_LEJEPA_MODE,
-        use_koopman=USE_KOOPMAN,
-        koopman_rank=KOOPMAN_RANK,
-        koopman_stable=KOOPMAN_STABLE,
-        # SIGReg (LeJEPA - provable collapse prevention)
-        use_sigreg=USE_SIGREG,
-        sigreg_weight=SIGREG_WEIGHT,
-        sigreg_num_slices=SIGREG_NUM_SLICES,
-        # Disabled features (kept in model for future use)
-        use_vicreg=False,
-        use_cross_variate=False,
-        use_hierarchy=False,
-        use_patches=USE_PATCHES,
-        patch_len=PATCH_LEN,
-        stride=STRIDE,
-    ).to(device)
+    if RECIPE == "dlinear":
+        model = DLinearForecaster(
+            seq_len=SEQ_LEN,
+            pred_len=PRED_LEN,
+            num_features=info['num_features'],
+        ).to(device)
+    elif RECIPE in ("patchtst", "jepa", "koopman"):
+        model = PatchTSTForecaster(
+            num_features=info['num_features'],
+            seq_len=SEQ_LEN,
+            pred_len=PRED_LEN,
+            d_model=D_MODEL,
+            n_heads=N_HEADS,
+            e_layers=E_LAYERS,
+            d_ff=D_FF,
+            dropout=DROPOUT,
+            patch_len=PATCH_LEN,
+            stride=STRIDE,
+            use_jepa=USE_JEPA,
+            latent_dim=LATENT_DIM,
+            use_sigreg=USE_SIGREG,
+            sigreg_weight=SIGREG_WEIGHT,
+            sigreg_num_slices=SIGREG_NUM_SLICES,
+        ).to(device)
+    else:
+        model = KHJEPAForecaster(
+            num_features=info['num_features'],
+            seq_len=SEQ_LEN,
+            pred_len=PRED_LEN,
+            d_model=D_MODEL,
+            n_heads=N_HEADS,
+            e_layers=E_LAYERS,
+            d_ff=D_FF,
+            dropout=DROPOUT,
+            use_jepa=USE_JEPA,
+            latent_dim=LATENT_DIM,
+            ema_momentum=EMA_MOMENTUM,
+            use_lejepa_mode=USE_LEJEPA_MODE,
+            use_koopman=USE_KOOPMAN,
+            koopman_rank=KOOPMAN_RANK,
+            koopman_stable=KOOPMAN_STABLE,
+            use_sigreg=USE_SIGREG,
+            sigreg_weight=SIGREG_WEIGHT,
+            sigreg_num_slices=SIGREG_NUM_SLICES,
+            use_vicreg=False,
+            use_cross_variate=False,
+            use_hierarchy=False,
+            use_patches=USE_PATCHES,
+            patch_len=PATCH_LEN,
+            stride=STRIDE,
+        ).to(device)
 
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"\nModel parameters: {n_params:,}")
