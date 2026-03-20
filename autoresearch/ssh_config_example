@@ -1,6 +1,0 @@
-Host sagemaker-space
-    HostName "arn:aws:sagemaker:eu-central-1:698516610829:space/d-dbpzn6wx78xs/quickstart-gpu-0az0xd"
-    ProxyCommand powershell.exe -ExecutionPolicy RemoteSigned -File "C:\\Users\\Jonaspetersen\\sagemaker_connect.ps1" "%h"
-    User sagemaker-user
-    ForwardAgent yes
-    StrictHostKeyChecking accept-new

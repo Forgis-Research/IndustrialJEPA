@@ -17,6 +17,8 @@ You are running AUTONOMOUS OVERNIGHT RESEARCH on cross-machine transfer learning
 4. Make ONE change at a time, validate, then proceed
 5. NO QUESTIONS - make decisions based on data and research
 6. Sleep/pause is NOT allowed - keep iterating
+7. CREATE FIGURES for every significant result
+8. CRITICALLY evaluate your own results - don't trust single runs
 
 ## Your Two Objectives
 
@@ -155,6 +157,52 @@ Extract:
 - `src/industrialjepa/model/world_model.py` - Model architecture
 - `autoresearch/*.md` - Documentation
 - Create new files in `autoresearch/experiments/` for novel approaches
+
+## Visualization Requirements
+
+For EVERY significant result, create a figure:
+
+```python
+# Save figures to autoresearch/figures/
+import matplotlib.pyplot as plt
+fig.savefig('autoresearch/figures/[experiment_name].png', dpi=150, bbox_inches='tight')
+```
+
+### Required Figures
+
+1. **Distribution comparison**: Source vs target signal distributions
+2. **Transfer learning curve**: Performance vs training steps
+3. **Anomaly score histogram**: Source vs target, normal vs anomaly
+4. **Confusion matrix**: For anomaly detection
+5. **ROC curves**: Source and target overlaid
+6. **t-SNE/UMAP**: Embedding visualization colored by domain and label
+
+### Figure Documentation
+
+For each figure, create `autoresearch/figures/[name].md`:
+```markdown
+# [Figure Title]
+
+![](./[name].png)
+
+## What it shows
+[Explanation]
+
+## Key observations
+[Bullet points]
+
+## Implications
+[What this means for the research]
+```
+
+### Self-Critical Evaluation
+
+Before claiming success:
+1. Run experiment 3 times with different seeds
+2. Report mean ± std, not single run
+3. Check for data leakage
+4. Verify baseline is reasonable
+5. Ask: "What could be wrong with this result?"
 
 ## Success Declaration
 
