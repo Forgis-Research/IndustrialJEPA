@@ -657,6 +657,10 @@ def main():
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-4)
 
+    # Resume from checkpoint
+    parser.add_argument("--source-checkpoint", type=str, default=None,
+                        help="Path to pre-trained source model (skip source training)")
+
     # Output
     parser.add_argument("--output-dir", type=str, default="results")
     parser.add_argument("--device", type=str, default="cuda")
@@ -704,13 +708,20 @@ def main():
     model = TransferModel(config).to(device)
     logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-    source_history = train_source_domain(
-        model, source_train_loader, source_val_loader, config, device, output_dir
-    )
-
-    # Load best model
-    checkpoint = torch.load(output_dir / "source_model.pt", map_location=device, weights_only=False)
-    model.load_state_dict(checkpoint["state_dict"])
+    if args.source_checkpoint:
+        # Load pre-trained source model (skip training)
+        logger.info(f"Loading pre-trained source model from {args.source_checkpoint}")
+        checkpoint = torch.load(args.source_checkpoint, map_location=device, weights_only=False)
+        model.load_state_dict(checkpoint["state_dict"])
+        source_history = None
+    else:
+        # Train from scratch
+        source_history = train_source_domain(
+            model, source_train_loader, source_val_loader, config, device, output_dir
+        )
+        # Load best model
+        checkpoint = torch.load(output_dir / "source_model.pt", map_location=device, weights_only=False)
+        model.load_state_dict(checkpoint["state_dict"])
 
     # Evaluate on source test set
     source_results = evaluate_transfer(model, source_test_loader, device, "source_test")
