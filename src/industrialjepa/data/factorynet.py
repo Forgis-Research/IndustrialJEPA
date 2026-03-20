@@ -147,7 +147,7 @@ class FactoryNetConfig:
     # The loader will find whichever columns are available
     setpoint_signals: list[str] = field(default_factory=lambda: ["position", "velocity"])
     # Try effort signal types in order of preference
-    effort_signals: list[str] = field(default_factory=lambda: ["torque", "current", "velocity"])
+    effort_signals: list[str] = field(default_factory=lambda: ["torque", "current", "voltage", "velocity"])
 
     # Unified output dimensions (for cross-dataset training)
     # All outputs padded to these dims with validity masks
