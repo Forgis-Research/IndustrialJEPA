@@ -150,3 +150,95 @@
 ### Key Insights
 
 ### Reproducible Commands
+
+### Experiment #1: Baseline Transfer (Episode Normalization)
+
+**Date**: 2026-03-20 21:30
+**Hypothesis**: A setpoint→effort predictor trained on AURSAD healthy data will detect anomalies on Voraus via prediction error, because anomalies violate normal physics. Episode normalization removes scale differences between robots.
+**Approach**: Train SimpleEffortPredictor on AURSAD (voltage signals), evaluate zero-shot on Voraus.
+**Command**:
+```bash
+python autoresearch/experiments/exp01_baseline_transfer.py --seed 42 --epochs 10 --norm-mode episode
+```
+**Metric**: Target AUC ≥ 0.70, Transfer Ratio ≤ 1.5
+
+**Result**:
+```
+Source AUC: 0.511 (near random)
+Target AUC: 0.489 (near random)
+Source MSE: 0.793
+Target MSE: 0.903
+Transfer Ratio: 1.14 ← PASSES objective 2!
+```
+**Pass/Fail**: FAIL for anomaly, PASS for forecasting
+**Learnings**: 
+- Forecasting transfer works well with episode normalization (ratio 1.14)
+- Anomaly detection completely fails - prediction error doesn't separate normal from anomalous
+- The setpoint→effort predictor with episode normalization erases anomaly signal
+- Episode normalization likely normalizes away the anomaly signature (anomalous effort patterns get z-scored to look normal)
+**Next**: Try global normalization or no normalization - anomalies should show as abnormal effort magnitudes
+
+---
+
+### Experiment #2: Anomaly Detection with NO Normalization
+
+**Date**: 2026-03-20 21:55
+**Hypothesis**: Episode normalization removes anomaly signal by z-scoring each window independently. With NO normalization, anomalous effort patterns (higher/different magnitudes) should stand out as higher prediction error.
+**Metric**: Target AUC ≥ 0.70
+**Result**: Source AUC=0.442, Target AUC=0.507, Transfer Ratio=0.028 (misleading - different scales)
+**Pass/Fail**: FAIL
+**Learnings**: No normalization makes signals incomparable across domains. AUC still near random.
+
+---
+
+### Experiment #3: Global Normalization + More Epochs
+
+**Date**: 2026-03-20 21:58
+**Hypothesis**: Global normalization preserves magnitude differences (anomaly signal) while standardizing scale. More epochs (20) may help model converge to better setpoint→effort mapping.
+**Metric**: Target AUC ≥ 0.70
+**Result**: Source AUC=0.533, Target AUC=0.495, Transfer Ratio=0.90
+**Pass/Fail**: FAIL for anomaly, PASS for forecasting
+
+---
+
+### Experiment #4: Diagnostic Analysis
+
+**Date**: 2026-03-20 22:03
+**Hypothesis**: Anomaly detection fails because anomaly signals differ between datasets
+**Approach**: Statistical analysis of normal vs anomalous windows
+**Result**:
+```
+AURSAD (global norm): Anomaly variance 3-9x higher than normal → detectable
+Voraus (global norm): Anomaly variance <3% different from normal → NOT detectable
+Episode normalization: Erases ALL differences
+```
+**Key Finding**: Voraus anomalies do NOT manifest as different voltage patterns compared to normal.
+1-to-1 cross-machine anomaly detection AURSAD→Voraus is fundamentally limited.
+**Learnings**:
+1. Anomaly signatures are NOT universal across robots/tasks
+2. Episode normalization completely erases anomaly signal
+3. Forecasting transfer works well (ratio 0.9-1.14) because normal dynamics ARE universal
+4. Anomaly detection requires understanding dataset-specific anomaly patterns
+
+---
+
+## PIVOT: Many-to-1 Transfer Learning
+
+User directed pivot from 1-to-1 to MANY-to-1 transfer.
+Key insight: training on MANY similar embodiment datasets and transferring to held-out one is more tractable.
+Need to find additional industrial time series datasets and reformulate objectives.
+
+---
+
+
+### Experiment #5: Many-to-1 Leave-One-Out Transfer with RevIN
+
+**Date**: 2026-03-20 22:20
+**Hypothesis**: Training on multiple source domains provides more diverse "normal" representations that transfer better to held-out domains. RevIN normalizes per-instance to handle domain shift while preserving learnable temporal patterns.
+**Approach**: Leave-one-out over AURSAD, Voraus, CNC. Compare many-to-1 vs 1-to-1.
+**Command**:
+```bash
+python autoresearch/experiments/exp02_multi_source_transfer.py --seed 42 --epochs 15
+```
+**Metric**: Transfer ratio ≤ 1.5, AUC ≥ 0.70
+
