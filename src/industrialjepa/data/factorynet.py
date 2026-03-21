@@ -252,6 +252,11 @@ class FactoryNetDataset(Dataset):
         # Optimize memory usage
         self._optimize_memory()
 
+        # Sort by episode_id to ensure each episode's rows are contiguous
+        # This is critical for iloc-based window slicing after concat from multiple parquet files
+        if "episode_id" in self.df.columns:
+            self.df = self.df.sort_values("episode_id").reset_index(drop=True)
+
         # Load episode metadata
         is_full_dataset = "FactoryNet_Dataset" in self.config.dataset_name
         if is_full_dataset:
@@ -369,8 +374,22 @@ class FactoryNetDataset(Dataset):
         if self.config.data_source and "dataset_source" in self.df.columns:
             source = self.config.data_source.lower()
             original_len = len(self.df)
-            # Use 'contains' for flexible matching (e.g., "voraus" matches "voraus_AD")
-            self.df = self.df[self.df["dataset_source"].str.lower().str.contains(source)].reset_index(drop=True)
+
+            # Map data_source config to possible dataset_source column values
+            # Some datasets have different naming (e.g., CNC data is labeled "UMich_Kaggle")
+            source_aliases = {
+                "cnc": ["umich", "cnc", "kaggle"],
+                "aursad": ["aursad"],
+                "voraus": ["voraus"],
+                "hackathon": ["hackathon", "ur3"],
+            }
+            aliases = source_aliases.get(source, [source])
+
+            # Match any alias
+            mask = self.df["dataset_source"].str.lower().apply(
+                lambda x: any(alias in str(x).lower() for alias in aliases)
+            )
+            self.df = self.df[mask].reset_index(drop=True)
             logger.info(f"Filtered to {source}: {len(self.df)} rows (from {original_len})")
 
     def _load_metadata(self, data_dir: Optional[str]):
@@ -695,8 +714,10 @@ class FactoryNetDataset(Dataset):
         """Create sliding windows from episodes.
 
         Uses groupby for O(1) episode lookup instead of O(m) filtering.
+        DataFrame is pre-sorted by episode_id so each episode's rows are contiguous,
+        making iloc-based slicing safe.
         """
-        self.windows = []  # List of (episode_id, start_idx, end_idx)
+        self.windows = []
 
         logger.info(f"Creating windows from {len(self.split_episodes)} episodes...")
 
@@ -715,13 +736,17 @@ class FactoryNetDataset(Dataset):
             if ep_len < self.config.window_size:
                 continue
 
+            # Since df is sorted by episode_id, rows are contiguous
+            # Use the first index value as the base for iloc
+            ep_start_iloc = ep_data.index[0]
+
             # Create windows with stride
             start = 0
             while start + self.config.window_size <= ep_len:
                 self.windows.append({
                     "episode_id": ep_id,
-                    "start_idx": ep_data.index[start],
-                    "end_idx": ep_data.index[start + self.config.window_size - 1],
+                    "iloc_start": ep_start_iloc + start,
+                    "iloc_end": ep_start_iloc + start + self.config.window_size - 1,
                     "label": self.episode_labels.get(ep_id),
                 })
                 start += self.config.stride
@@ -774,12 +799,13 @@ class FactoryNetDataset(Dataset):
         """
         window = self.windows[idx]
 
-        # Get window data
-        start_idx = window["start_idx"]
-        end_idx = window["end_idx"]
+        # Get window data using iloc (integer position-based) to handle
+        # non-contiguous indices from concatenated parquet files
+        iloc_start = window["iloc_start"]
+        iloc_end = window["iloc_end"]
 
-        # Slice dataframe by index range
-        window_data = self.df.loc[start_idx:end_idx]
+        # Slice dataframe by integer position (iloc is exclusive on end)
+        window_data = self.df.iloc[iloc_start:iloc_end + 1]
 
         # Extract setpoint and effort (actual dimensions)
         setpoint_raw = window_data[self.setpoint_cols].values.astype(np.float32)
@@ -817,10 +843,11 @@ class FactoryNetDataset(Dataset):
         fault_type = window["label"] if window["label"] else "normal"
         phase = ep_meta.get("phase", "unknown")
 
-        # Anomaly = tightening phase with non-normal fault
+        # Anomaly = non-normal fault label, UNLESS it's a loosening phase (AURSAD-specific)
         # Loosening phase is always "normal" (different operation, not fault)
-        is_anomaly = (phase == "tightening" and
-                      str(fault_type).lower() not in ["normal", "none", "null", "healthy", ""])
+        is_anomaly = str(fault_type).lower() not in ["normal", "none", "null", "healthy", ""]
+        if phase == "loosening":
+            is_anomaly = False  # AURSAD loosening is always normal
 
         metadata = {
             "episode_id": ep_id,
