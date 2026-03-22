@@ -154,6 +154,20 @@ Different robots have different kinematic coupling. Joint 1's effect on Joint 3 
 
 ---
 
+### Per-Condition Normalization Eliminates Architecture Advantage
+
+**Finding**: With KMeans-based operating condition clustering and per-cluster normalization, CI-Trans (31.95) matches Role-Trans (32.63) on FD001→FD002.
+
+**Implication**: Role-Trans' advantage comes from *implicit* condition invariance — within-component features don't change much across conditions. But if you have condition labels (or can cluster), explicit normalization works just as well. This is the honest framing for a paper.
+
+### Shorter Sequences Transfer Better
+
+**Finding**: seq_len=15 gives best transfer ratio (2.85) despite worse in-domain (16.90). seq_len=80 gives ratio 6.82.
+
+**Why**: Longer sequences capture more source-specific patterns (degradation trajectories, condition-specific dynamics) that don't generalize. Shorter windows force the model to learn local physics.
+
+---
+
 ## Approaches to Avoid
 
 | Approach | Issue | Status |
