@@ -11,6 +11,7 @@ Output:
 """
 
 import logging
+import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -56,7 +57,7 @@ def permutation_entropy(x: np.ndarray, order: int = 3, delay: int = 1) -> float:
     entropy = -np.sum(probs * np.log2(probs + 1e-10))
 
     # Normalize by maximum entropy
-    max_entropy = np.log2(np.math.factorial(order))
+    max_entropy = np.log2(math.factorial(order))
     return entropy / max_entropy
 
 
@@ -180,11 +181,12 @@ def main():
     logger.info("Extracting signal data...")
     n_samples = min(200, len(ds_a), len(ds_b))
 
-    setpoint_a = np.stack([ds_a[i]['setpoint'].numpy() for i in range(n_samples)])
-    effort_a = np.stack([ds_a[i]['effort'].numpy() for i in range(n_samples)])
+    # Dataset returns (setpoint, effort, metadata) tuple
+    setpoint_a = np.stack([ds_a[i][0].numpy() for i in range(n_samples)])
+    effort_a = np.stack([ds_a[i][1].numpy() for i in range(n_samples)])
 
-    setpoint_b = np.stack([ds_b[i]['setpoint'].numpy() for i in range(n_samples)])
-    effort_b = np.stack([ds_b[i]['effort'].numpy() for i in range(n_samples)])
+    setpoint_b = np.stack([ds_b[i][0].numpy() for i in range(n_samples)])
+    effort_b = np.stack([ds_b[i][1].numpy() for i in range(n_samples)])
 
     # Channel names
     setpoint_names = [f'setpoint_{i}' for i in range(setpoint_a.shape[-1])]

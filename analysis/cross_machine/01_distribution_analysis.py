@@ -63,6 +63,11 @@ def compute_per_channel_distances(data_a: np.ndarray, data_b: np.ndarray,
         x = data_a[:, i].flatten()
         y = data_b[:, i].flatten()
 
+        # Skip zero-variance channels (padding)
+        if np.std(x) < 1e-8 or np.std(y) < 1e-8:
+            logger.warning(f"Skipping channel {name}: zero variance (likely padding)")
+            continue
+
         # Subsample for efficiency
         n_samples = min(10000, len(x), len(y))
         x_sub = np.random.choice(x, n_samples, replace=False)
@@ -126,11 +131,12 @@ def main():
     logger.info("Extracting signal data...")
     n_samples = min(500, len(ds_a), len(ds_b))
 
-    setpoint_a = np.stack([ds_a[i]['setpoint'].numpy() for i in range(n_samples)])
-    effort_a = np.stack([ds_a[i]['effort'].numpy() for i in range(n_samples)])
+    # Dataset returns (setpoint, effort, metadata) tuple
+    setpoint_a = np.stack([ds_a[i][0].numpy() for i in range(n_samples)])
+    effort_a = np.stack([ds_a[i][1].numpy() for i in range(n_samples)])
 
-    setpoint_b = np.stack([ds_b[i]['setpoint'].numpy() for i in range(n_samples)])
-    effort_b = np.stack([ds_b[i]['effort'].numpy() for i in range(n_samples)])
+    setpoint_b = np.stack([ds_b[i][0].numpy() for i in range(n_samples)])
+    effort_b = np.stack([ds_b[i][1].numpy() for i in range(n_samples)])
 
     # Flatten time dimension
     setpoint_a = setpoint_a.reshape(-1, setpoint_a.shape[-1])

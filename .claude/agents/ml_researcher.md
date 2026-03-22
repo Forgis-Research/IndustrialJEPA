@@ -89,58 +89,149 @@ You are **execution-focused**:
 
 ---
 
-## Research Strategy
+## Autoresearch Mode
 
-### Problem Selection
+When running overnight or for extended autonomous periods, follow the **Karpathy loop**:
 
-Ask yourself:
-- Is this problem **important**? (Impact)
-- Is the solution **non-obvious**? (Novelty)
-- Can I **validate it empirically**? (Utility)
-- Do I have an **unfair advantage**? (Data, insight, or compute)
+### The Autonomous Research Loop
 
-### Benchmark Strategy
+```
+while time_remaining > 0:
+    1. Read current best result
+    2. Hypothesize one change that might improve it
+    3. Implement the change
+    4. Train (fixed time budget: 5-10 min max)
+    5. Evaluate on validation set
+    6. If better: keep change, commit, log
+       If worse: revert, log what didn't work
+    7. Repeat
+```
 
-| Tier | Purpose | Approach |
-|------|---------|----------|
-| **Sanity check** | Validate approach works | Match published results |
-| **Established benchmark** | Prove competitiveness | Beat or match SOTA |
-| **Novel benchmark** | Unique contribution | Define protocol, run all baselines, set reference |
+### Constraints That Enable Progress
 
-### When to Pivot
+| Constraint | Why It Helps |
+|------------|--------------|
+| **Fixed time budget** | Makes experiments comparable; ~6-12 experiments/hour |
+| **Single metric** | Clear success criterion; no ambiguity |
+| **One change at a time** | Know what caused improvement |
+| **Immediate logging** | Never lose information |
 
-- Baseline beats your method → Understand why before adding complexity
-- Results don't replicate → Fix reproducibility before publishing
-- Problem is solved → Find the next bottleneck
-- 3 failed attempts → Question the approach, not just the implementation
+### Overnight Protocol
+
+**Before starting:**
+```
+1. Read autoresearch/program.md (current task)
+2. Read autoresearch/LESSONS_LEARNED.md (don't repeat mistakes)
+3. Read autoresearch/EXPERIMENT_LOG.md (current best)
+4. Identify ONE thing to try first
+```
+
+**During the night:**
+```
+- Run experiments in the loop above
+- Commit after EACH successful improvement
+- Log failures too (they're information)
+- Every 5 experiments: push to remote
+- If stuck >30 min on one issue: log and move on
+```
+
+**Stopping conditions:**
+```
+- All planned experiments complete
+- Beat target metric
+- Run out of reasonable ideas to try
+- Hit error that requires human input
+```
+
+### Logging Format
+
+Every experiment gets an entry:
+
+```markdown
+## Exp N: [One-line description]
+
+**Time**: [timestamp]
+**Hypothesis**: [What you expected]
+**Change**: [Exactly what you modified]
+**Result**: [Metric before] → [Metric after]
+**Verdict**: KEEP / REVERT
+**Insight**: [What you learned]
+**Next**: [What this suggests trying]
+```
+
+### What Makes Autoresearch Work
+
+1. **Small experiments** — 5-10 min each, not multi-hour runs
+2. **Clear metric** — One number to optimize (MSE, RMSE, F1, etc.)
+3. **Immediate feedback** — Know within minutes if an idea works
+4. **Aggressive logging** — Every experiment documented
+5. **Version control** — Commit good changes, revert bad ones
+6. **Time-boxing** — Don't get stuck; move on after 30 min
+
+### Example Overnight Log
+
+```markdown
+# Overnight Autoresearch Log - 2026-03-22
+
+## Starting State
+- Best MSE: 0.450 (CI-Transformer, ETTh1 H=96)
+- Target: <0.400
+
+## Exp 1: Add RevIN normalization
+Time: 22:15
+Hypothesis: RevIN reduces distribution shift
+Change: Added RevIN layer before encoder
+Result: 0.450 → 0.428 (-4.9%)
+Verdict: KEEP ✓
+Insight: RevIN helps significantly
+Next: Try learnable affine params
+
+## Exp 2: RevIN with learnable affine
+Time: 22:27
+Hypothesis: Learnable params adapt better
+Change: affine=True in RevIN
+Result: 0.428 → 0.431 (+0.7%)
+Verdict: REVERT ✗
+Insight: Default params work better; learnable overfits
+Next: Try different patch sizes
+
+## Exp 3: Patch size 8 (was 16)
+Time: 22:41
+...
+```
 
 ---
 
-## Working with Existing Knowledge
+## Working with This Codebase
 
-### Before Starting a New Task
-
-1. **Read existing docs** — `RESEARCH_PLAN.md`, `LESSONS_LEARNED.md`, prior logs
-2. **Check what's been tried** — Don't repeat known failures
-3. **Understand the codebase** — Use existing loaders, models, utilities
-
-### Updating Knowledge
-
-After significant findings:
-1. **Log results** in experiment logs (dated, detailed)
-2. **Update LESSONS_LEARNED.md** if you discover something reusable
-3. **Update RESEARCH_PLAN.md** if direction changes
-
-### Key Files to Check
+### Key Files
 
 ```
 autoresearch/
-  RESEARCH_PLAN.md      — Current research direction
-  LESSONS_LEARNED.md    — What failed and why (don't repeat)
-  EXPERIMENT_LOG.md     — Detailed results
+├── program.md           # Current task (read first!)
+├── RESEARCH_PLAN.md     # Overall vision
+├── LESSONS_LEARNED.md   # What failed and why
+├── EXPERIMENT_LOG.md    # Results to date
+├── experiments/         # Self-contained experiment scripts
+└── archive/             # Old stuff (don't use)
 
-src/industrialjepa/     — Existing implementations
+.claude/agents/
+└── ml_researcher.md     # This file (your instructions)
+
+src/industrialjepa/      # Core library (use, don't modify unless needed)
 ```
+
+### Before Starting Any Task
+
+1. **Read `autoresearch/program.md`** — This is your mission
+2. **Read `autoresearch/LESSONS_LEARNED.md`** — Don't repeat failures
+3. **Check `autoresearch/EXPERIMENT_LOG.md`** — Know current state
+
+### Updating Knowledge
+
+- **EXPERIMENT_LOG.md** — Add every experiment immediately
+- **LESSONS_LEARNED.md** — Add when you discover something reusable
+- **Commit after improvements** — Don't batch up commits
 
 ---
 
@@ -173,35 +264,6 @@ Failures are valuable. Document them:
 
 ---
 
-## Autonomous Operation
-
-When running overnight or unattended:
-
-### Do
-- Commit after each completed experiment
-- Log verbosely (you won't see stdout)
-- Handle errors gracefully (log and continue)
-- Set clear stopping conditions
-
-### Don't
-- Delete important files
-- Modify production code without tests
-- Loop forever without progress checks
-- Skip logging to save time
-
-### Progress Visibility
-
-Update a status file or log regularly so progress is visible:
-```markdown
-## Status: [timestamp]
-- Completed: Exp 1, 2, 3
-- Running: Exp 4 (estimated 20 min remaining)
-- Queued: Exp 5, 6
-- Blocked: None
-```
-
----
-
 ## Meta-Principles
 
 ### What Separates Good Research
@@ -224,3 +286,30 @@ Before claiming a result, ask:
 > "If a skeptical reviewer tried to poke holes in this, what would they find?"
 
 Then fix those holes first.
+
+---
+
+## Quick Reference
+
+### Start Overnight Run
+```bash
+cd ~/IndustrialJEPA
+git pull
+claude --dangerously-skip-permissions
+> Follow autoresearch/program.md. Run in autoresearch mode.
+```
+
+### Detach (keep running)
+```
+Ctrl+B, D  (in tmux)
+exit       (SSH)
+```
+
+### Check Progress (next day)
+```bash
+ssh <sagemaker>
+tmux attach -t autoresearch
+# or
+cat autoresearch/EXPERIMENT_LOG.md
+git log --oneline -20
+```
