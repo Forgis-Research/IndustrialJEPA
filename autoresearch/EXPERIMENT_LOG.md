@@ -346,6 +346,45 @@
 
 **Implication for paper**: The story should be: "Without condition information, Role-Trans provides 36% better transfer by learning condition-invariant within-component features. With condition-aware normalization, both architectures benefit equally." This positions Role-Trans as the *unsupervised* approach to condition invariance.
 
+## Exp 24: Settings as Input Features — REVERT
+
+**Result**: Including operating settings (setting1-3) as input features doesn't help transfer. Avg FD002 RMSE: Role+Settings=57.48, CI+Settings=62.46 vs Role-only=48.82.
+**Insight**: Model memorizes condition-specific patterns through settings, hurting generalization.
+
+## Exp 25: Per-Condition Normalization — Multi-seed Confirmation
+
+| Seed | Role-Trans + cond-norm | CI-Trans + cond-norm |
+|------|----------------------|---------------------|
+| 42 | 33.25 | 32.42 |
+| 123 | 30.55 | 31.40 |
+| 456 | 31.78 | 30.29 |
+| **Avg** | **31.86** | **31.37** |
+
+**Verdict**: With condition normalization, architectures are equivalent. Confirms Role-Trans advantage is from implicit condition invariance.
+
+## Exp 26: Dropout Ablation — INFORMATIVE
+
+| Dropout | FD001 | FD002 | Ratio |
+|---------|-------|-------|-------|
+| 0.0 | 12.18 | 66.39 | 5.45 |
+| **0.1** | **12.45** | **45.96** | **3.69** |
+| 0.2 | 12.20 | 54.78 | 4.49 |
+| 0.3 | 12.53 | 60.98 | 4.87 |
+| 0.5 | 13.46 | 63.59 | 4.73 |
+
+**Insight**: Dropout=0.1 is optimal sweet spot. No dropout → severe overfitting to source domain. Too much dropout → underfitting.
+
+## Exp 27: In-Domain FD001 Tuning — Marginal
+
+| Config | FD001 RMSE |
+|--------|-----------|
+| lr=1e-3, ep=60 | 12.22 ± 0.38 |
+| lr=5e-4, ep=100 | 12.19 ± 0.14 |
+| lr=1e-3, ep=100 | 12.57 ± 0.26 |
+| lr=2e-3, ep=60 | 12.52 ± 0.31 |
+
+**Insight**: lr=5e-4 gives slightly lower variance but same mean. Default config is fine.
+
 ---
 
 # Grand Summary of All C-MAPSS Experiments
