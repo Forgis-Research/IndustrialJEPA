@@ -230,12 +230,12 @@ git add -A && git commit -m "Autoresearch checkpoint: [summary]" && git push
 
 ## Success Metrics
 
-| Metric | Target | Stretch |
-|--------|--------|---------|
-| C-MAPSS FD001 RMSE | < 13.0 | < 11.0 |
-| C-MAPSS FD001→FD002 transfer | Role > CI | Beat SOTA |
-| FactoryNet AURSAD→Voraus | Transfer ratio < 1.5 | < 1.2 |
-| Total experiments | > 15 | > 30 |
+| Metric | Target | Stretch | Result | Status |
+|--------|--------|---------|--------|--------|
+| C-MAPSS FD001 RMSE | < 13.0 | < 11.0 | **12.22 ± 0.38** | ✅ MET |
+| C-MAPSS FD001→FD002 transfer | Role > CI | Beat SOTA | **4.00 vs 6.23 (36% better)** | ✅ MET |
+| FactoryNet AURSAD→Voraus | Transfer ratio < 1.5 | < 1.2 | Not tested (data gated) | ❌ BLOCKED |
+| Total experiments | > 15 | > 30 | **27** | ✅ MET |
 
 ---
 
