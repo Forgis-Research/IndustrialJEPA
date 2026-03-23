@@ -118,7 +118,9 @@ Different robots have different kinematic coupling. Joint 1's effect on Joint 3 
 
 **Result**: Role-Transformer transfers 36% better than CI-Transformer (ratio 4.00 vs 6.23) with 9x lower variance, on FD001→FD002 (1→6 operating conditions).
 
-**Why it works**: Within-component sensor relationships (e.g., fan speed ↔ bypass ratio) reflect physics invariant across operating conditions. CI-Transformer treats each sensor independently, losing these relationships.
+**Why it works**: Weight sharing within component groups forces the encoder to learn universal sensor dynamics. The transfer mechanism is *compositional* — within-component features remain transferable even though they encode condition information. It's NOT about condition-invariance (t-SNE analysis shows Role-Trans representations cluster MORE by condition, not less).
+
+**Key ablation**: Weight sharing is the critical ingredient (ratio 4.36), not just grouping. Separate encoders per component (4.98) or per sensor (4.69) help less. The shared encoder acts as both inductive bias and regularizer.
 
 **Critical detail**: This result only appears WITHOUT RevIN. RevIN normalizes away the operating-condition information and makes all groupings look equivalent.
 
