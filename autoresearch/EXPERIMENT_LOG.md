@@ -81,7 +81,36 @@
 
 **What doesn't**: Slot assignments are uniform — the model doesn't actually discover differentiated component groupings in the attention weights. The competitive performance comes from the GRU-based slot refinement and cross-slot attention, not from meaningful channel-to-slot decomposition.
 
-**Next steps**: Try entropy regularization on slot assignments to force differentiation. Try hard assignment (argmax). Compare slot representations (not just assignments) across seeds for stability.
+**Next steps**: Try entropy regularization on slot assignments to force differentiation.
+
+## Exp 40: Entropy-Regularized Slot Assignments — NEGATIVE FOR DISCOVERY
+
+**Time**: 23:39
+**Hypothesis**: Entropy regularization will force differentiated channel-to-slot assignments.
+
+**Results (entropy weight sweep, seed=42):**
+
+| λ | FD001 | FD002 | Ratio | Assignment Entropy |
+|---|-------|-------|-------|-------------------|
+| 0.00 | 12.82 | 45.67 | 3.56 | 1.609/1.609 (uniform) |
+| 0.01 | 12.74 | 45.81 | 3.60 | 1.601/1.609 |
+| 0.10 | 12.58 | 44.92 | 3.57 | 1.609/1.609 |
+| 0.50 | 12.98 | 45.58 | 3.51 | 1.600/1.609 |
+| 1.00 | 12.94 | 45.38 | 3.51 | 1.596/1.609 |
+| 5.00 | 12.63 | 44.91 | 3.56 | 1.596/1.609 |
+
+**Verdict**: NEGATIVE for concept discovery ✗ — entropy stays near maximum (uniform) regardless of λ. Only 1/5 unique components discovered at any λ.
+
+**3-seed with λ=1.0**: FD001=12.81±0.14, FD002=55.18±13.32, ratio 4.31
+
+**Why slot attention fails to discover components**:
+1. **Shared temporal encoder homogenizes features**: All sensors are processed by the same encoder, producing similar features (all show degradation dynamics). Slot attention needs differentiated inputs to differentiate slots.
+2. **14 sensors is too few**: In vision, slot attention works with hundreds of spatial tokens. With 14 channels, the competition mechanism doesn't have enough diversity.
+3. **Degradation is global**: All C-MAPSS sensors degrade together (engine-level failure). There's no local/component-specific signal strong enough for unsupervised decomposition.
+
+**Honest assessment**: Slot-Concept Transformer works as a model (competitive transfer) but doesn't discover meaningful concepts. The "concept discovery" narrative doesn't hold for C-MAPSS. The model succeeds because the slot attention + cross-slot transformer acts as an implicit grouping regularizer, not because it discovers physics.
+
+**Implication**: The Role-Transformer's explicit physics grouping remains the better approach for this task. Learned concept discovery requires either (a) per-channel encoders (not shared), (b) more diverse sensor behavior, or (c) explicit structure in the loss.
 
 ---
 
