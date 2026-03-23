@@ -599,19 +599,76 @@
 
 ---
 
+# Phase 2g: Karpathy Loop Round 8 (2026-03-23)
+
+## Exp 37: Reverse Transfer (FD002→FD001) — HIGH VARIANCE
+
+**Time**: 21:43
+**Hypothesis**: Training on FD002 (6 conditions, 260 engines) then testing on FD001 (1 condition) should benefit from more diverse training data.
+
+**Results (3 seeds):**
+
+| Seed | Role FD002 | Role FD001 | Role ratio | CI FD002 | CI FD001 | CI ratio |
+|------|-----------|-----------|-----------|---------|---------|---------|
+| 42 | 18.69 | 95.55 | 5.11 | 19.35 | 155.50 | 8.04 |
+| 123 | 18.22 | 49.46 | 2.71 | 43.95 | 40.22 | 0.92 |
+| 456 | 18.60 | 38.83 | 2.09 | 19.95 | 134.04 | 6.72 |
+
+**Verdict**: HIGH VARIANCE — Role-Trans more consistent in-domain (18-19 vs 19-44 for CI), but both architectures are highly unstable on cross-condition transfer in this direction.
+**Insight**: FD002→FD001 is harder than FD001→FD002 because the model trained on 6 conditions may specialize to specific condition clusters.
+
+## Exp 38: 10-Seed Confirmation — STATISTICALLY SIGNIFICANT ✓✓✓
+
+**Time**: 22:00
+**Purpose**: Definitive statistical test of Role-Trans vs CI-Trans on FD001→FD002.
+
+**Results (10 seeds):**
+
+| Seed | Role FD001 | Role FD002 | CI FD001 | CI FD002 |
+|------|-----------|-----------|---------|---------|
+| 42 | 12.55 | 48.79 | 13.05 | 116.98 |
+| 123 | 12.36 | 59.00 | 12.75 | 78.59 |
+| 456 | 12.45 | 55.04 | 13.80 | 51.16 |
+| 789 | 11.86 | 47.66 | 13.56 | 72.37 |
+| 2024 | 12.55 | 65.34 | 12.76 | 74.44 |
+| 7 | 11.99 | 55.18 | 13.41 | 113.63 |
+| 13 | 11.64 | 55.16 | 13.14 | 98.01 |
+| 99 | 12.04 | 52.72 | 14.05 | 62.48 |
+| 1337 | 11.90 | 49.03 | 13.63 | 59.14 |
+| 31415 | 12.31 | 49.36 | 13.72 | 98.29 |
+
+**Summary:**
+
+| Model | FD001 RMSE | FD002 RMSE | Transfer Ratio |
+|-------|-----------|-----------|----------------|
+| **Role-Trans** | **12.17 ± 0.30** | **53.73 ± 5.21** | **4.42** |
+| CI-Trans | 13.39 ± 0.42 | 82.51 ± 21.82 | 6.16 |
+
+**Statistical significance:**
+- **Paired t-test: t=-3.750, p=0.0046** ✓✓
+- **Wilcoxon signed-rank: W=1.0, p=0.0039** ✓✓
+- **Role-Trans wins 9/10 seeds** (only seed 456 goes to CI)
+- **Bootstrap 95% CI: [15.09, 43.17]** — entirely positive
+- **FD001 improvement also significant**: 12.17 vs 13.39 (9% better)
+
+**Verdict**: DEFINITIVE ✓✓✓
+**This is the paper-ready result**: Role-Trans provides 35% lower transfer RMSE (53.73 vs 82.51) with 4x lower variance (5.21 vs 21.82), significant at p<0.005 across 10 random seeds.
+
+---
+
 # Grand Summary of All C-MAPSS Experiments
 
-## 33 experiments, 20 key findings
+## 38 experiments, 22 key findings
 
 ### Architecture (Role-Trans vs CI-Trans)
 
-| Setting | Role-Trans | CI-Trans | Winner |
-|---------|-----------|---------|--------|
-| FD001 in-domain | 12.22±0.38 | 13.20±0.44 | Role (+7%) |
-| FD001→FD002 (cross-condition) | 48.82±2.86 | 82.24±26.99 | **Role (+41%)** |
-| FD001→FD003 (cross-fault) | 20.30±2.01 | 18.54±2.24 | CI (+9%) |
-| FD001→FD004 (cross-both) | 52.92±4.40 | 71.79±19.43 | **Role (+26%)** |
-| FD002→FD004 (cross-fault) | 31.99±3.01 | 30.31±5.65 | CI (+6%) |
+| Setting | Role-Trans | CI-Trans | Winner | Seeds |
+|---------|-----------|---------|--------|-------|
+| FD001 in-domain | **12.17±0.30** | 13.39±0.42 | Role (+9%) | 10 |
+| **FD001→FD002 (cross-condition)** | **53.73±5.21** | **82.51±21.82** | **Role (+35%, p=0.005)** | **10** |
+| FD001→FD003 (cross-fault) | 20.30±2.01 | 18.54±2.24 | CI (+9%) | 3 |
+| FD001→FD004 (cross-both) | 52.92±4.40 | 71.79±19.43 | **Role (+26%)** | 3 |
+| FD002→FD004 (cross-fault) | 31.99±3.01 | 30.31±5.65 | CI (+6%) | 3 |
 
 ### Ablations
 
@@ -632,13 +689,17 @@
 | Patch embeddings (patch_len=5) | No benefit over point-wise |
 | Encoder freezing | Role-Trans encoder 42% more transferable at 1% FD002 |
 
-### The NeurIPS Story (updated with pretraining results)
+### The NeurIPS Story (final, honest)
 
-**Claim**: "Physics-informed channel grouping provides 26-41% better cross-condition transfer by learning condition-invariant within-component features, equivalent to 5% of target-domain labels. This improvement comes from architectural inductive bias, not from representation pretraining — JEPA, contrastive, and domain adaptation methods provide no significant additional benefit."
+**Main result (p<0.005, 10 seeds)**: "Physics-informed channel grouping with weight sharing reduces cross-condition transfer RMSE by 35% (53.73 vs 82.51) with 4x lower variance. Role-Trans wins 9/10 seeds."
 
-**Nuance**: "This advantage is specific to operating condition shift. For novel fault modes under the same conditions, channel-independent approaches remain competitive. With operating condition information available (e.g., via clustering), condition-aware normalization provides comparable or greater benefits."
+**Mechanism (Exp 34, 36)**: "The transfer advantage comes from *compositional* representations — weight sharing forces universal sensor dynamics, while component pooling provides transferable building blocks. This is architectural regularization, NOT condition-invariant features (t-SNE shows Role-Trans is more condition-aware, not less)."
 
-**Novel contribution**: First systematic comparison of structured channel grouping vs channel-independence for industrial transfer learning, with comprehensive ablation of architecture, normalization, pretraining, and domain adaptation across 4 C-MAPSS subsets and 7 transfer directions. Key finding: the architecture IS the transfer mechanism — pretraining is unnecessary when the inductive bias is correct.
+**Pretraining result (Exp 28-33)**: "JEPA, contrastive, and MMD pretraining provide no benefit. The architecture IS the transfer mechanism — pretraining is unnecessary when the inductive bias is correct."
+
+**Honest nuance**: "The advantage is specific to operating condition shift. For novel fault modes under the same conditions, CI-Trans remains competitive. With condition labels (or clustering), per-condition normalization provides comparable benefits."
+
+**Novel contribution**: First systematic study (38 experiments) of structured channel grouping for industrial transfer learning, showing that architectural inductive bias (grouping + weight sharing) provides significant, statistically robust transfer improvement that pretraining methods cannot match.
 
 ### Encoder Quality Analysis (Exp 32)
 

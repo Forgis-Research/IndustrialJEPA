@@ -337,7 +337,7 @@ By morning, produce:
 
 | Metric | Target | Stretch | Result | Status |
 |--------|--------|---------|--------|--------|
-| C-MAPSS FD001 RMSE | < 13.0 | < 11.0 | **12.17 ± 0.30** | ✅ MET |
+| C-MAPSS FD001 RMSE | < 13.0 | < 11.0 | **12.17 ± 0.30** (10 seeds) | ✅ MET |
 | C-MAPSS FD001→FD002 transfer | Role > CI | Beat SOTA | **53.73 vs 82.51 (p=0.005, 10 seeds)** | ✅ MET |
 | FactoryNet AURSAD→Voraus | Transfer ratio < 1.5 | < 1.2 | Not tested (data gated) | ❌ BLOCKED |
 | Total experiments | > 15 | > 30 | **38** | ✅ MET (stretch) |
