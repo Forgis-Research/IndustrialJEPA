@@ -1,263 +1,424 @@
-# Autoresearch Program: Role-Based Transfer Learning
+# Autoresearch Program: Three Paths to Breakthrough
 
-**Mission:** Demonstrate that structured channel-dependence enables cross-machine transfer where channel-independence fails.
+**Mission:** Explore three promising research directions for industrial time series. Thoroughly research, define, and evaluate each. Find the breakthrough.
 
-**Target:** Results worthy of NeurIPS submission.
+**Duration:** Full overnight session (8-12 hours)
+
+**Mode:** Deep research first, experiments second. Be thorough, not fast.
 
 ---
 
 ## Before You Start
 
 Read these files:
-1. `.claude/agents/ml_researcher.md` — Your operating instructions
+1. `.claude/agents/ml_researcher.md` — Your operating instructions (includes deep research mode)
 2. `autoresearch/LESSONS_LEARNED.md` — What failed before
-3. `autoresearch/EXPERIMENT_LOG.md` — Current best results
+3. `autoresearch/EXPERIMENT_LOG.md` — Current results
 
-**Current state:** CI-Transformer achieves 0.450 MSE on ETTh1 H=96. This matches PatchTST-style channel-independence but cannot learn transferable physics.
-
----
-
-## The Core Hypothesis
-
-**Channel-independent processing:**
-- ✅ Wins on single-dataset forecasting (avoids overfitting)
-- ❌ Cannot learn cross-channel physics
-- ❌ Cannot transfer across machines
-
-**Role-based processing:**
-- Group channels by physical component (joint, stage, subsystem)
-- Share weights within component (physics is universal)
-- Learn or specify cross-component topology
-- **Should enable transfer while maintaining forecasting performance**
+**Current state:**
+- Role-based grouping shows 36% better transfer than CI on C-MAPSS
+- Channel-independence wins on single-dataset forecasting
+- JEPA as joint objective adds nothing on small supervised data
+- The transfer problem is unsolved
 
 ---
 
-## Phase 1: Deep Research (1-2 hours)
+## The Three Research Directions
 
-Before coding, understand the landscape. Search for and analyze:
+### Direction 1: Learned Sparse Graph for Channel Dependence
 
-### Required Reading
+**Core idea:** Learn which sensors interact (sparse graph), use that structure for forecasting. The graph is interpretable and transferable.
 
-1. **Transfer learning for time series** — What approaches work?
-   - Search: "time series transfer learning survey" (recent, high citations)
-   - Key questions: How do others handle different channel counts? Different domains?
+**Key insight:** Full attention (iTransformer) overfits to spurious correlations. Sparse learned graphs capture only true physics, which transfers.
 
-2. **C-MAPSS SOTA** — What beats current baselines?
-   - Search: "C-MAPSS remaining useful life 2024 2025"
-   - Find: Best RMSE numbers, what architectures, any transfer experiments
-   - Check Papers With Code for benchmarks
+### Direction 2: Learned Latent Concepts (Aggregated Features)
 
-3. **Cross-machine fault diagnosis** — The bearing transfer literature
-   - Search: "CWRU Paderborn transfer learning" (highly cited)
-   - Key insight: How do they handle domain shift?
+**Core idea:** Learn abstract concepts (like "energy consumption", "joint effort", "system load") as aggregations of raw features. Predict in concept space, then decode back.
 
-4. **Role-based / physics-informed architectures**
-   - Search: "physics-informed neural network time series"
-   - Search: "structured state space models"
-   - Look for: Mamba, S4, related work
+**Key insight:** Raw sensors are noisy and machine-specific. Latent concepts might be universal.
 
-### Log Your Findings
+### Direction 3: Mechanical-JEPA (JEPA for Physical Systems)
 
-Create entries in EXPERIMENT_LOG.md:
+**Core idea:** Apply JEPA (Joint Embedding Predictive Architecture) to industrial time series. Predict future in latent space, not sensor space. The latent space learns physics.
+
+**Key insight:** Predicting raw sensors forces modeling noise. Predicting latent states focuses on dynamics.
+
+---
+
+## Phase 1: Deep Literature Review (4-6 hours)
+
+**This is the most important phase.** Don't rush. For each direction:
+
+1. Find 10+ relevant papers (prioritize: NeurIPS/ICML/ICLR, >50 citations, or from top labs)
+2. Understand what exists
+3. Identify gaps and shortcomings
+4. Document everything
+
+### Direction 1: Sparse Graph Learning for Time Series
+
+**Search queries:**
+- "graph structure learning time series"
+- "neural relational inference"
+- "sparse attention time series"
+- "MTGNN graph learning"
+- "dynamic graph neural network forecasting"
+
+**Key papers to find and analyze:**
+- [ ] NRI (Kipf et al., ICML 2018) — Neural Relational Inference
+- [ ] MTGNN (Wu et al., NeurIPS 2020) — Graph WaveNet with learned adjacency
+- [ ] GTS (Shang et al., ICLR 2021) — Discrete Graph Structure Learning
+- [ ] StemGNN (Cao et al., NeurIPS 2020) — Spectral Temporal Graph
+- [ ] DGCRN (Li et al., NeurIPS 2021) — Dynamic Graph for Traffic
+- [ ] iTransformer (Liu et al., ICLR 2024) — Inverted attention baseline
+- [ ] Autoformer, FEDformer, Crossformer — Recent transformer variants
+
+**Questions to answer:**
+1. What graph learning methods exist? (Attention-based, MLP-based, VAE-based?)
+2. Do they produce sparse/interpretable graphs?
+3. Has anyone validated learned graphs against known physics?
+4. Has anyone used learned graphs for TRANSFER?
+5. What are the failure modes? (Dense graphs, unstable training, etc.)
+6. What's SOTA on which benchmarks?
+
+**Log format:**
 ```markdown
-## Research: [Topic]
-**Papers reviewed**: N
-**Key finding**: ...
-**Implication for us**: ...
-**Next experiment**: ...
+## Research Log: Direction 1 — Sparse Graph Learning
+
+### Paper: [Title] (Venue Year)
+**Authors:** [Names, affiliations]
+**Citations:** [Count]
+**Core idea:** [1-2 sentences]
+**Method:** [How does it work?]
+**Results:** [Key numbers]
+**Limitations:** [What doesn't work?]
+**Relevance to us:** [How does this inform our approach?]
+
+### Gap Analysis
+[After reviewing all papers, what's missing?]
+
+### Our Opportunity
+[What can we do that hasn't been done?]
 ```
 
 ---
 
-## Phase 2: C-MAPSS Baseline (2-3 hours)
+### Direction 2: Learned Latent Concepts
 
-**Goal:** Establish strong baselines on the standard industrial benchmark.
+**Search queries:**
+- "concept bottleneck models time series"
+- "disentangled representation time series"
+- "prototype learning time series"
+- "slot attention time series"
+- "object-centric learning dynamics"
 
-### Setup
+**Key papers to find and analyze:**
+- [ ] Concept Bottleneck Models (Koh et al., ICML 2020)
+- [ ] Slot Attention (Locatello et al., NeurIPS 2020)
+- [ ] Object-Centric Learning (various)
+- [ ] β-VAE and disentanglement literature
+- [ ] Time series representation learning surveys
+- [ ] TS2Vec, TNC, CoST — Contrastive methods
+- [ ] Any "concept learning" for sensor data
 
-1. Download C-MAPSS dataset:
-   - Source: NASA Prognostics Center or Kaggle mirror
-   - 4 subsets: FD001, FD002, FD003, FD004
+**Questions to answer:**
+1. Has anyone learned interpretable concepts from time series?
+2. How do you define "concepts" without supervision?
+3. Slot attention — can it discover "joint 1", "joint 2" etc automatically?
+4. What about physics-informed concepts (energy, momentum, etc.)?
+5. Does concept-based prediction transfer better?
+6. How do you evaluate concept quality without ground truth?
 
-2. Create dataloader: `src/industrialjepa/data/cmapss.py`
-   - 3 operational settings (inputs)
-   - 21 sensors (outputs)
-   - Piece-wise linear RUL (capped at 125)
-   - Standard train/test split per subset
-
-3. Define component groups (from OVERNIGHT_PROMPT_V2 archive):
-   ```python
-   COMPONENTS = {
-       "operating": ["setting1", "setting2", "setting3"],
-       "fan": ["s1", "s5", "s8", "s12", "s21"],
-       "hpc": ["s3", "s7", "s10", "s11", "s20"],
-       "lpt": ["s4"],
-       ...
-   }
-   ```
-
-### Experiments
-
-| Exp | Model | What It Tests |
-|-----|-------|---------------|
-| 1 | Linear (flatten → predict) | Trivial baseline |
-| 2 | LSTM | Standard sequence model |
-| 3 | Transformer (channel-mixing) | Attention baseline |
-| 4 | CI-Transformer | Channel-independent (our current best approach) |
-| 5 | **Role-Transformer** | Grouped by component, shared within-component weights |
-
-### Success Criteria
-
-- FD001 test RMSE < 13.0 (competitive with LSTM baseline)
-- Role-Transformer ≥ CI-Transformer on FD001
-
-### Transfer Experiment
-
-Once baselines established:
-- Train on FD001
-- Test on FD002 (different operating conditions)
-- Compare: Role-Transformer vs CI-Transformer
-
-**This is the key result:** Does role-based grouping help transfer?
+**Log format:** Same as Direction 1
 
 ---
 
-## Phase 3: FactoryNet Transfer (if Phase 2 succeeds)
+### Direction 3: JEPA for Physical Systems
 
-**Goal:** Establish SOTA on our novel robot transfer benchmark.
+**Search queries:**
+- "JEPA time series"
+- "joint embedding predictive architecture"
+- "self-supervised time series forecasting"
+- "world models time series"
+- "latent dynamics models"
+- "video prediction latent space"
 
-### Setup
+**Key papers to find and analyze:**
+- [ ] I-JEPA (Assran et al., CVPR 2023) — Original image JEPA
+- [ ] V-JEPA (Bardes et al., 2024) — Video JEPA
+- [ ] BYOL, SimSiam — Related self-supervised methods
+- [ ] World Models (Ha & Schmidhuber, 2018)
+- [ ] Dreamer (Hafner et al.) — Latent world models for RL
+- [ ] TimeMAE, PatchTST pretraining — Self-supervised TS
+- [ ] Any JEPA applied to time series (may not exist!)
 
-Use existing `src/industrialjepa/data/factorynet.py`
+**Questions to answer:**
+1. Has JEPA been applied to time series? (Probably not — opportunity!)
+2. What's the difference between JEPA and contrastive learning for TS?
+3. V-JEPA for video — can we adapt this to sensor "video"?
+4. World models literature — what works for learning dynamics?
+5. What's the right masking strategy for time series JEPA?
+6. How does JEPA handle multivariate (multiple sensors)?
 
-Component groups:
+**Log format:** Same as Direction 1
+
+---
+
+## Phase 2: Precise Definitions (1-2 hours)
+
+After the literature review, define each approach precisely.
+
+### Definition Template
+
+For each direction, write:
+
+```markdown
+## Direction N: [Name]
+
+### Problem Statement
+[What exactly are we trying to solve?]
+
+### Formal Definition
+[Mathematical formulation]
+- Input: ...
+- Output: ...
+- Objective: ...
+
+### Architecture
+[Detailed architecture description]
 ```python
-COMPONENTS = {
-    "joint1": ["setpoint_pos_1", "actual_pos_1", "setpoint_vel_1", "actual_vel_1", "effort_1"],
-    "joint2": [...],
-    ...
-    "joint6": [...],
-}
+class ModelName(nn.Module):
+    # Pseudocode
 ```
 
-### Experiments
+### Training Procedure
+[Step by step: data, loss, optimization]
 
-| Train | Test | Model | MSE |
-|-------|------|-------|-----|
-| AURSAD Robot1 | Robot1 | CI-Transformer | ? |
-| AURSAD Robot1 | Robot1 | Role-Transformer | ? |
-| AURSAD Robot1 | Robot2 | CI-Transformer | ? |
-| AURSAD Robot1 | Robot2 | Role-Transformer | ? |
-| AURSAD both | Voraus | CI-Transformer | ? |
-| AURSAD both | Voraus | Role-Transformer | ? |
+### What Makes This Novel
+[Precise delta from prior work]
 
-### Success Criteria
+### Hypotheses to Test
+1. [Hypothesis 1] — How to test it
+2. [Hypothesis 2] — How to test it
 
-- Role-Transformer transfer ratio < CI-Transformer transfer ratio
-- Document the protocol for others to reproduce
+### Expected Results (if it works)
+[What would success look like?]
+
+### Failure Modes (what could go wrong)
+[Risks and how to detect them]
+```
 
 ---
 
-## Phase 4: Iterate Until Dawn
+## Phase 3: Evaluation Framework (1 hour)
 
-Run the Karpathy loop:
+### Datasets
 
-```
-while time > 0:
-    1. Identify weakest result
-    2. Hypothesize improvement (or research if stuck)
-    3. Implement ONE change
-    4. Train (5-10 min max)
-    5. Evaluate
-    6. Keep/revert, log, commit
-    7. Repeat
-```
+| Dataset | Domain | Channels | Transfer Scenario | Task |
+|---------|--------|----------|-------------------|------|
+| **ETTh1/h2/m1/m2** | Electricity | 7 | None (baseline) | Forecasting |
+| **Weather** | Meteorology | 21 | None (baseline) | Forecasting |
+| **C-MAPSS** | Turbofan | 24 | FD001→FD002→FD003→FD004 | RUL + Forecasting |
+| **AURSAD** | Robot | ~30 | Robot1→Robot2 | Forecasting |
+| **Voraus** | Robot | ~30 | AURSAD→Voraus | Forecasting |
 
-### Ideas to Try (if baselines work)
+### Metrics
 
-- [ ] RevIN normalization
-- [ ] Different component groupings
-- [ ] Cross-component GNN vs attention
-- [ ] JEPA pretraining then fine-tune
-- [ ] Patch size ablations
-- [ ] Layer depth ablations
-- [ ] xLSTM as predictor (efficiency claim)
+| Metric | What It Measures |
+|--------|------------------|
+| **MSE/MAE** | Forecasting accuracy |
+| **Transfer Ratio** | MSE(transfer) / MSE(from_scratch) |
+| **Graph Sparsity** | % of possible edges used |
+| **Graph Interpretability** | Match to known physics |
+| **Concept Interpretability** | Can humans understand learned concepts? |
+| **Compute Efficiency** | FLOPs, latency, memory |
 
-### If Stuck
+### Baselines
 
-1. Research: What did successful papers do?
-2. Simplify: Is the model too complex?
-3. Debug: Is there a data issue?
-4. Pivot: Try different component groupings
-5. Move on: Log and try Phase 3
+| Model | Type | Why Include |
+|-------|------|-------------|
+| **Linear** | Trivial | Lower bound |
+| **LSTM** | RNN | Classic sequence model |
+| **PatchTST** | Channel-independent | Current paradigm |
+| **iTransformer** | Channel-dependent (dense) | SOTA channel-mixing |
+| **MTGNN** | Learned graph | Graph learning baseline |
+| **Crossformer** | Cross-dimension attention | Another channel-mixing |
 
 ---
 
-## Logging Requirements
+## Phase 4: SOTA Shortcomings Analysis (1 hour)
 
-### Every Experiment
+For each current SOTA method, analyze:
+
+```markdown
+## SOTA Analysis: [Method Name]
+
+### What It Does Well
+- ...
+
+### Shortcomings
+1. [Shortcoming 1]
+   - Evidence: [Paper/experiment showing this]
+   - Why it matters: [Impact on real applications]
+
+2. [Shortcoming 2]
+   - ...
+
+### How Our Approach Could Fix It
+- Direction 1 addresses this by...
+- Direction 2 addresses this by...
+- Direction 3 addresses this by...
+```
+
+**Focus on:**
+- Transfer/generalization failures
+- Interpretability limitations
+- Computational efficiency
+- Data efficiency
+- Robustness issues
+
+---
+
+## Phase 5: Experiments (If Time Remains)
+
+Only after Phases 1-4 are complete, start experiments.
+
+### Experiment Priority
+
+1. **Minimal viable test of each direction** (1 hour each)
+   - Does the core idea work at all?
+   - Use smallest dataset (ETTh1)
+   - Simple architecture
+   - Goal: signal, not SOTA
+
+2. **Best direction deep dive** (remaining time)
+   - Whichever direction shows most promise
+   - Full evaluation on multiple datasets
+   - Ablations
+
+### Experiment Log Format
 
 ```markdown
 ## Exp N: [Description]
 
-**Time**: HH:MM
-**Hypothesis**: ...
-**Change**: ...
-**Result**: [before] → [after]
-**Verdict**: KEEP ✓ / REVERT ✗
-**Insight**: ...
-**Next**: ...
-```
-
-### Every Hour
-
-Push to git:
-```bash
-git add -A && git commit -m "Autoresearch checkpoint: [summary]" && git push
-```
-
-### Research Findings
-
-```markdown
-## Research: [Topic]
-
-**Papers**: [List with citations/venues]
-**Key insight**: ...
-**Implication**: ...
+**Direction:** 1/2/3
+**Time:** HH:MM
+**Hypothesis:** [What we expect]
+**Setup:** [Model, data, hyperparams]
+**Result:** [Numbers]
+**Verdict:** PROMISING / NEUTRAL / FAILED
+**Insight:** [What we learned]
+**Next:** [What this suggests]
 ```
 
 ---
 
-## Success Metrics
+## Deliverables
 
-| Metric | Target | Stretch | Result | Status |
-|--------|--------|---------|--------|--------|
-| C-MAPSS FD001 RMSE | < 13.0 | < 11.0 | **12.22 ± 0.38** | ✅ MET |
-| C-MAPSS FD001→FD002 transfer | Role > CI | Beat SOTA | **4.00 vs 6.23 (36% better)** | ✅ MET |
-| FactoryNet AURSAD→Voraus | Transfer ratio < 1.5 | < 1.2 | Not tested (data gated) | ❌ BLOCKED |
-| Total experiments | > 15 | > 30 | **27** | ✅ MET |
+By morning, produce:
+
+### 1. Literature Review Document
+`autoresearch/LITERATURE_REVIEW.md`
+- 30+ papers analyzed
+- Gap analysis for each direction
+- Clear picture of what exists vs what's novel
+
+### 2. Technical Definitions
+`autoresearch/TECHNICAL_SPECS.md`
+- Precise definition of each approach
+- Architecture pseudocode
+- Training procedures
+
+### 3. SOTA Analysis
+`autoresearch/SOTA_ANALYSIS.md`
+- Current methods' shortcomings
+- How each direction addresses them
+
+### 4. Experiment Log
+`autoresearch/EXPERIMENT_LOG.md`
+- All experiments run
+- Results and insights
+
+### 5. Recommendation
+`autoresearch/RECOMMENDATION.md`
+- Which direction is most promising?
+- Why?
+- Concrete next steps
+
+---
+
+## Success Criteria
+
+| Deliverable | Minimum | Stretch |
+|-------------|---------|---------|
+| Papers reviewed | 20 | 40+ |
+| Directions fully defined | 3 | 3 with variants |
+| SOTA shortcomings identified | 5 | 10+ |
+| Experiments run | 3 (one per direction) | 15+ |
+| Clear recommendation | Yes | With evidence |
 
 ---
 
 ## What NOT to Do
 
-- Don't spend >30 min debugging one issue
-- Don't skip baselines (Linear, LSTM)
-- Don't claim "transfer" without comparing to CI baseline
-- Don't forget to log negative results
-- Don't modify core `src/industrialjepa/` code unless necessary
-- Don't install packages without checking if needed
+- Don't start coding before literature review is done
+- Don't skim papers — read thoroughly
+- Don't ignore negative results in literature
+- Don't get stuck on one direction — cover all three
+- Don't sacrifice depth for breadth in experiments
+- Don't forget to commit/push every 2 hours
+
+---
+
+## Commit Protocol
+
+Every 2 hours:
+```bash
+git add -A
+git commit -m "Autoresearch checkpoint: [what you accomplished]"
+git push
+```
 
 ---
 
 ## When You're Done
 
-Update EXPERIMENT_LOG.md with:
-1. Summary table of all results
-2. Best model configuration
-3. Key insights
-4. Recommended next steps
-5. Honest assessment: Does role-based help transfer?
+Write an executive summary in `autoresearch/EXECUTIVE_SUMMARY.md`:
 
-**The NeurIPS claim (if results support it):**
-> "We demonstrate that structured channel-dependence—grouping sensors by physical component with shared within-component weights—enables cross-machine transfer that channel-independent approaches cannot achieve, while maintaining competitive single-dataset performance."
+```markdown
+# Executive Summary
+
+## Most Promising Direction
+[Direction N: Name]
+
+## Why
+[Evidence from literature + preliminary experiments]
+
+## Key Insight
+[The one thing that could make this breakthrough]
+
+## Risk Assessment
+[What could still go wrong]
+
+## Recommended Next Steps
+1. ...
+2. ...
+3. ...
+
+## Timeline to NeurIPS Submission
+[Realistic assessment]
+```
+
+---
+
+## Remember
+
+**This is research, not engineering.**
+
+The goal tonight is UNDERSTANDING:
+- What exists?
+- What's missing?
+- What could be breakthrough?
+
+The experiments validate understanding, they don't replace it.
+
+**Think big. Be thorough. Find the breakthrough.**
