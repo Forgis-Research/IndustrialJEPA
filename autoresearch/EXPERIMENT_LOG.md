@@ -62,6 +62,64 @@
 
 ---
 
+## Tier 3: Jena Weather (Physical Real)
+
+**Time**: 22:41-23:40
+**Task**: Forecasting next 96 steps from 96-step lookback, 14 channels (hourly weather)
+**Groups**: temperature=[T,Tpot,Tdew], pressure=[p,VPmax,VPact,VPdef], humidity=[rh,sh,H2OC,rho], wind=[wv,max_wv,wd]
+**Transfer**: Source=2015, Target=2016 (temporal distribution shift)
+
+**Results (3 seeds: 42, 123, 456):**
+
+| Model | Source MSE | Target MSE | Target 10%-Adapted | R(zero) | R(10%) |
+|-------|-----------|-----------|-------------------|---------|--------|
+| Mean | 1.012888 | 1.002737 | N/A | 0.99 | N/A |
+| Last-Value | 0.940940 | 0.860310 | N/A | 0.91 | N/A |
+| Linear | 0.499695 | 0.438701 | 0.586511 | 0.88 | 1.17 |
+| MLP | 0.508486 | 0.442799 | 0.474813 | 0.87 | 0.93 |
+| CI-Trans | 0.516651±0.001 | 0.462512±0.0005 | 0.490712±0.0005 | 0.90 | 0.95 |
+| Full-Attn | 0.493065±0.002 | 0.436762±0.002 | 0.485245±0.005 | 0.89 | 0.98 |
+| **PhysMask** | **0.495426±0.0004** | **0.439802±0.00008** | **0.484799±0.003** | **0.89** | **0.98** |
+| RoleTrans | 0.518621±0.008 | 0.456201±0.007 | 0.508345±0.010 | 0.88 | 0.98 |
+
+**Key Findings**:
+1. **PhysMask beats CI-Trans by 4.9%** on target MSE (0.4398 vs 0.4625)
+2. **PhysMask has remarkably low variance** (±0.00008) — the physics structure acts as strong regularizer
+3. **Full-Attention is best** overall (0.4368), but only 0.7% better than PhysMask
+4. **RoleTrans underperforms** — the hierarchical pool-then-cross architecture loses fine-grained channel information. The within-group mean-pooling is too aggressive for weather where all channels matter.
+5. **Linear is competitive** — weather year-to-year transfer is relatively easy (R<1.0 means target is easier than source)
+6. **10% adaptation hurts** for most models — the small adaptation set introduces overfitting
+
+**Honest Assessment**: Physics-masked attention helps vs CI (4.9% better), matching the pattern from C-MAPSS. But the RoleTrans architecture (shared within-group encoder + cross-group attention) doesn't transfer well to weather — it's designed for component-based systems where groups are naturally independent. Weather variables within a group (e.g., T, Tpot, Tdew) are highly correlated, making the mean-pooling appropriate, but cross-group interactions (e.g., temperature↔humidity) require full resolution.
+
+**Architecture Insight**: PhysMask (full encoder + masked cross-channel attention) > RoleTrans (grouped encoder + cross-group attention). The mask approach preserves all channel information while constraining attention, whereas the RoleTrans bottleneck loses too much.
+
+**Verdict**: WIN for PhysMask over CI-Trans (4.9%). LOSS for RoleTrans. Full-Attn wins overall.
+
+---
+
+## Cross-Tier Summary
+
+| Tier | Best Physics Model | vs CI-Trans | vs Full-Attn | Winner Overall |
+|------|-------------------|-------------|--------------|----------------|
+| 1. Pendulum | PhysicsGrouped | **+21%** target MSE | Comparable | PhysicsGrouped |
+| 2. C-MAPSS | RoleTrans | **+27%** FD002 RMSE | -17% (loses) | Full-Attn |
+| 3. Weather | PhysMask | **+4.9%** target MSE | -0.7% (close) | Full-Attn |
+
+**Physics vs CI**: 3/3 tiers — physics grouping consistently beats channel-independent
+**Physics vs Full-Attn**: 1/3 tiers — physics grouping rarely beats learned full attention
+
+**Honest Conclusion**: Physics grouping is a reliable improvement over channel-independent processing (4.9-27% on transfer). But full unconstrained attention usually matches or beats it, suggesting that learned cross-channel relationships capture the physics structure automatically when given enough data. The value of physics grouping is in:
+1. **Regularization** (extremely low variance on weather)
+2. **Data efficiency** (should help more with less data — untested)
+3. **Interpretability** (groups are physically meaningful)
+
+---
+
+# Phase 7: Ablation & Statistical Tests (2026-03-24)
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
