@@ -2,6 +2,66 @@
 
 ---
 
+# Phase 6: 3-Tier Physics Grouping Validation (2026-03-24)
+
+## Tier 1: Double Pendulum (Synthetic)
+
+**Time**: 21:30-21:52
+**Task**: Forecasting next 10 steps from 50-step lookback, 4 channels (theta1, omega1, theta2, omega2)
+**Groups**: mass_1=[theta1, omega1], mass_2=[theta2, omega2]
+**Transfer**: m_ratio=1.0 (balanced) -> m_ratio=0.5 (unbalanced)
+
+**Results (3 seeds: 42, 123, 456):**
+
+| Model | Source MSE | Target Zero-Shot | Target 10%-Adapted | R(zero) | R(10%) |
+|-------|-----------|-----------------|-------------------|---------|--------|
+| Mean | 1.061518 | 1.207630 | N/A | 1.14 | N/A |
+| Last-Value | 0.077380 | 0.135134 | N/A | 1.75 | N/A |
+| Linear | 0.002963 | 0.036864 | 0.016143 | 12.44 | 5.45 |
+| MLP | 0.000860 | 0.023571 | 0.003296 | 27.40 | 3.83 |
+| CI-Trans | 0.004845 | 0.020568 | 0.015254 | 4.24 | 3.15 |
+| Full-Attn | 0.001748 | 0.017115 | 0.006004 | 9.79 | 3.44 |
+| **Physics-Grouped** | **0.002896** | **0.016283** | **0.009804** | **5.62** | **3.39** |
+
+**Key Finding**: Physics-grouped achieves **best absolute target MSE** (0.0163 vs CI's 0.0206, 21% better) but worse transfer *ratio* because it also fits source better. The ratio metric penalizes good in-domain performance.
+
+**Honest Assessment**: Physics grouping helps for absolute transfer quality but doesn't clearly beat CI on the ratio metric. With only 2 groups and 4 channels, the grouping structure doesn't provide enough constraint. Full-Attention is competitive.
+
+**Verdict**: PARTIAL WIN for physics grouping (best raw target, but ratio favors CI)
+
+---
+
+## Tier 2: C-MAPSS Turbofan (Mechanical)
+
+**Time**: 21:55-22:30
+**Task**: RUL prediction, 14 sensors, seq_len=30
+**Groups**: fan=[s2,s8,s12,s21], HPC=[s3,s7,s11,s20], combustor=[s9,s14], turbine=[s4,s13], nozzle=[s15,s17]
+**Transfer**: FD001->FD002/FD003/FD004
+
+**Results (3 seeds: 42, 123, 456):**
+
+| Model | FD001 | FD002 | FD003 | FD004 | R(1->2) | R(1->3) | R(1->4) | FD002-adapted |
+|-------|-------|-------|-------|-------|---------|---------|---------|--------------|
+| Mean | 41.94 | 44.90 | 41.29 | 43.91 | 1.07 | 0.98 | 1.05 | N/A |
+| Median | 49.20 | 51.99 | 48.88 | 49.79 | 1.06 | 0.99 | 1.01 | N/A |
+| Linear | 48.89 | 21284 | 49.84 | 21190 | 435 | 1.02 | 433 | 15836 |
+| MLP | 14.12 | 151830 | 248.70 | 154860 | 10751 | 17.6 | 10966 | 2795 |
+| CI-Trans | 13.21+/-0.47 | 78.44+/-26 | 21.19+/-1.6 | 81.98+/-27 | 5.94 | 1.60 | 6.21 | 30.04 |
+| Full-Attn | 11.49+/-0.20 | 47.49+/-3.6 | 17.12+/-0.7 | 47.99+/-3.0 | 4.13 | 1.49 | 4.18 | 23.96 |
+| **Role-Trans** | **13.02+/-0.26** | **56.98+/-5.5** | **18.46+/-1.9** | **56.73+/-6.8** | **4.37** | **1.42** | **4.36** | **26.39** |
+
+**Key Findings**:
+1. **Role-Trans beats CI-Trans by 27.4%** on FD002 zero-shot (56.98 vs 78.44) — consistent with previous results
+2. **Full-Attention beats both** on FD002 (47.49 RMSE) — 2D cross-channel attention helps, but physics masking isn't needed here
+3. Role-Trans has **lower variance** than CI-Trans (5.5 vs 26.0 on FD002)
+4. Role-Trans best on **FD003 ratio** (1.42 vs 1.49/1.60) — cross-fault transfer
+
+**Honest Assessment**: The 2D treatment (temporal + spatial attention) is the big win over CI. Full-Attention outperforms physics-grouped, suggesting learned attention discovers useful patterns beyond our predefined groups. However, Role-Trans still beats CI clearly.
+
+**Verdict**: WIN for physics grouping over CI, but NOT vs Full-Attention
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
