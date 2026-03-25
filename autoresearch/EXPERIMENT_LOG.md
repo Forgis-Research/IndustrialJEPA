@@ -242,6 +242,35 @@
 
 ---
 
+## Exp 44: Data Efficiency — Full-Attn dominates, Role-Trans is noisy
+
+**Time**: 02:11-02:41
+**Hypothesis**: Grouped architecture should help more with less training data due to inductive bias.
+
+**FD002 Transfer RMSE at varying training data fractions:**
+
+| Fraction | CI-Trans | Full-Attn | Role-Trans | RT vs CI |
+|----------|---------|-----------|-----------|----------|
+| 5% (886) | 81.43 | **62.39** | 71.84 | +11.8% |
+| 10% (1773) | 63.39 | **53.08** | 62.30 | +1.7% |
+| 25% (4432) | 61.61 | **59.50** | 77.75 | -26.2% |
+| 50% (8865) | 56.54 | **50.85** | 77.96 | -37.9% |
+| 100% (17731) | 83.38 | **50.97** | 60.66 | +27.2% |
+
+**Honest Assessment**: The data efficiency hypothesis is NOT supported:
+1. **Full-Attention wins at ALL data sizes** — even at 5% data (886 samples), it outperforms both CI and Role-Trans
+2. **Role-Trans is unstable at intermediate sizes** — variance ±14.42 at 50%, suggesting the grouped architecture can get trapped in local minima
+3. Role-Trans only clearly beats CI at extreme low (5%) and full (100%) data
+4. At 25-50%, Role-Trans is WORSE than CI — likely due to the mean-pooling bottleneck struggling with limited but non-trivial data
+
+**Why Full-Attn dominates**: With only 14 channels, full attention has very few parameters to learn (14x14 attention matrix). The O(n²) cost is negligible. The inductive bias of grouped architecture only helps when the model capacity is saturated, which doesn't happen with 14 channels.
+
+**Implication**: The grouped architecture advantage is primarily about **transfer**, not about data efficiency. At any training size, full attention learns better in-domain, and often transfers better too. The grouped advantage on transfer only emerges at 100% data where the models are well-trained.
+
+**Verdict**: NEGATIVE for data efficiency claim. Full-Attn is the pragmatic choice.
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
