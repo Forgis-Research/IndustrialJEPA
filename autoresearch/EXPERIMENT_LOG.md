@@ -314,6 +314,47 @@
 
 ---
 
+## Exp 46: PhysMask vs Full-Attn — 10-seed definitive comparison
+
+**Time**: 02:56-04:19
+**Purpose**: Determine when physics-masked attention beats unconstrained attention.
+
+### Pendulum (10 seeds)
+
+| Model | Target MSE | ± std | vs CI |
+|-------|-----------|-------|-------|
+| CI-Trans | 0.015853 | 0.000553 | baseline |
+| Full-Attn | 0.013698 | 0.000648 | -13.6% |
+| **PhysMask** | **0.012686** | **0.000366** | **-20.0%** |
+
+- PhysMask vs Full-Attn: **t=6.150, p=0.0002, 10/10 wins, 7.4% better**
+- PhysMask vs CI: t=19.478, p<0.0001, 10/10 wins, 20.0% better
+
+### Weather H=96 (10 seeds)
+
+| Model | Test MSE | ± std | vs CI |
+|-------|---------|-------|-------|
+| CI-Trans | 0.456655 | 0.000597 | baseline |
+| **Full-Attn** | **0.426516** | **0.000984** | **-6.6%** |
+| PhysMask | 0.432004 | 0.000815 | -5.4% |
+
+- Full-Attn vs PhysMask: **t=-11.828, p<0.0001, 10/10 wins**
+- PhysMask vs CI: t=96.787, p<0.0001, 10/10 wins, 5.4% better
+
+### Key Insight: When Does Physics Masking Beat Full Attention?
+
+| System | PhysMask vs Full-Attn | Why? |
+|--------|----------------------|------|
+| **Pendulum** | **PhysMask wins** (+7.4%, p=0.0002) | True physical independence: mass_1 dynamics ⊥ mass_2. Masking prevents learning spurious cross-mass correlations. |
+| **Weather** | Full-Attn wins (-1.3%, p<0.0001) | Complex cross-group interactions: temp↔humidity, pressure↔wind. Masking blocks useful connections. |
+| **C-MAPSS** | Full-Attn wins (Tier 2 data) | Degradation affects all components jointly; cross-component correlations are informative. |
+
+**The Rule**: PhysMask > Full-Attn when physics groups are **truly independent** (like separate masses). Full-Attn > PhysMask when groups interact heavily (weather, degradation).
+
+**Both always beat CI**: PhysMask 10/10 wins vs CI on both domains. The 2D treatment (temporal + spatial attention) is universally beneficial.
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
