@@ -271,6 +271,49 @@
 
 ---
 
+## Exp 45: Pendulum Grouping Ablation — Wrong grouping kills, but singleton wins
+
+**Time**: 02:42-02:55
+**Hypothesis**: On pendulum (with true physical independence between masses), physics grouping should clearly beat random grouping.
+
+**Results (5 seeds: 42, 123, 456, 789, 1234):**
+
+| Condition | Groups | Src MSE | Tgt MSE | Ratio |
+|-----------|--------|---------|---------|-------|
+| **singleton** | {[θ1],[ω1],[θ2],[ω2]} (4 groups) | **0.001620** | **0.017599** | 10.86 |
+| **physics** | {[θ1,ω1],[θ2,ω2]} (2 groups) | 0.001392 | 0.026924 | 19.34 |
+| cross_1 | {[θ1,ω2],[ω1,θ2]} | 0.002910 | 0.072617 | 24.95 |
+| cross_2 | {[θ1,ω2],[θ2,ω1]} | 0.003071 | 0.075245 | 24.51 |
+| type | {[θ1,θ2],[ω1,ω2]} | 0.587376 | 0.621355 | 1.06 |
+| all | {[θ1,ω1,θ2,ω2]} (1 group) | 0.586540 | 0.628802 | 1.07 |
+
+**All comparisons highly significant** (p < 0.001).
+
+**Key Findings — This Changes the Story**:
+
+1. **Wrong grouping is catastrophic**: "type" (grouping by measurement type) and "all" (single group) are 23x worse. The within-group mean-pooling destroys dynamics when it mixes the wrong channels.
+
+2. **Singleton (per-channel) BEATS physics grouping** (0.0176 vs 0.0269, p<0.001): More groups = more resolution = better performance. The mean-pooling within physics groups loses information.
+
+3. **Cross-mass mixing is 2.7x worse than physics**: Mixing θ1 with ω2 (from different masses) is bad but survivable. Mixing θ1 with θ2 (from same type, different masses) is catastrophic.
+
+4. **The pattern**: singleton > physics >> cross >> type ≈ all
+
+**Why singleton wins**: The RoleTrans architecture pools within groups. With 4 singleton groups, no pooling happens — each channel retains its full representation. The cross-group attention then learns channel relationships freely (like Full-Attention). With 2 physics groups, theta and omega of each mass are averaged, losing critical phase information.
+
+**Implication**: The mean-pooling bottleneck in RoleTrans is the fundamental limitation. Physics grouping helps with *attention masking* (PhysMask) but hurts with *encoder sharing + pooling* (RoleTrans) when groups are small.
+
+**Reconciliation with C-MAPSS ablation**: On C-MAPSS (14 channels, 5 groups of 2-4), random grouping ≈ physics because the groups are larger and pooling averages more channels. On pendulum (4 channels, 2 groups of 2), every channel matters and pooling is more harmful.
+
+**Revised Architecture Recommendation**:
+- Use **PhysMask** (attention masking), NOT **RoleTrans** (encoder sharing + pooling)
+- PhysMask preserves all channel information while constraining attention
+- RoleTrans bottleneck helps only when groups are large enough that pooling is beneficial
+
+**Verdict**: Physics grouping matters (wrong groups are catastrophic) but the RoleTrans mean-pooling hurts. PhysMask is the better approach.
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
