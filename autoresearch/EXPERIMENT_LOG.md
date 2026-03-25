@@ -154,6 +154,31 @@
 
 ---
 
+## Exp 42: Multi-Horizon Weather Forecasting — Grouped advantage grows with horizon
+
+**Time**: 00:13-01:21
+**Hypothesis**: Physics grouping advantage should increase at longer horizons where cross-channel structure matters more.
+
+**Results (3 seeds, Jena Weather 2016 test):**
+
+| Horizon | CI-Trans | Full-Attn | Role-Trans | RT vs CI |
+|---------|----------|-----------|------------|----------|
+| H=96 | 0.4570±0.0002 | 0.4267±0.0005 | 0.4323±0.0012 | **5.4%** |
+| H=336 | 0.5608±0.0003 | 0.5203±0.0031 | 0.5248±0.0014 | **6.4%** |
+| H=720 | 0.6214±0.0010 | 0.5435±0.0026 | 0.5620±0.0084 | **9.6%** |
+
+**Key Finding**: The grouped architecture advantage over CI **grows from 5.4% to 9.6%** as horizon increases from 96 to 720 steps. At H=720, the gap is nearly 2x what it is at H=96.
+
+**Why this happens**: Longer horizons require better understanding of inter-variable dynamics. CI-Trans treats each channel independently, so it can only extrapolate each variable separately. The grouped models capture cross-channel relationships that become more important for multi-step predictions.
+
+**Full-Attn vs Role-Trans**: Full-Attn is consistently better (0.4267 vs 0.4323 at H=96, 0.5435 vs 0.5620 at H=720). The gap also grows slightly with horizon, suggesting that the mean-pooling bottleneck in RoleTrans loses more information at longer horizons.
+
+**Combined with ablation insight**: Since random grouping ≈ physics grouping, the benefit is purely from the grouped architecture pattern, not the specific assignment. The longer the horizon, the more valuable any form of cross-channel processing becomes.
+
+**Verdict**: CONFIRMED that grouped > CI, and the effect scales with task difficulty.
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
