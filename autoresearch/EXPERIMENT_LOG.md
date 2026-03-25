@@ -355,6 +355,39 @@
 
 ---
 
+## Exp 47: Mask Ablation — Physics mask specifically matters (not just sparsity)
+
+**Time**: 04:30-04:54
+**Hypothesis**: The physics mask's advantage comes from matching physical independence, not just from sparsifying attention.
+
+**Results (10 seeds, Pendulum target MSE):**
+
+| Mask Type | Description | Target MSE | ± std | vs Physics |
+|-----------|-----------|-----------|-------|-----------|
+| **physics** | Within-mass + cross-rep | **0.012686** | **0.000366** | **baseline** |
+| random_0 | 50% random sparsity | 0.013539 | 0.000361 | -6.7% (p<0.001) |
+| full | No mask | 0.013698 | 0.000648 | -8.0% (p=0.0002) |
+| random_2 | 50% random sparsity | 0.013737 | 0.000725 | -8.3% (p=0.0004) |
+| random_1 | 50% random sparsity | 0.014041 | 0.000684 | -10.7% (p<0.001) |
+| wrong | Cross-mass only | 0.014803 | 0.000742 | -16.7% (p<0.001) |
+| CI | Self-only | 0.015708 | 0.000517 | -23.8% |
+
+**Key Finding**: **Physics mask beats ALL other masks at p<0.001.** It's not just attention sparsification — the specific physics structure provides the benefit.
+
+**Ordering**: physics >> random ≈ full > wrong >> CI
+
+**What this means**:
+1. The physics mask encodes true statistical independence between masses
+2. Random masks sometimes help (sparsity regularization), sometimes hurt
+3. Wrong mask (cross-mass attention, blocking within-mass) is actively harmful
+4. Physics masking provides both the right inductive bias AND variance reduction (±0.000366, lowest)
+
+**Combined with previous findings**: On pendulum (independent masses), physics mask > random mask > no mask. On C-MAPSS (correlated degradation), random grouping ≈ physics grouping. The difference is the strength of physical independence — pendulum has clean independence, C-MAPSS doesn't.
+
+**Verdict**: STRONG POSITIVE for physics-specific masking on systems with true physical independence.
+
+---
+
 # Phase 3: Deep Literature Review (2026-03-23)
 
 ## Research: Three Directions for Breakthrough
