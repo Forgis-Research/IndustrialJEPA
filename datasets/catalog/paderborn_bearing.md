@@ -79,6 +79,55 @@ Viable: predict next 640 timesteps (10ms at 64kHz) given past 6400 samples. Or d
 ### Verdict for Tier 2
 **Strong candidate** — 8 channels with clear physics grouping, real damage, motor current + vibration multimodality. Main weakness: no published forecasting SOTA (would define our own baseline).
 
+---
+
+## Evaluation Suite: Sparse Graphs
+
+Paderborn is the **primary dataset for sparse graph experiments** due to its 4 distinct modalities forming a naturally sparse bipartite graph.
+
+### Graph Structure
+
+```
+[Vibration Group]     [Thermal Group]     [Electrical Group]
+   a1  a2  a3  v1       temp1  torque       phase_a  phase_b
+      \  |  /              \    /                \    /
+       \ | /                \  /                  \  /
+        \|/                  \/                    \/
+    vib_cluster          thermal_cluster      current_cluster
+          \                   |                    /
+           \__________________|___________________/
+                              |
+                         [Fault State]
+```
+
+**Key insight**: Groups are weakly coupled during normal operation but strongly coupled at failure modes. This creates naturally sparse inter-group edges that become dense during faults—ideal for testing physics-informed graph attention.
+
+### Rapid Evaluation (Sparse Graphs)
+
+| Test | Configuration | Metric | Baseline | Target |
+|---|---|---|---|---|
+| Unit test | 8ch subset, 10 files | Forecasting MSE | Full attention | Physics mask +3% |
+| Cross-modality | Train: vib+thermal, Test: +current | Transfer MSE | Scratch | >70% retention |
+
+### Full-Scale Benchmarks (Sparse Graphs)
+
+| Benchmark | Configuration | Metric | Paper Claim |
+|---|---|---|---|
+| Cross-condition transfer | Healthy (K001-K006) → Faulty (KA/KI) | Forecasting MSE | "Physics grouping enables zero-shot fault detection" |
+| Graph sparsity analysis | Measure attention weights | % cross-group attention | "Inter-group attention < 20% normal, > 60% fault" |
+| Ablation: wrong grouping | Scramble channel assignments | MSE degradation | "Correct grouping 10-20x better than random" |
+
+### Meta-Features for Paderborn
+
+| Feature | Channels | Computation | Anomaly Meaning |
+|---|---|---|---|
+| **Spectral energy ratio** | a1, a2, a3 | HF power / LF power | Bearing damage → HF increase |
+| **Thermal gradient** | temp1 vs torque | |dtemp/dt| correlation with torque | Friction-induced heating |
+| **Coupling strength** | vib ↔ current | Cross-correlation | Normal ~0.3, Fault ~0.7 |
+| **Phase imbalance** | phase_a, phase_b | |I_a - I_b| / (I_a + I_b) | Electrical fault indicator |
+
+---
+
 ## Download Notes
 - 33 RAR archives, each ~155–175 MB (total ~5.4 GB)
 - No registration required — direct HTTP download

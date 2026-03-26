@@ -74,6 +74,64 @@ Primary training dataset for IndustrialJEPA. Used for anomaly detection experime
 ### Scale Adequacy
 **Moderate** — 4,094 episodes × ~1,500 timesteps = ~6.1M timesteps × 20 channels. Good for supervised learning; small for pretraining.
 
+---
+
+## Evaluation Suite: Meta-Feature Prediction
+
+AURSAD is the **primary dataset for meta-feature prediction experiments** due to its clear causal structure (command → effort → feedback) and well-labeled fault classes.
+
+### High-Value Meta-Features for AURSAD
+
+| Feature | Channels | Computation | Physical Meaning | Anomaly Signal |
+|---|---|---|---|---|
+| **Effort Variance** | i1–i6 | σ(current) per joint | Motor stress | Normal: 0.02-0.05A, Fault: 0.08-0.15A |
+| **Command-Response Lag** | q1–q6 vs qd1–qd6 | Cross-correlation peak delay | Mechanical binding | Normal: 0-2ms, Fault: 5-15ms |
+| **Coupling Strength** | i_j ↔ qd_j | Pearson correlation | Current-velocity coupling | Normal: 0.6-0.8, Fault: 0.3-0.5 (decoupled) |
+| **Joint Asymmetry** | i1–i6 | Gini coefficient across joints | Load distribution | Normal: 0.1-0.2, Fault: 0.3-0.5 |
+| **Velocity Smoothness** | qd1–qd6 | |d²q/dt²| (jerk) | Motion quality | Fault → increased jerk |
+| **TCP Deviation** | TCP_xyz | |actual - commanded| | Position error | Fault → increased deviation |
+
+### Causal Structure for Meta-Features
+
+```
+[Setpoint (q*)]  →  [Effort (i)]  →  [Feedback (q, qd)]  →  [Output (TCP)]
+                          ↓
+                    ANOMALY SIGNALS:
+                    - Effort variance ↑
+                    - Lag ↑
+                    - Coupling ↓
+```
+
+**Key insight**: Faults manifest as disruptions in the causal chain. Current (effort) is the earliest indicator; TCP deviation is the latest.
+
+### Rapid Evaluation (Meta-Features)
+
+| Test | Feature | Metric | Baseline | Target |
+|---|---|---|---|---|
+| Variance spike | Effort variance (i1–i6) | F1 on fault class | Threshold detector: 0.75 | JEPA latent: 0.85 |
+| Lag detection | Command-response delay | AUC-ROC | Statistical threshold: 0.70 | JEPA latent: 0.80 |
+
+### Full-Scale Benchmarks (Meta-Features)
+
+| Benchmark | Features Used | Metric | Paper Claim |
+|---|---|---|---|
+| Single vs multi-feature | Effort variance alone vs all 6 features | F1-score | "Multi-feature +10-15% over single" |
+| Raw vs latent features | Features on raw data vs JEPA latent | F1-score | "Latent features +5-8% generalization" |
+| Early detection | Time-to-detection from episode start | Timesteps | "Detect fault 20-30% earlier than baseline" |
+| Fault type discrimination | Per-class F1 | Macro-F1 | "Meta-features distinguish fault types" |
+
+### Comparison to Prior Work
+
+| Method | AUC-ROC | F1 | Features Used |
+|---|---|---|---|
+| Threshold on current | ~0.70 | ~0.65 | Raw current |
+| MLP (time features) | 0.89 | 0.87 | Hand-crafted |
+| CNN-1D | — | 0.92 | Learned |
+| LSTM | — | 0.91 | Learned |
+| **Target: JEPA meta-features** | **0.90** | **0.88** | **Latent meta-features** |
+
+---
+
 ## Download Notes
 - Available on GitHub: https://github.com/saifsustain/AURSAD
 - Also on Zenodo: https://zenodo.org/record/4905920

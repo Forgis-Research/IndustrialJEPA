@@ -18,6 +18,35 @@ The channel count (7-27) is far below Brain-JEPA's 450 ROIs, so OXE cannot repli
 
 ---
 
+## Evaluation Suite Summary
+
+### Rapid Evaluation (Mechanical-JEPA)
+
+| Phase | Data | Test | Time | Success Metric |
+|---|---|---|---|---|
+| Sanity check | TOTO (902 ep, 20 MB) | Overfit single-embodiment prediction | ~1 hr | Train loss < 0.001 |
+| Action correlation | ManiSkill (sim) | Verify state-action coupling | ~2 hr | r > 0.4 |
+| DOF transfer | Franka→UR5 (zero-shot) | Joint angle MSE degradation | ~1 hr | MSE < 2x pretrain |
+
+### Full-Scale Benchmarks (Mechanical-JEPA)
+
+| Phase | Data | Paper Claim | Primary Metric |
+|---|---|---|---|
+| **Phase 1** | DROID + TOTO (77k Franka ep) | "JEPA predicts 10-step joint rollouts with MSE < 0.01" | Next-step MSE |
+| **Phase 2** | Franka→{UR5, KUKA, JACO} | "50%+ performance retention with zero-shot transfer" | Transfer MSE ratio |
+| **Phase 3** | ManiSkill (action-conditioned) | "Action conditioning improves 20-step rollout stability" | Rollout divergence time |
+
+### Download Priority
+
+| Priority | Dataset | Size | Episodes | Role |
+|---|---|---|---|---|
+| 1 | DROID | ~2 GB | 76,000 | Primary Franka training |
+| 2 | TOTO | 20 MB | 902 | Long-horizon eval |
+| 3 | ManiSkill | 1.7 GB | 30,213 | Action-conditioned ablation |
+| 4 | Berkeley UR5 | ~100 MB | 896 | Cross-embodiment transfer target |
+
+---
+
 ## Detailed Description
 
 Open X-Embodiment consolidates 60 existing robot learning datasets into a unified RLDS (Robot Learning Dataset Specification) format. Originally designed for training generalist robot policies (RT-X, Octo), it is the largest publicly available collection of robot manipulation trajectories.

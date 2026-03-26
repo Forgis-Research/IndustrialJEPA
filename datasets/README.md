@@ -63,107 +63,189 @@ datasets/
 | WADI | Water dist. | Yes | 127 | 1,209,600 | 3 (subsystems) | pretraining |
 | AURSAD | Robot (UR3e) | Yes | 20 | ~1500/ep × 4094 ep | 4 (pos/vel/current/cartesian) | current |
 | Voraus-AD | Robot (Cobot) | Yes | 66 | ~2000/ep × 2000 ep | 8 (joint modalities) | current |
-| Open X-Embodiment | Robotics | Yes | 7–20 | 50–500/traj × 1M traj | varies | not viable |
+| Open X-Embodiment | Robotics | Yes | 7–27 | 50–1160/traj × 123k traj | varies | **conditionally viable** |
 
 ---
 
-## Rapid Evaluation Suite Recommendations
+## Research Directions: Evaluation Suites
 
-### Tier 1: Double Pendulum (CONFIRMED)
-- Synthetic, 4 channels, 2 physics groups
-- Perfect ground truth: physics mask beats full-attention by 7.4% (p=0.0002, Exp 47)
-
-### Tier 2: RECOMMENDATION — Paderborn Bearing
-
-**Primary recommendation: Paderborn Bearing**
-
-Evidence:
-- 8 channels with 4 clear physical modalities: vibration (radial + tangential + axial + velocity), thermal (temperature + torque), electrical (2-phase motor current)
-- The voltage/current/vibration combination directly tests whether physics grouping helps on multi-modal mechanical data
-- Real damage (both artificial EDM and natural progressive wear)
-- No registration required for download
-- 33 bearing conditions (healthy, outer race, inner race, combined damage)
-- 20 measurements per bearing × 4 operating conditions = 80 files per bearing
-- Transfer scenarios: healthy→faulty, artificial→natural damage, cross operating condition
-
-**Why Paderborn over CWRU**: CWRU has 2–4 channels of the same modality (vibration only); Paderborn has 4 distinct modalities. Physics-informed grouping is only meaningful when groups represent different physical phenomena.
-
-**The only gap**: No published MSE-based forecasting SOTA exists for Paderborn. This means we must establish our own baselines (persistence, linear, CI-Transformer, Full-Attention). This is acceptable for a paper that is primarily about the architecture, not about matching an external leaderboard.
-
-**Fallback: Hydraulic System (UCI)**
-- 17 sensors, 4 physics groups (pressure/flow/thermal/mechanical)
-- 2,205 cycles, direct download (no registration)
-- Clean labels for 4 fault types
-- Downside: Mixed sampling rates (100/10/1 Hz) require careful preprocessing
-
-### Tier 3: ETT (CONFIRMED)
-- Real electricity transformer data, 7 channels, 4 groups
-- Key result: PhysMask HURTS (-1.3%) because thermal couples to all load groups
-- This is the "complex interactions" case in the paper narrative
-- Transfer test: ETTh1 → ETTh2
+This section provides **rapid evaluation** (quick dev tests) and **full-scale benchmarks** (paper-ready) for the three IndustrialJEPA research directions.
 
 ---
 
-## Paper Dataset Recommendations (3–4 strongest)
+## Direction 1: Sparse Graphs
 
-| Dataset | Role in Paper | SOTA to Beat | Transfer Test |
+Physics-informed attention can be viewed as sparse graph attention, where nodes are sensor channels and edges represent physical coupling.
+
+### Rapid Evaluation Suite (Sparse Graphs)
+
+| Dataset | Purpose | Test | Time |
 |---|---|---|---|
-| Double Pendulum | "Independent system" — physics mask clearly wins | Internal baselines | m1/m2=1.0 → 0.5 |
-| Paderborn Bearing | "Mechanical real data" — multi-modal physics | Internal baselines (no forecasting SOTA) | KA01 → KI01 (outer→inner fault) |
-| C-MAPSS | "Correlated system" — physics ≈ random (honest negative) | Internal baselines (sensor forecasting) | FD001 → FD003 |
-| ETT | "Complex interactions" — physics hurts | PatchTST (~0.37), iTransformer (~0.39) | ETTh1 → ETTh2 |
+| Double Pendulum | Unit test graph structure | Physics mask vs random on known 4-node graph | ~10 min |
+| Paderborn Bearing (8ch subset) | Real multi-modal sparse graph | 4-group bipartite (vib/thermal/elec/mech) | ~30 min |
 
-This 4-dataset narrative tells a complete scientific story:
+### Full-Scale Benchmarks (Sparse Graphs)
 
-1. **When physics masking helps strongly**: Independent groups (pendulum, idealized)
-2. **When physics masking helps moderately**: Semi-independent mechanical groups (Paderborn)
-3. **When physics masking doesn't help**: Correlated degradation (C-MAPSS)
-4. **When physics masking hurts**: Tight cross-group coupling (ETT)
+| Dataset | Paper Role | Benchmark | Expected Result |
+|---|---|---|---|
+| **Paderborn Bearing** | Primary mechanical | Graph attention on 8 channels, cross-condition transfer (healthy→faulty) | Physics mask +3-5% |
+| **Hydraulic System** | Industrial process | 17-channel causal graph (pressure→flow→thermal), anomaly detection | Physics mask +2-4% |
+| **AURSAD** | Robotics graph | 20-channel hierarchical (cmd→current→joint state), fault classification | Physics mask +1-3% |
+
+**Key insight**: Paderborn's 4-group structure (vibration/thermal/electrical/mechanical) is ideal—groups are weakly coupled except at failure modes, creating naturally sparse inter-group edges.
+
+---
+
+## Direction 2: Meta-Feature Prediction
+
+Beyond energy consumption, several high-value meta-features can be predicted from JEPA latent representations for anomaly detection and predictive maintenance.
+
+### High-Value Meta-Features
+
+| Feature | Physical Meaning | Anomaly Signal | Best Dataset |
+|---|---|---|---|
+| **Effort Variance** | Motor current σ | Stress/friction increase | AURSAD |
+| **Coupling Strength** | Cross-channel correlation | Normal: 0.3-0.5, Fault: 0.6-0.9 | Paderborn |
+| **Spectral Energy Ratio** | High-freq / low-freq power | Fault → increased HF | Paderborn, CWRU |
+| **Phase Delay** | Command→response lag | Mechanical binding | AURSAD |
+| **Degradation Rate** | dRUL/dt in latent space | Predictive maintenance | C-MAPSS |
+| **Thermal Gradient** | ΔT across components | Overheating precursor | ETT, Paderborn |
+
+### Rapid Evaluation Suite (Meta-Features)
+
+| Test | Dataset | Metric | Baseline |
+|---|---|---|---|
+| Variance spike detection | AURSAD (current channels) | F1 on fault class | Threshold detector |
+| Correlation change | Paderborn (cross-modality) | AUC-ROC | PCA residual |
+
+### Full-Scale Benchmarks (Meta-Features)
+
+| Dataset | Meta-Feature Suite | Paper Claim |
+|---|---|---|
+| **AURSAD** | Current variance + coupling + phase delay | "Multi-feature anomaly score outperforms single-channel by X%" |
+| **Paderborn** | Spectral energy + thermal gradient + coupling | "Cross-modality features detect faults 2-3 timesteps earlier" |
+| **C-MAPSS** | Degradation rate in latent space | "JEPA latent RUL estimation competitive with supervised" |
+
+**Novel angle**: Meta-features extracted from JEPA latent space (not raw sensor space) could show better generalization—the latent compresses physics-relevant structure.
+
+---
+
+## Direction 3: Mechanical-JEPA (Cross-Embodiment Robotics)
+
+OXE is **conditionally viable** for Mechanical-JEPA. While channel count (7-27) is far below Brain-JEPA (450 ROIs), OXE enables a distinct contribution: **cross-embodiment proprioceptive transfer learning**.
+
+### Rapid Evaluation Suite (Mechanical-JEPA)
+
+| Phase | Data | Test | Time |
+|---|---|---|---|
+| Sanity check | TOTO (902 ep, 20 MB) | Overfit single-embodiment prediction | ~1 hr |
+| Action correlation | ManiSkill (sim) | Verify state-action coupling (r=0.47) | ~2 hr |
+| DOF transfer | Franka→UR5 (zero-shot) | Joint angle MSE degradation | ~1 hr |
+
+### Full-Scale Benchmarks (Mechanical-JEPA)
+
+| Phase | Data | Paper Claim |
+|---|---|---|
+| **Phase 1: Single-embodiment** | DROID + TOTO (77k Franka episodes) | "JEPA predicts 10-step joint rollouts with MSE < 0.01" |
+| **Phase 2: Cross-embodiment** | Franka→{UR5, KUKA, JACO} | "50%+ performance retention with zero-shot transfer" |
+| **Phase 3: Action-conditioned** | ManiSkill (best action-state corr) | "Action conditioning improves 20-step rollout stability by X%" |
+
+### Data Requirements (All Downloadable)
+
+| Dataset | Size | Episodes | Role |
+|---|---|---|---|
+| DROID | ~2 GB | 76,000 | Primary Franka training |
+| TOTO | 20 MB | 902 | Long-horizon eval |
+| ManiSkill | 1.7 GB | 30,213 | Action-conditioned ablation |
+| Berkeley UR5 | ~100 MB | 896 | Transfer target |
+| **Total** | ~4 GB | ~108k | Feasible on current machine |
+
+### Critical Limitations to Address in Paper
+
+1. **Channel gap**: OXE proprioception (7-27ch) vs Brain-JEPA (450 ROIs)—can't claim "same architecture scales"
+2. **Action space**: All OXE actions are EE-deltas (Cartesian), not joint commands—need learned FK or EE-space formulation
+3. **Novel contribution**: Frame as "cross-embodiment transfer via shared latent dynamics" rather than "Brain-JEPA for robots"
+
+### Scale Comparison: OXE vs Brain-JEPA
+
+| Dimension | Brain-JEPA | OXE Mechanical-JEPA | Gap |
+|---|---|---|---|
+| Subjects/Trajectories | 32,000 | ~123,000 | OXE 4x larger |
+| Timesteps per instance | 160 | 50-1,160 (mean 120) | Comparable |
+| Channels | 450 ROIs | 7-27 proprioception | OXE 17-64x smaller |
+| Total tokens | 2.3B | 31M | Brain-JEPA 74x larger |
+| Cross-domain variety | 1 domain (brain) | 7+ embodiments | OXE richer |
+| Actions available | NO | YES (per timestep) | OXE unique advantage |
+
+---
+
+## Summary: The 3-Dataset Paper Narrative
+
+For a cohesive paper covering all three directions:
+
+| Direction | Quick Test | Paper Benchmark | Story |
+|---|---|---|---|
+| **Sparse Graphs** | Paderborn 8ch subset | Full Paderborn + Hydraulic | "Physics grouping creates natural sparse graph structure" |
+| **Meta-Features** | AURSAD current variance | AURSAD + C-MAPSS degradation | "Latent meta-features outperform raw sensor thresholds" |
+| **Mechanical-JEPA** | TOTO single-robot | DROID→{UR5,KUKA} transfer | "Cross-embodiment transfer via shared joint dynamics" |
+
+The strongest unique contribution is likely **cross-embodiment transfer**—Brain-JEPA can't demonstrate this (single domain), and most robot learning papers don't leverage JEPA-style prediction for transfer.
+
+---
+
+## Physics Masking Story Arc (Paper Narrative)
+
+The 4-dataset narrative tells a complete scientific story about when physics masking helps:
+
+| Dataset | Role in Paper | SOTA to Beat | Transfer Test | Expected Result |
+|---|---|---|---|---|
+| Double Pendulum | "Independent system" | Internal baselines | m1/m2=1.0 → 0.5 | Physics mask +7.4% (p<0.001) |
+| Paderborn Bearing | "Semi-independent mechanical" | Internal baselines | Healthy → Faulty | Physics mask +3-5% |
+| C-MAPSS | "Correlated system" | Internal baselines | FD001 → FD003 | Physics mask ≈ random (p=0.528) |
+| ETT | "Tightly coupled" | PatchTST (~0.37), iTransformer (~0.39) | ETTh1 → ETTh2 | Physics mask -1.3% (hurts) |
 
 **Paper title fit**: "When to Mask: Physics-Informed Attention Depends on Group Independence"
 
 ---
 
-## Brain-JEPA Analog Analysis (Direction 3)
+## Additional Dataset Recommendations
 
-Brain-JEPA scale: **32,000 patients × 160 timesteps × 450 ROIs**
+### Tier 2: Paderborn Bearing (PRIMARY)
 
-The key dimension is **450 parallel channels** — this enables attention across "channels" (ROIs) to be the core computation. Our physics-informed grouping would operate on these channels.
+- 8 channels with 4 clear physical modalities: vibration (radial + tangential + axial + velocity), thermal (temperature + torque), electrical (2-phase motor current)
+- Real damage (both artificial EDM and natural progressive wear)
+- No registration required for download
+- 33 bearing conditions (healthy, outer race, inner race, combined damage)
+- Transfer scenarios: healthy→faulty, artificial→natural damage, cross operating condition
 
-### Available Datasets by Channel Count
+**Gap**: No published MSE-based forecasting SOTA exists. We establish our own baselines.
 
-| Dataset | Channels | Timesteps | Total "Tokens" | Access |
+### Tier 2 Fallback: Hydraulic System (UCI)
+
+- 17 sensors, 4 physics groups (pressure/flow/thermal/mechanical)
+- 2,205 cycles, direct download
+- Downside: Mixed sampling rates (100/10/1 Hz) require preprocessing
+
+### Tier 3: ETT
+
+- Real electricity transformer data, 7 channels
+- Key result: PhysMask HURTS (-1.3%) because thermal couples to all load groups
+- The "complex interactions" case in the paper narrative
+
+---
+
+## High-Channel Brain-JEPA Analog
+
+For experiments requiring many channels (closer to Brain-JEPA's 450 ROIs):
+
+| Dataset | Channels | Timesteps | Access | Notes |
 |---|---|---|---|---|
-| WADI (water dist.) | 127 | 1,209,600 | 153M | Request (1 week) |
-| SWaT (water treat.) | 51 | 946,000 | 48M | Request (1 week) |
-| Electricity (UCI) | 321 | 26,304 | 8.4M | Direct |
-| Traffic (SF) | 862 | 17,544 | 15.1M | Direct |
-| Open X-Embodiment | 7–20 | M+ traj | — | Direct (TFRecord) |
+| WADI (water dist.) | 127 | 1,209,600 | Request (1 week) | Best available analog |
+| SWaT (water treat.) | 51 | 946,000 | Request (1 week) | |
+| Electricity (UCI) | 321 | 26,304 | Direct | |
+| Traffic (SF) | 862 | 17,544 | Direct | |
 
-### Verdict: Open X-Embodiment is NOT Viable for Brain-JEPA Analog
-
-Critical analysis:
-1. **Channel count**: OXE has 7–20 proprioceptive channels per dataset. Brain-JEPA has 450 ROIs. A 20–60x gap means we cannot run the same "many-channel physics attention" experiment at scale.
-2. **Modality mismatch**: OXE is primarily a vision dataset (RGB cameras). The proprioceptive signals are secondary. Most published OXE papers use image+action, not pure sensor time series.
-3. **Format overhead**: RLDS/TFRecord requires TensorFlow; incompatible with our PyTorch pipeline. Conversion to numpy is ~5x the storage.
-4. **Heterogeneous channels**: Different OXE sub-datasets have incompatible sensor spaces. No "universal 20-channel" format exists across the full 60 datasets.
-
-### Best Available Analog: WADI (127 channels, 1.2M timesteps)
-
-WADI gives us:
-- **127 channels** (still 3.5x fewer than Brain-JEPA's 450, but closest available)
-- **Continuous operation** (16 days at 1 Hz) — perfect for causal sliding windows
-- **3 physical subsystems** (chemical treatment, storage, distribution) for physics grouping
-- **Published anomaly detection SOTA** for evaluation comparison
-- **Requires data request** to SUTD (~1 week turnaround)
-
-### Realistic Brain-JEPA Analog Strategy
-
-Given that no single dataset reaches 450 channels, two options:
-1. **Use WADI (127 ch)**: Demonstrate the approach scales to 127 channels; argue this is sufficient for the paper's claims
-2. **Stack multiple datasets**: Concatenate Paderborn (8 ch) + Hydraulic (17 ch) + C-MAPSS (21 ch) + AURSAD (20 ch) + ETT (7 ch) = 73 channels total — but channels are physically incoherent across datasets
-
-Recommendation: **WADI is the realistic target**. Request access immediately if Direction 3 (Brain-JEPA) is the priority.
+**Recommendation**: WADI (127 channels) is the realistic high-channel target
 
 ---
 
