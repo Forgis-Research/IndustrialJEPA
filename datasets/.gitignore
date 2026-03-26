@@ -1,0 +1,26 @@
+# Downloaded dataset files — do not commit
+data/
+
+# Generated analysis figures are committed (small PNGs)
+# analysis/figures/ is tracked
+
+# Common data formats
+*.mat
+*.csv
+*.txt
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pkl
+*.parquet
+*.tfrecord
+*.zip
+*.rar
+*.gz
+*.tar
+
+# Except catalog and downloader scripts
+!catalog/
+!downloaders/
+!analysis/

@@ -1,0 +1,2 @@
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — 48 experiments done, physics-mask story clear, paper-writing phase
+- [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE not viable, all downloads verified

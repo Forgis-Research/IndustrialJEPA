@@ -83,6 +83,7 @@ Thumbs.db
 # Project-specific
 checkpoints/
 /data/
+datasets/data/
 wandb/
 outputs/
 results/**/*.pt
