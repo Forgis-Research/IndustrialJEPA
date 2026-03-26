@@ -1443,3 +1443,77 @@ Possible causes:
 **Verdict**: KEEP — Full-Attn and PhysMask are the appropriate architectures for force prediction. CI-Transformer is wrong for cross-channel tasks.
 
 **Insight**: This reverses the CI-Transformer advantage from ETTh1/C-MAPSS. Force prediction is fundamentally a cross-channel prediction problem (joint state → EE forces). Physics grouping is a principled intermediate between full cross-channel and CI. The story: "use CI when channels are statistically independent (weather, ETT), use physics grouping when causal structure is known (robotics, manufacturing)."
+
+---
+
+## Exp 51: Mechanical-JEPA on AURSAD (UR3e Screwdriving)
+
+**Hypothesis**: JEPA pretraining on AURSAD motor current signals will learn representations that separate anomalous screwdriving from normal, improving linear probe AUROC over random initialization.
+
+**Change**: Implement MechanicalJEPA (360K params, patch_len=8, block mask 30%, 30 epochs) on AURSAD FactoryNet (4094 episodes, 27 channels: 14 setpoint + 13 effort, window_size=64/stride=32 → 151k train windows). Pre-materialize dataset into numpy array to avoid O(n) pandas overhead. Evaluate via linear probe (LogisticRegression on mean-pooled representations).
+
+**Architecture**:
+- PatchEmbed(27ch, patch_len=8) → TransformerEncoder(d=64, 4h, 3L) → Predictor(2L MLP)
+- EMA target encoder (decay=0.996), block masking 30% of patches
+- 360,256 params total
+- Pre-materialization: 151k windows × 64 × 27 ≈ 1.6 GB numpy array; materialization time ~124s
+
+**Results (3 seeds: 42, 123, 456):**
+
+| Seed | JEPA AUROC | Random AUROC | Delta | JEPA Loss |
+|------|-----------|--------------|-------|-----------|
+| 42 | 0.5426 | 0.5424 | +0.0002 | 0.477→0.118 |
+| 123 | 0.5382 | 0.5516 | -0.0134 | 0.511→0.122 |
+| 456 | 0.5637 | 0.5478 | +0.0159 | 0.465→0.114 |
+| **Mean** | **0.5482±0.0111** | **0.5473±0.0038** | **+0.0009±0.0120** | |
+
+**Sanity checks**: ✓ Loss decreases (0.47→0.12), model is learning. ✓ Both JEPA and random probe well above chance on some seeds. ✗ High variance across seeds (±0.011).
+
+**Key findings**:
+1. **No benefit from JEPA pretraining**: Delta = +0.0009 is within noise (±0.012). Not statistically distinguishable from zero.
+2. **Both methods hover near chance (0.55)**: The anomaly detection task is hard even with correct labels. AURSAD anomalies are subtle current signature deviations.
+3. **JEPA loss converges normally** (0.47→0.12) confirming training is correct, but representations don't capture anomaly-relevant features.
+4. **Bottleneck analysis**: 30 epochs on 151k windows ≈ 18k gradient steps. This may be insufficient for JEPA to develop discriminative representations. Alternatively, temporal block prediction may not be the right pretext task for motor current anomaly detection.
+
+**Verdict**: NO_BENEFIT
+**Time**: 975s (~16 min)
+
+**Insight**: JEPA's temporal prediction objective may not align with anomaly detection. JEPA learns "what follows from context" — useful for forecasting, but anomalies may require global distribution shift detection rather than local temporal structure. Compare: JEPA was designed for image patches (spatial structure) and video (temporal continuity), not per-episode industrial fault signatures.
+
+---
+
+## Exp 52: Mechanical-JEPA on Voraus-AD (Yu-Cobot Pick-and-Place)
+
+**Hypothesis**: JEPA pretraining on Voraus-AD motor current/setpoint signals will improve anomaly detection AUROC over random initialization, as in Exp 51 test.
+
+**Change**: Repeat JEPA pretraining on Voraus-AD. Key engineering challenge: Voraus has 60 parquet files (6.25 GB compressed), which OOM-kills the process during pd.concat on a 16 GB instance. Solution: bypass FactoryNetDataset entirely and stream parquets one at a time. Load 10 anomaly files + 12 normal files (of 21+39 available), extract windows per-file, concatenate into bounded numpy array.
+
+**Data**: 10 anomaly files (voraus_001–021 range) + 12 normal files (voraus_022–060 range)
+- 24 channels (12 setpoint: pos×6+vel×6, 12 effort: current_iq×6+current_id×6)
+- 51,000 train windows, 12,260 test windows (anomaly_rate ≈ 0.47/0.49)
+- File-level train/test split to avoid data leakage (80/20 on selected files)
+- Per-episode normalization (subtract mean, divide by std)
+
+**Results (3 seeds: 42, 123, 456):**
+
+| Seed | JEPA AUROC | Random AUROC | Delta | JEPA Loss |
+|------|-----------|--------------|-------|-----------|
+| 42 | 0.4761 | 0.5048 | -0.0287 | 0.370→0.063 |
+| 123 | 0.4985 | 0.5333 | -0.0348 | 0.380→0.060 |
+| 456 | 0.4739 | 0.4867 | -0.0128 | 0.368→0.060 |
+| **Mean** | **0.4828±0.0111** | **0.5083±0.0192** | **-0.0254±0.0093** | |
+
+**Sanity checks**: ✓ JEPA loss converges (0.37→0.06). ✗ Both AUROC near chance. ✗ JEPA slightly worse than random on all seeds.
+
+**Key findings**:
+1. **JEPA is worse than random** (-0.025 delta, consistent across seeds). This suggests JEPA representations are actively misleading for Voraus anomaly detection.
+2. **Near-chance for both methods** (~0.49-0.51): The Voraus anomaly signal may not be encoded in the channels loaded (setpoint+current), or file-level split creates mismatched distributions.
+3. **Loss convergence is fast** (0.37→0.06 in 30 epochs on 51k windows): Learning happens, but the latent space does not encode anomaly type.
+4. **Replication of AURSAD pattern**: Two independent datasets with very different hardware (UR3e vs Yu-Cobot) both show no JEPA benefit for anomaly detection.
+
+**Verdict**: NO_BENEFIT (JEPA weakly worse than random on Voraus)
+**Time**: 283s (~5 min; fast because parquet streaming avoids OOM)
+
+**Insight**: The consistent NO_BENEFIT pattern across AURSAD (UR3e screwdriving) and Voraus (Yu-Cobot pick-and-place) suggests a structural limitation: JEPA's temporal patch prediction objective does not capture the episode-level distributional shift that defines industrial anomalies. Future work should explore: (1) reconstruction-based pretraining (masked autoencoder), (2) contrastive pre-training with health label supervision, or (3) density estimation baselines (Isolation Forest, OCSVM) which don't require pretraining.
+
+**Engineering note**: OOM with FactoryNetDataset for large datasets — parquet streaming is the correct approach for Voraus-scale data on 16 GB instances.

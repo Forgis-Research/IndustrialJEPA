@@ -1,2 +1,2 @@
-- [IndustrialJEPA Project Context](project_industrialjepa.md) — 48 experiments done, physics-mask story clear, paper-writing phase
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — 52 experiments done, Phase 7 robotics+JEPA complete (NO_BENEFIT result), paper-writing phase
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE not viable, all downloads verified
