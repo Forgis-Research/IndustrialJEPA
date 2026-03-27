@@ -228,19 +228,33 @@ k_seasonalities = 5  # Top-5 FFT peaks
 ### API Usage Pattern
 
 ```python
-from tabpfn_ts import TabPFNForecaster
+import pandas as pd
+from tabpfn_time_series import TabPFNTSPipeline, TabPFNMode
 
-# Basic usage
-forecaster = TabPFNForecaster(horizon=H)
-forecaster.fit(y_train)
-predictions = forecaster.predict()
+# Prepare data (DataFrame with timestamp and target)
+context_df = pd.DataFrame({
+    'item_id': ['series'] * len(y_train),
+    'timestamp': pd.date_range('2024-01-01', periods=len(y_train), freq='s'),
+    'target': y_train
+})
 
-# With covariates (external features)
-forecaster.fit(y_train, X=X_train)
-predictions = forecaster.predict(X=X_test)
+# Create pipeline
+pipeline = TabPFNTSPipeline(tabpfn_mode=TabPFNMode.CLIENT)
 
-# Probabilistic output
-quantiles = forecaster.predict_quantiles(quantiles=[0.1, 0.5, 0.9])
+# Basic forecast
+predictions_df = pipeline.predict_df(context_df=context_df, prediction_length=H)
+
+# With covariates (add to context_df, provide future_df with future covariates)
+context_df['covariate'] = X_train
+future_df = pd.DataFrame({
+    'item_id': ['series'] * H,
+    'timestamp': pd.date_range(...),
+    'covariate': X_test
+})
+predictions_df = pipeline.predict_df(context_df=context_df, future_df=future_df)
+
+# Quantiles are returned by default (columns '0.1' through '0.9')
+median_predictions = predictions_df['0.5'].values
 ```
 
 ---

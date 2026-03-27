@@ -37,28 +37,39 @@ pip install prophet      # For Prophet baselines (optional)
 
 ```python
 # Quick verification
-from tabpfn_ts import TabPFNForecaster
+import pandas as pd
 import numpy as np
+from tabpfn_time_series import TabPFNTSPipeline, TabPFNMode
 
 # Generate toy data
 np.random.seed(42)
 y = np.sin(np.linspace(0, 4*np.pi, 100)) + np.random.normal(0, 0.1, 100)
 
-# Create forecaster
-forecaster = TabPFNForecaster(horizon=10)
-forecaster.fit(y)
-predictions = forecaster.predict()
+# Prepare data (DataFrame with timestamp and target columns)
+context_df = pd.DataFrame({
+    'item_id': ['test'] * len(y),
+    'timestamp': pd.date_range('2024-01-01', periods=len(y), freq='s'),
+    'target': y
+})
+
+# Create pipeline (uses cloud API - no GPU needed)
+pipeline = TabPFNTSPipeline(tabpfn_mode=TabPFNMode.CLIENT)
+
+# Forecast
+predictions_df = pipeline.predict_df(context_df=context_df, prediction_length=10)
 
 print(f"Input shape: {y.shape}")
-print(f"Prediction shape: {predictions.shape}")
-print(f"First 3 predictions: {predictions[:3]}")
+print(f"Prediction DataFrame shape: {predictions_df.shape}")
+print(f"Columns: {predictions_df.columns.tolist()}")
+print(f"First 3 median predictions: {predictions_df['0.5'].values[:3]}")
 ```
 
 Expected output:
 ```
 Input shape: (100,)
-Prediction shape: (10,)
-First 3 predictions: [0.xxx, 0.xxx, 0.xxx]
+Prediction DataFrame shape: (10, 9)
+Columns: ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9']
+First 3 median predictions: [x.xxx, x.xxx, x.xxx]
 ```
 
 ## Troubleshooting

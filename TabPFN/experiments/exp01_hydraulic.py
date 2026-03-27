@@ -128,12 +128,12 @@ def run_experiment(data, subsample=10, train_frac=0.8, include_detrend=False):
 
     # TabPFN-TS (standard)
     try:
-        from tabpfn_ts import TabPFNForecaster
+        from baselines import TabPFNForecaster
         forecaster = TabPFNForecaster(horizon=horizon)
         forecaster.fit(y_train)
         predictions['TabPFN-TS'] = forecaster.predict()
-    except ImportError:
-        print("TabPFN-TS not installed. Run: pip install tabpfn-time-series")
+    except ImportError as e:
+        print(f"TabPFN-TS not installed: {e}")
         predictions['TabPFN-TS'] = np.full(horizon, np.nan)
     except Exception as e:
         print(f"TabPFN-TS error: {e}")
@@ -142,7 +142,7 @@ def run_experiment(data, subsample=10, train_frac=0.8, include_detrend=False):
     # TabPFN-TS with detrending (handles linear trends better)
     if include_detrend:
         try:
-            from tabpfn_ts import TabPFNForecaster
+            from baselines import TabPFNForecaster, DetrendedForecaster
             base_forecaster = TabPFNForecaster(horizon=horizon)
             detrended_forecaster = DetrendedForecaster(base_forecaster, method='linear')
             detrended_forecaster.fit(y_train)

@@ -104,7 +104,7 @@ class DetrendedForecaster:
     3. Adding the extrapolated trend back to the forecast
 
     Example:
-        from tabpfn_ts import TabPFNForecaster
+        from tabpfn_time_series import TabPFNForecaster
 
         base_forecaster = TabPFNForecaster(horizon=20)
         forecaster = DetrendedForecaster(base_forecaster, method='linear')
@@ -248,6 +248,143 @@ def get_all_baselines(period: Optional[int] = 20) -> dict:
     }
 
 
+class TabPFNForecaster:
+    """
+    Simple wrapper around TabPFNTSPipeline with array-based API.
+
+    This provides a simpler interface that matches common forecasting APIs:
+        forecaster = TabPFNForecaster(horizon=20)
+        forecaster.fit(y_train)
+        predictions = forecaster.predict()
+
+    Internally converts numpy arrays to the DataFrame format required by TabPFNTSPipeline.
+
+    Note: Uses TabPFNMode.CLIENT by default (cloud API, no GPU required).
+    """
+
+    def __init__(self, horizon: int = 10, use_local: bool = False):
+        """
+        Args:
+            horizon: Number of steps to forecast
+            use_local: If True, use local GPU inference. If False (default), use cloud API.
+        """
+        self.horizon = horizon
+        self.use_local = use_local
+        self.pipeline = None
+        self.context_df = None
+        self._predictions_df = None
+
+    def fit(self, y: np.ndarray, X: np.ndarray = None) -> 'TabPFNForecaster':
+        """
+        Fit the forecaster on training data.
+
+        Args:
+            y: Target time series (1D array)
+            X: Optional covariates (2D array with shape [n_samples, n_features])
+        """
+        try:
+            from tabpfn_time_series import TabPFNTSPipeline, TabPFNMode
+            import pandas as pd
+
+            mode = TabPFNMode.LOCAL if self.use_local else TabPFNMode.CLIENT
+            self.pipeline = TabPFNTSPipeline(tabpfn_mode=mode)
+
+            # Create context DataFrame with required columns
+            # item_id is optional for single time series
+            self.context_df = pd.DataFrame({
+                'item_id': ['series_0'] * len(y),
+                'timestamp': pd.date_range('2024-01-01', periods=len(y), freq='s'),
+                'target': y
+            })
+
+            # Add covariates if provided
+            if X is not None:
+                for i in range(X.shape[1]):
+                    self.context_df[f'covariate_{i}'] = X[:, i]
+
+            self._y_train = y
+            self._X_train = X
+
+        except ImportError:
+            raise ImportError("TabPFN-TS not installed. Run: pip install tabpfn-time-series")
+
+        return self
+
+    def predict(self, horizon: int = None, X: np.ndarray = None) -> np.ndarray:
+        """
+        Generate forecasts.
+
+        Args:
+            horizon: Forecast horizon (uses self.horizon if not provided)
+            X: Future covariates (required if covariates were used in fit)
+
+        Returns:
+            Numpy array of predictions
+        """
+        import pandas as pd
+
+        if self.pipeline is None:
+            raise ValueError("Must call fit() before predict()")
+
+        h = horizon if horizon is not None else self.horizon
+
+        if X is not None:
+            # Create future DataFrame with covariates
+            last_timestamp = self.context_df['timestamp'].iloc[-1]
+            future_df = pd.DataFrame({
+                'item_id': ['series_0'] * h,
+                'timestamp': pd.date_range(last_timestamp + pd.Timedelta(seconds=1),
+                                           periods=h, freq='s'),
+            })
+            for i in range(X.shape[1]):
+                future_df[f'covariate_{i}'] = X[:, i]
+
+            self._predictions_df = self.pipeline.predict_df(
+                context_df=self.context_df, future_df=future_df
+            )
+        else:
+            self._predictions_df = self.pipeline.predict_df(
+                context_df=self.context_df, prediction_length=h
+            )
+
+        # Extract target column (point predictions)
+        if 'target' in self._predictions_df.columns:
+            return self._predictions_df['target'].values
+        elif '0.5' in self._predictions_df.columns:
+            return self._predictions_df['0.5'].values
+        else:
+            # Return first numeric column
+            return self._predictions_df.iloc[:, 0].values
+
+    def predict_quantiles(self, quantiles: list = None) -> np.ndarray:
+        """
+        Get quantile predictions from the last predict() call.
+
+        Args:
+            quantiles: List of quantiles to return (default: [0.1, 0.5, 0.9])
+
+        Returns:
+            Array of shape [horizon, n_quantiles]
+        """
+        if self._predictions_df is None:
+            raise ValueError("Must call predict() before predict_quantiles()")
+
+        if quantiles is None:
+            quantiles = [0.1, 0.5, 0.9]
+
+        result = []
+        for q in quantiles:
+            col = str(q)
+            if col in self._predictions_df.columns:
+                result.append(self._predictions_df[col].values)
+            elif q == 0.5 and 'target' in self._predictions_df.columns:
+                result.append(self._predictions_df['target'].values)
+            else:
+                result.append(np.full(len(self._predictions_df), np.nan))
+
+        return np.column_stack(result)
+
+
 def get_tabpfn_forecaster(horizon: int, detrend: bool = False):
     """
     Get TabPFN-TS forecaster, optionally with detrending.
@@ -260,8 +397,6 @@ def get_tabpfn_forecaster(horizon: int, detrend: bool = False):
         Forecaster instance or None if TabPFN-TS not installed
     """
     try:
-        from tabpfn_ts import TabPFNForecaster
-
         forecaster = TabPFNForecaster(horizon=horizon)
 
         if detrend:

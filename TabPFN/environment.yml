@@ -1,0 +1,16 @@
+name: tabpfn
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - jupyter
+  - ipykernel
+  - pip:
+    - tabpfn-time-series
+    - statsmodels

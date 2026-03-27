@@ -107,22 +107,34 @@ pip install tabpfn
 ### Minimal Example
 
 ```python
-from tabpfn_ts import TabPFNForecaster
+import pandas as pd
+from tabpfn_time_series import TabPFNTSPipeline, TabPFNMode
 
 # Your mechanical system time series
 y = pressure_sensor_data  # shape: (n_timesteps,)
 
-# Optional: operating conditions as covariates
-X = np.column_stack([
-    motor_speed,      # rpm
-    load_setting,     # N
-    ambient_temp,     # °C
-])
+# Prepare data in required format (DataFrame with timestamp and target)
+context_df = pd.DataFrame({
+    'item_id': ['sensor'] * len(y),  # Optional but recommended
+    'timestamp': pd.date_range('2024-01-01', periods=len(y), freq='s'),
+    'target': y
+})
 
-# Forecast
-forecaster = TabPFNForecaster(horizon=10)
-forecaster.fit(y, X=X)
-predictions = forecaster.predict()
+# Optional: add operating conditions as covariates
+# context_df['speed'] = motor_speed
+# context_df['load'] = load_setting
+
+# Create pipeline (uses cloud API by default - no GPU needed)
+pipeline = TabPFNTSPipeline(tabpfn_mode=TabPFNMode.CLIENT)
+
+# Forecast (returns DataFrame with quantiles 0.1-0.9)
+predictions_df = pipeline.predict_df(
+    context_df=context_df,
+    prediction_length=10  # forecast 10 steps ahead
+)
+
+# Get point predictions (median)
+predictions = predictions_df['0.5'].values
 ```
 
 ---
