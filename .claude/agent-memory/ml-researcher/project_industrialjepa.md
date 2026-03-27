@@ -31,5 +31,16 @@ IndustrialJEPA is a research project on physics-informed channel grouping in tra
 
 **Paper title**: "When to Mask: Physics-Informed Attention for Multivariate Time Series"
 
-**Why:** Phase 7 complete 2026-03-26. Physics-mask story confirmed. JEPA results are negative but informative.
-**How to apply:** When discussing experiments or datasets, reference the 4-tier narrative and all findings including the Phase 7 robotics/JEPA additions.
+**Mechanical-JEPA Session 2 findings (Exp 1-5 in autoresearch/mechanical_jepa/EXPERIMENT_LOG.md, 2026-03-27)**:
+- **Pretraining**: 50-epoch JEPA on 12k TOTO+DROID windows → val_loss=0.0086±0.0019, no collapse
+- **Embodiment classification**: Pretrained WORSE than random (65.1% vs 79.8%, p=0.006). JEPA discards discriminative features.
+- **Contact classification**: Trivially easy (AUROC 0.99 all methods). Dataset artifact.
+- **In-domain forecasting**: Linear regression best at h=1 (MSE=0.00007). Pretrained beats scratch (ratio=0.43) but can't beat linear.
+- **Cross-embodiment transfer (KEY RESULT)**: Franka-pretrained encoder beats from-scratch on KUKA/UR5/JACO at all budgets (ratios 0.5-0.7). Only FANUC shows no benefit at 10-shot.
+  - KUKA 10-shot: pretrained=0.584 vs scratch=0.862 (ratio=0.678)
+  - JACO 100-shot: pretrained=0.095 vs scratch=0.201 (ratio=0.473)
+  - Linear regression dominates at 50+ shots (MSE=0.005-0.02 vs encoder=0.2-0.4)
+- **Bottom line**: JEPA representations transfer usefully across robot embodiments in the truly data-scarce regime (10 windows), but simple linear regression wins once >50 labeled examples are available.
+
+**Why:** Session 2 complete 2026-03-27. Full real-data OXE suite done.
+**How to apply:** Cross-embodiment transfer result is the publishable positive finding. Linear regression dominance is the honest limitation to disclose.
