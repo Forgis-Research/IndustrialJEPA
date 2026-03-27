@@ -4,6 +4,51 @@
 
 ---
 
+## Critical Paper Findings (Must Read First!)
+
+Before running experiments, understand these key limitations from the TabPFN-TS paper analysis:
+
+### ⚠️ Linear Trend Extrapolation FAILS
+
+**This is the most critical limitation for mechanical systems.**
+
+TabPFN-TS does **NOT** extrapolate simple linear trends well:
+```
+y(t) = α·t + β  →  Prediction flattens out instead of continuing
+```
+
+**Impact on experiments**:
+- C-MAPSS degradation trajectories may not extrapolate correctly
+- RUL-style predictions will be problematic
+- Any sensor with monotonic degradation trend is at risk
+
+**Mitigation strategies**:
+1. **Detrend first**: Fit linear trend, forecast residuals, add trend back
+2. **Focus on periodic components**: Use for vibration/rotation patterns, not degradation
+3. **Exponential trends work better**: Curiously, exponential decay/growth is handled better
+
+### ✅ What Works Well
+
+- **Pure periodic signals**: Almost perfect (rotation frequencies, machine cycles)
+- **Complex waveforms**: Multiple harmonics, non-sinusoidal patterns
+- **Trend + periodicity combinations**: Even multiplicative
+- **Covariates**: Native support is a key advantage
+
+### Technical Configuration (from paper)
+
+```python
+# Recommended settings
+max_context = 4096        # Sweet spot for context length
+k_seasonalities = 5       # Top-5 FFT peaks for auto-seasonal features
+
+# For 100 Hz data: 4096 samples = ~40 seconds of history
+# For 1 Hz data: 4096 samples = ~68 minutes of history
+```
+
+See `docs/PAPER_INSIGHTS.md` for complete paper analysis.
+
+---
+
 ## Phase 1: Validation (Quick Sanity Checks)
 
 **Goal**: Confirm TabPFN-TS works and establish baseline expectations.
@@ -72,6 +117,8 @@ Test if one sensor improves prediction of another:
 
 **Motivation**: C-MAPSS has strong covariates (operating settings).
 
+**⚠️ CRITICAL WARNING**: C-MAPSS sensors exhibit degradation trends. Per paper analysis, TabPFN-TS does NOT extrapolate linear trends well. This experiment focuses on **covariate benefit**, not raw forecasting performance.
+
 **Setup**:
 - Sensor: T24 (LPC outlet temperature)
 - Covariates: setting1, setting2, setting3
@@ -81,12 +128,17 @@ Test if one sensor improves prediction of another:
 1. For each unit: forecast last 30% of cycles
 2. Compare: No covariates vs operating settings as covariates
 3. Baseline: Linear extrapolation (degradation trend)
+4. **NEW**: Also test with detrended data (remove linear trend, forecast residuals)
 
 **Success criterion**: Covariates provide >5% improvement.
+
+**Expected outcome**: TabPFN-TS may struggle with degradation trends but covariates should still help capture operating-condition-dependent variations.
 
 ### Exp 2.4: C-MAPSS — Cross-Condition Transfer
 
 Can a model trained on one condition generalize?
+
+**⚠️ NOTE**: Given linear trend limitations, focus on whether *patterns around the trend* transfer, not absolute trajectory forecasting. Consider detrending as preprocessing.
 
 | Train | Test | Hypothesis |
 |-------|------|------------|
@@ -97,6 +149,9 @@ Can a model trained on one condition generalize?
 1. Train TabPFN-TS on FD001 training set
 2. Evaluate on FD002/FD003 test sets
 3. Compare to models trained on target dataset
+4. **NEW**: Try both raw and detrended versions
+
+**Interpretation guidance**: If detrended versions transfer well but raw versions don't, this confirms the trend limitation is the bottleneck, not the general pattern learning.
 
 ---
 

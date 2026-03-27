@@ -27,7 +27,23 @@ Mechanical systems often exhibit:
 TabPFN-TS could excel here because it:
 - Treats time series as tabular data with explicit temporal features
 - Naturally handles covariates without special preprocessing
-- May capture cross-channel relationships through its attention mechanism
+- Auto-detects periodicities via FFT (rotation frequencies, machine cycles)
+- Native probabilistic outputs (better calibrated than quantile heads)
+
+### Known Limitations (from paper analysis)
+
+**Critical**: TabPFN-TS does **NOT extrapolate linear trends well** (Section 5.4 of paper).
+- Degradation trajectories may flatten out instead of continuing
+- C-MAPSS RUL-style predictions will be challenging
+- **Mitigation**: Detrend data first, forecast residuals, add trend back
+
+**What works well**:
+- Pure periodic signals (almost perfect)
+- Complex waveforms (multiple harmonics)
+- Trend + periodicity combinations
+- Exponential trends (better than linear)
+
+See `docs/PAPER_INSIGHTS.md` for detailed analysis of the TabPFN-TS paper
 
 ---
 
@@ -50,8 +66,29 @@ TabPFN/
 └── docs/                     # Research documentation
     ├── DATASETS.md           # Dataset selection rationale
     ├── EXPERIMENT_PLAN.md    # Structured experiment outline
-    └── BREAKTHROUGH.md       # What success looks like
+    ├── BREAKTHROUGH.md       # What success looks like
+    └── PAPER_INSIGHTS.md     # Detailed paper analysis (critical!)
 ```
+
+---
+
+## How It Works (Technical Summary)
+
+TabPFN-TS converts time series to tabular format via feature extraction:
+
+```
+X_t = Φ_cal(t) ⊕ Φ_auto(t) ⊕ Φ_index(t) ∈ R^28
+```
+
+| Feature Type | Dims | Description | Mechanical Relevance |
+|--------------|------|-------------|---------------------|
+| **Calendar** | 17 | sin/cos of day/week/month/year | Low (replace with machine cycles) |
+| **Auto-Seasonal** | 10 | Top-5 FFT-detected frequencies | **High** (detects rotation freq) |
+| **Running Index** | 1 | Simple timestep counter | Medium (enables trends) |
+
+**Key insight**: The auto-seasonal features via FFT can automatically detect machine rotation frequencies, load cycles, and other domain-specific periodicities.
+
+**No lag features**: Unlike traditional approaches, TabPFN-TS does NOT use autoregressive features (moving averages, lag terms). This enables fast multi-step forecasting.
 
 ---
 
