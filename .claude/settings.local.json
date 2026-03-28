@@ -18,7 +18,24 @@
       "WebFetch(domain:github.com)",
       "Bash(git pull:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(find /home/sagemaker-user/IndustrialJEPA/tests -type f -name *.py)"
+      "Bash(find /home/sagemaker-user/IndustrialJEPA/tests -type f -name *.py)",
+      "Bash(grep:*)",
+      "Bash(C:UsersJonaspetersendevIndustrialJEPATabPFN.venvScriptspython.exe -c \"import tabpfn_time_series; print\\(dir\\(tabpfn_time_series\\)\\)\")",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"import tabpfn_time_series; print\\(dir\\(tabpfn_time_series\\)\\)\")",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"from tabpfn_time_series import TimeSeriesPredictor; help\\(TimeSeriesPredictor.__init__\\)\")",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"from tabpfn_time_series import TabPFNTSPipeline; help\\(TabPFNTSPipeline\\)\")",
+      "Bash(\"..\\\\..\\\\..\\\\TabPFN\\\\.venv\\\\Scripts\\\\python.exe\" -m py_compile baselines/__init__.py)",
+      "Bash(curl:*)",
+      "Bash(powershell:*)",
+      "Bash(dir \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\TabPFN\\\\tutorial\\\\quickstart.ipynb\")",
+      "Bash(if exist \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\TabPFN\\\\.venv\" echo EXISTS)",
+      "Bash(if exist \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\.venv\" echo EXISTS)",
+      "Bash(where:*)",
+      "Bash(powershell \"Get-Content ''C:\\\\Users\\\\JONASP~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Jonaspetersen-dev-IndustrialJEPA\\\\tasks\\\\b15fb20.output'' -Tail 20\")",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(conda create:*)"
     ]
   }
 }
