@@ -1,0 +1,13 @@
+# Generated pendulum data (regenerate with pendulum_generator.py)
+pendulum_n*/
+
+# General data artifacts
+*.csv
+*.parquet
+*.pkl
+*.npy
+*.npz
+
+# Keep the generator scripts
+!*.py
+!*.md
