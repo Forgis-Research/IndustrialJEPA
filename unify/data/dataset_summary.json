@@ -1,0 +1,28 @@
+{
+  "description": "N-Link Pendulum Dataset for Unify Project",
+  "purpose": "Cross-morphological latent alignment research",
+  "n_values": [
+    1,
+    2,
+    3,
+    5
+  ],
+  "trajectories_per_n": 100,
+  "timesteps_per_trajectory": 1001,
+  "dt_seconds": 0.01,
+  "total_time_per_trajectory": 10.0,
+  "total_trajectories": 400,
+  "base_seed": 42,
+  "directories": {
+    "n1": "pendulum_n1/",
+    "n2": "pendulum_n2/",
+    "n3": "pendulum_n3/",
+    "n5": "pendulum_n5/"
+  },
+  "physics_model": {
+    "formulation": "Lagrangian mechanics",
+    "link_model": "Uniform rod with I = (1/12)*m*l^2",
+    "gravity": "9.81 m/s^2",
+    "includes_damping": true
+  }
+}

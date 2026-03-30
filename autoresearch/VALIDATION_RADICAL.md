@@ -1,6 +1,6 @@
-# Radical Simplification: Three Tiers, One Question
+# Datasets to benchmark ideas and progress
 
-**Goal**: Prove physics grouping beats learned attention on mechanical dynamical systems.
+**Goal**: Achieve clear SOTA on forecasting multivariate time series for mechanical systems, ideally via an architectural paradigm shift
 
 ---
 
@@ -33,11 +33,10 @@ GROUPS = {
    # Generate 1000s of trajectories with varying parameters
    ```
 
-2. **[Mendeley Double Pendulum Dataset](https://data.mendeley.com/datasets/7yd2ntbh3w/1)**:
-   - Real video data at 1000 FPS with tracking markers
-   - Pre-extracted angles (CSV + NumPy)
-   - Python tracking code included
-   - From: "Low-cost double pendulum for high-quality data collection" (HardwareX)
+2. **[IBM Double Pendulum Dataset](https://developer.ibm.com/exchanges/data/all/double-pendulum-chaotic/)**:
+   - Real video data, 21 runs, ~17,500 frames each
+   - Extracted positions via pattern matching
+   - High-speed camera, real physics
 
 ### Task & Metric
 - **Task**: Predict next 10-50 timesteps of (θ1, θ2, ω1, ω2)
@@ -212,7 +211,7 @@ python -c "from gift_eval import download; download('weather')"
 
 | Claim | Verified? | Source |
 |-------|-----------|--------|
-| Double pendulum datasets exist | ✅ | [Mendeley](https://data.mendeley.com/datasets/7yd2ntbh3w/1) |
+| Double pendulum datasets exist | ✅ | [IBM DAX](https://developer.ibm.com/exchanges/data/all/double-pendulum-chaotic/) |
 | Double pendulum is chaotic >10° | ✅ | Multiple ML papers |
 | Short-term prediction feasible | ✅ | LSTM papers show 10-50 step works |
 | KAIST has 4 sensor groups | ✅ | [Paper](https://www.sciencedirect.com/science/article/pii/S2352340923001671) |

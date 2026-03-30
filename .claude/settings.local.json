@@ -35,7 +35,12 @@
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
-      "Bash(conda create:*)"
+      "Bash(conda create:*)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\unify\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(pip show:*)",
+      "Bash(conda env:*)",
+      "Bash(C:/Users/Jonaspetersen/miniconda3/Scripts/conda.exe env list)"
     ]
   }
 }
