@@ -39,11 +39,13 @@ For each experiment:
 2. Run with at least 1 seed initially
 3. Log results to EXPERIMENT_LOG.md
 4. Run 3 seeds only for promising results
+5. Use common sense to interpret results, do they really show transferability? Feel free to also tune and even adapt the architecture as needed. Thoroughly do deep research and compare to the Brain-JEPA paper, but also consider the different modality (time series instead of images) and smaller dataset size.
 
 ### Phase 3: Analysis & Documentation
 Once you have strong results:
 1. Create/update `notebooks/03_results_analysis.ipynb` with:
    - Clear explanation of JEPA for bearing fault detection
+   - Some very foundational but telling plots (time series forecasted vs actual, classification based on the architecture, etc...). What helps a human understand what`s going on and also sanity check the results.
    - All baseline comparisons in a table
    - Best result with 3+ seeds (mean ± std)
    - t-SNE visualization by fault type
