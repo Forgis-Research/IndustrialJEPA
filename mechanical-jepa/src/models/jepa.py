@@ -427,9 +427,24 @@ class MechanicalJEPA(nn.Module):
 
         return loss, predictions, targets
 
-    def get_embeddings(self, x: torch.Tensor) -> torch.Tensor:
-        """Get CLS embeddings for downstream tasks."""
-        return self.encoder(x, return_all_tokens=False)
+    def get_embeddings(self, x: torch.Tensor, pool: str = 'mean') -> torch.Tensor:
+        """
+        Get embeddings for downstream tasks.
+
+        Args:
+            x: (B, C, T) input signal
+            pool: 'cls' for CLS token, 'mean' for mean-pool over patch tokens.
+                  Mean-pooling is preferred since JEPA loss trains patch tokens
+                  directly (CLS never receives direct gradient from JEPA loss).
+
+        Returns:
+            embeddings: (B, embed_dim)
+        """
+        if pool == 'cls':
+            return self.encoder(x, return_all_tokens=False)
+        else:  # mean pooling over patch tokens
+            all_tokens = self.encoder(x, return_all_tokens=True)
+            return all_tokens[:, 1:].mean(dim=1)  # Skip CLS, mean over patches
 
     def train_step(self, x: torch.Tensor) -> torch.Tensor:
         """Single training step with EMA update."""

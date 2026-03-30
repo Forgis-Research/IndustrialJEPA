@@ -158,7 +158,8 @@ def train_linear_probe(
         with torch.no_grad():
             for signals, labels, _ in loader:
                 signals = signals.to(device)
-                embeds = model.get_embeddings(signals)
+                # Mean-pool over patch tokens (not CLS) — JEPA trains patch tokens directly
+                embeds = model.get_embeddings(signals, pool='mean')
                 all_embeds.append(embeds.cpu())
                 all_labels.append(labels)
         return torch.cat(all_embeds), torch.cat(all_labels)
