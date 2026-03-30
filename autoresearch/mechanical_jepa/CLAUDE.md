@@ -1,76 +1,65 @@
-# Mechanical-JEPA
+# Mechanical-JEPA: Bearing Fault Detection
 
-This folder contains the autoresearch setup for Mechanical-JEPA: self-supervised dynamics transfer across robot embodiments.
+Self-supervised learning for industrial bearing fault detection using JEPA (Joint Embedding Predictive Architecture).
 
 ## Quick Start
 
 ```bash
-# 1. Run sanity checks first (REQUIRED)
-python experiments/sanity_check.py
+# 1. Setup (download CWRU dataset)
+cd mechanical-jepa
+bash setup_vm.sh
 
-# 2. If sanity checks pass, run viability test
-python experiments/viability_test.py
+# 2. Verify installation
+python train.py --epochs 5 --no-wandb
 
-# 3. If viability passes, start overnight pretraining
-python experiments/pretrain.py --config small --epochs 50
+# 3. Full training
+python train.py --epochs 30
 ```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `program.md` | Full research plan — read this first |
-| `EXPERIMENT_LOG.md` | Results log — update after each experiment |
-| `LESSONS_LEARNED.md` | Reusable insights — update when you learn something |
-| `OXE_SUMMARY.md` | Dataset reference — which datasets, what fields |
-| `experiments/` | Python scripts for each phase |
+| `program.md` | Research plan - READ THIS FIRST |
+| `EXPERIMENT_LOG.md` | Results log - UPDATE AFTER EACH EXPERIMENT |
+| `LESSONS_LEARNED.md` | Insights - UPDATE WHEN YOU LEARN SOMETHING |
 
 ## Core Hypothesis
 
-A JEPA encoder pretrained on robot proprioceptive sequences (joint positions, velocities) learns transferable dynamics representations. This enables:
-
-1. **Cross-embodiment transfer:** Pretrain on Franka → transfer to KUKA, UR5
-2. **Few-shot adaptation:** 10x less data needed on new robot
-3. **Action-conditioned prediction:** Better forecasting with actions than without
+JEPA learns transferable features for bearing fault detection by predicting masked patch embeddings. This is analogous to Brain-JEPA (NeurIPS 2024) for fMRI.
 
 ## Datasets
 
-**Pretraining (7-DOF):**
-- DROID: 76k episodes, Franka Panda
-- ManiSkill: 30k episodes, Panda (sim)
-- Stanford KUKA: 3k episodes, KUKA iiwa
-
-**Transfer targets:**
-- UR5, FANUC, JACO (6-DOF)
-- TOTO (same Franka, different tasks)
+| Dataset | Status | Size | Use |
+|---------|--------|------|-----|
+| **CWRU** | ✅ Ready | 134MB | Classification benchmark |
+| **IMS** | ✅ Ready | 6GB | Run-to-failure (RUL) |
+| Paderborn | ⚠️ RAR files | 5GB | Multi-modal (future) |
 
 ## Success Criteria
 
-| Metric | Target |
-|--------|--------|
-| Pretraining loss | Converges, no collapse |
-| Embodiment classification | >70% (random=14%) |
-| Transfer ratio | <2.0 (lower is better) |
-| Few-shot efficiency | 5-10x less data |
+| Metric | Target | Current |
+|--------|--------|---------|
+| JEPA Test Acc | >40% | 49.8% ✓ |
+| vs Random Init | +5% | +19.8% ✓ |
+| Multi-seed | 3+ seeds | 1 (TODO) |
 
-## Anti-Patterns to Avoid
+## Commands
 
-1. **Don't skip sanity checks** — bugs waste overnight compute
-2. **Don't scale up too fast** — validate small, then grow
-3. **Don't ignore collapse** — check embedding variance regularly
-4. **Don't trust single seeds** — 3+ seeds for any claim
+```bash
+# Training
+python train.py --epochs 30                # Default
+python train.py --epochs 100 --seed 42     # Longer, fixed seed
+python train.py --encoder-depth 6          # Deeper model
+python train.py --mask-ratio 0.7           # More masking
+python train.py --no-wandb                 # Without logging
 
-## Overnight Protocol
+# Evaluation
+python train.py --eval-only --checkpoint checkpoints/jepa_xxx.pt
+```
 
-Before leaving overnight:
-1. Verify sanity checks passed
-2. Verify viability test passed
-3. Set up checkpointing (every 10 epochs)
-4. Enable logging to file
-5. Set reasonable time limit
+## Anti-Patterns
 
-Check in morning:
-1. Training converged? (loss curve)
-2. No collapse? (embedding variance)
-3. Checkpoints saved?
-4. Any errors in logs?
+1. **Split by bearing** - NOT by window (prevents leakage)
+2. **Multiple seeds** - 3+ for any claim
+3. **Log everything** - Even failures are information
