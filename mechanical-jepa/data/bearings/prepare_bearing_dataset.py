@@ -183,13 +183,69 @@ FAULT_LABELS = {
 
 def check_unrar() -> Optional[str]:
     """Check if unrar or 7z is available."""
-    for cmd in ["unrar", "7z", "bsdtar"]:
+    import platform
+
+    # Standard commands to try
+    commands = ["unrar", "7z", "bsdtar"]
+
+    # On Windows, also check common 7-Zip installation paths
+    if platform.system() == "Windows":
+        win_paths = [
+            r"C:\Program Files\7-Zip\7z.exe",
+            r"C:\Program Files (x86)\7-Zip\7z.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\7-Zip\7z.exe"),
+        ]
+        for path in win_paths:
+            if os.path.exists(path):
+                return path
+
+    for cmd in commands:
         try:
             subprocess.run([cmd], capture_output=True)
             return cmd
         except FileNotFoundError:
             continue
     return None
+
+
+def extract_paderborn_rar(rar_path: Path, output_dir: Path, unrar_cmd: str) -> bool:
+    """Extract a single Paderborn RAR file."""
+    bearing_name = rar_path.stem
+    bearing_dir = output_dir / bearing_name
+
+    if bearing_dir.exists() and any(bearing_dir.iterdir()):
+        return True  # Already extracted
+
+    print(f"  {bearing_name}: Extracting...")
+    try:
+        if "7z" in unrar_cmd.lower():
+            # 7z syntax (works for 7z.exe on Windows too)
+            result = subprocess.run(
+                [unrar_cmd, "x", f"-o{output_dir}", str(rar_path), "-y"],
+                capture_output=True, text=True
+            )
+        elif unrar_cmd == "unrar":
+            result = subprocess.run(
+                ["unrar", "x", "-o+", str(rar_path), str(output_dir) + "/"],
+                capture_output=True, text=True
+            )
+        elif unrar_cmd == "bsdtar":
+            bearing_dir.mkdir(exist_ok=True)
+            result = subprocess.run(
+                ["bsdtar", "-xf", str(rar_path), "-C", str(bearing_dir)],
+                capture_output=True, text=True
+            )
+        else:
+            print(f"  {bearing_name}: Unknown extraction tool {unrar_cmd}")
+            return False
+
+        if result.returncode != 0:
+            print(f"  {bearing_name}: Extraction failed - {result.stderr[:200]}")
+            return False
+        return True
+    except Exception as e:
+        print(f"  {bearing_name}: Extraction error - {e}")
+        return False
 
 
 # ============================================================
@@ -229,17 +285,41 @@ def download_paderborn(output_dir: Path, sample: bool = False) -> List[str]:
 
         # Extract if possible
         if unrar_cmd:
-            bearing_dir = raw_dir / bearing
-            if not bearing_dir.exists():
-                print(f"  {bearing}: Extracting...")
-                if unrar_cmd == "unrar":
-                    subprocess.run(["unrar", "x", "-o+", str(output_path), str(raw_dir) + "/"],
-                                   capture_output=True)
-                elif unrar_cmd == "7z":
-                    subprocess.run(["7z", "x", f"-o{raw_dir}", str(output_path), "-y"],
-                                   capture_output=True)
+            extract_paderborn_rar(output_path, raw_dir, unrar_cmd)
 
     return downloaded
+
+
+def extract_all_paderborn(output_dir: Path) -> int:
+    """Extract all downloaded Paderborn RAR files."""
+    raw_dir = output_dir / "raw" / "paderborn"
+    if not raw_dir.exists():
+        print("Paderborn directory not found. Run --download --dataset paderborn first.")
+        return 0
+
+    unrar_cmd = check_unrar()
+    if not unrar_cmd:
+        print("ERROR: No RAR extraction tool found.")
+        print("  Windows: Install 7-Zip from https://www.7-zip.org/")
+        print("  Linux:   sudo apt-get install unrar  OR  sudo apt-get install p7zip-full")
+        print("  macOS:   brew install unar  OR  brew install p7zip")
+        return 0
+
+    print(f"Using extraction tool: {unrar_cmd}")
+
+    rar_files = list(raw_dir.glob("*.rar"))
+    if not rar_files:
+        print("No RAR files found in Paderborn directory.")
+        return 0
+
+    print(f"Found {len(rar_files)} RAR files to extract...")
+    extracted = 0
+    for rar_path in sorted(rar_files):
+        if extract_paderborn_rar(rar_path, raw_dir, unrar_cmd):
+            extracted += 1
+
+    print(f"Extracted {extracted}/{len(rar_files)} bearings.")
+    return extracted
 
 
 def process_paderborn(output_dir: Path) -> List[Dict]:
@@ -679,6 +759,8 @@ def main():
     parser.add_argument('--dataset', type=str, default='all',
                         choices=['paderborn', 'cwru', 'ims', 'xjtu', 'all'],
                         help='Dataset to download')
+    parser.add_argument('--extract', action='store_true',
+                        help='Extract Paderborn RAR files (requires unrar/7z)')
     parser.add_argument('--process', action='store_true', help='Process into unified format')
     parser.add_argument('--verify', action='store_true', help='Verify dataset')
     parser.add_argument('--all', action='store_true', help='Run all steps')
@@ -696,13 +778,16 @@ def main():
         if args.dataset in ['xjtu', 'all']:
             download_xjtu(output_dir, sample=args.sample)
 
+    if args.extract:
+        extract_all_paderborn(output_dir)
+
     if args.all or args.process:
         process_all(output_dir)
 
     if args.all or args.verify:
         verify_dataset(output_dir)
 
-    if not any([args.download, args.process, args.verify, args.all]):
+    if not any([args.download, args.extract, args.process, args.verify, args.all]):
         parser.print_help()
 
 

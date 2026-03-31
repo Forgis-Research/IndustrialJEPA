@@ -1,16 +1,35 @@
 #!/bin/bash
 # VM Setup Script for Mechanical-JEPA
-# Usage: bash setup_vm.sh [--full]
+# Usage: bash setup_vm.sh [OPTIONS]
 #
-# Quick setup (~2 min): Downloads CWRU only (134MB)
-# Full setup (~15 min): Downloads CWRU + IMS (6.5GB total)
+# Options:
+#   --full       Downloads CWRU + IMS (6.5GB total)
+#   --paderborn  Downloads and extracts Paderborn dataset (~5GB)
+#   --all        Downloads all datasets (CWRU + IMS + Paderborn)
+#
+# Quick setup (default): Downloads CWRU only (134MB)
 
 set -e
 
 FULL_SETUP=false
-if [[ "$1" == "--full" ]]; then
-    FULL_SETUP=true
-fi
+PADERBORN=false
+ALL_DATASETS=false
+
+for arg in "$@"; do
+    case $arg in
+        --full)
+            FULL_SETUP=true
+            ;;
+        --paderborn)
+            PADERBORN=true
+            ;;
+        --all)
+            ALL_DATASETS=true
+            FULL_SETUP=true
+            PADERBORN=true
+            ;;
+    esac
+done
 
 echo "=============================================="
 echo "Mechanical-JEPA VM Setup"
@@ -24,7 +43,7 @@ fi
 
 # Install dependencies
 echo ""
-echo "[1/4] Installing Python dependencies..."
+echo "[1/5] Installing Python dependencies..."
 pip install -q -r requirements.txt
 
 # Install Kaggle CLI if doing full setup
@@ -32,21 +51,47 @@ if $FULL_SETUP; then
     pip install -q kaggle
 fi
 
+# Install RAR extraction tools if needed for Paderborn
+if $PADERBORN; then
+    echo ""
+    echo "[1b/5] Checking RAR extraction tools..."
+    if ! command -v unrar &> /dev/null && ! command -v 7z &> /dev/null; then
+        echo "  Installing unrar..."
+        # Try different package managers
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq unrar || \
+            sudo apt-get install -y -qq p7zip-full || \
+            echo "  WARNING: Could not install unrar. Install manually."
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y -q unrar || sudo yum install -y -q p7zip || \
+            echo "  WARNING: Could not install unrar. Install manually."
+        elif command -v brew &> /dev/null; then
+            brew install unar || brew install p7zip || \
+            echo "  WARNING: Could not install unrar. Install manually."
+        else
+            echo "  WARNING: Unknown package manager. Install unrar or 7z manually."
+        fi
+    else
+        echo "  RAR extraction tool already installed."
+    fi
+fi
+
 # Create data directories
 echo ""
-echo "[2/4] Creating data directories..."
+echo "[2/5] Creating data directories..."
 mkdir -p data/bearings/raw/cwru
 mkdir -p data/bearings/raw/ims
+mkdir -p data/bearings/raw/paderborn
 
 # Download CWRU (always - it's quick)
 echo ""
-echo "[3/4] Downloading CWRU dataset (~134MB)..."
+echo "[3/5] Downloading CWRU dataset (~134MB)..."
 python data/bearings/prepare_bearing_dataset.py --download --dataset cwru
 
 # Download IMS if full setup
 if $FULL_SETUP; then
     echo ""
-    echo "[3b/4] Downloading IMS dataset (~6GB via Kaggle)..."
+    echo "[3b/5] Downloading IMS dataset (~6GB via Kaggle)..."
     echo "Note: Requires KAGGLE_USERNAME and KAGGLE_KEY env vars"
 
     # Check for Kaggle credentials
@@ -59,9 +104,20 @@ if $FULL_SETUP; then
     fi
 fi
 
+# Download and extract Paderborn if requested
+if $PADERBORN; then
+    echo ""
+    echo "[3c/5] Downloading Paderborn dataset (~5GB)..."
+    python data/bearings/prepare_bearing_dataset.py --download --dataset paderborn
+
+    echo ""
+    echo "[3d/5] Extracting Paderborn RAR files..."
+    python data/bearings/prepare_bearing_dataset.py --extract
+fi
+
 # Process datasets
 echo ""
-echo "[4/4] Processing datasets into unified format..."
+echo "[4/5] Processing datasets into unified format..."
 python data/bearings/prepare_bearing_dataset.py --process
 
 # Verify
@@ -73,7 +129,7 @@ python data/bearings/prepare_bearing_dataset.py --verify
 
 # Quick test
 echo ""
-echo "Running quick model test..."
+echo "[5/5] Running quick model test..."
 python -c "
 from src.models import MechanicalJEPA
 import torch
@@ -87,7 +143,11 @@ echo ""
 echo "Ready to train! Run:"
 echo "  python train.py --epochs 30"
 echo ""
-if ! $FULL_SETUP; then
-    echo "For full setup with IMS dataset, run:"
-    echo "  bash setup_vm.sh --full"
+
+# Print additional options
+if ! $FULL_SETUP && ! $PADERBORN; then
+    echo "Additional datasets available:"
+    echo "  bash setup_vm.sh --full       # Add IMS dataset"
+    echo "  bash setup_vm.sh --paderborn  # Add Paderborn dataset"
+    echo "  bash setup_vm.sh --all        # All datasets"
 fi
