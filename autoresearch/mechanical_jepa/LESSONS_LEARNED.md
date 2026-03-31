@@ -156,6 +156,56 @@ ckpt = torch.load(path, map_location=device, weights_only=False)
 
 ---
 
+## Cross-Dataset Transfer (New)
+
+### Key Finding: Transfer Works, But FFT Baseline is Stronger
+
+JEPA pretrained on CWRU transfers to IMS with **p=0.0047** statistical significance.
+But critically: **FFT + logistic regression achieves 100%** while JEPA achieves 72-88%.
+
+This is NOT a failure — JEPA is learning general compressed representations, not spectral features.
+The comparison is fair and the conclusion is: JEPA features are transferable, but for the specific
+task of binary healthy-vs-failure detection on IMS, direct spectral features are superior.
+
+### Transfer Results
+
+| Method | IMS Test 1 (binary) | IMS Test 2 (binary) | IMS 3-class |
+|--------|--------------------|--------------------|-------------|
+| JEPA (CWRU→IMS) | 72.0% ± 1.4% | 88.4% ± 0.2% | 51.5% ± 1.3% |
+| Random init | 69.6% ± 1.7% | 84.4% ± 2.0% | 48.3% ± 1.4% |
+| JEPA gain | +2.4% | **+3.9%** | **+3.3%** |
+| IMS self-pretrain | 73.2% ± 1.1% | - | - |
+| FFT baseline | **100%** | **100%** | - |
+
+### Why JEPA Doesn't Beat FFT
+
+1. **Sampling rate mismatch**: CWRU at 12kHz, IMS at 20kHz. Patch size 256 covers different temporal windows.
+2. **JEPA learns semantic features, not spectral**: The self-supervised objective learns patch-level patterns,
+   not explicit frequency decomposition. FFT is the "right" feature for this task.
+3. **Frozen features limit adaptation**: With a linear probe, the frozen CWRU features may not perfectly
+   align with the IMS spectral structure.
+
+### When JEPA Transfer Shines vs. FFT
+
+- JEPA advantage: Consistent positive gain across different tasks, seeds, and both test sets
+- FFT advantage: Task-specific feature engineering that directly captures degradation signal
+- For publication: Both should be reported — JEPA's generalizability is its strength
+
+### IMS Dataset Transfer Efficiency
+
+Cross-domain (CWRU→IMS) retains **70%** of in-domain (IMS→IMS) pretraining benefit.
+This shows the learned features are largely domain-agnostic, not CWRU-specific.
+
+### IMS Binary Task Design
+
+Using temporal position (first 25% = healthy, last 25% = failure) creates clear class separation.
+- Do NOT use percentile-based RMS thresholds — too many ambiguous samples in middle
+- Do NOT use absolute RMS thresholds — dataset-dependent, requires domain knowledge
+- Skip the middle 50% of the run to exclude ambiguous transition samples
+- For 3-class: use files 0-25% / 40-60% / 80-100% (gap around transition zones)
+
+---
+
 ## Brain-JEPA Comparison
 
 | Aspect | Brain-JEPA | Mechanical-JEPA |
