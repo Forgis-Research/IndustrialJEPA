@@ -40,7 +40,18 @@
       "Bash(Select-Object FullName)",
       "Bash(pip show:*)",
       "Bash(conda env:*)",
-      "Bash(C:/Users/Jonaspetersen/miniconda3/Scripts/conda.exe env list)"
+      "Bash(C:/Users/Jonaspetersen/miniconda3/Scripts/conda.exe env list)",
+      "Bash(dir \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\cwru\")",
+      "Bash(kaggle datasets download:*)",
+      "Bash(kaggle:*)",
+      "Bash(\"C:\\\\Users\\\\Jonaspetersen\\\\AppData\\\\Roaming\\\\Python\\\\Python314\\\\Scripts\\\\kaggle.exe\" datasets download -d vinayak123tyagi/bearing-dataset -p \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\ims\" --unzip)",
+      "Bash(dir \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\ims\")",
+      "Bash(dir \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\ims\\\\1st_test\")",
+      "Bash(dir /s /b \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\ims\\\\*.txt\")",
+      "Bash(dir \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\ims\\\\1st_test\\\\1st_test\")",
+      "Bash(\"C:\\\\Users\\\\Jonaspetersen\\\\AppData\\\\Roaming\\\\Python\\\\Python314\\\\Scripts\\\\jupyter-nbconvert.exe\" --to html \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\notebooks\\\\01_bearing_faults_analysis_output.ipynb\")",
+      "Bash(dir /b \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\paderborn\")",
+      "Bash(pkill:*)"
     ]
   }
 }

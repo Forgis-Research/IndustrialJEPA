@@ -276,7 +276,7 @@ def evaluate_transfer(
 
     # Load checkpoint
     print(f"\nLoading checkpoint: {checkpoint_path}")
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = checkpoint['config']
 
     # Create model
@@ -334,7 +334,7 @@ def evaluate_transfer(
         )
 
         print(f"\n{'='*60}")
-        print(f"RESULTS: CWRU → IMS Transfer")
+        print(f"RESULTS: CWRU -> IMS Transfer")
         print(f"{'='*60}")
         print(f"Train accuracy: {results['train_acc']:.4f}")
         print(f"Test accuracy: {results['test_acc']:.4f}")
@@ -343,9 +343,9 @@ def evaluate_transfer(
         # Success criteria
         random_baseline = 0.5
         if results['test_acc'] > random_baseline + 0.05:
-            print(f"\n✓ TRANSFER SUCCESS: {results['test_acc']:.1%} > {random_baseline+0.05:.1%}")
+            print(f"\nTRANSFER SUCCESS: {results['test_acc']:.1%} > {random_baseline+0.05:.1%}")
         else:
-            print(f"\n✗ TRANSFER FAILED: {results['test_acc']:.1%} <= {random_baseline+0.05:.1%}")
+            print(f"\nTRANSFER FAILED: {results['test_acc']:.1%} <= {random_baseline+0.05:.1%}")
 
         results['mode'] = 'degradation'
         results['info'] = info

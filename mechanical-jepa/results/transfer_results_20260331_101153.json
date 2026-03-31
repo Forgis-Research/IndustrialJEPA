@@ -1,0 +1,5 @@
+{
+  "mode": "embedding",
+  "n_samples": 500,
+  "tsne_plot": "results\\ims_transfer_tsne_20260331_101153.png"
+}

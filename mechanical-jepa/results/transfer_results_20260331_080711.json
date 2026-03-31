@@ -1,0 +1,13 @@
+{
+  "train_acc": 0.5001291036605835,
+  "test_acc": 0.5,
+  "mode": "degradation",
+  "info": {
+    "test_set": "1st_test",
+    "n_total": 2156,
+    "n_early": 539,
+    "n_late": 539,
+    "train_windows": 7758,
+    "test_windows": 1944
+  }
+}
