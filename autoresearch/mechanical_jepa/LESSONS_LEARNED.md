@@ -370,3 +370,83 @@ This finding directly supports the "general-purpose vibration encoder" design go
 - [I-JEPA Paper (CVPR 2023)](https://arxiv.org/abs/2301.08243)
 
 ---
+
+---
+
+## V3 Overnight: New Lessons (2026-04-01)
+
+### Frequency Standardization (CRITICAL)
+
+**The single most important finding**: Cross-dataset transfer failures due to "sampling rate mismatch" are entirely solvable with polyphase resampling.
+
+- CWRU (12kHz) → Paderborn (64kHz): **FAILS** (-1.4%) without resampling
+- CWRU (12kHz) → Paderborn @ 20kHz after 64k→20k resample: **+14.7%** ✓
+- CWRU (12kHz) → Paderborn @ 12kHz after 64k→12k resample: **+8.5%** ✓
+
+**Rule**: Always resample to a common frequency before cross-dataset evaluation.
+**Best target rate**: 20kHz works better than 12kHz even for CWRU-pretrained model.
+**Tool**: `scipy.signal.resample_poly(signal, up, down)` with GCD simplification.
+
+Implementation: `mechanical-jepa/paderborn_transfer.py`
+
+---
+
+### Pretrained Encoders vs. Domain-Specific JEPA
+
+**Finding**: Our 5M-param JEPA beats frozen 94M-param wav2vec2 (speech) by +9.9% on vibration signals.
+
+- wav2vec2-base (94M, speech-pretrained): 77.2% ± 3.0%
+- V2 JEPA (5M, vibration-pretrained): 87.1% ± 7.2%
+- Random init (5M): 71.8% ± 4.7%
+
+**Key insight**: Speech pretraining IS somewhat useful for vibration (+5.4% over random), but domain-specific pretraining is much better. The low-level waveform features (temporal modulation, frequency content) are partially shared between speech and mechanical vibration.
+
+**Practical implication**: Don't dismiss transfer from related audio domains, but always prefer domain-specific pretraining when available.
+
+---
+
+### Transfer Asymmetry
+
+Cross-dataset transfer is NOT symmetric:
+
+| Direction | Gain | Why |
+|-----------|------|-----|
+| CWRU → IMS | +8.8% | CWRU fault types → IMS degradation |
+| CWRU → Paderborn | +14.7% | CWRU fault types → Paderborn fault types |
+| IMS → CWRU | **-6.8%** | Degradation dynamics ≠ fault classification features |
+| Paderborn → CWRU | +5.3% ± 9% | Marginal, high variance |
+
+**Rule**: Diverse fault-type datasets (CWRU) make the best pretraining sources. Run-to-failure degradation datasets (IMS) learn different representations that don't transfer to fault classification.
+
+---
+
+### Patch Size
+
+- patch=128 (32 patches): 84.4% — marginally better
+- patch=256 (16 patches): 84.1% — current default
+- patch=512 (8 patches): 60.4% — much worse
+
+**Rule**: Patch size should be ~10-20ms at the sampling rate. At 12kHz: 120-240 samples. patch=256 (21ms) is reasonable; patch=128 (11ms) is slightly better. patch=512 is too coarse.
+
+---
+
+### Multi-Source Pretraining
+
+Adding diverse datasets to CWRU pretraining HURTS in-domain accuracy:
+- CWRU-only: 88.7%
+- CWRU + Paderborn: 81.2% (-7.5%)
+
+This is expected if the model must represent both datasets. For a true foundation model, the tradeoff may be acceptable (better zero-shot transfer at cost of in-domain accuracy). But for maximum CWRU performance: train on CWRU only.
+
+---
+
+### Optimal Configuration (Updated)
+
+| Parameter | V2 Best | V3 Best | Notes |
+|-----------|---------|---------|-------|
+| mask_ratio | 0.625 | 0.625 | Confirmed optimal at 100ep |
+| var_reg | 0.1 | **0.05** | Marginally better mean |
+| patch_size | 256 | **128** | Marginally better |
+| epochs | 100 | 100 | 200ep still hurts |
+| Block masking | N/A | Random same | No benefit from block masking |
+

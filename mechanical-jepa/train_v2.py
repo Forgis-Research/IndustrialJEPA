@@ -101,6 +101,8 @@ def get_args():
     parser.add_argument('--encoder-depth', type=int, default=None)
     parser.add_argument('--predictor-depth', type=int, default=None)
     parser.add_argument('--mask-ratio', type=float, default=None)
+    parser.add_argument('--patch-size', type=int, default=None,
+                        help='Patch size in samples (default: 256, gives 16 patches per window)')
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--dataset', type=str, default=None)
 
@@ -225,8 +227,8 @@ def quick_diagnose(model, device, embed_dim):
     x = torch.randn(B, 3, 4096).to(device)
 
     with torch.no_grad():
-        n_patches = 16
-        n_context = 8
+        n_patches = model.n_patches  # Use model's actual n_patches
+        n_context = n_patches // 2  # Use half as context
 
         context_indices = torch.arange(n_context).unsqueeze(0).expand(B, -1).to(device)
         all_patches = model.encoder(x, return_all_tokens=True)[:, 1:]
@@ -440,6 +442,7 @@ def main():
     if args.encoder_depth is not None: config['encoder_depth'] = args.encoder_depth
     if args.predictor_depth is not None: config['predictor_depth'] = args.predictor_depth
     if args.mask_ratio is not None: config['mask_ratio'] = args.mask_ratio
+    if args.patch_size is not None: config['patch_size'] = args.patch_size
     if args.seed is not None: config['seed'] = args.seed
     if args.dataset is not None: config['dataset_filter'] = args.dataset
     if args.predictor_pos is not None: config['predictor_pos'] = args.predictor_pos
