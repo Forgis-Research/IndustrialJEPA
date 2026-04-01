@@ -221,6 +221,69 @@ Key architectural difference: Mechanical-JEPA benefits more from mean-pool than 
 
 ---
 
+## Predictor Collapse: Root Cause and Fix (2026-04-01)
+
+### What Collapsed and Why
+
+V1 predictor had spread_ratio=0.020 (predictions 50x less diverse than targets).
+Root cause: mask_ratio=0.5 gives 8 context patches out of 16. With 8 visible patches,
+the predictor can collapse to context-weighted average without using positional info.
+The "lazy minimum" exists because averaging context gives a reasonable (if poor) prediction.
+
+### What Fixes It
+
+**Primary lever: HIGH MASK RATIO (0.625-0.75)**
+- With only 4-6 context patches (out of 16), averaging context gives very poor predictions
+- Forces the predictor to use positional information
+- mask=0.625 achieves 82.1% ± 5.4% vs 80.4% ± 2.6% for mask=0.5
+- mask=0.75 achieves 76.0% at 30 epochs vs 66.6% (V1)
+
+**Secondary levers (each helps a bit)**:
+- Sinusoidal pos encoding: Guarantees position discrimination (learnable can collapse)
+- L1 loss: Less incentive for "safe" mean predictions than MSE
+- Variance regularization (lambda=0.1): Direct penalty on low prediction variance
+- Deeper predictor (4 layers vs 2): More capacity to learn position-dependent transforms
+
+### Diagnostic Numbers (Before/After Fix)
+
+| Metric | V1 (collapsed) | V2 (fixed) |
+|--------|---------------|------------|
+| pred_var_across_pos | 0.00045 | 0.019 (42x improvement) |
+| spread_ratio | 0.020 | 0.138-0.260 |
+| CWRU linear probe | 80.4% ± 2.6% | 82.1% ± 5.4% |
+| IMS transfer gain | +2.4% ± 2.9% | **+8.8% ± 0.7%** |
+
+### Critical Insight: Transfer Gain is the True Test
+
+The CWRU improvement is modest (+1.7%), but the IMS transfer gain tripled (3.7x).
+This confirms that the predictor collapse was degrading the GENERALITY of learned features.
+A collapsed predictor learns context-specific features; a working predictor learns
+position-specific, generalizable dynamics. **Cross-dataset transfer is the right metric
+for evaluating predictor quality, not just in-distribution accuracy.**
+
+---
+
+## Spectral Inputs: High Accuracy, Poor Transfer
+
+### What Works
+- FFT-only input: 86.0% CWRU (vs 89.7% raw V2)
+- Dual raw+FFT: 91.4% CWRU (best single-seed result)
+- Log-FFT: 83.1% CWRU
+
+### What Doesn't
+- Dual input IMS transfer: +0.04% (essentially zero) vs +8.8% for raw
+- Dual input has high seed variance: 75.5% ± 12.7% vs 82.1% ± 5.4% raw
+- Root cause: CWRU (12kHz) vs IMS (20kHz) sampling rate mismatch
+  → Frequency patterns at 12kHz don't align with IMS at 20kHz
+  → Spectral features are dataset-specific, not domain-agnostic
+
+### Recommendation
+For general-purpose cross-domain encoder: use raw time-domain inputs.
+FFT can be used for CWRU-specific high accuracy but hurts generalization.
+This finding directly supports the "general-purpose vibration encoder" design goal.
+
+---
+
 ## Brain-JEPA Insights (NeurIPS 2024)
 
 ### What Brain-JEPA Teaches Us

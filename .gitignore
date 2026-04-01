@@ -108,4 +108,5 @@ results/**/
 .claude/settings.local.json
 
 # Windows artifacts
-nul
+nulmechanical-jepa/data/bearings/ims_npy_cache/
+mechanical-jepa/checkpoints/

@@ -40,7 +40,7 @@ from torch.utils.data import Dataset, DataLoader
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
-from src.models import MechanicalJEPA
+from src.models import MechanicalJEPA, MechanicalJEPAV2
 
 
 # =============================================================================
@@ -100,14 +100,18 @@ class IMSDegradationDataset(Dataset):
         f = self.selected_files[file_idx]
 
         # Try fast numpy cache first, fall back to loadtxt
-        npy_cache = Path(str(f).replace(
-            'data/bearings/raw/ims',
-            'data/bearings/ims_npy_cache'
-        )).with_suffix(f.suffix + '.npy')
-        if npy_cache.exists():
-            data = np.load(npy_cache)  # fast
+        if f.suffix == '.npy':
+            # File is already a numpy cache (symlinked directory or pre-converted)
+            data = np.load(f)
         else:
-            data = np.loadtxt(f, dtype=np.float32)  # slow fallback
+            npy_cache = Path(str(f).replace(
+                'data/bearings/raw/ims',
+                'data/bearings/ims_npy_cache'
+            )).with_suffix(f.suffix + '.npy')
+            if npy_cache.exists():
+                data = np.load(npy_cache)  # fast
+            else:
+                data = np.loadtxt(f, dtype=np.float32)  # slow fallback
 
         window = data[start:start + self.window_size].T  # (8, window_size)
 
@@ -461,17 +465,37 @@ def run_transfer_experiment(
     results = {}
 
     def make_model(load_ckpt=True):
-        m = MechanicalJEPA(
-            n_channels=n_channels,
-            window_size=window_size,
-            patch_size=config['patch_size'],
-            embed_dim=embed_dim,
-            encoder_depth=config['encoder_depth'],
-            predictor_depth=config['predictor_depth'],
-            n_heads=config['n_heads'],
-            mask_ratio=config['mask_ratio'],
-            ema_decay=config['ema_decay'],
-        ).to(device)
+        # Support both V1 (MechanicalJEPA) and V2 (MechanicalJEPAV2) checkpoints
+        is_v2 = 'predictor_pos' in config
+        if is_v2:
+            m = MechanicalJEPAV2(
+                n_channels=n_channels,
+                window_size=window_size,
+                patch_size=config['patch_size'],
+                embed_dim=embed_dim,
+                encoder_depth=config['encoder_depth'],
+                predictor_depth=config['predictor_depth'],
+                n_heads=config['n_heads'],
+                mask_ratio=config['mask_ratio'],
+                ema_decay=config['ema_decay'],
+                predictor_pos=config.get('predictor_pos', 'sinusoidal'),
+                separate_mask_tokens=config.get('separate_mask_tokens', False),
+                loss_fn=config.get('loss_fn', 'l1'),
+                var_reg_lambda=0.0,   # No reg during inference
+                vicreg_lambda=0.0,
+            ).to(device)
+        else:
+            m = MechanicalJEPA(
+                n_channels=n_channels,
+                window_size=window_size,
+                patch_size=config['patch_size'],
+                embed_dim=embed_dim,
+                encoder_depth=config['encoder_depth'],
+                predictor_depth=config['predictor_depth'],
+                n_heads=config['n_heads'],
+                mask_ratio=config['mask_ratio'],
+                ema_decay=config['ema_decay'],
+            ).to(device)
         if load_ckpt:
             m.load_state_dict(ckpt['model_state_dict'])
         return m
