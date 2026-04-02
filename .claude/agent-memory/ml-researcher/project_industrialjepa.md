@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: Mechanical-JEPA V4 done: macro F1=0.773±0.018, +0.360 F1 gain, cross-component +2.5%, no forgetting (-0.15%), IMS Spearman=0.758
+description: Mechanical-JEPA V4 COMPLETE: F1=0.773±0.018, JEPA RUL (Test1 Spearman=0.08, 60% early warning), 3-seed ablation (V2 full 0.743 vs minimal 0.711, all collapsed), collapse visualizations done
 type: project
 ---
 
@@ -122,12 +122,15 @@ python train_v2.py --epochs 100 --seed 123 --embed-dim 512 --predictor-pos sinus
 - Experiment log: `autoresearch/mechanical_jepa/EXPERIMENT_LOG.md` (Exp 0-35)
 - Lessons: `autoresearch/mechanical_jepa/LESSONS_LEARNED.md`
 
-### IMS Data Notes
-- Raw IMS files deleted; npy cache is source of truth
-- `data/bearings/raw/ims` symlink → `data/bearings/ims_npy_cache/`
-- The symlink is BROKEN if ims_npy_cache doesn't exist (only RMS cache remains)
-- IMS experiments (Exp 8-21) used npy cache; cache no longer available
-- For new IMS experiments: need to re-download or use cached results from log
+### IMS Data Notes (UPDATED 2026-04-02)
+- Raw IMS files DOWNLOADED and available:
+  - `data/bearings/ims_raw/1st_test/1st_test/` (2156 files, 35 days)
+  - `data/bearings/ims_raw/2nd_test/2nd_test/` (984 files, 7 days)
+  - `data/bearings/ims/Test1/` and `Test2/` are symlinks to the above
+- IMS files are TAB-DELIMITED TEXT: use `np.loadtxt(fpath)` → (20480, 8) float64
+  - DO NOT use `np.fromfile(fpath, dtype=np.float64)` — gives all zeros silently
+- Use `jepa_rul_ims.py` for proper JEPA prognostics on raw IMS data
+- Old broken symlink `data/bearings/raw/ims` → `ims_npy_cache` (still there but cache is gone)
 
 ### Paderborn Data
 - Location: `/home/sagemaker-user/IndustrialJEPA/datasets/data/paderborn/`

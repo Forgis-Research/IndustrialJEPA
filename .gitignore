@@ -112,6 +112,9 @@ nul
 
 # Mechanical-JEPA data caches
 mechanical-jepa/data/bearings/ims_npy_cache/
+mechanical-jepa/data/bearings/ims/
+mechanical-jepa/data/bearings/ims_raw/
+mechanical-jepa/data/bearings/raw/ims/
 mechanical-jepa/checkpoints/
 
 # Dataset curation temp files
