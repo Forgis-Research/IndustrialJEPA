@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: Mechanical-JEPA V3: frequency standardization breakthrough (+14.7% Paderborn), wav2vec2 comparison, complete transfer matrix. Best: 82.1%±5.4% CWRU, +8.8% IMS, +14.7% Paderborn (resampled)
+description: Mechanical-JEPA V4 done: macro F1=0.773±0.018, +0.360 F1 gain, cross-component +2.5%, no forgetting (-0.15%), IMS Spearman=0.758
 type: project
 ---
 
@@ -79,6 +79,31 @@ python train_v2.py --epochs 100 --seed 123 --embed-dim 512 --predictor-pos sinus
 
 8. **100 epochs optimal**: 200ep hurts (-2.1%), confirmed twice across V1 and V2.
 
+### V4 Results (2026-03-31)
+
+| Metric | Result | Notes |
+|--------|--------|-------|
+| CWRU Macro F1 (3-seed) | 0.773 ± 0.018 | vs random 0.412 (F1 gain +0.360) |
+| Cross-component bearing→gearbox | +2.5% F1 | mcc5_thu 8-class, 3/3 seeds |
+| Continual learning CWRU drop | -0.15% | No catastrophic forgetting |
+| IMS RMS Spearman (1st_test) | 0.758 | 22% early warning lead time |
+| IMS RMS Spearman (2nd_test) | 0.443 | 29% early warning lead time |
+
+**New V4 Files:**
+- `mechanical-jepa/eval_f1.py`: Macro F1 evaluation with per-class breakdown
+- `mechanical-jepa/rul_from_rms.py`: RUL from precomputed RMS cache (no raw IMS needed)
+- `mechanical-jepa/rul_prognostics.py`: Full JEPA embedding-based RUL (needs raw IMS)
+- `mechanical-jepa/hf_cross_component.py`: HF Mechanical-Components cross-component transfer
+- `mechanical-jepa/notebooks/04_v4_comprehensive_analysis.ipynb`: 10-section analysis notebook
+
+**V4 Key Findings:**
+1. All 5 V2 fixes are necessary as a system; no single fix alone prevents collapse AND gives good features
+2. L1 loss is the critical feature-quality driver (MSE+var_reg prevents collapse but gives 49% acc)
+3. Diagnostic bug: `quick_diagnose` used wrong `n_context=8` (should be 6 for mask=0.625); V2 best checkpoint is NOT collapsed
+4. HF Mechanical-Components: use `pd.read_parquet('hf://...', storage_options={'token': TOKEN})` NOT `load_dataset()` (OOM)
+5. Cross-component gain modest (+2.5%) because bearing impulses vs gearbox tooth-mesh modulation are different physics
+6. EMA + low LR (5e-5) prevents catastrophic forgetting in continual learning
+
 ### Experiment Log Range
 
 | Run | Experiments | Key Result |
@@ -86,6 +111,7 @@ python train_v2.py --epochs 100 --seed 123 --embed-dim 512 --predictor-pos sinus
 | Overnight V1 | Exp 0-15 | 80.4% baseline, +28.5% over random |
 | Overnight V2 | Exp 16-23 | Fixed predictor collapse, +8.8% IMS transfer |
 | Overnight V3 | Exp 24-35 | +14.7% Paderborn (20kHz resample), wav2vec2 comparison |
+| Overnight V4 | Exp 36-40 | F1 metrics, RUL, cross-component, continual learning |
 
 ### Files
 - Training: `mechanical-jepa/train_v2.py` (main), `train_v3_block.py` (block masking variant)
@@ -111,9 +137,10 @@ python train_v2.py --epochs 100 --seed 123 --embed-dim 512 --predictor-pos sinus
 - MUST resample to 20kHz for best transfer with CWRU checkpoint
 
 ### HuggingFace Dataset
-- `Forgis/Mechanical-Components`: only CWRU has actual samples (n_samples=16)
-- All other sources (IMS, Paderborn, MFPT, etc.) have n_samples=0 — metadata only
+- `Forgis/Mechanical-Components`: CWRU (n=16 parquet rows), FEMTO bearings (25.6kHz, 2ch), mcc5_thu gearboxes (12.8kHz, 3ch, 8 fault types, 956 samples)
 - Token: `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`
+- Load with: `pd.read_parquet('hf://datasets/Forgis/Mechanical-Components/gearboxes/train-00000-of-00004.parquet', storage_options={'token': TOKEN})` (NOT load_dataset — OOM)
+- FEMTO has 2ch (mismatches CWRU 3ch model); use mcc5_thu gearboxes for cross-component (3ch matches)
 
 **Why:** V3 was needed to test frequency standardization, pretrained encoders, and complete the transfer matrix.
 **How to apply:** Use `paderborn_transfer.py` for Paderborn experiments. Always resample to 20kHz first.

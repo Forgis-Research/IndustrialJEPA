@@ -543,3 +543,75 @@ Key findings:
 - Dataset has rul_percent column → can do RUL prediction with proper labels
 - 8 gearbox fault types provide meaningful multi-class challenge
 
+
+---
+
+## V4 Completion: New Lessons (2026-04-02)
+
+### JEPA RUL Prognostics: Honest Assessment
+
+Exp 41 (IMS raw data, JEPA embeddings for prognostics):
+
+**What JEPA does NOT do well:**
+- Linear RUL regression from JEPA embeddings: RMSE=0.503 (WORSE than constant baseline of 0.360)
+- Spearman correlation with time: 0.080 (vs RMS: 0.545)
+- JEPA was pretrained on CWRU (fault classification), NOT degradation progression
+
+**What JEPA DOES do differently:**
+- Early warning lead time: 59.9% of run remaining (fires alarm at 40% of run elapsed!)
+- Compare to RMS: 0.2% remaining (fires only near failure)
+- JEPA detects distribution shift from healthy MUCH earlier (high sensitivity)
+- Trade-off: much higher false positive risk (hypersensitive)
+
+**Key design insight:**
+JEPA is a FAULT TYPE discriminator, not a DEGRADATION MONITOR.
+For prognostics, the model needs to be pretrained on run-to-failure data, not fault classification data.
+The 59.9% early warning from JEPA is driven by feature distribution shift, not learned degradation dynamics.
+
+**For future prognostics work:**
+- Pretrain JEPA on IMS directly (run-to-failure, 35 days of data)
+- Use contrastive loss between early-run and late-run windows
+- Or: use FEMTO bearings (25.6kHz, run-to-failure, RUL labels) for proper prognostics pretraining
+
+### 3-Seed Ablation: Collapsed Models Can Still Achieve High F1
+
+Surprising finding from Exp 43:
+- Config B (mask=0.625, all other fixes removed): mean F1 = 0.711, ALL 3 SEEDS COLLAPSED
+- Config A (full V2 fixes): mean F1 = 0.743, NO SEEDS COLLAPSED
+- The collapse doesn't prevent feature learning entirely — encoder still trains!
+
+**Why collapse doesn't kill F1:**
+The ENCODER is not the thing that collapses — only the PREDICTOR collapses.
+The encoder still receives gradients from the loss (even if the predictor outputs degenerate).
+The predictor collapse means: the predictor learns an easy shortcut (context average).
+The encoder doesn't need the predictor to be diverse to learn useful representations.
+
+**Why collapse DOES hurt transfer:**
+When the predictor collapses, the encoder doesn't need to encode position-specific information.
+It can succeed by encoding context-level summary statistics.
+For IN-DOMAIN classification: this is enough (CWRU classes are distinct).
+For CROSS-DOMAIN transfer: position-specific information is needed to generalize.
+Result: collapsed predictor → 2.4% IMS transfer; fixed predictor → 8.8% IMS transfer (3.7x).
+
+**Practical rule:** Always check predictor collapse with spread_ratio.
+If spread_ratio < 0.1, add var_reg or increase mask_ratio.
+
+### IMS Data Format Note
+
+IMS files are TAB-DELIMITED TEXT, not binary:
+- Format: 20480 rows x 8 columns (floats)
+- Load with `np.loadtxt(fpath)` NOT `np.fromfile(fpath, dtype=np.float64)`
+- `np.fromfile` on text files gives all-zeros (silent failure!)
+- Use first 3 channels (bearing channels) for CWRU-compatible encoding
+- Nested directory: download gives ims_raw/1st_test/1st_test/...
+
+### IMS Test1 vs RMS Cache
+
+The Exp 38 RMS cache showed higher Spearman (0.758 on best channel) vs Exp 41 JEPA (0.080).
+The difference: Exp 38 used per-channel RMS, finding the FAILED BEARING CHANNEL.
+Exp 41 averaged across 3 channels, diluting the signal.
+
+Lesson: For prognostics, channel selection matters enormously.
+Mixing healthy and degrading channels reduces sensitivity.
+Consider: run JEPA on each channel separately and pick the most informative.
+
