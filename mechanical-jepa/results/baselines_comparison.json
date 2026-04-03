@@ -1,0 +1,22 @@
+{
+  "mae": [
+    {
+      "seed": 42,
+      "cwru_f1": 0.49747369734270386,
+      "paderborn_f1": null,
+      "n_params": 19713280
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 0.8395194920496096,
+      "paderborn_f1": null,
+      "n_params": 19713280
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.590468305114325,
+      "paderborn_f1": null,
+      "n_params": 19713280
+    }
+  ]
+}

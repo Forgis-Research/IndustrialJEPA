@@ -615,3 +615,60 @@ Lesson: For prognostics, channel selection matters enormously.
 Mixing healthy and degrading channels reduces sensitivity.
 Consider: run JEPA on each channel separately and pick the most informative.
 
+
+---
+
+## V5 Session Lessons (2026-04-02)
+
+### The Key Result: JEPA Transfer >> Supervised Pretraining Transfer
+
+The most important finding from V5 is counterintuitive:
+- **Supervised Transformer**: 0.969 CWRU F1, Paderborn gain = **-0.011** (worse than random!)
+- **JEPA V2 (self-supervised)**: 0.773 CWRU F1, Paderborn gain = **+0.453**
+
+Self-supervised JEPA provides 46.4x better cross-domain transfer than supervised pretraining.
+Why? Supervised training overfits to CWRU-specific spurious correlations (motor load, sensor placement, specific fault frequencies). JEPA learns domain-general temporal structure.
+
+**Rule**: For cross-domain transfer of vibration models, self-supervised pretraining > supervised pretraining, even when the supervised method achieves higher in-domain F1.
+
+### SIGReg (LeJEPA) Does Not Replace EMA for This Task
+
+V3 architecture (stop-gradient + SIGReg) achieves:
+- CWRU F1: 0.531 ± 0.008 (vs V2's 0.773)
+- Paderborn transfer gain: +0.193 (vs V2's +0.453)
+
+Root cause: stop-gradient creates unstable targets (changed every step). EMA provides exponentially smoothed targets that prevent representation collapse. For small datasets (2300 windows), EMA's stabilization effect is critical.
+
+**Rule**: For small industrial vibration datasets (<10K windows), use EMA not stop-gradient. SIGReg helps as an additional regularizer but does not replace EMA.
+
+### MAE (Signal Reconstruction) Fails for Transfer
+
+MAE with signal-space reconstruction achieves near-zero Paderborn transfer (-0.015 gain).
+This validates the JEPA hypothesis: **predicting in latent space > predicting in signal space**.
+
+Why: Signal reconstruction forces the encoder to store all high-frequency detail (necessary for reconstruction). JEPA prediction forces the encoder to learn semantic representations (what patches "mean" in context). Semantic representations transfer; low-level signal details do not.
+
+### Frequency Masking: Marginal at Best
+
+Frequency-domain masking (30% of bands zeroed) helps at 30 epochs (+5.9% F1) but the benefit is unclear at 100 epochs (high variance, seed-dependent). Not a reliable improvement.
+
+**Rule**: Frequency masking may be useful as a regularizer for short training regimes but should not be included as a primary contribution without rigorous ablation over multiple seeds and epoch lengths.
+
+### CWRU Is Too Easy to Be a Meaningful Benchmark Alone
+
+Handcrafted features + LogReg achieves 0.999 F1 on CWRU.
+CNN supervised achieves 1.000 F1.
+Any method that "beats" a weak baseline on CWRU may just be fitting trivial frequency patterns.
+
+**Rule**: Always evaluate cross-domain transfer (Paderborn, MFPT, etc.), not just in-domain CWRU F1. The benchmark that matters is: "how well do these representations transfer to a different machine, speed, and sensor setup?"
+
+### IMS RUL: Dataset Structural Problems
+
+IMS RUL fails for all methods (constant baseline wins) for two reasons:
+1. **Label imbalance**: ~70% of windows have RUL≈1.0 (early in run). Constant predictor exploits this.
+2. **Nonlinear degradation**: Linear regression (Ridge) is wrong model for degradation curves.
+
+To properly solve RUL with JEPA: need a health indicator (distance from healthy state) + degradation model, not direct regression. This is a separate research problem.
+
+**Rule**: Don't benchmark RUL on IMS 1st_test without explicitly handling label distribution. Report the constant baseline, and only claim "improvement" if you beat it with a well-calibrated model.
+

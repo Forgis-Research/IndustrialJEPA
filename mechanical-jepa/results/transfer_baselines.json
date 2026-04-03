@@ -1,0 +1,83 @@
+{
+  "handcrafted": [
+    {
+      "seed": 42,
+      "cwru_f1": 1.0,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 1.0,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.9978447875443583,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    }
+  ],
+  "cnn_supervised": [
+    {
+      "seed": 42,
+      "cwru_f1": 1.0,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 1.0,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 1.0,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    }
+  ],
+  "transformer_supervised": [
+    {
+      "seed": 42,
+      "cwru_f1": 0.9697463741995844,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 0.9870603108500038,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.9696485796181382,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    }
+  ],
+  "mae": [
+    {
+      "seed": 42,
+      "cwru_f1": 0.47109745487531873,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 0.9005461612745514,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.5535157822199998,
+      "pad_f1": null,
+      "rand_pad_f1": null
+    }
+  ],
+  "jepa_v2": []
+}
