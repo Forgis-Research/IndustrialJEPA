@@ -30,40 +30,46 @@ JEPA_V2_CKPT = Path('checkpoints/jepa_v2_20260401_003619.pt')
 
 
 def get_paderborn_loaders(target_sr=20000, seed=42, batch_size=32):
-    """Load Paderborn data as DataLoaders."""
+    """Load Paderborn data as DataLoaders using file-level splits."""
     paderborn_dir = Path('/home/sagemaker-user/IndustrialJEPA/datasets/data/paderborn')
     if not paderborn_dir.exists():
         print(f"Paderborn dir not found: {paderborn_dir}")
         return None, None
 
-    torch.manual_seed(seed)
+    # Use the proper create_paderborn_loaders function from paderborn_transfer
+    from paderborn_transfer import create_paderborn_loaders, CLASSES
+
+    bearing_dirs = []
+    for folder, label in CLASSES.items():
+        bp = paderborn_dir / folder
+        if bp.exists():
+            bearing_dirs.append((str(bp), label))
+
+    if not bearing_dirs:
+        print("No Paderborn bearing directories found")
+        return None, None
 
     try:
-        dataset = PaderbornDataset(
-            root_dir=str(paderborn_dir),
-            target_sr=target_sr,
+        train_loader, test_loader = create_paderborn_loaders(
+            bearing_dirs=bearing_dirs,
             window_size=4096,
             stride=2048,
-            n_channels=1,
+            target_sr=target_sr,
+            n_channels=3,
+            test_ratio=0.2,
+            batch_size=batch_size,
+            seed=seed,
+            max_files_per_bearing=20,  # 20/80 files per class for speed; still ample data
         )
     except Exception as e:
         print(f"Failed to load Paderborn: {e}")
+        import traceback; traceback.print_exc()
         return None, None
 
-    if len(dataset) == 0:
-        return None, None
-
-    n_train = int(0.7 * len(dataset))
-    n_test = len(dataset) - n_train
-    train_ds, test_ds = torch.utils.data.random_split(
-        dataset, [n_train, n_test],
-        generator=torch.Generator().manual_seed(seed)
-    )
-
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0)
-    test_loader = torch.utils.data.DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=0)
-
-    print(f"  Paderborn: {len(train_ds)} train, {len(test_ds)} test windows")
+    # Count total windows
+    n_train = len(train_loader.dataset)
+    n_test = len(test_loader.dataset)
+    print(f"  Paderborn: {n_train} train, {n_test} test windows (seed={seed})")
     return train_loader, test_loader
 
 
