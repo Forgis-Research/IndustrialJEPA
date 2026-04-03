@@ -51,7 +51,18 @@
       "Bash(dir \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\ims\\\\1st_test\\\\1st_test\")",
       "Bash(\"C:\\\\Users\\\\Jonaspetersen\\\\AppData\\\\Roaming\\\\Python\\\\Python314\\\\Scripts\\\\jupyter-nbconvert.exe\" --to html \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\notebooks\\\\01_bearing_faults_analysis_output.ipynb\")",
       "Bash(dir /b \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\data\\\\bearings\\\\raw\\\\paderborn\")",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(dir /b \"C:\\\\Users\\\\Jonaspetersen\\\\dev\\\\IndustrialJEPA\\\\mechanical-jepa\\\\notebooks\")",
+      "Bash(dir:*)",
+      "Bash(git checkout:*)",
+      "Bash(hf --version:*)",
+      "Bash(huggingface-cli whoami:*)",
+      "Bash(wmic:*)",
+      "WebFetch(domain:www.mfpt.org)",
+      "WebFetch(domain:engineering.case.edu)",
+      "WebFetch(domain:data-acoustics.com)",
+      "Bash(wc -l /c/Users/Jonaspetersen/dev/IndustrialJEPA/mechanical-jepa/src/models/*.py)",
+      "Bash(wc -l /c/Users/Jonaspetersen/dev/IndustrialJEPA/mechanical-jepa/*.py)"
     ]
   }
 }
