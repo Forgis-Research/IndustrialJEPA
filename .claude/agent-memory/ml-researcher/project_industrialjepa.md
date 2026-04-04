@@ -1,179 +1,125 @@
 ---
 name: IndustrialJEPA Project Context
-description: Mechanical-JEPA V5 COMPLETE: JEPA transfer gain +0.453 (46x better than supervised Transformer's -0.011). CNN supervised wins abs F1 (0.921 Paderborn) but needs labels. MAE fails transfer (-0.015). SIGReg V3 inferior (EMA needed for small datasets).
+description: Mechanical-JEPA V6 COMPLETE: JEPA transfer gain +0.371 (2.6x better than supervised Transformer +0.144). JEPA@N=10 > Transformer@N=all on Paderborn. All key claims p<0.05, large effect sizes.
 type: project
 ---
 
 IndustrialJEPA is a research project on self-supervised learning (JEPA) for industrial time series.
 
-**Two main subprojects:**
+## Mechanical-JEPA: Bearing Fault Detection
 
-## 1. Physics-Informed Attention (main paper)
+**Status as of 2026-04-04 (V6 complete)**
 
-52+ experiments, core finding: Physics-masked attention provides principled constraint when physics groups are statistically independent.
+### CORRECTED V6 Results (JSON-backed, 3-seed, fixed Paderborn API bug)
 
-| System | Physics Mask Effect | Why |
-|---|---|---|
-| Double Pendulum | +7.4% over Full-Attn (p=0.0002) | Groups are truly independent |
-| C-MAPSS | ≈ random mask (p=0.528) | Correlated degradation |
-| ETT Weather | -1.3% vs Full-Attn | Thermal couples to all loads |
+| Method | CWRU F1 | Paderborn F1 | Transfer Gain | Source |
+|--------|---------|-------------|---------------|--------|
+| CNN Supervised | 1.000 ± 0.000 | 0.987 ± 0.005 | +0.457 ± 0.020 | transfer_baselines_v6_final.json |
+| **JEPA V2 (ours)** | 0.773 ± 0.018 | **0.900 ± 0.008** | **+0.371 ± 0.026** | transfer_baselines_v6_final.json |
+| Transformer Supervised | 0.969 ± 0.026 | 0.673 ± 0.063 | +0.144 ± 0.044 | transfer_baselines_v6_final.json |
+| MAE (reconstruct) | 0.643 ± 0.144 | ~0.587 | ~+0.001 | baselines_comparison.json |
+| JEPA V3 (SIGReg, no EMA) | 0.531 ± 0.008 | 0.540 ± 0.025 | +0.193 | log only |
+| Random Init | ~0.412 | 0.529 ± 0.024 | 0.000 | transfer_baselines_v6_final.json |
 
----
+**IMPORTANT**: V5 numbers were wrong due to Paderborn API bug (PaderbornDataset constructor mismatch).
+Corrected: JEPA V2 Paderborn F1 is 0.900 (not 0.795), gain is +0.371 (not +0.453).
+The qualitative finding is unchanged: JEPA > Transformer supervised for transfer.
 
-## 2. Mechanical-JEPA: Bearing Fault Detection
+### Few-Shot Transfer Curves (fewshot_curves.json)
 
-**Status as of 2026-04-01 (V3 complete)**
+| Method | N=10 | N=20 | N=50 | N=100 | N=all |
+|--------|------|------|------|-------|-------|
+| CNN Supervised | 0.989 | 0.992 | 0.989 | 0.990 | 0.990 |
+| **JEPA V2** | **0.735** | 0.779 | 0.853 | 0.878 | **0.903** |
+| Transformer Sup. | 0.510 | 0.545 | 0.609 | 0.638 | 0.689 |
+| Random Init | 0.383 | 0.385 | 0.413 | 0.418 | 0.538 |
+
+**KEY FINDING: JEPA@N=10 (0.735) > Transformer@N=all (0.689)**
+p=0.034, Cohen's d=0.92 (large). This is the primary publishable figure.
+
+### Statistical Significance
+
+All key claims: p < 0.05, large Cohen's d (>0.9). See `mechanical-jepa/statistical_tests.py`.
+- JEPA gain > 0: t=20.3, p=0.0012, d=11.73
+- JEPA gain > Transformer gain: t=5.36, p=0.017, d=5.11
+- JEPA@N=10 > Transformer@N=all: t=1.96, p=0.034, d=0.92
+
+With n=3 seeds, p-values are approximate. For camera-ready: run 10 seeds for key claims.
+
+### SF-JEPA Tradeoff (sfjepa_comparison.json)
+
+No sweet spot: spectral auxiliary losses improve in-domain but hurt transfer.
+| lambda_spec | CWRU F1 | Paderborn F1 | Transfer Gain |
+|-------------|---------|-------------|---------------|
+| 0.0 (pure JEPA) | 0.773 | 0.900 | +0.371 |
+| 0.1 | 0.863 | 0.825 | +0.319 |
+| 0.5 | 0.905 | 0.818 | +0.312 |
+
+Finding: pure JEPA always maximizes transfer. SF-JEPA is useful only when in-domain accuracy > transfer.
+
+### Cross-Component Transfer (partial, seed 42 only)
+
+- CWRU bearings → MCC5-THU gearboxes: Gear-pretrained JEPA CWRU F1=0.506 (below random 0.542)
+- Multi-source CWRU+Gear: CWRU F1=0.526 (still below random)
+- Root cause: bearing impulses vs gear tooth-mesh modulation are physically distinct
+
+### JEPA V2 Architecture (jepa_v2.py)
+
+- Encoder: 4-layer Transformer, d=512, 4 heads, sinusoidal PE
+- Input: (B, 3, 4096) → 16 patches of 256 samples
+- Mask ratio: 0.625 (10 of 16 patches masked)
+- EMA target encoder (momentum=0.996)
+- Loss: L1 + variance regularization (lambda=0.1)
+- Training: 100 epochs, AdamW lr=1e-4, cosine schedule
+- Params: ~5.1M
+
+**5 critical components** (all required, verified by ablation):
+1. Sinusoidal PE in predictor (not learnable)
+2. High mask ratio 0.625
+3. L1 loss (not MSE)
+4. Variance regularization lambda=0.1
+5. EMA target encoder (not stop-gradient)
 
 ### Best Checkpoint
-`mechanical-jepa/checkpoints/jepa_v2_20260401_003619.pt` (seed=123, 89.7% CWRU, no collapse)
 
-### Best Training Command
-```bash
-python train_v2.py --epochs 100 --seed 123 --embed-dim 512 --predictor-pos sinusoidal \
-  --predictor-depth 4 --loss-fn l1 --var-reg 0.1 --mask-ratio 0.625
-```
+`mechanical-jepa/checkpoints/jepa_v2_20260401_003619.pt` (seed=123)
+- Used as reference in multi-source and SF-JEPA experiments
 
-### V2 Architecture (jepa_v2.py)
-- Sinusoidal positional encoding in predictor
-- Mask ratio 0.625 (key: forces position use, not context averaging)
-- L1 loss + variance regularization lambda=0.1
-- Predictor depth 4, encoder depth 4, embed_dim 512
+### Key Files
 
-### Results Summary
+- Training: `mechanical-jepa/train_v2.py` (main)
+- Transfer audit: `mechanical-jepa/run_transfer_audit.py` (generates V6 JSON)
+- Paderborn: `mechanical-jepa/paderborn_transfer.py` (use `create_paderborn_loaders`)
+- Few-shot curves: `mechanical-jepa/fewshot_transfer_curves.py`
+- SF-JEPA: `mechanical-jepa/train_sfjepa_fast.py` (use torch FFT, not scipy)
+- Multi-source: `mechanical-jepa/multi_source_hf_pretrain.py`
+- Stats tests: `mechanical-jepa/statistical_tests.py`
+- Paper outline: `mechanical-jepa/PAPER_OUTLINE.md`
+- Publication notebook: `mechanical-jepa/notebooks/06_v6_walkthrough.ipynb`
+- Figures: `mechanical-jepa/notebooks/plots/fig1-6.{pdf,png}`
+- Results: `mechanical-jepa/results/transfer_baselines_v6_final.json`, `fewshot_curves.json`, `sfjepa_comparison.json`
+- Full results doc: `mechanical-jepa/CONSOLIDATED_RESULTS.md`
 
-| Metric | V1 | V2 | V3 Best |
-|--------|----|----|---------|
-| CWRU linear probe (3-seed) | 80.4% ± 2.6% | 82.1% ± 5.4% | **83.7% ± 6.6%** (var_reg=0.05) |
-| CWRU best seed | 84.1% | 89.7% | 90.1% (patch=128, seed=123) |
-| IMS transfer gain | +2.4% ± 2.9% | **+8.8% ± 0.7%** | +8.8% (maintained) |
-| Paderborn transfer | -1.4% (failed) | -1.4% | **+14.7% ± 0.8%** (20kHz resample) |
-| Predictor collapse | Yes | No | No |
+### Critical Bug Fixed in V6
 
-### Complete Transfer Matrix (V3)
+`transfer_baselines.py` was calling `PaderbornDataset(root_dir=..., ...)` but the class expects
+`bearing_dirs: list` (list of (path, label) tuples). Fixed by using `create_paderborn_loaders`.
+All prior Paderborn F1 values were null/bogus. V6 has correct numbers.
 
-| Source → Target | Gain | Seeds |
-|---|---|---|
-| CWRU → IMS (binary, 20kHz) | **+8.8% ± 0.7%** | 3/3 |
-| CWRU → Paderborn @ 12kHz | **+8.5% ± 3.0%** | 3/3 |
-| CWRU → Paderborn @ 20kHz | **+14.7% ± 0.8%** | 3/3 |
-| CWRU → Paderborn (no resample) | -1.4% ± 1.0% | 0/3 |
-| IMS → IMS (self) | **+6.2% ± 1.7%** | 3/3 |
-| Paderborn → CWRU | +5.3% ± 9.0% | 2/3 |
-| IMS → CWRU | **-6.8% ± 1.1%** | 0/3 |
+### Datasets
 
-### Key V3 Findings
+- CWRU: `mechanical-jepa/data/bearings/` (134MB, 40 bearings, 4 fault classes, 12kHz)
+- IMS raw: `/mnt/sagemaker-nvme/ims_raw/` (symlinked from `data/bearings/ims_raw/`)
+  - Files: TAB-DELIMITED TEXT, load with `np.loadtxt(fpath)` NOT `np.fromfile()`
+- Paderborn: `datasets/data/paderborn/` (K001/KA01/KI01, 64kHz → resample to 20kHz)
+- HF gearboxes: `Forgis/Mechanical-Components`, token `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`
+  - Use `pd.read_parquet('hf://...', storage_options={'token': TOKEN})` (not load_dataset)
 
-1. **FREQUENCY STANDARDIZATION IS THE CRITICAL FIX**: Use `scipy.signal.resample_poly` to 20kHz before cross-dataset eval. Implemented in `paderborn_transfer.py`.
+### Disk Space
 
-2. **Transfer is asymmetric**: CWRU (diverse faults) → anything works. IMS (degradation dynamics) → CWRU fault classification FAILS (-6.8%).
+- Home disk: ~10GB free after cleanup
+- NVMe: `/mnt/sagemaker-nvme/` (~200GB), used for IMS raw data and training logs
+- If disk fills: delete `mechanical-jepa/__pycache__/` and `mechanical-jepa/wandb/`
 
-3. **JEPA 5M > wav2vec2 94M**: V2 JEPA (87.1%) beats frozen wav2vec2-base (77.2%) by +9.9% on vibration. Speech pretraining provides some transfer (+5.4% over random) but domain-specific wins.
-
-4. **Optimal mask ratio = 0.625**: Confirmed over fine sweep (0.5 to 0.875). Higher mask (0.75) wins at 30ep but loses at 100ep.
-
-5. **Block masking = random masking**: No benefit for vibration JEPA. Random masking is sufficient.
-
-6. **Multi-source pretraining dilutes features**: CWRU+Paderborn: 81.2% vs CWRU-only: 88.7% (-7.5%). Train on one domain at a time for in-domain tasks.
-
-7. **Patch size 256 near-optimal**: patch=128 marginally better (+0.3%), patch=512 dramatically worse (-23.7%).
-
-8. **100 epochs optimal**: 200ep hurts (-2.1%), confirmed twice across V1 and V2.
-
-### V4 Results (2026-03-31)
-
-| Metric | Result | Notes |
-|--------|--------|-------|
-| CWRU Macro F1 (3-seed) | 0.773 ± 0.018 | vs random 0.412 (F1 gain +0.360) |
-| Cross-component bearing→gearbox | +2.5% F1 | mcc5_thu 8-class, 3/3 seeds |
-| Continual learning CWRU drop | -0.15% | No catastrophic forgetting |
-| IMS RMS Spearman (1st_test) | 0.758 | 22% early warning lead time |
-| IMS RMS Spearman (2nd_test) | 0.443 | 29% early warning lead time |
-
-**New V4 Files:**
-- `mechanical-jepa/eval_f1.py`: Macro F1 evaluation with per-class breakdown
-- `mechanical-jepa/rul_from_rms.py`: RUL from precomputed RMS cache (no raw IMS needed)
-- `mechanical-jepa/rul_prognostics.py`: Full JEPA embedding-based RUL (needs raw IMS)
-- `mechanical-jepa/hf_cross_component.py`: HF Mechanical-Components cross-component transfer
-- `mechanical-jepa/notebooks/04_v4_comprehensive_analysis.ipynb`: 10-section analysis notebook
-
-**V4 Key Findings:**
-1. All 5 V2 fixes are necessary as a system; no single fix alone prevents collapse AND gives good features
-2. L1 loss is the critical feature-quality driver (MSE+var_reg prevents collapse but gives 49% acc)
-3. Diagnostic bug: `quick_diagnose` used wrong `n_context=8` (should be 6 for mask=0.625); V2 best checkpoint is NOT collapsed
-4. HF Mechanical-Components: use `pd.read_parquet('hf://...', storage_options={'token': TOKEN})` NOT `load_dataset()` (OOM)
-5. Cross-component gain modest (+2.5%) because bearing impulses vs gearbox tooth-mesh modulation are different physics
-6. EMA + low LR (5e-5) prevents catastrophic forgetting in continual learning
-
-### V5 Results (2026-04-02) — COMPREHENSIVE BASELINE COMPARISON
-
-| Method | CWRU F1 | Paderborn F1 | Transfer Gain | Supervision |
-|--------|---------|-------------|---------------|-------------|
-| CNN Supervised | 1.000 ± 0.000 | 0.921 ± 0.041 | +0.757 | Supervised |
-| **JEPA V2 (ours)** | **0.773 ± 0.018** | **0.795 ± 0.002** | **+0.453** | **Self-supervised** |
-| JEPA V3 (SIGReg) | 0.531 ± 0.008 | 0.540 ± 0.025 | +0.193 | Self-supervised |
-| MAE (reconstruct) | 0.643 ± 0.144 | 0.609 ± 0.008 | -0.015 | Self-supervised |
-| Transformer Supervised | 0.969 ± 0.026 | 0.609 ± 0.051 | -0.011 | Supervised |
-| Random init | ~0.342 | ~0.342 | 0.000 | N/A |
-
-**Key V5 findings:**
-1. **Supervised Transformer provides ZERO transfer benefit (-0.011) despite 0.969 CWRU F1.** JEPA is 46x better for cross-domain transfer (+0.453 vs -0.011).
-2. **MAE reconstruction fails for transfer** (-0.015): predicting in latent space > pixel space.
-3. **SIGReg V3 is inferior to V2** (0.531 vs 0.773 CWRU): EMA is essential for small datasets (<10K windows).
-4. **Frequency masking**: helps at 30ep (+0.037) but HURTS at 100ep (-0.111). Not a contribution.
-5. **IMS RUL**: constant baseline (RMSE=0.086) beats all methods. Dataset too small and label-imbalanced.
-6. **Handcrafted features + LogReg**: 0.999 CWRU F1 — CWRU is too easy for meaningful in-domain benchmarking.
-
-**V5 New Files:**
-- `mechanical-jepa/baselines_comparison.py`: All baselines in one script (CNN, Transformer, MAE)
-- `mechanical-jepa/transfer_baselines.py`: Full cross-domain transfer comparison
-- `mechanical-jepa/freq_masking.py`: Frequency-domain masking experiment
-- `mechanical-jepa/rul_ims_pretrained.py`: JEPA pretrain on IMS + RUL regression
-- `mechanical-jepa/train_v3_sigreg.py`: V3 SIGReg training
-- `mechanical-jepa/src/models/sigreg.py`: SIGReg regularizer (from LeJEPA)
-- `mechanical-jepa/src/models/jepa_v3.py`: V3 architecture (no EMA, stop-gradient)
-- `mechanical-jepa/notebooks/05_v5_baselines_and_analysis.ipynb`: Publication-ready analysis
-
-### Experiment Log Range
-
-| Run | Experiments | Key Result |
-|-----|------------|-----------|
-| Overnight V1 | Exp 0-15 | 80.4% baseline, +28.5% over random |
-| Overnight V2 | Exp 16-23 | Fixed predictor collapse, +8.8% IMS transfer |
-| Overnight V3 | Exp 24-35 | +14.7% Paderborn (20kHz resample), wav2vec2 comparison |
-| Overnight V4 | Exp 36-41 | F1 metrics, RUL, cross-component, continual learning |
-| Overnight V5 | Exp V5-1 to V5-10 | Comprehensive baseline comparison, SIGReg, freq masking |
-
-### Files
-- Training: `mechanical-jepa/train_v2.py` (main), `train_v3_block.py` (block masking variant)
-- Transfer: `mechanical-jepa/ims_transfer.py`, `paderborn_transfer.py`, `transfer_matrix.py`
-- Multi-source: `mechanical-jepa/multi_source_pretrain.py`
-- Pretrained encoder eval: `mechanical-jepa/pretrained_encoder_eval.py`
-- Models: `mechanical-jepa/src/models/jepa_v2.py` (main), `jepa_enhanced.py` (structured masking)
-- Experiment log: `autoresearch/mechanical_jepa/EXPERIMENT_LOG.md` (Exp 0-35)
-- Lessons: `autoresearch/mechanical_jepa/LESSONS_LEARNED.md`
-
-### IMS Data Notes (UPDATED 2026-04-02)
-- Raw IMS files DOWNLOADED and available:
-  - `data/bearings/ims_raw/1st_test/1st_test/` (2156 files, 35 days)
-  - `data/bearings/ims_raw/2nd_test/2nd_test/` (984 files, 7 days)
-  - `data/bearings/ims/Test1/` and `Test2/` are symlinks to the above
-- IMS files are TAB-DELIMITED TEXT: use `np.loadtxt(fpath)` → (20480, 8) float64
-  - DO NOT use `np.fromfile(fpath, dtype=np.float64)` — gives all zeros silently
-- Use `jepa_rul_ims.py` for proper JEPA prognostics on raw IMS data
-- Old broken symlink `data/bearings/raw/ims` → `ims_npy_cache` (still there but cache is gone)
-
-### Paderborn Data
-- Location: `/home/sagemaker-user/IndustrialJEPA/datasets/data/paderborn/`
-- K001/ (healthy), KA01/ (outer race), KI01/ (inner race)
-- 80 MAT files each, ~256k samples per file at 64kHz
-- Load with: `scipy.io.loadmat(..., simplify_cells=True)` → `obj['Y'][6]['Data']` for vibration_1
-- MUST resample to 20kHz for best transfer with CWRU checkpoint
-
-### HuggingFace Dataset
-- `Forgis/Mechanical-Components`: CWRU (n=16 parquet rows), FEMTO bearings (25.6kHz, 2ch), mcc5_thu gearboxes (12.8kHz, 3ch, 8 fault types, 956 samples)
-- Token: `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`
-- Load with: `pd.read_parquet('hf://datasets/Forgis/Mechanical-Components/gearboxes/train-00000-of-00004.parquet', storage_options={'token': TOKEN})` (NOT load_dataset — OOM)
-- FEMTO has 2ch (mismatches CWRU 3ch model); use mcc5_thu gearboxes for cross-component (3ch matches)
-
-**Why:** V3 was needed to test frequency standardization, pretrained encoders, and complete the transfer matrix.
-**How to apply:** Use `paderborn_transfer.py` for Paderborn experiments. Always resample to 20kHz first.
+**Why:** V6 was needed to fix the Paderborn API bug, get correct transfer numbers, and run few-shot curves.
+**How to apply:** Use results from `transfer_baselines_v6_final.json` and `fewshot_curves.json` for any paper numbers.
