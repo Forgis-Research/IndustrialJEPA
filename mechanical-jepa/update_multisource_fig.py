@@ -15,13 +15,15 @@ def main():
     with open(RESULTS_DIR / 'multisource_pretrain.json') as f:
         data = json.load(f)
 
-    # Check how many seeds we have
-    methods_in_data = list(data.keys())
+    # Check how many seeds we have (filter out non-list keys like _summary)
+    methods_in_data = [k for k in data.keys() if isinstance(data[k], list)]
     n_seeds_available = min(len(data.get(m, [])) for m in methods_in_data if data.get(m))
     print(f"Methods: {methods_in_data}")
     print(f"Seeds available: {n_seeds_available}")
     for method in methods_in_data:
         seeds = data[method]
+        if not isinstance(seeds, list) or not seeds:
+            continue
         cwru = [s['cwru_f1'] for s in seeds]
         pad = [s['pad_f1'] for s in seeds]
         print(f"  {method}: CWRU={np.mean(cwru):.3f}+/-{np.std(cwru):.3f}, Pad={np.mean(pad):.3f}+/-{np.std(pad):.3f} (n={len(seeds)})")

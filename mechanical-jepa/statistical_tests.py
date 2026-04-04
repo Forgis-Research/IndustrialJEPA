@@ -140,30 +140,37 @@ print("\n" + "=" * 70)
 print("TEST 4: JEPA few-shot N=10 > Transformer supervised N=all?")
 print("(The KEY claim: JEPA with 10 labels/class > Transformer with all labels)")
 
-# Get raw per-measurement data (3 seeds x 3 sub-seeds = 9 measurements)
-jepa_10_all = fewshot.get('_raw', {}).get('jepa_v2', {}).get('10', [])
-tr_all_all = fewshot.get('_raw', {}).get('transformer_supervised', {}).get('-1', [])
+# Get raw per-measurement data — prefer 'all' key (updated with extended seeds), fallback to _raw
+jepa_10_all = fewshot.get('jepa_v2', {}).get('10', {}).get('all', [])
+if not jepa_10_all:
+    jepa_10_all = fewshot.get('_raw', {}).get('jepa_v2', {}).get('10', [])
+tr_all_all = fewshot.get('transformer_supervised', {}).get('-1', {}).get('all', [])
+if not tr_all_all:
+    tr_all_all = fewshot.get('_raw', {}).get('transformer_supervised', {}).get('-1', [])
 
 if jepa_10_all and tr_all_all:
+    n_jepa = len(jepa_10_all)
+    n_tr = len(tr_all_all)
     t_stat, p_val = stats.ttest_ind(jepa_10_all, tr_all_all, alternative='greater')
     d = cohens_d(jepa_10_all, tr_all_all)
     print_test(
         "JEPA@N=10 > Transformer@N=all (two-sample t-test, one-sided)",
-        f"JEPA@10: {np.mean(jepa_10_all):.3f} +/- {np.std(jepa_10_all):.3f}, Transformer@all: {np.mean(tr_all_all):.3f} +/- {np.std(tr_all_all):.3f}",
-        p_val, t_stat, d, min(len(jepa_10_all), len(tr_all_all))
+        f"JEPA@10: {np.mean(jepa_10_all):.3f} +/- {np.std(jepa_10_all):.3f} (n={n_jepa}), Transformer@all: {np.mean(tr_all_all):.3f} +/- {np.std(tr_all_all):.3f} (n={n_tr})",
+        p_val, t_stat, d, min(n_jepa, n_tr)
     )
 else:
     # Fall back to summary statistics with Welch's t-test approximation
     jepa_10_mean = fewshot['jepa_v2']['10']['mean']
     jepa_10_std = fewshot['jepa_v2']['10']['std']
+    n_jepa = fewshot['jepa_v2']['10'].get('n', 9)
     tr_all_mean = fewshot['transformer_supervised']['-1']['mean']
     tr_all_std = fewshot['transformer_supervised']['-1']['std']
-    n = 9  # 3 seeds x 3 sub-seeds
+    n_tr = fewshot['transformer_supervised']['-1'].get('n', 9)
 
     # Welch's t-test from summary stats
-    se_diff = np.sqrt(jepa_10_std**2/n + tr_all_std**2/n)
+    se_diff = np.sqrt(jepa_10_std**2/n_jepa + tr_all_std**2/n_tr)
     t_stat = (jepa_10_mean - tr_all_mean) / se_diff
-    df = n + n - 2
+    df = n_jepa + n_tr - 2
     p_val = 1 - stats.t.cdf(t_stat, df=df)  # one-sided
 
     # Effect size from means and pooled std
@@ -172,8 +179,8 @@ else:
 
     print_test(
         "JEPA@N=10 > Transformer@N=all (approx t-test from summary stats)",
-        f"JEPA@10: {jepa_10_mean:.3f} +/- {jepa_10_std:.3f} (n=9), Transformer@all: {tr_all_mean:.3f} +/- {tr_all_std:.3f} (n=9)",
-        p_val, t_stat, d, n
+        f"JEPA@10: {jepa_10_mean:.3f} +/- {jepa_10_std:.3f} (n={n_jepa}), Transformer@all: {tr_all_mean:.3f} +/- {tr_all_std:.3f} (n={n_tr})",
+        p_val, t_stat, d, min(n_jepa, n_tr)
     )
 
 # ============================================================================

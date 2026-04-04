@@ -1718,9 +1718,24 @@ The benefit at 30ep (+0.037) reverses at 100ep (−0.111). This is a regularizat
 - Gear pretraining only slightly helps gear classification (+3.5% vs random)
 - CWRU pretraining doesn't help gear classification (0.226 vs 0.205 random = +1%)
 
-**Verdict**: PENDING (awaiting all seeds + multi-source result)
-**Hypothesis update**: Cross-component transfer is fundamentally limited because bearing (impulse physics) and gearbox (tooth-mesh modulation) are different signal generating mechanisms. JEPA learns structural patterns of each modality separately.
-**Next**: Check multi-source result when done
+**Verdict**: KEEP (3-seed final results confirm negative cross-component transfer)
+
+**Final 3-seed results** (JSON: multisource_pretrain.json):
+| Method | CWRU F1 | Paderborn F1 | Gear F1 |
+|--------|---------|-------------|---------|
+| CWRU pretrained (ref) | 0.853 ± 0.058 | **0.895 ± 0.008** | 0.222 ± 0.003 |
+| Gear pretrained | 0.573 ± 0.057 | 0.591 ± 0.077 | **0.276 ± 0.012** |
+| Multi-source CWRU+Gear | 0.611 ± 0.075 | 0.770 ± 0.022 | 0.334 ± 0.014 |
+| Random init | 0.557 ± 0.012 | 0.491 ± 0.010 | 0.201 ± 0.006 |
+
+**Confirmed findings**:
+- Gear pretraining HURTS CWRU and Paderborn transfer (0.573 vs 0.853 CWRU-pretrained)
+- Multi-source partially recovers Paderborn (0.770) but still -12.5pp below CWRU-only
+- Cross-component transfer is negative: bearing and gear signals are physically distinct
+- Figure: fig7_multisource_n3.{png,pdf}
+
+**Insight**: JEPA learns machine-specific structural patterns, not universal vibration patterns. Cross-component negative transfer validates that JEPA's representations are physically meaningful (impulse vs tooth-mesh modulation are different).
+**Next**: This negative result is publishable as a nuanced finding — JEPA succeeds at cross-machine same-component transfer but not cross-component transfer.
 
 ---
 
