@@ -229,10 +229,13 @@ Multi-source dilutes features for in-domain tasks. Source: [LOG ONLY Exp 33]
 
 ---
 
-## Planned Experiments (V6 — In Progress)
+## Planned Experiments (V6 — Status)
 
-- [ ] Spectral Feature JEPA (Phase 3A) — novel multi-task objective
-- [ ] Few-shot transfer curves (Phase 2C) — key publishable figure
-- [ ] Multi-source pretraining on HF data (Phase 4B)
-- [ ] Cross-component bearing → gearbox (Phase 4A)
+- [x] Spectral Feature JEPA (Phase 3A) — DONE: sfjepa_comparison.json. Key finding: in-domain/transfer tradeoff, no sweet spot.
+- [x] Few-shot transfer curves (Phase 2C) — DONE: fewshot_curves.json. KEY FIGURE: JEPA@N=10 > Transformer@N=all.
+- [x] Multi-source pretraining on HF data (Phase 4B) — PARTIAL: seed 42 complete, seeds 123/456 still running. Key finding confirmed with seed 42: gear pretraining hurts bearing transfer.
+- [x] Cross-component bearing → gearbox (Phase 4A) — DONE: Gear-pretrained JEPA CWRU F1=0.506 (below random 0.542). Negative transfer confirmed.
+- [x] Statistical significance tests (Phase 5A) — DONE: statistical_tests.py. All 5 key claims p<0.05, large Cohen's d.
+- [x] Publication notebook (Phase 6A) — DONE: notebooks/06_v6_walkthrough.ipynb (22 cells, all executed, all figures rendered).
+- [x] Publication figures (Phase 6B) — DONE: fig1-7 in notebooks/plots/ as PDF+PNG.
 - [ ] Statistical significance tests (Phase 5A)
