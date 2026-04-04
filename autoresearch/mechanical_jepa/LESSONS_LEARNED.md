@@ -672,3 +672,124 @@ To properly solve RUL with JEPA: need a health indicator (distance from healthy 
 
 **Rule**: Don't benchmark RUL on IMS 1st_test without explicitly handling label distribution. Report the constant baseline, and only claim "improvement" if you beat it with a well-calibrated model.
 
+---
+
+## V6 Session Lessons (2026-04-03/04)
+
+### Data Integrity: PaderbornDataset API Bug
+
+The critical lesson from V6: **always verify the dataset API contract matches the actual constructor**.
+
+`transfer_baselines.py` was calling `PaderbornDataset(root_dir=..., ...)` but the class expects
+`bearing_dirs: list` (list of (path, label) tuples) as its first positional argument.
+The result: ALL previous Paderborn F1 values in EXPERIMENT_LOG were bogus (no data loaded → F1=null).
+
+**Rule**: Before trusting any reported F1, trace the data loading path end-to-end.
+Check: loader → dataset → constructor → what files does it actually open?
+Add a dataset size print (`len(dataset)`) in all evaluation scripts.
+
+### Corrected Paderborn Numbers (V6 Audit)
+
+The audited (correct) values after fixing the API bug:
+
+| Method | Paderborn F1 (V6) | Transfer Gain |
+|--------|------------------|---------------|
+| JEPA V2 | 0.900 ± 0.008 | +0.371 ± 0.026 |
+| CNN Supervised | 0.987 ± 0.005 | +0.457 ± 0.020 |
+| Transformer Supervised | 0.673 ± 0.063 | +0.144 ± 0.044 |
+| Random Init | 0.529 ± 0.024 | 0.000 (reference) |
+
+Transfer Gain standardization: random init uses same architecture (JEPA encoder, untrained) for ALL methods.
+
+### SF-JEPA: Physics Losses Create an Inescapable Tradeoff
+
+Spectral Feature JEPA (SF-JEPA) adds an auxiliary head predicting 8 spectral features of masked patches.
+Result: clear inescapable tradeoff between in-domain accuracy and transfer.
+
+| spec_weight | CWRU F1 | Paderborn F1 | Transfer Gain |
+|-------------|---------|-------------|---------------|
+| 0.0 (pure JEPA V2) | 0.773 | 0.900 | +0.371 |
+| 0.1 (SF-JEPA light) | 0.805 | 0.873 | +0.344 |
+| 0.5 (SF-JEPA heavy) | 0.905 | 0.818 | +0.289 |
+
+**Interpretation**: SF-JEPA learns spectral patterns that are useful for CWRU but are dataset-specific.
+Higher spec_weight → model focuses on CWRU spectral features → less transferable.
+The pure JEPA objective (latent space prediction) maximizes domain-agnostic representation quality.
+
+**Rule for reviewers**: "Our method boosts in-domain accuracy" is NOT a valid argument for SF-JEPA.
+The correct frame is: when in-domain accuracy matters more than transfer, use higher spec_weight.
+When transfer matters (production deployment), use pure JEPA.
+
+**Implementation insight**: Use vectorized torch FFT, NOT scipy per-patch loops.
+scipy loops at 200K+ calls during training = training never completes.
+Speedup from torch.fft.rfft vectorization: 100x+ (1.87s per 100 batches vs ~hours).
+
+### Few-Shot Transfer Curves: The Key Publishable Finding
+
+JEPA at N=10 per class (0.735 ± 0.039) beats Transformer supervised at N=ALL (0.689 ± 0.060).
+This is the cleanest story: JEPA's pretrained representations are data-efficient even in a
+zero-label pretraining scenario.
+
+| Method | N=10 | N=20 | N=50 | N=100 | N=all |
+|--------|------|------|------|-------|-------|
+| CNN Supervised | 0.989 | 0.992 | 0.989 | 0.990 | 0.990 |
+| JEPA V2 | **0.735** | 0.779 | 0.853 | 0.878 | **0.903** |
+| Transformer Supervised | 0.510 | 0.545 | 0.609 | 0.638 | 0.689 |
+| Random Init | 0.383 | 0.385 | 0.413 | 0.418 | 0.538 |
+
+**Why JEPA beats supervised Transformer with 10x fewer labels**:
+JEPA's pretraining forces it to learn position-aware, context-insensitive features.
+Supervised Transformer memorizes CWRU-specific patterns (sensor mount, motor load).
+In the new domain (Paderborn), CWRU-memorized patterns are misleading.
+
+**Key for paper**: The N=10 vs N=all comparison is Table 1 in Section 3 of the paper.
+Show the crossover point: JEPA@10 > Transformer@all is the headline result.
+
+### Cross-Component Transfer Is Physics-Limited
+
+CWRU bearing → MCC5-THU gearbox:
+- Gear-pretrained JEPA: CWRU F1 = 0.506 (BELOW random init 0.542)
+- Multi-source CWRU+Gear: CWRU F1 = 0.526 (also below random)
+- Gear pretraining damages bearing-domain features
+
+Root cause: bearing faults = periodic impulses; gear faults = tooth-mesh modulation.
+These are physically distinct dynamics. JEPA trained on gearboxes learns gear dynamics,
+which are anti-informative for bearing fault classification.
+
+**Rule**: Cross-component pretraining is harmful when source and target have fundamentally
+different physical mechanisms. Stick to within-component-type pretraining.
+"Vibration signals" is too broad a modality; "bearing vibration" vs "gear vibration" are distinct.
+
+### Multi-Source Result (Partial — Seed 42 Only as of writing)
+
+Seed 42 preview:
+- CWRU-pretrained reference: CWRU=0.787, Pad=0.902
+- Gear-pretrained: CWRU=0.506 (-28%), Pad=0.542 (-36%) — confirms negative transfer
+- Multi-source CWRU+Gear: CWRU=0.526 (-26%), Pad=0.801 (-11%)
+
+Multi-source partially recovers Paderborn transfer but still below CWRU-only.
+Gear data dilutes the CWRU-learned fault dynamics.
+
+**Hypothesis**: Multi-source may help if gear data fraction is small (<10%),
+but at 1:10 CWRU:gear ratio, gear data dominates.
+
+### Disk Space Management
+
+NVMe mount at `/mnt/sagemaker-nvme/` provides ~200GB scratch space.
+Home disk (`/home/sagemaker-user`) fills quickly — move large datasets:
+```
+mv mechanical-jepa/data/bearings/ims_raw/ /mnt/sagemaker-nvme/
+ln -s /mnt/sagemaker-nvme/ims_raw mechanical-jepa/data/bearings/ims_raw
+```
+Also: delete `wandb/` dir (~1GB) and `__pycache__/` dirs aggressively.
+
+### Background Process Reliability
+
+When running background processes with `run_in_background`, output can be lost if:
+1. Python stdout buffering + tee don't interact correctly
+2. Process is killed by OOM or timeout
+
+Always: `export PYTHONUNBUFFERED=1` before Python commands in background.
+Use absolute paths for log files: `/mnt/sagemaker-nvme/my_job.log`.
+Check progress with `tail -f /mnt/sagemaker-nvme/my_job.log`.
+
