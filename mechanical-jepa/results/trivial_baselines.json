@@ -1,0 +1,76 @@
+{
+  "random_forest": [
+    {
+      "seed": 42,
+      "cwru_f1": 0.8476896895520336,
+      "pad_f1": 0.16666666666666666
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 0.9870603108500038,
+      "pad_f1": 0.16666666666666666
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.9956893348197696,
+      "pad_f1": 0.16666666666666666
+    }
+  ],
+  "xgboost": [
+    {
+      "seed": 42,
+      "cwru_f1": 0.659670828038175,
+      "pad_f1": 0.16666666666666666
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 0.9454876971371642,
+      "pad_f1": 0.16666666666666666
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.8747772980421333,
+      "pad_f1": 0.16666666666666666
+    }
+  ],
+  "random_encoder": [
+    {
+      "seed": 42,
+      "cwru_f1": 0.708863718047803,
+      "pad_f1": 0.26175800202585087
+    },
+    {
+      "seed": 123,
+      "cwru_f1": 0.7617129416216799,
+      "pad_f1": 0.23186165933624384
+    },
+    {
+      "seed": 456,
+      "cwru_f1": 0.7013419363163806,
+      "pad_f1": 0.23059641538049833
+    }
+  ],
+  "_meta": {
+    "description": "Trivial baselines: RF, XGBoost, random-init encoder",
+    "features": "RMS, peak, crest, kurtosis, std, skewness, shape_factor, impulse_factor, spectral_entropy, spectral_centroid, spectral_spread, 4 band energies (per channel)",
+    "transfer": "CWRU-trained features/model evaluated on Paderborn (no retraining)"
+  },
+  "_summary_random_forest": {
+    "cwru_mean": 0.9434797784072689,
+    "cwru_std": 0.067825368193315,
+    "pad_mean": 0.16666666666666666,
+    "pad_std": 0.0
+  },
+  "_summary_xgboost": {
+    "cwru_mean": 0.826645274405824,
+    "cwru_std": 0.12154653276250993,
+    "pad_mean": 0.16666666666666666,
+    "pad_std": 0.0
+  },
+  "_summary_random_encoder": {
+    "cwru_mean": 0.7239728653286212,
+    "cwru_std": 0.026862356797300434,
+    "pad_mean": 0.24140535891419768,
+    "pad_std": 0.01440075858626044
+  }
+}

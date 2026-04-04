@@ -36,7 +36,7 @@ The random init baseline uses seeds 42/123/456 giving Paderborn F1 of 0.521/0.56
 | Handcrafted + LogReg | 1.000 | 1.000 | 0.998 | 0.999 | 0.001 | baselines_comparison.json |
 | Transformer Supervised | 0.931 | 0.991 | 0.983 | 0.969 | 0.026 | transfer_baselines_v6_final.json |
 | MAE | 0.471 | 0.901 | 0.553 | 0.643 | 0.144 | baselines_comparison.json |
-| **JEPA V2** | **0.748** | **0.791** | **0.779** | **0.773** | **0.018** | project_industrialjepa.md (Exp 36) |
+| **JEPA V2** | **0.748** | **0.791** | **0.779** | **0.773** | **0.018** | transfer_baselines_v6_final.json |
 | JEPA V3 (SIGReg) | ~0.524 | ~0.535 | ~0.535 | 0.531 | 0.008 | [LOG ONLY V5-2] |
 
 **Note**: CWRU is too easy — handcrafted features achieve 0.999 F1. The meaningful metric is Paderborn transfer.
