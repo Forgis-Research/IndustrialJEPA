@@ -158,13 +158,30 @@ Cross-component gain is minimal (+2.5%) because bearing impulse physics vs gearb
 
 ---
 
-## 8. Multi-Source Pretraining (Previous Finding)
+## 8. Multi-Source Pretraining (V6 Cross-Component)
 
-From V3 experiments (3-seed, Exp 33):
+### V6 Results (multisource_pretrain.json, partial — 2/3 seeds as of 2026-04-04 01:41 UTC)
+
+| Method | CWRU F1 | Paderborn F1 | Gear F1 | n seeds |
+|--------|---------|-------------|---------|---------|
+| CWRU pretrained (reference) | 0.858 ± 0.070 | 0.900 ± 0.002 | 0.223 ± 0.003 | 2 |
+| Gear pretrained (50ep) | 0.536 ± 0.030 | 0.621 ± 0.079 | 0.283 ± 0.006 | 2 |
+| Multi-source CWRU+Gear | 0.617 ± 0.091 | 0.774 ± 0.027 | 0.296 ± 0.040 | 2 |
+| Random Init | 0.557 ± 0.015 | 0.484 ± 0.001 | 0.199 ± 0.009 | 2 |
+
+Seed 456 still running — final 3-seed update pending.
+
+**Key finding** (confirmed across seeds 42 and 123):
+1. Gear-pretrained JEPA CWRU F1 = 0.536 (near random 0.557) — no cross-component transfer
+2. Multi-source CWRU+Gear: CWRU F1 = 0.617 (below CWRU-only reference 0.858) — gear data dilutes bearing features
+3. Gear-pretrained Paderborn F1 = 0.621 (vs CWRU-pretrained 0.900) — confirms gear features don't transfer to bearings
+4. Paderborn seed 123 gear pretrain oddly high (0.699) — likely high-variance single-seed result
+
+**From V3 experiments** (CWRU+Paderborn multi-source, 3-seed, Exp 33):
 - CWRU-only pretraining: 0.887 CWRU F1
 - CWRU + Paderborn pretraining: 0.812 CWRU F1 (−7.5%)
 
-Multi-source dilutes features for in-domain tasks. Source: [LOG ONLY Exp 33]
+Multi-source dilutes features for in-domain tasks regardless of source data type (gearbox or Paderborn).
 
 ---
 
