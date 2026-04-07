@@ -322,3 +322,33 @@ After each phase, review results critically:
 - What's surprising? Investigate surprises — they're either bugs or insights.
 
 Commit results after each major phase so progress is saved.
+
+### Final Validation Loop (MANDATORY — do this AFTER all phases complete)
+
+Once all baselines are implemented and results collected, loop over every single baseline and metric and ask two questions:
+
+**Question 1: Is the metric meaningful & correctly implemented?**
+For each metric in each task:
+- Is this the metric the community actually uses for this task? (e.g., AUROC for anomaly detection, not accuracy on imbalanced data)
+- Is the implementation correct? Check edge cases: class imbalance handling, macro vs micro averaging, threshold selection, normalization
+- Does the metric capture what we care about? (e.g., F1 is meaningless if the test set is balanced — accuracy would be equivalent and simpler)
+- Are there standard metrics we're MISSING that reviewers would expect? (e.g., EER for anomaly detection, MAPE for forecasting)
+- For forecasting: are we evaluating at the right granularity? (per-episode vs pooled, per-horizon vs averaged)
+- For anomaly detection: are we reporting at a fair operating point? (optimal threshold is cheating — use fixed FPR or cross-validated threshold)
+
+If any metric fails these checks: fix it, re-run, and update the JSON.
+
+**Question 2: Do we include the SOTA baseline?**
+For each task, search the web for the current SOTA method and ask:
+- **Classification**: What's the best published cross-domain bearing fault detection method? (DANN? CORAL? Some 2025 method?) Is there a method that uses self-supervised pretraining + fine-tuning that we should compare against? Are we missing a key baseline that ICML/NeurIPS reviewers will ask about?
+- **Anomaly detection**: What's SOTA for unsupervised/one-class anomaly detection on vibration data? Is there a deep learning method that's become standard (e.g., DAGMM, Deep SAD, DROCC)? Are there domain-specific methods (envelope analysis + threshold) that practitioners actually use?
+- **Forecasting**: What's SOTA for health indicator prognostics? Is there a transformer-based or foundation-model-based method we should include? What about physics-informed methods (Paris' law, degradation models)?
+- **Latent forecasting**: Is anyone else doing this? If not, is our framing novel or just reinventing something with a different name?
+
+For each task, if there's a clear SOTA that we're missing:
+1. Implement it (or a faithful approximation)
+2. Run it on the same splits with the same seeds
+3. Add to the results JSON and notebook
+4. If it can't be implemented in reasonable time, document WHY and note it as a known gap
+
+Update `BASELINE_RESULTS.md` with a "Validation Notes" section documenting every check performed and its outcome. Be honest about gaps — it's better to know what we're missing than to discover it during review.
