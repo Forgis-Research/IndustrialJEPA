@@ -1,0 +1,157 @@
+{
+  "_meta": {
+    "timestamp": "2026-04-07T21:30:29.056667",
+    "seeds": [
+      42,
+      123,
+      456
+    ],
+    "n_train": 1000,
+    "n_test": 564,
+    "n_classes": 10,
+    "class_names": [
+      "ball",
+      "cage",
+      "compound",
+      "compound_ball_imbalance",
+      "compound_cage_imbalance",
+      "healthy",
+      "imbalance",
+      "inner_race",
+      "misalignment_horizontal",
+      "outer_race"
+    ],
+    "train_sources": [
+      "cwru",
+      "mafaulda",
+      "mfpt",
+      "seu"
+    ],
+    "test_sources": [
+      "ottawa_bearing",
+      "paderborn"
+    ],
+    "n_features": 18,
+    "note": "Cross-domain: train on CWRU+MAFAULDA+SEU, test on Ottawa+Paderborn",
+    "timestamp_end": "2026-04-07T21:31:02.692918"
+  },
+  "trivial_majority": {
+    "macro_f1": 0.0,
+    "accuracy": 0.0
+  },
+  "trivial_random": {
+    "macro_f1_mean": 0.04038065231901317,
+    "macro_f1_std": 0.0034767529974928124,
+    "accuracy_mean": 0.05319148936170213,
+    "accuracy_std": 0.009040814740412738,
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  },
+  "trivial_nearest_centroid": {
+    "macro_f1": 0.1925046576914243,
+    "accuracy": 0.3351063829787234
+  },
+  "lr": {
+    "macro_f1_mean": 0.14365743498043068,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 0.2783687943262411,
+    "accuracy_std": 0.0,
+    "all_f1s": [
+      0.14365743498043068,
+      0.14365743498043068,
+      0.14365743498043068
+    ],
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  },
+  "random_forest": {
+    "macro_f1_mean": 0.19296490182925782,
+    "macro_f1_std": 0.021154624548751843,
+    "accuracy_mean": 0.3510638297872341,
+    "accuracy_std": 0.008805948242169816,
+    "all_f1s": [
+      0.21224179718768668,
+      0.16351286818729754,
+      0.20314004011278922
+    ],
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  },
+  "xgboost": {
+    "macro_f1_mean": 0.17153856886325855,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 0.35638297872340424,
+    "accuracy_std": 0.0,
+    "all_f1s": [
+      0.17153856886325855,
+      0.17153856886325855,
+      0.17153856886325855
+    ],
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  },
+  "svm_rbf": {
+    "macro_f1_mean": 0.1272010949615968,
+    "macro_f1_std": 0.0,
+    "accuracy_mean": 0.2127659574468085,
+    "accuracy_std": 0.0,
+    "all_f1s": [
+      0.1272010949615968
+    ],
+    "seeds": [
+      42
+    ]
+  },
+  "cnn_1d": {
+    "macro_f1_mean": 0.15889481762043853,
+    "macro_f1_std": 0.004228738479799461,
+    "accuracy_mean": 0.24392361111111108,
+    "accuracy_std": 0.01857720013804921,
+    "seeds": [
+      42,
+      123,
+      456
+    ],
+    "n_train": 180,
+    "n_test": 384,
+    "deep_classes": [
+      "ball",
+      "compound",
+      "healthy",
+      "inner_race",
+      "outer_race"
+    ]
+  },
+  "resnet_1d": {
+    "macro_f1_mean": 0.1679930519038906,
+    "macro_f1_std": 0.00676573809884634,
+    "accuracy_mean": 0.32378472222222227,
+    "accuracy_std": 0.02389913176725034,
+    "seeds": [
+      42,
+      123,
+      456
+    ],
+    "n_train": 180,
+    "n_test": 384,
+    "deep_classes": [
+      "ball",
+      "compound",
+      "healthy",
+      "inner_race",
+      "outer_race"
+    ]
+  }
+}

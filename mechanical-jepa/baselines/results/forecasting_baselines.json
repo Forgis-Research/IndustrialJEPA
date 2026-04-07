@@ -1,0 +1,439 @@
+{
+  "hi_forecasting_rms": {
+    "horizon_1": {
+      "trivial_last_value": {
+        "rmse": 0.3512323418689116,
+        "mae": 0.16617445647716522,
+        "r2": 0.8265632390975952,
+        "spearman_r": 0.8279436255025822,
+        "spearman_p": 5.58633764243519e-97
+      },
+      "trivial_moving_avg": {
+        "rmse": 0.5472153285873047,
+        "mae": 0.22500091791152954,
+        "r2": 0.5790130496025085,
+        "spearman_r": 0.795618281362934,
+        "spearman_p": 2.701085847349543e-84
+      },
+      "trivial_linear_extrap": {
+        "rmse": 0.38901857895985115,
+        "mae": 0.16169147356593033,
+        "r2": 0.7872385937468809,
+        "spearman_r": 0.8355368403557248,
+        "spearman_p": 2.3913682062353055e-100
+      },
+      "trivial_constant_mean": {
+        "rmse": 0.8435216170742319,
+        "mae": 0.4917930066585541,
+        "r2": -0.00033295154571533203,
+        "spearman_r": NaN,
+        "spearman_p": NaN
+      },
+      "ridge": {
+        "rmse_mean": 0.35434799834894876,
+        "rmse_std": 5.551115123125783e-17,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "random_forest": {
+        "rmse_mean": 0.31113009710134065,
+        "rmse_std": 0.002383577702355273,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "xgboost": {
+        "rmse_mean": 0.3447081477188047,
+        "rmse_std": 5.551115123125783e-17,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "arima": {
+        "rmse_mean": 1.8215875417198646,
+        "rmse_std": 0.38694021527625877,
+        "note": "ARIMA(2,1,2) per-episode, episode-level RMSE"
+      }
+    },
+    "horizon_5": {
+      "trivial_last_value": {
+        "rmse": 0.5438569851563412,
+        "mae": 0.22240880131721497,
+        "r2": 0.591774582862854,
+        "spearman_r": 0.7715461506669311,
+        "spearman_p": 1.128027238643344e-74
+      },
+      "trivial_moving_avg": {
+        "rmse": 0.59978268880199,
+        "mae": 0.25643497705459595,
+        "r2": 0.5035008788108826,
+        "spearman_r": 0.7310787522148092,
+        "spearman_p": 2.0981190878598914e-63
+      },
+      "trivial_linear_extrap": {
+        "rmse": 0.5877009369343237,
+        "mae": 0.24214565453549577,
+        "r2": 0.5233019675904418,
+        "spearman_r": 0.6920004391738402,
+        "spearman_p": 2.582457494532085e-54
+      },
+      "trivial_constant_mean": {
+        "rmse": 0.8515137474733323,
+        "mae": 0.49600985646247864,
+        "r2": -0.0007231235504150391,
+        "spearman_r": NaN,
+        "spearman_p": NaN
+      },
+      "ridge": {
+        "rmse_mean": 0.552432109018834,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "random_forest": {
+        "rmse_mean": 0.6219847271421142,
+        "rmse_std": 0.0019751227843569177,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "xgboost": {
+        "rmse_mean": 0.6858890038380391,
+        "rmse_std": 1.1102230246251565e-16,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "arima": {
+        "rmse_mean": 1.8215875417198646,
+        "rmse_std": 0.38694021527625877,
+        "note": "ARIMA(2,1,2) per-episode, episode-level RMSE"
+      }
+    },
+    "horizon_10": {
+      "trivial_last_value": {
+        "rmse": 0.6070606347315286,
+        "mae": 0.2628166377544403,
+        "r2": 0.5033615827560425,
+        "spearman_r": 0.708916515657654,
+        "spearman_p": 1.5297721443774143e-56
+      },
+      "trivial_moving_avg": {
+        "rmse": 0.644220566285557,
+        "mae": 0.2904501259326935,
+        "r2": 0.44069933891296387,
+        "spearman_r": 0.6838040130473809,
+        "spearman_p": 3.2495331191890416e-51
+      },
+      "trivial_linear_extrap": {
+        "rmse": 0.656051150726635,
+        "mae": 0.2809605983722482,
+        "r2": 0.41996852102950855,
+        "spearman_r": 0.6641770364019098,
+        "spearman_p": 2.0676695049000322e-47
+      },
+      "trivial_constant_mean": {
+        "rmse": 0.8618818652658987,
+        "mae": 0.5031821727752686,
+        "r2": -0.001086592674255371,
+        "spearman_r": NaN,
+        "spearman_p": NaN
+      },
+      "ridge": {
+        "rmse_mean": 0.5961363920905829,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "random_forest": {
+        "rmse_mean": 0.6829354534304946,
+        "rmse_std": 0.004672133405761335,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "xgboost": {
+        "rmse_mean": 0.7888118232401949,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "arima": {
+        "rmse_mean": 1.8215875417198646,
+        "rmse_std": 0.38694021527625877,
+        "note": "ARIMA(2,1,2) per-episode, episode-level RMSE"
+      }
+    }
+  },
+  "hi_forecasting_kurtosis": {
+    "horizon_1": {
+      "trivial_last_value": {
+        "rmse": 1.0702738511284398,
+        "mae": 0.7124752402305603,
+        "r2": -0.12634849548339844,
+        "spearman_r": 0.21121410302812277,
+        "spearman_p": 3.314949747043417e-05
+      },
+      "trivial_moving_avg": {
+        "rmse": 0.963894489060134,
+        "mae": 0.5970454812049866,
+        "r2": 0.08642983436584473,
+        "spearman_r": 0.2426543994873853,
+        "spearman_p": 1.6984733819509497e-06
+      },
+      "trivial_linear_extrap": {
+        "rmse": 0.9436096186255333,
+        "mae": 0.6291394491836004,
+        "r2": 0.12447681389692322,
+        "spearman_r": 0.26061581560741237,
+        "spearman_p": 2.5646570802982616e-07
+      },
+      "trivial_constant_mean": {
+        "rmse": 1.0089833163951085,
+        "mae": 0.6472236514091492,
+        "r2": -0.0010387897491455078,
+        "spearman_r": NaN,
+        "spearman_p": NaN
+      },
+      "ridge": {
+        "rmse_mean": 0.9064124060495563,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "random_forest": {
+        "rmse_mean": 0.9952065749586024,
+        "rmse_std": 0.005252220078845803,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "xgboost": {
+        "rmse_mean": 1.08611120577392,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "arima": {
+        "rmse_mean": 1.6026077981268516,
+        "rmse_std": 0.2910090388418203,
+        "note": "ARIMA(2,1,2) per-episode, episode-level RMSE"
+      }
+    },
+    "horizon_5": {
+      "trivial_last_value": {
+        "rmse": 1.2165761291226496,
+        "mae": 0.7750576138496399,
+        "r2": -0.4373600482940674,
+        "spearman_r": 0.1085190633848601,
+        "spearman_p": 0.03642257868953203
+      },
+      "trivial_moving_avg": {
+        "rmse": 1.0132433034928279,
+        "mae": 0.624026894569397,
+        "r2": 0.0029556751251220703,
+        "spearman_r": 0.1867024967872009,
+        "spearman_p": 0.00029374398564981964
+      },
+      "trivial_linear_extrap": {
+        "rmse": 1.3898357602363498,
+        "mae": 0.8511999950447501,
+        "r2": -0.875918501554644,
+        "spearman_r": 0.16697533936319325,
+        "spearman_p": 0.0012276075001598822
+      },
+      "trivial_constant_mean": {
+        "rmse": 1.0152865506158595,
+        "mae": 0.6513576507568359,
+        "r2": -0.0010696649551391602,
+        "spearman_r": NaN,
+        "spearman_p": NaN
+      },
+      "ridge": {
+        "rmse_mean": 0.996390683664346,
+        "rmse_std": 1.1102230246251565e-16,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "random_forest": {
+        "rmse_mean": 1.0912686644069352,
+        "rmse_std": 0.007818930927012422,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "xgboost": {
+        "rmse_mean": 1.1943021006871286,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "arima": {
+        "rmse_mean": 1.6026077981268516,
+        "rmse_std": 0.2910090388418203,
+        "note": "ARIMA(2,1,2) per-episode, episode-level RMSE"
+      }
+    },
+    "horizon_10": {
+      "trivial_last_value": {
+        "rmse": 1.3138630465026444,
+        "mae": 0.8200526833534241,
+        "r2": -0.6509063243865967,
+        "spearman_r": 0.08775892928401932,
+        "spearman_p": 0.09548047590057623
+      },
+      "trivial_moving_avg": {
+        "rmse": 1.0206592502208267,
+        "mae": 0.6339696645736694,
+        "r2": 0.0037145018577575684,
+        "spearman_r": 0.14570288028690173,
+        "spearman_p": 0.005478976755517944
+      },
+      "trivial_linear_extrap": {
+        "rmse": 1.873443292492149,
+        "mae": 1.1166211040770295,
+        "r2": -2.356628926976082,
+        "spearman_r": 0.07991527221274379,
+        "spearman_p": 0.12909980994533152
+      },
+      "trivial_constant_mean": {
+        "rmse": 1.0229879658719288,
+        "mae": 0.6541315317153931,
+        "r2": -0.0008368492126464844,
+        "spearman_r": NaN,
+        "spearman_p": NaN
+      },
+      "ridge": {
+        "rmse_mean": 1.007639552217758,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "random_forest": {
+        "rmse_mean": 1.1578561006142352,
+        "rmse_std": 0.002744268904468319,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "xgboost": {
+        "rmse_mean": 1.2325865912051477,
+        "rmse_std": 0.0,
+        "seeds": [
+          42,
+          123,
+          456
+        ]
+      },
+      "arima": {
+        "rmse_mean": 1.6026077981268516,
+        "rmse_std": 0.2910090388418203,
+        "note": "ARIMA(2,1,2) per-episode, episode-level RMSE"
+      }
+    }
+  },
+  "rul_estimation": {
+    "trivial_constant_mean": {
+      "rmse": 0.2897499133077826,
+      "mae": 0.25092601776123047,
+      "r2": -8.881092071533203e-05,
+      "spearman_r": NaN,
+      "spearman_p": NaN
+    },
+    "trivial_linear_position": {
+      "rmse": 2.1069907582950447e-08,
+      "mae": 1.1857022919059546e-08,
+      "r2": 1.0,
+      "spearman_r": 0.9999999999999998,
+      "spearman_p": 0.0
+    },
+    "ridge": {
+      "rmse_mean": 0.22898624734363596,
+      "rmse_std": 0.0,
+      "seeds": [
+        42,
+        123,
+        456
+      ]
+    },
+    "random_forest": {
+      "rmse_mean": 0.21430476681779376,
+      "rmse_std": 0.00038559605561793716,
+      "seeds": [
+        42,
+        123,
+        456
+      ]
+    },
+    "xgboost": {
+      "rmse_mean": 0.2121455865934285,
+      "rmse_std": 0.0,
+      "seeds": [
+        42,
+        123,
+        456
+      ]
+    }
+  },
+  "_meta": {
+    "timestamp": "2026-04-07T21:38:33.587635",
+    "seeds": [
+      42,
+      123,
+      456
+    ],
+    "hi_types": [
+      "rms",
+      "kurtosis"
+    ],
+    "horizons": [
+      1,
+      5,
+      10
+    ],
+    "context_len": 20
+  }
+}
