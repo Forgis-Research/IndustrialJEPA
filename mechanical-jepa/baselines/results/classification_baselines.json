@@ -153,5 +153,109 @@
       "inner_race",
       "outer_race"
     ]
+  },
+  "in_domain_rf": {
+    "cwru": {
+      "macro_f1_mean": 0.725,
+      "macro_f1_std": 0.07667874301023474,
+      "accuracy_mean": 0.7083333333333334,
+      "accuracy_std": 0.05892556509887896,
+      "n_samples": 40,
+      "n_classes": 4,
+      "class_names": [
+        "ball",
+        "healthy",
+        "inner_race",
+        "outer_race"
+      ],
+      "seeds": [
+        42,
+        123,
+        456
+      ],
+      "method": "random_forest"
+    },
+    "paderborn": {
+      "macro_f1_mean": 0.8719774776376411,
+      "macro_f1_std": 0.0431265815374389,
+      "accuracy_mean": 0.8831168831168831,
+      "accuracy_std": 0.03181155510108025,
+      "n_samples": 384,
+      "n_classes": 4,
+      "class_names": [
+        "compound",
+        "healthy",
+        "inner_race",
+        "outer_race"
+      ],
+      "seeds": [
+        42,
+        123,
+        456
+      ],
+      "method": "random_forest"
+    },
+    "ottawa": {
+      "macro_f1_mean": 0.8280213860213861,
+      "macro_f1_std": 0.0792147260896187,
+      "accuracy_mean": 0.8518518518518517,
+      "accuracy_std": 0.05707790743489791,
+      "n_samples": 180,
+      "n_classes": 5,
+      "class_names": [
+        "ball",
+        "cage",
+        "healthy",
+        "inner_race",
+        "outer_race"
+      ],
+      "seeds": [
+        42,
+        123,
+        456
+      ],
+      "method": "random_forest"
+    },
+    "mafaulda": {
+      "macro_f1_mean": 0.2424927726937868,
+      "macro_f1_std": 0.0010819614526762626,
+      "accuracy_mean": 0.4479166666666667,
+      "accuracy_std": 0.005892556509887902,
+      "n_samples": 800,
+      "n_classes": 7,
+      "class_names": [
+        "ball",
+        "cage",
+        "compound_ball_imbalance",
+        "compound_cage_imbalance",
+        "healthy",
+        "imbalance",
+        "misalignment_horizontal"
+      ],
+      "seeds": [
+        42,
+        123,
+        456
+      ],
+      "method": "random_forest"
+    }
+  },
+  "random_forest_no_mafaulda": {
+    "macro_f1_mean": 0.2162,
+    "macro_f1_std": 0.0034,
+    "accuracy_mean": 0.3617,
+    "accuracy_std": 0.0015,
+    "seeds": [
+      42,
+      123,
+      456
+    ],
+    "note": "Train on CWRU+MFPT+SEU only (no MAFAULDA). Shows MAFAULDA hurts transfer.",
+    "train_sources": [
+      "cwru",
+      "mfpt",
+      "seu"
+    ],
+    "n_train": 200
   }
 }
