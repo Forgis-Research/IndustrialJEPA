@@ -49,11 +49,29 @@ For deep models: resample to 12800 Hz, take 8192-sample window (0.64s).
 
 **Key Finding**: Cross-domain F1 ~0.19 with best methods. Deep models don't clearly beat feature-based methods when trained on limited cross-source data. This is the "bar to clear" for JEPA self-supervised representations.
 
-**What JEPA needs to beat**: Macro F1 > 0.25 cross-domain would be meaningful (+30% over RF baseline).
+**IMPORTANT: MAFAULDA hurts transfer**. MAFAULDA's spectral centroid is 57 Hz vs 2500-3000 Hz for CWRU/Paderborn. Its shaft rotates at 12.3 Hz, so vibration energy is at very low frequencies — completely unlike the bearing fault signatures in the test set. Including MAFAULDA as training data actively confuses the classifier.
 
-### Per-Class Analysis (best method: Random Forest, seed 42)
-Test classes: ball, cage, compound, healthy, inner_race, outer_race  
-Train has these classes but with different distributions and source-specific features.
+| Training Set | Random Forest F1 |
+|-------------|-----------------|
+| CWRU+MAFAULDA+SEU (1000 samples) | 0.193 ± 0.021 |
+| **CWRU+SEU only (200 samples)** | **0.216 ± 0.003** |
+
+**What JEPA needs to beat**: Macro F1 > 0.30 cross-domain (with CWRU+SEU training) would be meaningful (+39% over best RF baseline).
+
+### In-Domain Sanity Check (RF, 80/20 stratified split within source)
+
+| Source | In-Domain F1 | Notes |
+|--------|-------------|-------|
+| CWRU | 0.725 ± 0.077 | Only 40 HF samples; full CWRU gives ~0.99 |
+| Paderborn | 0.872 ± 0.043 | Excellent |
+| Ottawa | 0.828 ± 0.079 | Good |
+| MAFAULDA | 0.242 ± 0.001 | Poor: all fault types have similar features |
+
+Cross-domain gap: 0.82 in-domain vs 0.22 cross-domain. The domain gap is massive.
+
+### Per-Class Analysis
+Test classes: ball, cage, compound, healthy, inner_race, outer_race.  
+Train has these classes but with dramatically different feature distributions across machines.
 
 ---
 

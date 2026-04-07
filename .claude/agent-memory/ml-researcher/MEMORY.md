@@ -1,3 +1,3 @@
-- [IndustrialJEPA Project Context](project_industrialjepa.md) — Mechanical-JEPA V6 complete: JEPA@N=10 > Transformer@N=all, +0.371 transfer gain (2.6x better than supervised). All claims p<0.05.
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — V6 JEPA+0.371 transfer gain; V7 baselines: RF cross-domain F1=0.216, kurtosis AUROC=0.779, XGBoost RUL RMSE=0.212
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
