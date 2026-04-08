@@ -154,6 +154,26 @@ Result: Both JEPA and contrastive pretraining significantly beat elapsed-time ba
 
 ---
 
+## Exp 13: Hybrid JEPA + Handcrafted Features
+
+**Time**: 2026-04-08 (session wrap-up)
+**Hypothesis**: JEPA waveform features + handcrafted spectral features are complementary
+**Change**: Concatenate [z_jepa(256), hc_feats(18), elapsed_t(1)] → Transformer(d=128, 4L) → RUL
+**Sanity checks**: All 5 seeds converge, loss decreases, RMSE consistent (std=0.0041)
+**Result**: RMSE=0.0553 ± 0.0041 (+75.5% vs elapsed-time, +20.7% vs Transformer+HC alone)
+- Seeds: 0.0566, 0.0514, 0.0530, 0.0525, 0.0628
+- vs Transformer+HC: 0.0697 → 0.0553 (20.7% better)
+**Verdict**: KEEP — JEPA adds value when combined with handcrafted features
+**Insight**: JEPA captures waveform texture that is ORTHOGONAL to spectral statistics.
+            Handcrafted alone misses waveform periodicity; JEPA alone misses centroid shift.
+            Together they exceed either individual representation.
+**Cross-domain addendum**: FEMTO→XJTU Hybrid RMSE=0.258 ± 0.010
+- Better than JEPA alone (0.276, +6.5%) but worse than Contrastive (0.229, -12.4%)
+- Conclusion: handcrafted features do transfer cross-domain (help JEPA), but contrastive
+  encoder learned a more transferable spectral centroid representation than HC+JEPA combined
+
+---
+
 ## Key Lessons Learned
 
 1. **JEPA oscillates**: Multi-source pretraining leads to training instability after ~2-5 epochs.
@@ -170,3 +190,6 @@ Result: Both JEPA and contrastive pretraining significantly beat elapsed-time ba
 
 6. **Piecewise labels are harder**: JEPA better than contrastive for piecewise labels because
    contrastive encoder conflates temporal position with health state.
+
+7. **JEPA is complementary, not competitive**: JEPA alone underperforms handcrafted, but hybrid
+   [JEPA + handcrafted] beats pure handcrafted by 20.7%. The representations are orthogonal.

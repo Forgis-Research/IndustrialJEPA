@@ -1,0 +1,35 @@
+{
+  "in_domain": {
+    "hybrid_jepa_hc_transformer": {
+      "rmse_mean": 0.0553,
+      "rmse_std": 0.0041,
+      "rmse_all_seeds": [
+        0.0566,
+        0.0514,
+        0.053,
+        0.0525,
+        0.0628
+      ],
+      "n_seeds": 5,
+      "vs_elapsed_time_pct": 75.5,
+      "vs_transformer_hc_pct": 20.7,
+      "note": "JEPA(256) + HC(18) + elapsed_t(1) -> Transformer(d=128, 4L) -> RUL"
+    }
+  },
+  "femto_to_xjtu": {
+    "elapsed_rmse": 0.3666,
+    "jepa_lstm_rmse": 0.276,
+    "contrastive_lstm_rmse": 0.2294,
+    "hybrid_jepa_hc_rmse_mean": 0.2579,
+    "hybrid_jepa_hc_rmse_std": 0.0095,
+    "hybrid_all_seeds": [
+      0.2642,
+      0.2465,
+      0.2673,
+      0.2654,
+      0.2461
+    ],
+    "n_seeds": 5,
+    "conclusion": "Hybrid beats JEPA alone (+6.5%) but not Contrastive (-12.4%). Contrastive spectral centroid alignment is more transferable than HC+JEPA."
+  }
+}
