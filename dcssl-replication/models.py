@@ -12,7 +12,6 @@ Implements:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils import weight_norm
 import numpy as np
 from typing import Optional, Tuple
 
@@ -38,43 +37,57 @@ class TCNResidualBlock(nn.Module):
 
     Based on Bai et al. 2018 "An Empirical Evaluation of Generic Convolutional
     and Recurrent Networks for Sequence Modeling".
+
+    Uses BatchNorm instead of WeightNorm for stability (weight_norm can produce NaN).
     """
 
     def __init__(self, n_inputs: int, n_outputs: int, kernel_size: int,
                  stride: int, dilation: int, padding: int, dropout: float = 0.2):
         super().__init__()
-        self.conv1 = weight_norm(nn.Conv1d(
+        self.conv1 = nn.Conv1d(
             n_inputs, n_outputs, kernel_size,
             stride=stride, padding=padding, dilation=dilation
-        ))
+        )
+        self.bn1 = nn.BatchNorm1d(n_outputs)
         self.chomp1 = Chomp1d(padding)
         self.relu1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
 
-        self.conv2 = weight_norm(nn.Conv1d(
+        self.conv2 = nn.Conv1d(
             n_outputs, n_outputs, kernel_size,
             stride=stride, padding=padding, dilation=dilation
-        ))
+        )
+        self.bn2 = nn.BatchNorm1d(n_outputs)
         self.chomp2 = Chomp1d(padding)
         self.relu2 = nn.ReLU()
         self.dropout2 = nn.Dropout(dropout)
 
-        self.net = nn.Sequential(
-            self.conv1, self.chomp1, self.relu1, self.dropout1,
-            self.conv2, self.chomp2, self.relu2, self.dropout2
-        )
         self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if n_inputs != n_outputs else None
         self.relu = nn.ReLU()
         self.init_weights()
 
     def init_weights(self):
-        self.conv1.weight.data.normal_(0, 0.01)
-        self.conv2.weight.data.normal_(0, 0.01)
+        nn.init.kaiming_normal_(self.conv1.weight, nonlinearity='relu')
+        nn.init.kaiming_normal_(self.conv2.weight, nonlinearity='relu')
         if self.downsample is not None:
-            self.downsample.weight.data.normal_(0, 0.01)
+            nn.init.kaiming_normal_(self.downsample.weight, nonlinearity='relu')
 
     def forward(self, x):
-        out = self.net(x)
+        # First conv block
+        out = self.conv1(x)
+        out = self.chomp1(out)
+        out = self.bn1(out)
+        out = self.relu1(out)
+        out = self.dropout1(out)
+
+        # Second conv block
+        out = self.conv2(out)
+        out = self.chomp2(out)
+        out = self.bn2(out)
+        out = self.relu2(out)
+        out = self.dropout2(out)
+
+        # Skip connection
         res = x if self.downsample is None else self.downsample(x)
         return self.relu(out + res)
 
@@ -164,15 +177,21 @@ def nt_xent_loss(z1: torch.Tensor, z2: torch.Tensor, temperature: float = 0.1) -
     batch_size = z1.shape[0]
     device = z1.device
 
-    # Normalize
-    z1 = F.normalize(z1, dim=1)
-    z2 = F.normalize(z2, dim=1)
+    if batch_size < 2:
+        return torch.tensor(0.0, device=device, requires_grad=True)
+
+    # Normalize — add small epsilon to avoid NaN when norm is 0
+    z1 = F.normalize(z1 + 1e-8, dim=1)
+    z2 = F.normalize(z2 + 1e-8, dim=1)
 
     # Concatenate all representations
     z = torch.cat([z1, z2], dim=0)  # (2B, dim)
 
     # Similarity matrix
     sim = torch.mm(z, z.T) / temperature  # (2B, 2B)
+
+    # Clamp to avoid overflow in exp
+    sim = torch.clamp(sim, min=-100.0, max=100.0)
 
     # Mask out self-similarities
     mask = torch.eye(2 * batch_size, device=device).bool()
@@ -183,6 +202,11 @@ def nt_xent_loss(z1: torch.Tensor, z2: torch.Tensor, temperature: float = 0.1) -
     labels = torch.cat([labels + batch_size, labels], dim=0)  # (2B,)
 
     loss = F.cross_entropy(sim, labels)
+
+    # Check for NaN
+    if torch.isnan(loss):
+        return torch.tensor(0.0, device=device, requires_grad=True)
+
     return loss
 
 

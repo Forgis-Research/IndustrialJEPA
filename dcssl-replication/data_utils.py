@@ -44,16 +44,41 @@ CONDITION_INFO = {
 }
 
 
-def find_bearing_dir(data_root: Path, bearing_name: str) -> Optional[Path]:
-    """Find a bearing directory anywhere under data_root."""
-    # Try common patterns
+def find_bearing_dir(data_root: Path, bearing_name: str,
+                     prefer_full_test: bool = True) -> Optional[Path]:
+    """
+    Find a bearing directory under data_root.
+
+    Priority order:
+    1. Full_Test_Set (run-to-failure, for test bearings) if prefer_full_test=True
+    2. Learning_set (for training bearings)
+    3. Any matching directory
+    """
+    # Try preferred directories first
+    search_priority = []
+    if prefer_full_test:
+        search_priority = [
+            data_root / "Full_Test_Set" / bearing_name,
+            data_root / "Learning_set" / bearing_name,
+            data_root / "Test_set" / bearing_name,
+        ]
+    else:
+        search_priority = [
+            data_root / "Learning_set" / bearing_name,
+            data_root / "Test_set" / bearing_name,
+            data_root / "Full_Test_Set" / bearing_name,
+        ]
+
+    for candidate in search_priority:
+        if candidate.exists():
+            return candidate
+
+    # Fallback: walk entire tree
     for root, dirs, files in os.walk(data_root):
         root_path = Path(root)
         if root_path.name.lower() == bearing_name.lower():
             return root_path
-        # Handle underscores vs spaces
-        if root_path.name.lower().replace("_", "").replace(" ", "") == bearing_name.lower().replace("_", ""):
-            return root_path
+
     return None
 
 
@@ -84,8 +109,12 @@ def load_bearing_snapshots(data_root: Path, bearing_name: str) -> np.ndarray:
     for f in csv_files:
         try:
             # FEMTO format: each row has columns [h, m, s, us, horizontal_acc, vertical_acc]
-            # or sometimes just [horizontal_acc, vertical_acc]
-            data = np.loadtxt(str(f), delimiter=',')
+            # Delimiter varies: Learning_set uses comma, Full_Test_Set uses semicolon
+            # Try comma first, then semicolon
+            try:
+                data = np.loadtxt(str(f), delimiter=',')
+            except ValueError:
+                data = np.loadtxt(str(f), delimiter=';')
             if data.ndim == 1:
                 data = data.reshape(-1, 1)
 
@@ -139,18 +168,19 @@ def compute_kurtosis(snapshots: np.ndarray) -> np.ndarray:
 
 
 def detect_fpt(snapshots: np.ndarray, method: str = "rms", threshold_std: float = 3.0,
-               window: int = 20) -> int:
+               window: int = 100) -> int:
     """
     Detect First Prediction Time (FPT) — when degradation begins.
 
-    Uses a threshold: FPT = first point where RMS/kurtosis exceeds
+    Uses a threshold: FPT = first sustained crossing where RMS/kurtosis exceeds
     mean + threshold_std * std of the "healthy" early portion.
 
     Args:
         snapshots: (n_snapshots, 2560, 2)
         method: "rms" or "kurtosis"
         threshold_std: number of std deviations for threshold
-        window: number of early snapshots to estimate healthy baseline
+        window: number of early snapshots to estimate healthy baseline (default=100)
+            Use a large window to avoid spurious early crossings.
 
     Returns:
         FPT index (integer snapshot index where degradation starts)
@@ -160,19 +190,27 @@ def detect_fpt(snapshots: np.ndarray, method: str = "rms", threshold_std: float 
     else:
         signal = compute_kurtosis(snapshots)
 
-    # Baseline from early portion
-    baseline_window = min(window, len(signal) // 5)
+    n = len(signal)
+    # Baseline from early portion — use at least 50 points
+    baseline_window = max(50, min(window, n // 5))
     baseline = signal[:baseline_window]
     mu = baseline.mean()
     sigma = baseline.std()
-    threshold = mu + threshold_std * sigma
 
-    # Find first crossing
-    for i in range(baseline_window, len(signal)):
-        if signal[i] > threshold:
+    # If sigma is very small, use a percentage-based threshold instead
+    if sigma < 1e-4 or mu / sigma > 100:
+        threshold = mu * 1.2  # 20% above healthy mean
+    else:
+        threshold = mu + threshold_std * sigma
+
+    # Find first sustained crossing (consecutive crossings over a small window)
+    # to avoid single noisy spikes being flagged as FPT
+    sustain = 3  # require at least 3 consecutive crossings
+    for i in range(baseline_window, n - sustain + 1):
+        if all(signal[i + k] > threshold for k in range(sustain)):
             return i
 
-    # If no crossing found, FPT = 0 (entire life is degradation)
+    # If no crossing found, FPT = 0 (assume entire life is relevant)
     return 0
 
 

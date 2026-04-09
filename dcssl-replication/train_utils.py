@@ -48,6 +48,7 @@ def pretrain_ssl(
     history = []
     best_loss = float("inf")
 
+    nan_count = 0
     for epoch in range(n_epochs):
         model.train()
         epoch_losses = {}
@@ -73,10 +74,28 @@ def pretrain_ssl(
             )
 
             if torch.isnan(loss) or torch.isinf(loss):
+                nan_count += 1
+                # If too many consecutive NaNs, reinitialize optimizer
+                if nan_count > 50:
+                    if verbose:
+                        print(f"  Warning: Many NaN losses, reinitializing optimizer")
+                    optimizer = torch.optim.Adam(
+                        model.parameters(), lr=lr * 0.1, weight_decay=weight_decay
+                    )
+                    nan_count = 0
                 continue
 
+            nan_count = 0
             optimizer.zero_grad()
             loss.backward()
+            # Check for NaN gradients before clipping
+            has_nan_grad = any(
+                (p.grad is not None and torch.isnan(p.grad).any())
+                for p in model.parameters()
+            )
+            if has_nan_grad:
+                optimizer.zero_grad()
+                continue
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
