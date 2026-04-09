@@ -1,0 +1,19 @@
+# Pretrain on compatible sources only (from data/analysis/dataset_compatibility.py)
+# Excludes:
+#   - MAFAULDA: centroid 173Hz vs 2453Hz (FEMTO) -- completely different frequency regime
+#   - MFPT: kurtosis 12.4+/-17 vs 1.0+/-2 (FEMTO) -- high-kurtosis impulse signals
+sources:
+  - cwru
+  - femto
+  - xjtu_sy
+  - ims
+  - paderborn
+  - ottawa
+
+preprocessing:
+  target_sr: 12800
+  window_len: 1024
+  max_windows_per_signal: 15
+  instance_norm: true
+  bandpass: false
+  spectral_whitening: false

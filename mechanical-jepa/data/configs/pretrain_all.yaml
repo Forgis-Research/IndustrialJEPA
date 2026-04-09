@@ -1,0 +1,18 @@
+# Pretrain on all 8 sources (V8 configuration)
+sources:
+  - cwru
+  - femto
+  - xjtu_sy
+  - ims
+  - mfpt
+  - paderborn
+  - ottawa
+  - mafaulda
+
+preprocessing:
+  target_sr: 12800
+  window_len: 1024
+  max_windows_per_signal: 15
+  instance_norm: true
+  bandpass: false
+  spectral_whitening: false

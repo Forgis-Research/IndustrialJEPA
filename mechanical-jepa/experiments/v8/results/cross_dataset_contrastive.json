@@ -1,0 +1,26 @@
+{
+  "femto_to_femto": {
+    "elapsed": 0.0272,
+    "jepa_lstm_rmse": 0.137,
+    "contrastive_lstm_rmse": 0.1365,
+    "contrastive_std": 0.0109
+  },
+  "xjtu_to_xjtu": {
+    "elapsed": 0.1586,
+    "jepa_lstm_rmse": 0.195,
+    "contrastive_lstm_rmse": 0.2139,
+    "contrastive_std": 0.0215
+  },
+  "femto_to_xjtu": {
+    "elapsed": 0.3666,
+    "jepa_lstm_rmse": 0.276,
+    "contrastive_lstm_rmse": 0.2294,
+    "contrastive_std": 0.0114
+  },
+  "xjtu_to_femto": {
+    "elapsed": 0.3356,
+    "jepa_lstm_rmse": 0.403,
+    "contrastive_lstm_rmse": 0.3094,
+    "contrastive_std": 0.0067
+  }
+}

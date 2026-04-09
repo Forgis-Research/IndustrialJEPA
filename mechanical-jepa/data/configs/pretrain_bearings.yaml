@@ -1,0 +1,17 @@
+# Pretrain on bearing-only sources (exclude centrifugal pump MAFAULDA)
+sources:
+  - cwru
+  - femto
+  - xjtu_sy
+  - ims
+  - mfpt
+  - paderborn
+  - ottawa
+
+preprocessing:
+  target_sr: 12800
+  window_len: 1024
+  max_windows_per_signal: 15
+  instance_norm: true
+  bandpass: false
+  spectral_whitening: false
