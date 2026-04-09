@@ -1,0 +1,108 @@
+\section{Method}
+\label{sec:method}
+
+We present a self-supervised framework for mechanical RUL prediction comprising three stages: JEPA pretraining on unlabeled vibration data (\cref{sec:jepa}), temporal contrastive learning using run-to-failure episode structure (\cref{sec:contrastive}), and hybrid fusion with domain-informed spectral features (\cref{sec:hybrid}). \plannedc{We further describe multivariate extensions with spatiotemporal masking (\cref{sec:multivariate}) and synthetic grey swan augmentation (\cref{sec:augmentation}).}
+
+\subsection{Problem Formulation}
+\label{sec:problem}
+
+Consider a set of run-to-failure episodes $\{(\x_i^{(1)}, \ldots, \x_i^{(T_i)})\}_{i=1}^N$, where $\x_i^{(t)} \in \R^{L}$ is a vibration window of $L = 1024$ samples at time step $t$, and $T_i$ is the total lifetime of episode $i$. We define the normalized remaining useful life as:
+\begin{equation}
+  \rul(t) = 1 - \frac{t}{T_i},
+  \label{eq:rul}
+\end{equation}
+so $\rul = 1$ at the start of operation and $\rul = 0$ at failure. This normalization is essential because bearing lifetimes vary by up to $5\times$ across episodes and datasets.
+
+The grey swan challenge is that failure episodes are scarce (we have $N = 23$ across two datasets), while unlabeled healthy operation data is abundant. Our framework addresses this asymmetry through self-supervised pretraining.
+
+\subsection{JEPA Pretraining}
+\label{sec:jepa}
+
+Our JEPA encoder follows the architecture of I-JEPA~\citep{assran2023ijepa} adapted for 1D vibration signals.
+
+\paragraph{Patch embedding.} Each window $\x \in \R^L$ is divided into $P = 16$ non-overlapping patches of length $L/P = 64$ samples. Each patch is projected to a $d$-dimensional embedding via a linear layer, yielding patch tokens $\{p_1, \ldots, p_P\} \in \R^d$ with $d = 256$.
+
+\paragraph{Encoder.} The context encoder $\encoder$ is a Vision Transformer (ViT) with 4 layers, 4 attention heads, and hidden dimension $d = 256$ (4.0M parameters). Sinusoidal positional encodings are added to all patch tokens.
+
+\paragraph{Masking.} We randomly mask $62.5\%$ of patches (10 out of 16), providing only 6 context patches to the encoder. This high mask ratio is critical: at lower ratios ($\leq 50\%$), the predictor can exploit a context-average shortcut, leading to representation collapse~\citep{assran2023ijepa, bardes2024vjepa}.
+
+\paragraph{Target encoder.} The target encoder $\target$ is an exponential moving average (EMA) copy of $\encoder$ with momentum $\tau = 0.996$:
+\begin{equation}
+  \xi \leftarrow \tau \xi + (1 - \tau) \theta.
+  \label{eq:ema}
+\end{equation}
+
+\paragraph{Predictor.} The predictor $\predictor$ is a 4-layer Transformer ($d_{\text{pred}} = 128$, 0.9M parameters) that takes context encoder outputs and sinusoidal positional queries for masked positions, predicting the target encoder's representations.
+
+\paragraph{Training objective.} We minimize the L1 distance between predicted and target representations, with variance regularization to prevent collapse:
+\begin{equation}
+  \loss_{\text{JEPA}} = \frac{1}{|M|} \sum_{j \in M} \| \predictor(\encoder(\x_{\bar{M}}))_j - \text{sg}[\target(\x)_j] \|_1 + \lambda \cdot \loss_{\text{var}},
+  \label{eq:jepa_loss}
+\end{equation}
+where $M$ is the set of masked indices, $\bar{M}$ the context indices, $\text{sg}[\cdot]$ is stop-gradient, and $\loss_{\text{var}} = \max(0, 1 - \sqrt{\Var(\z) + \epsilon})$ with $\lambda = 0.1$.
+
+\paragraph{Pretraining data.} We pretrain on 33{,}939 vibration windows from 8 bearing datasets (CWRU, MFPT, IMS, FEMTO, XJTU-SY, Paderborn, Ottawa, MAFAULDA), spanning diverse operating conditions, fault types, and sampling rates (all resampled to 12{,}800\,Hz).
+
+\subsection{Temporal Contrastive Learning}
+\label{sec:contrastive}
+
+While JEPA learns waveform texture through reconstruction, it does not capture the spectral changes that indicate degradation (see \cref{sec:encoder_analysis}). We address this with temporal contrastive learning that exploits the natural ordering of run-to-failure episodes.
+
+\paragraph{Triplet objective.} For each anchor window $\x_i^{(t)}$, we sample a positive from a nearby time step $\x_i^{(t')}$ with $|t - t'| < \delta_{\text{pos}}$ and a negative from a distant time step $\x_i^{(t'')}$ with $|t - t''| > \delta_{\text{neg}}$:
+\begin{equation}
+  \loss_{\text{contrastive}} = \max(0, \| \encoder(\x^{(t)}) - \encoder(\x^{(t')}) \|_2 - \| \encoder(\x^{(t)}) - \encoder(\x^{(t'')}) \|_2 + \alpha),
+  \label{eq:contrastive}
+\end{equation}
+where $\alpha$ is the margin. This forces the encoder to learn what \emph{changes} over the bearing's life---primarily the spectral centroid shift as surface roughness increases with degradation.
+
+\paragraph{Training.} We train on 18 run-to-failure episodes (75\% training split) for 100 epochs using the temporal labels (not RUL targets). The encoder converges to positive-pair similarity 0.89 and negative-pair similarity 0.47, indicating strong temporal structure in the learned representation.
+
+\subsection{Hybrid Architecture}
+\label{sec:hybrid}
+
+Our key finding is that JEPA and handcrafted features capture complementary information (\cref{sec:encoder_analysis}). The hybrid architecture combines both:
+
+\paragraph{Feature extraction.} For each vibration window, we extract:
+\begin{itemize}[nosep]
+  \item \textbf{JEPA embeddings}: the mean-pooled output of the frozen pretrained encoder, $\h_{\text{JEPA}} \in \R^{256}$.
+  \item \textbf{Handcrafted features}: 8 time-domain statistics (RMS, peak, crest factor, kurtosis, skewness, shape factor, impulse factor, clearance factor), 7 frequency-domain features (spectral centroid, spread, entropy, and 4 band energies), and 3 envelope features (Hilbert-transform RMS, kurtosis, peak), yielding $\h_{\text{HC}} \in \R^{18}$.
+\end{itemize}
+
+\paragraph{Fusion.} For each time step in the episode, the concatenated input $[\h_{\text{JEPA}}; \h_{\text{HC}}; \Delta t] \in \R^{275}$ is projected to $d_{\text{model}} = 128$ and processed by a Transformer encoder (4 layers, 4 heads) with sinusoidal positional encoding over the temporal sequence. A linear head maps the final representation (concatenated with normalized elapsed time) to a scalar $\rul$ prediction.
+
+\paragraph{Training.} The fusion model is trained end-to-end with MSE loss on 75\% of episodes, with JEPA encoder weights frozen. We report mean $\pm$ std over 5 seeds on held-out episodes.
+
+\plannedc{
+\subsection{Multivariate Extension with Spatiotemporal Masking}
+\label{sec:multivariate}
+
+Industrial sensors provide multiple modalities beyond single-channel vibration. The Paderborn dataset, for example, includes 8 channels spanning 4 physics groups: radial vibration ($a_1, a_2$), axial vibration ($a_3, v_1$), thermal/mechanical (temperature, torque), and motor current ($i_a, i_b$).
+
+\paragraph{Multi-channel input.} We extend the patch embedding to accept $C$-channel inputs, where each patch becomes $p_j \in \R^{C \times (L/P)}$ and is projected to $\R^d$ via a channel-aware linear layer.
+
+\paragraph{Physics-aware spatiotemporal masking.} Rather than masking random patches independently across channels, we introduce structured masking that respects sensor physics:
+\begin{itemize}[nosep]
+  \item \textbf{Physics-group masking}: mask all channels within a physics group simultaneously, forcing the encoder to predict one modality (e.g., vibration) from another (e.g., motor current).
+  \item \textbf{Spatiotemporal masking}: mask contiguous blocks in both the time and channel dimensions, creating rectangular ``holes'' in the sensor array.
+\end{itemize}
+
+This masking strategy forces the encoder to learn cross-modal dependencies---e.g., how motor current fluctuations relate to vibration amplitude changes during degradation.
+
+\placeholder{Architecture details, training procedure, and masking hyperparameters.}
+}
+
+\plannedc{
+\subsection{Synthetic Grey Swan Augmentation}
+\label{sec:augmentation}
+
+Real failure data is inherently scarce. To improve prediction of rare failure modes, we introduce physics-informed synthetic data augmentation:
+
+\paragraph{Degradation simulation.} We model bearing degradation as a process that progressively shifts the spectral centroid and increases broadband energy. Given a healthy vibration window $\x$, we generate a synthetic degraded version by applying:
+\begin{equation}
+  \tilde{\x}(t) = \x(t) + \beta(\rul) \cdot n(t; \sigma(\rul)),
+  \label{eq:synth}
+\end{equation}
+where $\beta(\rul)$ controls the degradation amplitude and $n(t; \sigma(\rul))$ is filtered noise with frequency content matching empirical degradation signatures.
+
+\placeholder{Detailed augmentation procedure, validation against real degradation, results on rare failure mode prediction.}
+}

@@ -1,0 +1,94 @@
+\documentclass[11pt]{article}
+
+% NeurIPS style
+\usepackage[preprint]{neurips_2024}
+
+% Standard packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{cleveref}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+% ============================================================
+% Draft mode macros
+% Toggle \draftmodefalse for camera-ready submission
+% ============================================================
+\newif\ifdraftmode \draftmodetrue
+\ifdraftmode
+  \newcommand{\plannedc}[1]{{\color{blue}#1}}
+  \newcommand{\placeholder}[1]{{\color{red}\textbf{[#1]}}}
+  \newcommand{\todo}[1]{{\color{orange}\textbf{[TODO: #1]}}}
+\else
+  \newcommand{\plannedc}[1]{#1}
+  \newcommand{\placeholder}[1]{#1}
+  \newcommand{\todo}[1]{}
+\fi
+
+% ============================================================
+% Notation macros
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\z}{\mathbf{z}}
+\newcommand{\h}{\mathbf{h}}
+\newcommand{\W}{\mathbf{W}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\dataset}{\mathcal{D}}
+\newcommand{\encoder}{f_\theta}
+\newcommand{\predictor}{g_\phi}
+\newcommand{\target}{\bar{f}_\xi}
+\newcommand{\rul}{\text{RUL}}
+\newcommand{\rmse}{\text{RMSE}}
+
+% Convenience
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\Var}{Var}
+
+% ============================================================
+% Title and authors
+% ============================================================
+\title{Self-Supervised Learning for Mechanical Grey Swan Prediction}
+
+\author{
+  Anonymous Author(s)
+}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================
+% Paper sections
+% ============================================================
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/analysis}
+\input{sections/conclusion}
+
+% ============================================================
+% References
+% ============================================================
+\bibliography{references}
+
+% ============================================================
+% Appendix
+% ============================================================
+\newpage
+\appendix
+\input{sections/appendix}
+
+\end{document}

@@ -1,0 +1,9 @@
+\begin{abstract}
+Mechanical component failures are \emph{grey swans}---rare but physically plausible events that follow known degradation physics yet are critically underrepresented in training data.
+Existing supervised prognostic methods require extensive labeled failure trajectories that are expensive and dangerous to collect, limiting their applicability to novel operating conditions.
+We introduce a self-supervised framework that learns degradation-aware representations from abundant unlabeled vibration data using two complementary pretraining strategies: (1)~a Joint Embedding Predictive Architecture (JEPA) that captures waveform texture through masked patch prediction, and (2)~temporal contrastive learning that captures spectral centroid shift---the dominant degradation indicator---by exploiting the temporal ordering of run-to-failure episodes.
+A hybrid architecture fusing JEPA representations with handcrafted spectral features achieves $\rmse = 0.055 \pm 0.004$ on bearing remaining useful life prediction, a $75.5\%$ reduction versus time-only baselines and $20.7\%$ versus the best handcrafted-only model (5 seeds).
+For cross-dataset transfer (FEMTO$\to$XJTU-SY), temporal contrastive pretraining yields $38\%$ improvement over time-only baselines ($p < 0.001$, 10 seeds).
+Mechanistic analysis reveals that JEPA and contrastive encoders learn fundamentally different features---waveform periodicity versus spectral dynamics---explaining their complementary strengths.
+\plannedc{We further extend the framework to multivariate sensor inputs with physics-aware spatiotemporal masking, validate on C-MAPSS turbofan engines, and introduce a synthetic grey swan augmentation strategy for rare failure modes.}
+\end{abstract}

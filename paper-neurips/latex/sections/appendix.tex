@@ -1,0 +1,121 @@
+\section{Dataset Details}
+\label{app:datasets}
+
+\subsection{FEMTO (PRONOSTIA)}
+
+The FEMTO bearing dataset~\citep{nectoux2012pronostia} was collected at the FEMTO-ST institute using an accelerated degradation test platform. Bearings are subjected to radial loads while rotating at controlled speeds, with vibration measured by a piezoelectric accelerometer at 25.6\,kHz. The dataset contains 17 run-to-failure experiments across 3 operating conditions (we use 16 with complete recordings).
+
+\subsection{XJTU-SY}
+
+The XJTU-SY bearing dataset~\citep{wang2018xjtusybearing} contains 15 rolling element bearings tested under 3 operating conditions on the XJTU-SY platform. Each bearing is monitored with two accelerometers (horizontal and vertical) at 25.6\,kHz. We use 7 bearings with clear degradation trajectories.
+
+\subsection{Pretraining Data Sources}
+
+JEPA pretraining uses 33,939 vibration windows from 8 sources:
+
+\begin{table}[h]
+\centering
+\caption{Pretraining data sources.}
+\label{tab:pretrain_sources}
+\small
+\begin{tabular}{@{}lccl@{}}
+\toprule
+Source & Windows & Sampling Rate & Fault Types \\
+\midrule
+CWRU & 2,400 & 12\,kHz & Healthy, IR, OR, Ball \\
+MFPT & 1,200 & 25.6\,kHz & Healthy, IR, OR \\
+IMS & 3,000 & 20\,kHz & Run-to-failure \\
+FEMTO & 8,000 & 25.6\,kHz & Run-to-failure \\
+XJTU-SY & 4,500 & 25.6\,kHz & Run-to-failure \\
+Paderborn & 6,000 & 64\,kHz & Healthy, IR, OR \\
+Ottawa & 4,839 & 12\,kHz & Healthy, IR, OR, Ball \\
+MAFAULDA & 4,000 & 50\,kHz & Multiple \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All data is resampled to a common rate before pretraining.
+
+\section{Hyperparameters}
+\label{app:hyperparams}
+
+\begin{table}[h]
+\centering
+\caption{Complete hyperparameter settings for all methods.}
+\label{tab:hyperparams}
+\small
+\begin{tabular}{@{}llc@{}}
+\toprule
+Component & Hyperparameter & Value \\
+\midrule
+\multirow{7}{*}{JEPA Pretraining} & Encoder dim & 256 \\
+& Encoder depth & 4 layers \\
+& Attention heads & 4 \\
+& Predictor dim & 128 \\
+& Predictor depth & 4 layers \\
+& Mask ratio & 62.5\% \\
+& EMA momentum & 0.996 \\
+& Learning rate & $1 \times 10^{-4}$ \\
+& Batch size & 256 \\
+& Epochs & 100 (best at epoch 2) \\
+& Loss & L1 + variance reg ($\lambda = 0.1$) \\
+\midrule
+\multirow{4}{*}{Contrastive} & Learning rate & $1 \times 10^{-4}$ \\
+& Margin $\alpha$ & 1.0 \\
+& Epochs & 100 \\
+& Episodes & 18 (training split) \\
+\midrule
+\multirow{4}{*}{RUL Head (LSTM)} & Hidden dim & 128 \\
+& Layers & 2 \\
+& Dropout & 0.2 \\
+& Learning rate & $1 \times 10^{-3}$ \\
+\midrule
+\multirow{4}{*}{RUL Head (Transformer)} & Layers & 2 \\
+& Heads & 4 \\
+& Dim & 256 \\
+& Learning rate & $1 \times 10^{-3}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Additional Results}
+\label{app:additional}
+
+\subsection{Piecewise Label Ablation}
+
+\begin{table}[h]
+\centering
+\caption{Linear vs.\ piecewise-linear RUL labels. Piecewise labels define a constant healthy phase (RUL=1) followed by linear degradation, making prediction harder due to ambiguity in the healthy phase.}
+\label{tab:piecewise}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & Linear RMSE & Piecewise RMSE & $\Delta$ \\
+\midrule
+JEPA + LSTM & 0.189 & 0.310 & +0.121 \\
+HC + MLP & 0.085 & 0.114 & +0.029 \\
+HC + LSTM & 0.177 & 0.214 & +0.037 \\
+Transformer + HC & 0.070 & 0.114 & +0.044 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{JEPA Pretraining Configurations}
+
+\begin{table}[h]
+\centering
+\caption{Pretraining configurations explored. Best validation loss does not always correspond to best downstream RUL performance.}
+\label{tab:configs}
+\small
+\begin{tabular}{@{}lccccl@{}}
+\toprule
+Config & LR & EMA & Mask & Best Val Loss & Verdict \\
+\midrule
+Default & $10^{-4}$ & 0.996 & 62.5\% & 0.0166 (ep.\ 2) & \textbf{Best} \\
+Lower LR & $3 \times 10^{-5}$ & 0.996 & 62.5\% & 0.0172 & Similar \\
+Fixed LR & $10^{-5}$ & 0.996 & 62.5\% & 0.0189 & Worse \\
+High EMA & $10^{-4}$ & 0.999 & 62.5\% & 0.0178 & Worse \\
+2ch FFT & $10^{-4}$ & 0.996 & 62.5\% & 0.0149 & Better loss, worse RUL \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,34 @@
+\section{Introduction}
+\label{sec:intro}
+
+A turbine blade cracks after 12,000 flight hours. A bearing seizes in a wind turbine gearbox during peak generation. A pump seal fails in a chemical plant, triggering an emergency shutdown. These are \emph{grey swans}---events that are rare in operational data but follow known degradation physics and are, in principle, predictable~\citep{greyswan_supplychain2025}. Unlike black swans, which are fundamentally unforeseeable~\citep{taleb2007blackswan}, grey swans are physically plausible failures that sit in the long tail of operating experience. They present a data paradox for prognostics: \emph{the events most critical to predict are precisely the ones with the least training data}. A bearing that runs for 10,000 hours before failing provides abundant healthy-state data but perhaps a single failure trajectory.
+
+Modern predictive maintenance promises to catch these failures before they cascade into catastrophic downtime. Deep learning approaches for remaining useful life (RUL) prediction have shown strong results on benchmark datasets~\citep{lei2018machinery, zhao2019deeplearningphm}, with architectures ranging from CNN-LSTMs to Transformer-based models achieving impressive in-domain accuracy. However, these methods share two critical limitations. First, they require extensive labeled failure data---run-to-failure trajectories where degradation is observed from inception to failure---which is expensive, dangerous, and scarce by definition. Second, they rely on handcrafted spectral features (spectral centroid, kurtosis, envelope analysis) designed by domain experts, limiting applicability to well-studied component types.
+
+Meanwhile, time series foundation models have emerged as a paradigm for general-purpose temporal representation learning. Models such as TimesFM~\citep{das2024timesfm}, Chronos~\citep{ansari2024chronos}, and MOMENT~\citep{goswami2024moment} demonstrate strong zero-shot forecasting by pretraining on massive time series corpora. Yet these models solve a different problem: they forecast the \emph{next value} in a sequence. For mechanical prognostics, predicting the next vibration sample is neither necessary nor sufficient---a perfect one-step-ahead predictor of raw waveform amplitude tells us nothing about remaining useful life. What matters is detecting the \emph{spectral signature changes} that track degradation: the shift in spectral centroid as surface roughness increases, the redistribution of vibrational energy across frequency bands as fatigue cracks propagate. This distinction---\emph{representing what matters for degradation} rather than reconstructing everything---motivates a targeted self-supervised approach designed for the structure of mechanical failure data.
+
+We propose a self-supervised framework that addresses this data paradox by pretraining on abundant unlabeled operational data and requiring only a small number of failure trajectories for fine-tuning. The framework has three components:
+
+\begin{enumerate}[nosep]
+  \item \textbf{JEPA pretraining} learns waveform texture and periodicity from unlabeled vibration data across multiple bearing datasets, using masked patch prediction in a joint embedding predictive architecture~\citep{assran2023ijepa}. The encoder learns to represent vibration signals without any degradation labels.
+
+  \item \textbf{Temporal contrastive learning} exploits the natural ordering of run-to-failure episodes to learn what \emph{changes} over a component's life. By training the encoder to distinguish early-life from late-life snapshots, it captures the spectral centroid shift that is the dominant degradation indicator for bearings.
+
+  \item \textbf{Hybrid fusion} combines self-supervised embeddings with domain-informed spectral features. Rather than treating self-supervised and handcrafted approaches as competing, we show they capture complementary information---JEPA learns fine-grained waveform features while spectral statistics capture the monotonic degradation trend.
+\end{enumerate}
+
+\plannedc{We further extend this framework with multivariate input encoding that exploits physics-aware sensor groupings (vibration, current, thermal) through spatiotemporal masking, and a synthetic grey swan augmentation strategy that generates physics-informed failure trajectories for rare degradation modes.}
+
+A key finding is that different self-supervised objectives learn fundamentally different representations. JEPA's masked prediction objective captures waveform texture (PC1 correlation with spectral centroid: $0.071$), while temporal contrastive learning captures spectral centroid shift (PC1 correlation: $0.856$). This mechanistic understanding explains a practical trade-off: JEPA excels within-dataset where fine-grained waveform features transfer, while contrastive learning dominates cross-dataset transfer where only invariant degradation dynamics generalize.
+
+\paragraph{Contributions.}
+
+\begin{enumerate}[nosep]
+  \item A self-supervised framework for mechanical prognostics that learns degradation-aware representations from unlabeled vibration data across 8 bearing datasets (33,939 pretraining windows). JEPA pretraining alone matches expert-designed handcrafted features ($p = 0.40$); their fusion achieves RMSE $0.055 \pm 0.004$---a $20.7\%$ improvement over the best handcrafted-only method (\cref{sec:indomain}).
+
+  \item Cross-dataset RUL transfer via temporal contrastive learning, achieving $+38\%$ over time-only baselines ($p < 0.001$) on FEMTO$\to$XJTU-SY---the first such result for bearing prognostics (\cref{sec:transfer}).
+
+  \item A mechanistic analysis showing that JEPA captures waveform texture while contrastive learning captures spectral centroid shift, explaining when and why each objective excels (\cref{sec:encoder_analysis}).
+
+  \plannedc{\item Extensions to multivariate inputs with physics-aware spatiotemporal masking (\cref{sec:multivariate}), validation on C-MAPSS turbofan engines (\cref{sec:cmapss}), and synthetic grey swan augmentation for rare failure modes (\cref{sec:augmentation_exp}).}
+\end{enumerate}

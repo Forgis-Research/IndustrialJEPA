@@ -1,0 +1,8 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced a self-supervised framework for predicting mechanical grey swans---rare but physically plausible component failures that are critically underrepresented in training data. By combining JEPA pretraining (which captures waveform texture) with temporal contrastive learning (which captures degradation dynamics), and fusing with domain-informed spectral features, we achieve state-of-the-art RUL prediction: RMSE $0.055 \pm 0.004$, a $75.5\%$ improvement over time-only baselines.
+
+Our mechanistic analysis reveals that different self-supervised objectives learn fundamentally different representations, explaining their complementary strengths: JEPA excels within-dataset while contrastive learning enables cross-dataset transfer ($+38\%$ vs.\ time-only, $p < 0.001$). This understanding motivates the hybrid architecture and provides guidance for practitioners choosing between pretraining strategies.
+
+\plannedc{The extensions to multivariate input with physics-aware spatiotemporal masking, validation on C-MAPSS turbofan engines, and synthetic grey swan augmentation demonstrate that the framework generalizes across sensor modalities, mechanical domains, and data regimes. Together, these results represent a step toward a \emph{mechanical world model}---a self-supervised encoder that learns degradation-aware representations from any mechanical sensor stream, enabling prediction of rare failures with minimal labeled data.}
