@@ -50,11 +50,12 @@
 **Design decisions locked in** (from user discussion):
 1. **"Unsupervised" = pretraining does not use failure times** (episode-structure and cycle indices OK)
 2. **Variable-horizon prediction**: predict h_future_k for k sampled from [5, 30] cycles ahead
-3. **Multivariate input**: channel stacking, no patching (each cycle is one multivariate vector — much simpler than bearings)
+3. **Multivariate input**: primary L=1 (cycle-as-token), ablation L=4 (patch-as-token). NO FFT (doesn't apply to C-MAPSS).
 4. **Data scope**: start with FD001 only; expand to all 4 only if FD001 works
 5. **Label budgets**: 100%, 50%, 20%, 10%, 5%
 6. **Primary metric**: RMSE on last window per test engine, RUL cap 125
 7. **Data analysis FIRST**, before any modeling
+8. **Pre-flight sanity checks verified**: C-MAPSS at `C:\Users\Jonaspetersen\dev\OpenTSLM\data\cmapss\6. Turbofan Engine Degradation Simulation Data Set\`, 14 sensor selection matches STAR exactly (constant sensors s1,5,6,10,16,18,19 drop verified on FD001)
 
 ---
 
@@ -62,11 +63,26 @@
 
 Before writing any model code, deeply understand the data. This phase is mandatory.
 
-### A.1: Load and inventory
+### A.0: Pre-flight sanity checks (ALREADY VERIFIED)
 
-Check if C-MAPSS is available:
-- `C:\Users\Jonaspetersen\dev\IndustrialJEPA\mechanical-datasets\cmapss\` (likely location)
-- If not, download from NASA Prognostics Data Repository
+The following has been verified before this overnight session — use as sanity checks for your loader:
+
+- **Data location**: `C:\Users\Jonaspetersen\dev\OpenTSLM\data\cmapss\6. Turbofan Engine Degradation Simulation Data Set\`
+  (path contains a space — quote appropriately; use raw Python strings)
+- **Files present**: `train_FD00{1,2,3,4}.txt`, `test_FD00{1,2,3,4}.txt`, `RUL_FD00{1,2,3,4}.txt`
+- **Format**: Space-separated floats, 26 columns: `[engine_id, cycle, op_set_1, op_set_2, op_set_3, s1, s2, ..., s21]`. Load via `np.loadtxt(path)`.
+- **FD001 verified facts**:
+  - train_FD001.txt: shape (20631, 26), 100 engines
+  - Engine length: min=128, max=362, mean=206.3
+  - Op settings are CONSTANT on FD001 (std ≈ 0) → single operating condition confirmed
+  - **Constant sensors to drop (verified)**: s1, s5, s6, s10, s16, s18, s19 (std ≈ 0)
+  - **Informative sensors (verified, matches STAR paper exactly)**: s2, s3, s4, s7, s8, s9, s11, s12, s13, s14, s15, s17, s20, s21 (14 sensors)
+  - Test set: 13096 rows for 100 engines (~131 cycles/engine avg, truncated before failure)
+  - RUL_FD001.txt: 100 values (ground-truth RUL at last observed cycle per test engine)
+
+Use these as assertions in your loader — if they don't match, your loader has a bug.
+
+### A.1: Load and inventory
 
 Files per subset: `train_FDXXX.txt`, `test_FDXXX.txt`, `RUL_FDXXX.txt`.
 
@@ -152,20 +168,33 @@ Write `data_analysis/CMAPSS_ANALYSIS.md` with all findings and figures linked. I
 ### B.1: Data loader
 
 ```python
+CMAPSS_DATA_DIR = r"C:\Users\Jonaspetersen\dev\OpenTSLM\data\cmapss\6. Turbofan Engine Degradation Simulation Data Set"
+SELECTED_SENSORS = [2, 3, 4, 7, 8, 9, 11, 12, 13, 14, 15, 17, 20, 21]  # 1-indexed
+# Column indices in the raw file: [engine_id=0, cycle=1, op1=2, op2=3, op3=4, s1=5, ..., s21=25]
+SENSOR_COLUMNS = [5 + (s - 1) for s in SELECTED_SENSORS]  # zero-indexed column positions
+
 def load_cmapss_subset(subset: str) -> dict:
     """
     Load one C-MAPSS subset.
     
+    Assertions for FD001 (use to sanity check your loader):
+      - train shape = (20631, 26)
+      - 100 train engines
+      - engine length: min=128, max=362, mean=206.3
+      - 100 test engines
+      - 100 RUL values
+    
     Returns dict with:
-        'train_engines': list of (np.ndarray, np.ndarray) — (sensors, cycles) per engine
+        'train_engines': list of np.ndarray — (T_i, 14) sensors per engine (after selection)
+        'train_cycles':  list of np.ndarray — cycle numbers per engine
         'test_engines':  list of np.ndarray — sensors per test engine (truncated)
-        'test_rul':      np.ndarray — ground truth RUL at last observation per test engine
-        'op_settings_train': list of np.ndarray — operating condition variables per train engine
+        'test_rul':      np.ndarray — ground truth RUL at last observed cycle per test engine
+        'op_settings_train': list of np.ndarray — (T_i, 3) operating condition per engine
         'op_settings_test':  list of np.ndarray — same for test engines
     """
 ```
 
-Extract the 14 selected sensors after loading.
+Extract the 14 selected sensors after loading. Verify shapes against the assertions above.
 
 ### B.2: Normalization
 
@@ -243,22 +272,75 @@ Test engines get truncated before failure. For each test engine, take the LAST w
 
 ## Part C: Trajectory JEPA Architecture for C-MAPSS (75 min)
 
-**Key simplification vs V10**: C-MAPSS cycles are already preprocessed sensor readings. No waveform, no Stage 1 patch encoder needed. The tokens are just the 14-dim sensor vectors projected to d_model.
+**Key simplification vs V10**: C-MAPSS cycles are already preprocessed sensor readings (14-dim per cycle after sensor selection). No waveform, no ultrasonic content, no need for a CNN Stage 1 encoder.
 
-### C.1: Sensor projection (Stage 1, trivial)
+### Patching decision (important)
+
+**Should we patch the time series?** This is the bearings-vs-turbofan question.
+
+For **bearings (V10)**, patching was essential because each snapshot was a 2560-sample raw waveform — individual samples are meaningless, patches of 64 samples capture one ball-pass event. Patching was unavoidable.
+
+For **C-MAPSS**, each cycle is already one reduced/aggregated reading per sensor. A single cycle is *already* an informative multivariate feature vector (14-dim). Patching means grouping L consecutive cycles into one token.
+
+Arguments for patching (L > 1):
+- Reduces sequence length (longer engines have 362 cycles → quadratic attention gets expensive)
+- Captures short-term trends within a patch (local context)
+- Matches STAR's successful approach (they use ~L=4)
+
+Arguments against patching (L = 1):
+- Simpler
+- Preserves fine-grained temporal resolution
+- Each cycle already has rich information (14 sensors)
+
+**Our approach: run both as ablations in the same session.**
+
+- **Primary**: L = 1 (cycle-as-token). Simplest, ~100-362 tokens per engine. Test first.
+- **Ablation**: L = 4 (STAR-style patching). ~25-90 tokens per engine. Run after L=1 works.
+
+The sensor projection layer becomes:
 
 ```python
 class SensorProjection(nn.Module):
-    def __init__(self, n_sensors=14, d_model=128):
-        self.proj = nn.Linear(n_sensors, d_model)
+    """
+    Projects multivariate sensor readings into model dimension.
+    Supports both L=1 (cycle-as-token) and L>1 (patch-as-token) via stacking.
+    """
+    def __init__(self, n_sensors=14, patch_length=1, d_model=128):
+        super().__init__()
+        self.patch_length = patch_length
+        self.proj = nn.Linear(n_sensors * patch_length, d_model)
     
     def forward(self, x):
         # x: (B, T, n_sensors)
-        # Returns: (B, T, d_model)
-        return self.proj(x)
+        B, T, S = x.shape
+        L = self.patch_length
+        if L > 1:
+            # Trim T to multiple of L
+            T_trim = (T // L) * L
+            x = x[:, :T_trim, :]
+            # Reshape into patches: (B, T/L, L*S)
+            x = x.reshape(B, T_trim // L, L * S)
+        return self.proj(x)  # (B, T_patches, d_model)
 ```
 
-No CNN, no patches. The `x_t` at cycle t is just the 14-dim sensor vector → project to 128-dim token.
+### FFT / frequency domain — skip for C-MAPSS
+
+For bearings (V9 E.2), we tried a dual-channel raw+FFT input and it made things worse (downstream RMSE 0.112 vs 0.087 with raw). The FFT channel gave better embedding correlation but overfitting from doubled PatchEmbed dimensions killed downstream performance.
+
+For C-MAPSS, **FFT is even less justified**:
+1. Each cycle is already an aggregated scalar per sensor (no sub-cycle waveform exists)
+2. The only "frequency" computable is cycle-to-cycle variation — which the Transformer already learns from the raw sequence
+3. No ball-pass frequencies, no resonances, no periodic content at sub-cycle scale
+
+**Decision: no FFT for C-MAPSS.** The time series is already in feature space.
+
+**What we CAN optionally add** (not in the primary path): first-difference features `Δx_t = x_t - x_{t-1}`, which capture short-term rate of change per sensor. Concatenate to raw sensor values → 28-dim input instead of 14-dim. Run this as a secondary ablation if time permits.
+
+### C.1: Sensor projection (Stage 1, minimal)
+
+See `SensorProjection` above. L=1 primary, L=4 ablation.
+
+No CNN, no ultrasonic waveform processing. The token at cycle t is just the 14-dim sensor vector → project to 128-dim.
 
 ### C.2: Continuous-time positional encoding
 
@@ -539,16 +621,18 @@ Follow format conventions from `notebooks/08_rul_jepa.qmd`, `notebooks/09_v9_dat
 |------|------|:---------:|:----------:|
 | A | Dataset characterization | 60 min | — |
 | B | Data pipeline | 45 min | A |
-| C | Trajectory JEPA architecture | 75 min | B |
+| C | Trajectory JEPA architecture (with L configurable) | 75 min | B |
 | Test | Test pipeline (5 epochs smoke test) | 15 min | C |
-| D | Pretraining FD001 | 60 min | Test passes |
-| E | Fine-tuning at 5 label budgets | 60 min | D |
-| F | Analysis and visualization | 45 min | E |
+| D1 | Pretraining FD001, **L=1 (primary)** | 45 min | Test passes |
+| E1 | Fine-tuning L=1 at 5 label budgets | 45 min | D1 |
+| D2 | Pretraining FD001, **L=4 (ablation)** | 30 min | E1 done |
+| E2 | Fine-tuning L=4 at 5 label budgets | 30 min | D2 |
+| F | Analysis and visualization | 45 min | E1, E2 |
 | G | FD002 / cross-subset transfer | 60 min | F (optional) |
 | H | Quarto notebook | 30 min | All above |
 | | **Total** | **~7h** | |
 
-If running short on time: skip Part G, focus on Parts A-F + H. Part G is a bonus experiment.
+If running short on time: skip Part G, skip L=4 ablation (D2/E2), focus on A-F with L=1 only + H. The L=1 primary path is the main deliverable.
 
 ---
 
