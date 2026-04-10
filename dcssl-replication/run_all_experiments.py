@@ -58,8 +58,8 @@ for i, (script, extra_args) in enumerate(EXPERIMENTS):
     print(f"  Time elapsed: {(time.time()-start_time)/60:.1f} min")
     print(f"{'='*60}")
     
-    cmd = [sys.executable, script] + extra_args + COMMON_ARGS
-    
+    cmd = [sys.executable, "-u", script] + extra_args + COMMON_ARGS  # -u = unbuffered
+
     with open(log_path, "w") as log_file:
         proc = subprocess.run(
             cmd,
