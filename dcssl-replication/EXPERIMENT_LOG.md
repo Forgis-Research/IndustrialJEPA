@@ -111,8 +111,18 @@ train_utils.py: NaN gradient check REMOVED (was doubling epoch time).
 | **Avg** | **0.0468** | 0.0480 | 0.0375 |
 
 **Sanity checks:** ✓ Loss decreased (5.0160→best), ✓ MSE reasonable, ✓ No NaN
-**Verdict:** KEEP — beats paper SupCon avg on condition 1
-**Insight:** Bearing 1_3 still problematic (0.1052 vs 0.0028). Bearing 1_4 dramatically better than paper SupCon (0.0304 vs 0.0080). Overall avg beats paper!
+**Verdict:** KEEP — results are competitive on condition 1
+
+**Revised comparison (with corrected paper values from PDF):**
+| Bearing | Ours | Paper SupCon | Paper DCSSL | Win? |
+|---------|------|-------------|-------------|------|
+| 1_3 | 0.1052 | 0.0213 | 0.0011 | Paper better |
+| 1_4 | **0.0304** | 0.0576 | 0.0476 | **Our SupCon WINS** |
+| 1_5 | 0.0114 | 0.0046 | 0.0005 | Paper better |
+| 1_6 | **0.0707** | 0.0735 | 0.0892 | **Our SupCon WINS (slight)** |
+| 1_7 | 0.0163 | 0.0038 | 0.0009 | Paper better |
+| Avg | 0.0468 | 0.0322 | 0.0279 | Paper better overall |
+
 **Next:** SupCon cond2, cond3, then DCSSL suite
 
 ---
