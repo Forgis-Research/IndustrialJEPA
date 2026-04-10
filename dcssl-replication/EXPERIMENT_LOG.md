@@ -70,17 +70,17 @@ All 10 experiments relaunched via run_all_experiments.py (PID 89954/89955)
 
 ---
 
-## Exp 3: Full Suite Run — RUNNING (2026-04-09 22:25 UTC)
+## Exp 3: Full Suite Run (2026-04-09 22:25 UTC → IN PROGRESS)
 
 **Config:** 300 pretrain + 150 finetune epochs, lr=1e-3/5e-4, batch=64, crop=1024
-**Status:** RUNNING (master runner via run_all_experiments.py)
-**Expected completion:** ~3-4 hours (02:30 UTC)
+**Status:** SimCLR ✓, SupCon ✓, DCSSL cond1 RUNNING (02:16 UTC start), cond2/3 pending
+**Expected DCSSL cond1 completion:** ~04:00-05:00 UTC (165 min, 4.1M param model)
 **Paper targets:** SimCLR avg=0.0583, SupCon avg=0.0480, DCSSL avg=0.0375
 
 ### GPU Contention Note (00:17 UTC 2026-04-10)
 User's CNN-GRU-MHA replication also running simultaneously on same GPU.
 Both processes compete — each running ~2x slower than normal.
-Total estimated completion: ~6-8 more hours.
+CNN-GRU-MHA completed at ~01:58 UTC. DCSSL now has exclusive GPU access.
 train_utils.py: NaN gradient check REMOVED (was doubling epoch time).
 
 ### SimCLR Condition 1 COMPLETE (23:00 UTC)
@@ -134,6 +134,24 @@ Our 0.0273 vs paper SupCon 0.0017 — 16x worse. However paper DCSSL gets 0.0068
 
 ---
 
+## Exp 7: DCSSL Condition 1 — IN PROGRESS (02:16 UTC 2026-04-10)
+
+**Time:** 02:16 UTC 2026-04-10 (expected completion ~04:00-05:00 UTC)
+**Config:** 300 pretrain + 150 finetune epochs, lr=1e-3/5e-4, batch=64, crop=1024, MAE finetune loss
+**Model:** DCSSSLModel — 4,118,305 params (temperature=0.07, lambda_temporal=0.3, lambda_instance=0.7)
+  - encoder_out=1024, encoder_hidden=32, proj_hidden=512, proj_out=256, rul_hidden=128 (per paper Tables 2,10,11)
+**Loss trajectory:**
+- Epoch 1: ntxent=3.31, temporal=3.20, instance=4.19, total=7.20
+- Epoch 21: ntxent=1.62, temporal=3.34, instance=3.23, total=4.88
+- Epoch 41: ntxent=1.22, temporal=3.42, instance=3.18, total=4.48 (at 02:27 UTC)
+**Sanity checks:** ✓ All 3 loss components active, ✓ Total loss decreasing, ✓ Loss_ntxent dropping well
+**Note:** loss_temporal rising slightly (normal — temporal smoothness constraint tightens)
+**Timing:** 41 epochs in ~11 min → ~3.7 min per 20 epochs → est. 55 min pretrain + 28 min finetune = 83 min total
+**Status:** Epoch ~41/300 at 02:27 UTC. Estimated completion ~03:39 UTC.
+**Paper targets (cond1):** 1_3: 0.0011, 1_4: 0.0476, 1_5: 0.0005, 1_6: 0.0892, 1_7: 0.0009 → avg=0.0375
+
+---
+
 ## Exp 5: SupCon Condition 2 — COMPLETE (01:57 UTC 2026-04-10)
 
 **Time:** 01:57 UTC 2026-04-10 (31.9 min — CNN-GRU-MHA contention ended at ~01:57)
@@ -159,6 +177,36 @@ Our 0.0273 vs paper SupCon 0.0017 — 16x worse. However paper DCSSL gets 0.0068
   → Paper's temporal structure captures "when does degradation start" within the window
   → Our single-snapshot encoder has no context about when in the lifecycle
 **Next:** SupCon cond3 (already running at 01:57 UTC)
+
+---
+
+## Critical Analysis: Trivial Baseline Context (2026-04-10)
+
+**Trivial baseline MSE (best constant predictor) per test bearing:**
+| Bearing | FPT% | n | Trivial MSE | Paper DCSSL | Ratio |
+|---------|------|---|-------------|-------------|-------|
+| 1_3 | 60% | 2375 | 0.0933 | 0.0011 | 85x better than trivial |
+| 1_4 | 76% | 1428 | 0.0655 | 0.0476 | 1.4x better than trivial |
+| 1_5 | 98% | 2463 | 0.0070 | **0.0005** | **14x better than trivial (SUSPICIOUS)** |
+| 1_6 | 67% | 2448 | 0.0834 | 0.0892 | *worse than trivial* |
+| 1_7 | 97% | 2259 | 0.0086 | **0.0009** | **10x better than trivial (SUSPICIOUS)** |
+| 2_3 | 13% | 1955 | 0.1013 | 0.0027 | 38x better than trivial |
+| 2_4 | 52% | 751 | 0.1027 | 0.0014 | 73x better than trivial |
+| 2_5 | 0% | 2311 | 0.0834 | 0.2538 | *worse than trivial* |
+| 2_6 | 98% | 701 | 0.0068 | **0.0012** | **5.7x better than trivial (SUSPICIOUS)** |
+| 2_7 | 97% | 230 | 0.0121 | 0.0075 | 1.6x better than trivial |
+| 3_3 | 73% | 434 | 0.0716 | 0.0068 | 10x better than trivial |
+| **Avg** | | | **0.0578** | **0.0375** | 1.5x better than trivial |
+
+**Key finding:** Average trivial baseline MSE = 0.0578 ≈ Paper SimCLR avg (0.0583). Paper SimCLR is essentially trivial-level!
+
+**Suspicious results:** Bearings 1_5, 1_7, 2_6 all have FPT≥97%, so RUL≈1.0 for 97-98% of the life. The trivial predictor MSE is 0.007-0.009. Paper claims 0.0005-0.0012 which is 5-14x below the theoretical variance floor. This may indicate:
+1. Paper evaluates only degradation phase (FPT→EOL), not full run
+2. Different RUL normalization
+3. Data leakage in paper evaluation
+
+**Our evaluation:** Full run-to-failure, piecewise linear RUL. This is the correct scientific setup.
+**Our target:** Beat trivial baseline (avg MSE = 0.0578) — meaningful improvement requires avg MSE < 0.05.
 
 ---
 
