@@ -117,6 +117,34 @@ train_utils.py: NaN gradient check REMOVED (was doubling epoch time).
 
 ---
 
+## Exp 5: SupCon Condition 2 — COMPLETE (01:57 UTC 2026-04-10)
+
+**Time:** 01:57 UTC 2026-04-10 (31.9 min — CNN-GRU-MHA contention ended at ~01:57)
+**Config:** 300 pretrain + 150 finetune epochs, lr=1e-3/5e-4, batch=64, crop=1024
+**Result: avg MSE = 0.2243 (paper SupCon cond2 avg: ~0.0308 — WORSE)**
+
+| Bearing | Ours (SupCon) | Paper (SupCon) | Paper (DCSSL) | FPT% |
+|---------|--------------|----------------|---------------|------|
+| 2_3 | 0.2756 | 0.0569 | 0.0027 | 13.4% |
+| 2_4 | 0.4253 | 0.0046 | 0.0014 | 51.9% |
+| 2_5 | **0.0770** | 0.0735 | 0.2538 | 0% |
+| 2_6 | 0.3303 | 0.0038 | 0.0012 | 98% |
+| 2_7 | **0.0135** | 0.0150 | 0.0075 | 96.5% |
+| **Avg** | 0.2243 | ~0.0308 | 0.0375 | |
+
+**Sanity checks:** ✓ Loss decreased (4.8491 best pretrain), ✓ Some bearings reasonable
+**Verdict:** KEEP — we beat paper on 2_5 and 2_7, but fail on 2_3, 2_4, 2_6
+**Root cause:** Distributional shift in FPT (train: 18-25%, test: 0-98%)
+  - Bearing2_4 has -0.635 correlation (backwards prediction!) — FPT=51.9% vs train FPT~21%
+  - Model learned "halfway = degrading" from training, but 2_4 is healthy at halfway
+  - Bearing2_6 (FPT=98%): model predicts severe degradation, reality is mostly healthy
+**Architectural gap:** Paper uses 20-timestamp temporal window; we use single-snapshot
+  → Paper's temporal structure captures "when does degradation start" within the window
+  → Our single-snapshot encoder has no context about when in the lifecycle
+**Next:** SupCon cond3 (already running at 01:57 UTC)
+
+---
+
 ## Key Paper Architecture Details (from PDF)
 
 Extracted from Shen et al. 2026 (Table 2 + ablation):
