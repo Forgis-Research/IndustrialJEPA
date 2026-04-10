@@ -117,6 +117,33 @@ train_utils.py: NaN gradient check REMOVED (was doubling epoch time).
 
 ---
 
+## Key Paper Architecture Details (from PDF)
+
+Extracted from Shen et al. 2026 (Table 2 + ablation):
+
+| Hyper-parameter | Paper Value | Our Implementation |
+|---|---|---|
+| Timesteps (window) | 20 | N/A (global pool) |
+| Batchsize | 256 | 64 |
+| Output_dims | 1024 | 1024 (DCSSL), 128 (baselines) |
+| Hidden_dims | 32 | 32 (DCSSL), 64 (baselines) |
+| Depth | 8 | 8 |
+| Temperature (t) | 0.07 | 0.07 (DCSSL), 0.1 (baselines) |
+| b (loss balance) | 0.3 | 0.3 (lambda_temporal=0.3, lambda_instance=0.7) |
+| Finetune loss | MAE | MAE (DCSSL), MSE (baselines) |
+
+**Architecture gap**: Paper uses per-timestamp representations + max pooling for instance-level.
+We use global average pooling over the time dimension — simpler but arguably equivalent for
+the final RUL head. Paper also uses Input Projection Layer + Timestamp Masking.
+
+**Key ablation findings**:
+- Timestamp masking critical: removing → MSE 0.0423 vs 0.0067
+- Instance contrast critical: removing → MSE 0.0163 vs 0.0067
+- Temporal contrast important: removing → MSE 0.0075 vs 0.0067
+- b=0.3 is optimal loss balance (Table 12)
+
+---
+
 ## Paper Targets (Table 3)
 
 | Test Bearing | InfoTS | USL | CBHRL | SimCLR | SupCon | DCSSL |
