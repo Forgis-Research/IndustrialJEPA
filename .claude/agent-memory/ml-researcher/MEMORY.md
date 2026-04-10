@@ -1,3 +1,4 @@
+- [DCSSL Replication Findings](project_dcssl_replication.md) — FPT shift is key failure mode; paper SimCLR avg≈trivial baseline; paper table had swapped columns; RUL-fix applied to cond2/3
 - [IndustrialJEPA Project Context](project_industrialjepa.md) — V9 complete: JEPA+Prob-LSTM RMSE=0.0868 PICP@90%=0.910; dataset compatibility protocol (MAFAULDA excluded, KL>2.0 threshold)
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
