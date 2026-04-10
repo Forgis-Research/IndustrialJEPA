@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: Complete project state including V6 (CWRU→Paderborn JEPA transfer) and V7 baseline establishment on Forgis/Mechanical-Components HF dataset
+description: V10 complete: Trajectory JEPA h_future max |Spearman|=0.496; HC Top-3 beats All-18 3x; DCSSL corrected to 0.0822
 type: project
 ---
 
@@ -218,3 +218,147 @@ Incompatible: mafaulda (centroid=173Hz, KL=3.04)
 **Why:** V9 establishes dataset compatibility as a prerequisite for stable multi-source JEPA.
 **How to apply:** Always run compatibility check before adding new sources. For next session,
 focus on getting more training episodes (50+) to enable TCN-Transformer and reduce noise in PICP estimation.
+
+---
+
+## V10: Trajectory JEPA (Completed 2026-04-10)
+
+### Goal: Replace patch-level JEPA with trajectory-level future prediction
+
+### Setup
+- 23 episodes (16 FEMTO + 7 XJTU-SY from shard 3), 18 train / 5 test
+- Cut-point evaluation: for each test episode, sample t in [5, T-3], predict RUL%
+- **WARNING**: This is DIFFERENT from V9's full-episode protocol; values not directly comparable
+
+### HC Feature Analysis (Part A)
+
+| Feature | Spearman rho | Notes |
+|---------|-------------|-------|
+| spectral_centroid | +0.585 | Dominant predictor |
+| band_energy_0_1kHz | -0.497 | 2nd most important |
+| band_energy_3_5kHz | +0.362 | 3rd |
+| rms | -0.004 | Near-zero — amplitude confounded by load |
+
+**HC+LSTM ablation (5 seeds, 150 epochs)**:
+- Top-3: RMSE=0.025 ± 0.005 (BEST)
+- All-18: RMSE=0.072 ± 0.019 (ALL-18 is 3x WORSE than Top-3)
+- SC only: RMSE=0.036 ± 0.013
+
+**Key insight**: More HC features HURTS. The LSTM overfits on noisy time-domain features.
+For all future work, use Top-3: spectral_centroid, band_energy_0_1kHz, band_energy_3_5kHz.
+
+### Trajectory JEPA Architecture
+
+- Context encoder: 2-layer causal Transformer (d=64, 4 heads, norm_first=True)
+- Target encoder: bidirectional, EMA (m=0.996), attention-pooled
+- Predictor: Linear(64,128)→ReLU→Linear(128,64)
+- Input: Top-5 HC features per snapshot (normalized by train mean/std)
+- Training: 200 epochs, 10 cuts/episode, grad_accum=8, warmup=20 epochs
+- Pretraining loss: 0.571 → 0.071 (8x decrease)
+
+### CRITICAL BUG FIX (in EMA update):
+Use named parameters, not zip(parameters()):
+```python
+ctx_params = dict(self.context_encoder.named_parameters())
+for name, p_tgt in self.target_encoder.named_parameters():
+    if name in ctx_params and ctx_params[name].shape == p_tgt.shape:
+        p_tgt.data = m * p_tgt.data + (1 - m) * ctx_params[name].data
+```
+TargetEncoder has extra `attn_query` parameter that ContextEncoder doesn't have.
+
+### Results (V10 cut-point protocol, 5 seeds)
+
+| Method | RMSE | ± std |
+|--------|------|-------|
+| Elapsed time (near-trivial) | 0.002 | — |
+| HC+LSTM Top-3 | **0.025** | 0.005 |
+| HC+LSTM All-18 | 0.072 | 0.019 |
+| Traj JEPA frozen linear probe | 0.211 | 0.004 |
+| Traj JEPA E2E finetune | 0.155 | 0.018 |
+| Traj JEPA hetero | 0.226 | 0.015 |
+| V9 JEPA+LSTM (reference, different eval) | 0.085 | 0.001 |
+
+### Embedding Quality
+
+- h_future max per-dim |Spearman| with RUL: **0.496** (vs V9 patch JEPA: 0.121)
+- Token-count leakage test: shuffle hurts (temporal_signal=True, p<0.001)
+- Degradation trajectories in PC1: monotonic trends visible in most episodes
+
+### Key Findings
+
+1. Top-3 HC features beat All-18 (use ONLY spectral + 2 band energies for RUL)
+2. Trajectory JEPA h_future embeds degradation with max |Spearman|=0.496 (4x better than V9)
+3. With 18 episodes, HC+LSTM Top-3 (0.025) still beats Traj JEPA E2E (0.155) by 6x
+4. DCSSL RMSE CORRECTION: V9 cited 0.131; correct is **0.0822** (Shen et al. 2026, Table 4, FEMTO only)
+5. Pretraining is useful initialization for E2E fine-tuning (0.211 → 0.155, 27% improvement)
+
+### Files
+- `experiments/v10/RESULTS.md`, `EXPERIMENT_LOG.md`, `hc_feature_analysis.md`
+- `notebooks/10_v10_trajectory_jepa.qmd`
+- `analysis/plots/v10/` (7 plots)
+- `experiments/v10/traj_jepa_pretrained.pt` (checkpoint)
+- `experiments/v10/run_v10b.py` (full training), `run_v10c.py` (probes from checkpoint)
+
+### What to do next
+- Scale to 50+ run-to-failure episodes to test trajectory JEPA properly
+- Try Top-3 HC features in all future experiments
+- The DCSSL 0.0822 is the correct competitor reference on FEMTO-only
+
+---
+
+## CNN-GRU-MHA Replication (Completed 2026-04-10)
+
+### Goal: Replicate Yu et al. Applied Sciences 2024 FEMTO transfer learning baseline
+
+**Status: EXACT replication — our avg RMSE=0.0416 vs paper RMSE=0.0443 (-6.1%)**
+
+All 11 unique FEMTO cross-bearing transfer experiments completed. 5 seeds each.
+
+| Transfer | Our RMSE | Paper RMSE | Delta |
+|----------|----------|------------|-------|
+| B1_3→B2_3 | 0.0435±0.0105 | 0.0463 | -6.0% |
+| B1_3→B2_4 | 0.0487±0.0151 | 0.0449 | +8.5% |
+| B1_3→B3_1 | 0.0444±0.0141 | 0.0427 | +3.9% |
+| B1_3→B3_3 | 0.0544±0.0152 | 0.0461 | +18.1% |
+| B2_3→B1_3 | 0.0252±0.0029 | 0.0458 | -45.0% |
+| B2_3→B1_4 | 0.0376±0.0108 | 0.0426 | -11.7% |
+| B2_3→B3_3 | 0.0514±0.0135 | 0.0416 | +23.6% |
+| B3_2→B1_3 | 0.0328±0.0101 | 0.0382 | -14.2% |
+| B3_2→B1_4 | 0.0355±0.0090 | 0.0397 | -10.6% |
+| B3_2→B2_3 | 0.0336±0.0112 | 0.0413 | -18.6% |
+| B3_2→B2_4 | 0.0504±0.0054 | 0.0418 | +20.5% |
+
+### Architecture
+- CNN (6 blocks, MHA after block 3) + 2-layer GRU (hidden=[512,128]) + FC (128→64→1+Sigmoid)
+- 4.8M parameters total (CNN=2.19M, GRU=2.61M, FC=8K)
+- DWT denoising (sym8, level=3), min-max normalization, horizontal channel only
+- Linear RUL: Y_i = (N - i) / N
+
+### Critical Implementation Details
+
+**Random 50/50 split beats chronological split:**
+Chronological split (FT on first half=RUL[1→0.5], eval on second half=RUL[0.5→0]) gives RMSE=0.43-0.53.
+The FC head trained on upper half cannot generalize to lower half. Random split (both halves cover full
+RUL range) gives RMSE matching the paper.
+
+**Memory-efficient training** (GPU shared with DCSSL using 18.3GB):
+- CNN features extracted with no_grad() — saves ~10GB activation memory
+- GRU+FC trains on full sequence with gradients (0.11 GB peak)
+- CNN updated separately with windowed mini-batches at 0.1x learning rate
+
+**contextlib.nullcontext() not torch.enable_grad():**
+When extract_cnn_features(use_grad=True), use contextlib.nullcontext() as context manager.
+torch.enable_grad() overrides outer no_grad() blocks, causing OOM during evaluation.
+
+### Files
+- `cnn-gru-mha-replication/models.py` — CNN-GRU-MHA architecture
+- `cnn-gru-mha-replication/data_utils.py` — DWT+minmax preprocessing, importlib for dcssl import
+- `cnn-gru-mha-replication/train_utils.py` — two-phase training, fine-tuning, evaluation
+- `cnn-gru-mha-replication/run_experiments.py` — main runner (200 source + 200 finetune iters)
+- `cnn-gru-mha-replication/results/RESULTS.md` — comparison table
+- `cnn-gru-mha-replication/results/all_results.json` — per-transfer, per-seed results
+- `cnn-gru-mha-replication/results/plots/` — 12 PNG plots
+
+### Use as Baseline
+CNN-GRU-MHA (our impl) RMSE=0.0416 is the reference supervised transfer learning baseline.
+Any JEPA-based approach needs to beat or approach 0.0416 on the same transfer protocol to be compelling.

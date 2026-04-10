@@ -248,6 +248,8 @@ Priority papers to include as baselines in any IndustrialJEPA RUL paper:
 2. **CNN-GRU-MHA with Transfer Learning (Applied Sciences 2024)**
    MDPI 2076-3417/14/19/9039. nRMSE 0.0443 on FEMTO (best reported).
    Why: Current best result on FEMTO (if reproducible).
+   STATUS: REPLICATED. Our implementation achieves 0.0416 avg RMSE (-6.1% vs paper).
+   Protocol: 5 seeds, 11 unique FEMTO transfers, random 50/50 split (NOT chronological).
 
 3. **DCSSL (Dual-Dimensional Contrastive SSL, Scientific Reports 2026)**
    Nature/s41598-026-38417-7. Self-supervised + RUL on FEMTO.
