@@ -146,8 +146,11 @@ Our 0.0273 vs paper SupCon 0.0017 — 16x worse. However paper DCSSL gets 0.0068
 - Epoch 41: ntxent=1.22, temporal=3.42, instance=3.18, total=4.48 (at 02:27 UTC)
 **Sanity checks:** ✓ All 3 loss components active, ✓ Total loss decreasing, ✓ Loss_ntxent dropping well
 **Note:** loss_temporal rising slightly (normal — temporal smoothness constraint tightens)
-**Timing:** 41 epochs in ~11 min → ~3.7 min per 20 epochs → est. 55 min pretrain + 28 min finetune = 83 min total
-**Status:** Epoch ~41/300 at 02:27 UTC. Estimated completion ~03:39 UTC.
+**Timing update:** Epochs 41→61 took 4:45 min → ~14.25 sec/epoch → 300 epochs=71 min + 150 ftt=35 min = 106 min total
+**Status:** Epoch 61/300 at 02:31:45 UTC. Estimated completion ~04:02 UTC.
+
+**Note:** Code fix applied 02:31 UTC. DCSSL cond2/3 will use RUL-based instance contrastive loss (fixes FPT distribution shift). Cond1 uses original time-based proximity (already running, not affected by fix).
+- **RUL fix**: instance_contrastive_loss() now uses actual RUL values when available to define 'similar degradation stage' positive pairs. This makes cross-bearing contrast FPT-position-independent.
 **Paper targets (cond1):** 1_3: 0.0011, 1_4: 0.0476, 1_5: 0.0005, 1_6: 0.0892, 1_7: 0.0009 → avg=0.0375
 
 ---
