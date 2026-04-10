@@ -1,0 +1,17 @@
+{
+  "dataset": "MBA",
+  "pred_len": 100,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "f1_mean": 43.13,
+  "f1_std": 0.0,
+  "f1_per_seed": {
+    "0": 43.13,
+    "1": 43.13,
+    "2": 43.13
+  },
+  "note": "All seeds identical - seed not propagating to torch/numpy at start of each run. Paper target: 67.55 +/- 5.62."
+}
