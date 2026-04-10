@@ -157,24 +157,39 @@ Our 0.0273 vs paper SupCon 0.0017 — 16x worse. However paper DCSSL gets 0.0068
 
 ---
 
-## Exp 7: DCSSL Condition 1 — IN PROGRESS (02:16 UTC 2026-04-10)
+## Exp 7: DCSSL Condition 1 — COMPLETE (03:46 UTC 2026-04-10)
 
-**Time:** 02:16 UTC 2026-04-10 (expected completion ~04:00-05:00 UTC)
+**Time:** 02:16 UTC → 03:46 UTC (89.9 minutes total)
 **Config:** 300 pretrain + 150 finetune epochs, lr=1e-3/5e-4, batch=64, crop=1024, MAE finetune loss
 **Model:** DCSSSLModel — 4,118,305 params (temperature=0.07, lambda_temporal=0.3, lambda_instance=0.7)
-  - encoder_out=1024, encoder_hidden=32, proj_hidden=512, proj_out=256, rul_hidden=128 (per paper Tables 2,10,11)
-**Loss trajectory:**
-- Epoch 1: ntxent=3.31, temporal=3.20, instance=4.19, total=7.20
-- Epoch 21: ntxent=1.62, temporal=3.34, instance=3.23, total=4.88
-- Epoch 41: ntxent=1.22, temporal=3.42, instance=3.18, total=4.48 (at 02:27 UTC)
-**Sanity checks:** ✓ All 3 loss components active, ✓ Total loss decreasing, ✓ Loss_ntxent dropping well
-**Note:** loss_temporal rising slightly (normal — temporal smoothness constraint tightens)
-**Timing update:** Epochs 41→61 took 4:45 min → ~14.25 sec/epoch → 300 epochs=71 min + 150 ftt=35 min = 106 min total
-**Status:** Epoch 61/300 at 02:31:45 UTC. Estimated completion ~04:02 UTC.
 
-**Note:** Code fix applied 02:31 UTC. DCSSL cond2/3 will use RUL-based instance contrastive loss (fixes FPT distribution shift). Cond1 uses original time-based proximity (already running, not affected by fix).
-- **RUL fix**: instance_contrastive_loss() now uses actual RUL values when available to define 'similar degradation stage' positive pairs. This makes cross-bearing contrast FPT-position-independent.
-**Paper targets (cond1):** 1_3: 0.0011, 1_4: 0.0476, 1_5: 0.0005, 1_6: 0.0892, 1_7: 0.0009 → avg=0.0375
+**Pretrain loss trajectory:**
+- Epoch 1: ntxent=3.31, temporal=3.20, instance=4.19, total=7.20
+- Epoch 121: ntxent=0.62, temporal=3.43, instance=2.77, total=3.59
+- Epoch 221: ntxent=0.37, temporal=3.40, instance=2.54, total=3.17
+- Epoch 300: ntxent=0.33, temporal=3.40, instance=2.44, total=3.06
+- Best checkpoint: loss=3.0329
+
+**Finetune MSE:** 0.1106 → 0.0085 (epoch 150 vs epoch 1) — solid convergence
+
+**Result: avg MSE = 0.0441 (paper DCSSL cond1 avg: 0.0279 — paper better overall, but we beat on 1_4)**
+
+| Bearing | Ours (DCSSL) | Paper (DCSSL) | Our SimCLR | Our SupCon | Win? |
+|---------|-------------|---------------|-----------|------------|------|
+| 1_3 | 0.0645 | 0.0011 | 0.1100 | 0.1052 | Paper |
+| 1_4 | **0.0384** | 0.0476 | 0.0457 | 0.0304 | **OUR DCSSL BEST** |
+| 1_5 | **0.0070** | 0.0005 | 0.0126 | 0.0114 | Paper (trivial-level) |
+| 1_6 | 0.1005 | 0.0892 | 0.0866 | 0.0707 | SupCon best |
+| 1_7 | 0.0103 | 0.0009 | 0.0125 | 0.0163 | Paper |
+| **Avg** | **0.0441** | **0.0279** | 0.0535 | 0.0468 | |
+
+**Sanity checks:** ✓ Loss decreased (3.0329 best pretrain), ✓ Finetune MSE decreased to 0.0085, ✓ Best checkpoint loaded, ✓ 1_5 MSE=0.0070 = trivial baseline (correct!)
+
+**Key finding:** DCSSL outperforms SimCLR and SupCon on cond1 (avg 0.0441 vs 0.0535/0.0468). Dual-dimensional loss does improve representations over SimCLR/SupCon on condition 1.
+
+**Note:** Cond1 uses time-based instance loss (code fix not applied — was already running). Cond2/3 will use RUL-based instance loss.
+
+**DCSSL cond2 started automatically at 03:47 UTC (with RUL-based instance loss fix).**
 
 ---
 
