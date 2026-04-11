@@ -1,0 +1,9 @@
+{
+  "probe": "162_alarm_optimization",
+  "lr_strict_auroc": 0.7807928086181865,
+  "lr_std_auroc": 0.6607705681087048,
+  "ap_strict": 0.08891713770729828,
+  "ap_std": 0.16521032680001385,
+  "base_rate_strict": 0.03194236781296724,
+  "base_rate_std": 0.09507951610710888
+}

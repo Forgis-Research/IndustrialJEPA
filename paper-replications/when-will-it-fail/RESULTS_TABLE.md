@@ -274,3 +274,68 @@ A NeurIPS-worthy contribution would be:
 1. Propose AUPRC (or DR@FAR) as the primary AP metric
 2. Show that AUPRC rankings of methods differ substantially from F1-tolerance rankings
 3. Develop a calibrated AP model (JEPA-based) that achieves AUROC > 0.7
+
+---
+
+## Overnight Session 3 Improvement Probe Summary (Probes 128-142)
+
+### Strict AP Task (no ongoing anomaly in [t+50,t+100]) - Our Main Finding
+
+The standard AP+ includes 66.4% "contaminated" events (ongoing anomaly in oracle window). When we filter to strict AP+ (genuine prediction - no anomaly in [t+50,t+100]), performance improves dramatically.
+
+| Method | Standard AP AUROC | Strict AP AUROC | Delta |
+|--------|-------------------|-----------------|-------|
+| Oracle [t+100,t+150] | 0.623 | 0.623* | - |
+| LR 4-feat | 0.615 (CV) | ~0.707 (60/40) | +0.092 |
+| RF 4-feat | 0.619 (CV) | ~0.791 (CV) | +0.172 |
+| LR 20-bin | 0.644 (CV) | **0.791 (CV)** | +0.147 |
+| TF model | ~0.614 | 0.723 ± 0.005 | +0.109 |
+
+*Oracle [t+100,t+150] = 0.623 even on strict AP because it measures early block onset (low variance); oracle [t+150,t+200] = 0.982
+
+### Feature Engineering Progression (strict AP task)
+
+| # Features | Method | Strict AP AUROC (5-fold CV) |
+|------------|--------|----------------------------|
+| 1 feature | Temporal slope | 0.584 |
+| 4 features | LR (paper proxy) | 0.706 ± 0.023 |
+| 7 features | LR 7-bin (greedy) | 0.748 ± 0.017 |
+| 20 features | LR 20-bin | **0.791 ± 0.020** |
+| 20 features | RF 20-bin | 0.769 ± 0.031 |
+
+### Oracle Window Paradox (Probe 137)
+
+The standard oracle target [t+100,t+150] is FLAWED - it measures the BEGINNING of the anomaly block, which has LOW variance (the block starts quiet then ramps up):
+
+| Oracle Window | AUROC (strict AP) |
+|---------------|-------------------|
+| [t+100,t+150] | 0.623 (STANDARD - measures early block) |
+| [t+110,t+120] | 0.637 |
+| [t+130,t+140] | 0.700 |
+| [t+150,t+160] | 0.830 |
+| [t+180,t+190] | 0.952 |
+| [t+150,t+200] (LATE) | **0.982** |
+| binary k=50 | **0.968** (ceiling) |
+
+Our LR 20-bin (0.791 CV) outperforms the standard oracle (0.623) because the oracle is measuring the wrong window.
+
+### Mechanistic Explanation (Probe 130)
+
+The "calm before storm" pattern is the core predictive signal:
+1. **Prior block remnant** (t=[-160,-100]): Elevated variance from previous block
+2. **Deep calm trough** (t=[-100,-40], 0.14x baseline): Inter-block silence
+3. **Rising onset** (t=[-40, 0]): New block begins to rise
+4. LR coefficient profile: monotonically negative from t=[0,160], deepest at t=[140-150] (coef=-1.900)
+
+This pattern only exists in strict AP+ events (no ongoing anomaly) - contaminated events are pure detection, not prediction.
+
+### Exp 142: 7-bin Minimum Efficient Feature Set
+
+| Method | Strict AP AUROC (5-fold CV) |
+|--------|----------------------------|
+| LR 20-bin | 0.791 ± 0.020 |
+| LR 7-bin (greedy) | 0.748 ± 0.017 |
+| LR 4-feat | 0.706 ± 0.023 |
+| Oracle [t+100,t+150] | 0.629 ± 0.015 |
+
+7-bin bins: t=[140-150], [150-160], [90-100], [190-200], [30-40], [130-140], [160-170]

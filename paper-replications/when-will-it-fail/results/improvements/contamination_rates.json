@@ -1,0 +1,19 @@
+{
+  "probe": "147_contamination_smd",
+  "svdb4": {
+    "n_ap_plus": 3486,
+    "n_contaminated": 2316,
+    "n_strict": 1170,
+    "contamination_rate": 0.6643717728055077,
+    "ap_plus_rate": 0.09474370821329564,
+    "strict_rate": 0.03179866282546067
+  },
+  "smd": {
+    "n_ap_plus": 840,
+    "n_contaminated": 417,
+    "n_strict": 423,
+    "contamination_rate": 0.49642857142857144,
+    "ap_plus_rate": 0.042147516307074764,
+    "strict_rate": 0.021224284997491218
+  }
+}

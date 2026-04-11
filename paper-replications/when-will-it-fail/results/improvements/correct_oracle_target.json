@@ -1,0 +1,11 @@
+{
+  "probe": "138_correct_oracle_target",
+  "lr_20bin": 0.7810871384174037,
+  "binary_tf_mean": 0.733240684018647,
+  "binary_tf_std": 0.004838072256753589,
+  "late_oracle_tf_mean": 0.4390385190054984,
+  "late_oracle_tf_std": 0.0034451948362419216,
+  "standard_oracle_auroc": 0.6098221969878078,
+  "late_oracle_auroc": 0.9843811259861344,
+  "binary_ceiling": 0.968
+}

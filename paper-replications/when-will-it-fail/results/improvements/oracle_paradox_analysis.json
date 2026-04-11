@@ -1,0 +1,17 @@
+{
+  "probe": "149_oracle_beats_lr_paradox",
+  "svdb4_standard": {
+    "oracle_auroc": 0.7470183761428217,
+    "lr_trained_on_std": 0.6607705681087048,
+    "lr_trained_on_strict": 0.6149686340519501
+  },
+  "svdb4_strict": {
+    "oracle_auroc": 0.6095132254267567,
+    "lr_trained_on_std": 0.7342101489540948,
+    "lr_trained_on_strict": 0.7807928086181865
+  },
+  "svdb4_detection": {
+    "oracle_auroc": 0.8020571962238795,
+    "lr_trained_on_std": 0.6114158968286225
+  }
+}

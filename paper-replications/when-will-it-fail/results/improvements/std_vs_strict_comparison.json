@@ -1,0 +1,32 @@
+{
+  "probe": "148_std_vs_strict_comparison",
+  "svdb4": {
+    "contamination_rate": 0.664,
+    "std_ap_cv": {
+      "mean": 0.644103812964538,
+      "std": 0.021991862358606753
+    },
+    "strict_ap_cv": {
+      "mean": 0.7908907779965452,
+      "std": 0.020260388655281486
+    },
+    "oracle_std": 0.7447635888189501,
+    "oracle_strict": 0.622621169817497,
+    "oracle_late": 0.9819503302024221,
+    "contamination_penalty": 0.14678696503200717
+  },
+  "smd": {
+    "contamination_rate": 0.496,
+    "std_ap_cv": {
+      "mean": 0.3972211746150929,
+      "std": 0.08708747273452397
+    },
+    "strict_ap_cv": {
+      "mean": 0.698173112607195,
+      "std": 0.055269770219213976
+    },
+    "oracle_std": 0.6809474694223931,
+    "oracle_strict": 0.6218401748666271,
+    "contamination_penalty": 0.30095193799210207
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "probe": "166_qualitative_analysis",
+  "status": "complete",
+  "strict_ap_plus_timestamps": [
+    835,
+    840,
+    845,
+    850,
+    855
+  ],
+  "contaminated_ap_plus_timestamps": [
+    885,
+    890,
+    895,
+    900,
+    905
+  ]
+}

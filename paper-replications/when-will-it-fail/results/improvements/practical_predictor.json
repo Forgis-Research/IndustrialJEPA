@@ -1,0 +1,17 @@
+{
+  "probe": "154_practical_predictor",
+  "streaming_auroc": 0.7800512600507999,
+  "optimal_threshold": {
+    "pct": 84.50000000000048,
+    "precision": 0.09006401824081382,
+    "dr": 0.4370212765957447,
+    "far": 0.14569350445112192,
+    "f1": 0.14934923289464117
+  },
+  "lead_times": {
+    "mean": 116.81818181818181,
+    "median": 108.0,
+    "n_detected": 33,
+    "n_onsets": 47
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "probe": "153_theoretical_ceiling",
+  "best_oracle_auroc": 0.9257592431100591,
+  "best_oracle_offset": 90,
+  "lr_20bin_ref": 0.791,
+  "binary_k50_ref": 0.968,
+  "hard_events_pct": 0.5,
+  "n_strict_plus": 1170,
+  "n_strict_minus": 32108
+}

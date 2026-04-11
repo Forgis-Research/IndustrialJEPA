@@ -1,0 +1,16 @@
+{
+  "probe": "155_neurips_table",
+  "main_claims": {
+    "standard_ap_lr20_svdb4": 0.644,
+    "strict_ap_lr20_svdb4": 0.791,
+    "contamination_penalty_svdb4": 0.147,
+    "lr20_vs_oracle_delta": 0.171,
+    "lr20_vs_oracle_pvalue": 0.0,
+    "smd_standard_ap_lr20": 0.397,
+    "smd_strict_ap_lr20": 0.698,
+    "tf_strict_ap": 0.723,
+    "gbm_strict_ap": 0.767,
+    "rf_strict_ap": 0.744,
+    "chronos_std_ap": 0.745
+  }
+}
