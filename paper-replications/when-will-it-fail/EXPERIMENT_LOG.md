@@ -492,3 +492,34 @@ A2P (paper claim):                     AUROC=~0.528 (train==test)
 **NeurIPS contribution:** This is the killer finding. "AP evaluation rewards anomaly detection, not prediction. We propose oracle AUROC as an upper bound and show that no amount of learning can make the current metric measure true AP."
 **Saved:** results/improvements/oracle_ap_auroc.json
 
+---
+
+### Probe 19: Correct AP Evaluation (Future Labels)
+
+**Time:** 2026-04-11 14:12
+**Hypothesis:** If we evaluate against the CORRECT target (future anomaly labels), the AP task becomes meaningful
+**Dataset:** MBA SVDB4 (184K test, 6.35% anomaly rate)
+**Method:** Define future_label[t] = 1 if any anomaly in [t+100, t+150]
+**Results:**
+```
+Under CORRECT AP evaluation (future_labels[t]):
+  Oracle future var AUROC: 0.720 (task IS learnable!)
+  Past rolling var AUROC: 0.483 (current detector FAILS on real AP)
+  Future anomaly rate: 9.46% (broader window = higher rate)
+
+Under CURRENT (wrong) AP evaluation (labels[t]):
+  Past rolling var AUROC: 0.813 (good because it detects current anomalies)
+  A2P AUROC: ~0.528 (bad even on wrong metric)
+```
+**Verdict:** PARADIGM-COMPLETING - Under correct AP evaluation:
+1. Oracle AUROC=0.720 proves AP is achievable (task is learnable)
+2. Rolling var AUROC=0.483 (fails on real AP, was only good on current detection)
+3. A2P (current evaluation) rewards detection (wrong task) with F1-tol metric
+
+**The complete picture:**
+- Current A2P evaluation: tests current anomaly detection in disguise
+- Correct AP evaluation: predicting future anomaly (ACHIEVABLE, oracle=0.720)
+- A NeurIPS-worthy AP model: should achieve AUROC >> 0.72 on future labels
+
+**Saved:** results/improvements/correct_ap_evaluation.json
+

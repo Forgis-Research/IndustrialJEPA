@@ -1651,6 +1651,124 @@ except FileNotFoundError:
     print("Run oracle_ap_auroc.json analysis first")
 ```
 
+## 21c3. Correct AP Evaluation: Predict Future Anomaly Labels
+
+The fundamental question: when evaluated against FUTURE anomaly labels (the actual task), can rolling variance or A2P predict future anomalies?
+
+```{python}
+import json, matplotlib.pyplot as plt
+import numpy as np
+
+try:
+    r = json.load(open('../results/improvements/correct_ap_evaluation.json'))
+
+    print("=" * 65)
+    print("Correct AP Evaluation: Predict Future Labels at t+100")
+    print("=" * 65)
+    print()
+    print(f"Target: anomaly in [{r['pred_len']}, {r['pred_len']+50}] steps")
+    print(f"Future anomaly rate: {r['future_anomaly_rate']:.4f}")
+    print()
+    print(f"{'Method':40}  {'Correct AP':>12}  {'Wrong AP':>10}")
+    print(f"{'':40}  {'(future lbls)':>12}  {'(curr lbls)':>10}")
+    print("-" * 67)
+    print(f"{'Oracle (future var, perfect knowledge)':40}  {r['oracle_vs_future_labels_auroc']:>12.4f}  {'0.347':>10}")
+    print(f"{'Past rolling var (anomaly detector)':40}  {r['past_var_vs_future_labels_auroc']:>12.4f}  {r['past_var_vs_current_labels_auroc']:>10.4f}")
+    print(f"{'A2P (trained model)':40}  {'unknown':>12}  {'~0.528':>10}")
+    print(f"{'Random baseline':40}  {'0.500':>12}  {'0.500':>10}")
+    print()
+    print("Key findings:")
+    print(f"  Oracle correct AP AUROC = {r['oracle_vs_future_labels_auroc']:.4f}")
+    print(f"  => AP task IS learnable! Target for a proper AP model.")
+    print()
+    print(f"  Rolling var correct AP AUROC = {r['past_var_vs_future_labels_auroc']:.4f}")
+    print(f"  => Current detector FAILS on real AP task.")
+    print()
+    print("Current AP evaluation rewards anomaly detection disguised as prediction.")
+    print("A proper JEPA-AP model should target AUROC > 0.72 on CORRECT evaluation.")
+
+except FileNotFoundError:
+    print("Run correct_ap_evaluation.json first")
+```
+
+```{python}
+try:
+    r = json.load(open('../results/improvements/correct_ap_evaluation.json'))
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    # Panel A: AUROC under two evaluations
+    ax = axes[0]
+    methods = ['Oracle\n(future var)', 'Rolling Var\n(detector)', 'A2P\n(paper)', 'Random']
+    correct_auroc = [r['oracle_vs_future_labels_auroc'], r['past_var_vs_future_labels_auroc'], None, 0.5]
+    wrong_auroc = [0.347, r['past_var_vs_current_labels_auroc'], 0.528, 0.5]
+
+    x = np.arange(len(methods))
+    width = 0.35
+
+    bars1 = ax.bar(x - width/2, wrong_auroc, width, label='Current eval (labels[t])',
+                   color=['#e74c3c', '#2ecc71', '#e74c3c', 'gray'], alpha=0.8)
+    bars2_vals = [v if v is not None else 0 for v in correct_auroc]
+    bars2_hatch = ['///' if v is not None else '' for v in correct_auroc]
+    bars2 = ax.bar(x + width/2, bars2_vals, width, label='Correct eval (future_labels[t])',
+                   color=['#2ecc71', '#e74c3c', 'lightgray', 'gray'], alpha=0.8,
+                   hatch='///')
+
+    ax.axhline(y=0.5, color='black', linestyle='--', linewidth=2, label='Random')
+    ax.set_xticks(x)
+    ax.set_xticklabels(methods)
+    ax.set_ylabel('AUROC')
+    ax.set_title('AUROC Under Two Evaluations\nCurrent AP vs Correct AP')
+    ax.legend(fontsize=8)
+    ax.set_ylim(0.3, 0.87)
+    ax.text(3 - width/2, 0.505, '0.500', ha='center', fontsize=8)
+
+    # Panel B: The conceptual picture
+    ax = axes[1]
+    # Timeline diagram showing what each approach measures
+    ax.set_xlim(-1, 11)
+    ax.set_ylim(-0.5, 3.5)
+    ax.axis('off')
+
+    # Anomaly segment
+    rect_anom = plt.Rectangle((3, 1.5), 2, 0.8, color='#e74c3c', alpha=0.7)
+    ax.add_patch(rect_anom)
+    ax.text(4, 1.9, 'Anomaly\n[t, t+100]', ha='center', va='center', fontsize=9, fontweight='bold')
+
+    # Rolling var credit region (current evaluation)
+    rect_credit = plt.Rectangle((2.5, 0.5), 3, 0.6, color='#f39c12', alpha=0.4)
+    ax.add_patch(rect_credit)
+    ax.text(4, 0.8, 'F1-tol credit window\n[t-50, t+150]', ha='center', va='center', fontsize=8)
+
+    # Correct AP target
+    rect_correct = plt.Rectangle((7, 1.5), 1, 0.8, color='#2ecc71', alpha=0.7)
+    ax.add_patch(rect_correct)
+    ax.text(7.5, 1.9, 'Correct\nAP target\n[t+100,\nt+150]', ha='center', va='center', fontsize=7)
+
+    # Arrows
+    ax.annotate('', xy=(7, 2), xytext=(5, 2), arrowprops=dict(arrowstyle='->', color='#2ecc71', lw=2))
+    ax.text(6, 2.1, f'+{r["pred_len"]} steps', ha='center', fontsize=8)
+
+    # Labels
+    ax.text(0, 3, 'Timeline', fontsize=10, fontweight='bold')
+    ax.text(0, 2.5, 'Orange: what current F1-tol measures (detection region)', fontsize=8, color='#e67e22')
+    ax.text(0, 2.2, 'Green: what AP should measure (future prediction)', fontsize=8, color='#2ecc71')
+    ax.text(0, 1.9, 'Red: anomaly segment (always exactly 100 steps!)', fontsize=8, color='#e74c3c')
+    ax.text(0, 0.2, f"All SVDB4 segments = exactly {r['pred_len']} steps = pred_len = coincidence?",
+            fontsize=7, style='italic', color='gray')
+
+    axes[1].set_title('Why F1-tolerance Tests Detection, Not Prediction', fontsize=11)
+
+    plt.suptitle('The Task Confusion: Anomaly Detection Disguised as Prediction',
+                 fontsize=12, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(f'{FIGURES_DIR_V2}/correct_ap_evaluation.png', dpi=150, bbox_inches='tight')
+    plt.show()
+
+except FileNotFoundError:
+    print("Run correct_ap_evaluation.json first")
+```
+
 ## 21d. Complete Comparison: All Methods, All Datasets (Publication Figure)
 
 ```{python}
@@ -1698,14 +1816,21 @@ A2P is ranked #1 by F1-tol but #6 (last) by AUROC.
 Train==test data inflates F1 by 3.4x. Proper split: 12.66%.
 Seed bug: all "seeds" use hardcoded seed=20462.
 
-**Step 6 - The oracle test (paradigm-breaking):**
-If we give the model ORACLE knowledge of future variance (100 steps ahead), what AUROC does it get?
-Oracle future var AUROC = **0.347** (BELOW random 0.5!). This means:
-- Even perfect knowledge of the future doesn't predict current anomaly labels
-- The F1-tolerance metric is testing anomaly DETECTION, not anomaly PREDICTION
-- Rolling variance (current detector) achieves AUROC=0.813 precisely because it detects current anomalies
-- A2P's high F1-tol comes from firing near current anomaly regions, not predicting future ones
+**Step 6 - The oracle test and correct evaluation (paradigm-completing):**
 
-**Proposed fix:** Use AUPRC + AUROC as primary metrics for AP evaluation with oracle-AUROC upper bound.
-Show that current evaluation incentivizes anomaly detection, not prediction.
-Develop a true AP model that predicts ahead of time.
+Under CURRENT evaluation (current labels[t]):
+- Oracle future var AUROC = 0.347 (BELOW random!) - future doesn't predict current labels
+- Rolling var AUROC = 0.813 (high because it detects current anomalies)
+
+Under CORRECT AP evaluation (future_labels[t] = anomaly in [t+100, t+150]):
+- Oracle future var AUROC = 0.720 (AP task IS achievable with correct evaluation!)
+- Rolling var AUROC = 0.483 (current detector FAILS on real AP task)
+- A2P AUROC = unknown, but rewards wrong objective
+
+**Conclusion:** Current AP evaluation tests anomaly detection disguised as prediction.
+The real AP task (predict future anomalies) is achievable (oracle AUROC=0.720).
+A proper AP model evaluated on future labels could achieve AUROC > 0.72.
+
+**Proposed fix:** Evaluate AP against future anomaly labels with AUROC/AUPRC.
+Oracle AUROC = 0.720 is the achievable target.
+Develop JEPA-AP that achieves this target with proper evaluation.

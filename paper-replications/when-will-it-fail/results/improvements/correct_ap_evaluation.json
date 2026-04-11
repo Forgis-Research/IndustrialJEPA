@@ -1,0 +1,10 @@
+{
+  "dataset": "SVDB4",
+  "pred_len": 100,
+  "window": 50,
+  "future_anomaly_rate": 0.094580078125,
+  "past_var_vs_future_labels_auroc": 0.4829351991088396,
+  "oracle_vs_future_labels_auroc": 0.7198938728290322,
+  "past_var_vs_current_labels_auroc": 0.8126651248184095,
+  "note": "Correct AP evaluation: predict if anomaly in [t+pred_len, t+pred_len+window]"
+}
