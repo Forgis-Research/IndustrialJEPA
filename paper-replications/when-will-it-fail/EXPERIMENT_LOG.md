@@ -920,6 +920,29 @@ Best val AUROC:                        0.645
 
 ---
 
+### Probe 28: APTransformer 5-Seed (Running, d_model=64 vs 128)
+
+**Time:** 2026-04-11 15:45 (running, PID 126506)
+**Hypothesis:** 5-seed validation with d_model=64 and d_model=128 will tighten confidence interval for correct AP baseline.
+**Goal:** Determine if d_model=128 gives more stable results (lower variance across seeds).
+**Seeds:** [42, 1, 2, 99, 7]
+**Status:** RUNNING
+
+---
+
+### Note: SMD Full A2P Run (Timed Out)
+
+**Time:** Started ~04:00 April 11, killed 2026-04-11 16:05
+**Attempt:** Run A2P (official code, 5 epochs joint + 5 cross-attn) on SMD (708K x 38 channels)
+**Status:** TIMED OUT after 129 CPU minutes, only at epoch 2 of 5
+**Per-epoch time:** ~1.5 hours (38 channels x 708K samples = 3x slower than MBA)
+**Estimated total time:** ~7.5 hours for 5 epochs = not feasible in this session
+**Verdict:** SMD A2P CANNOT be replicated in reasonable time with current setup.
+**Decision:** Document SMD A2P as "intractable, ~7.5 hours per full run" and use rolling var as SMD AP baseline.
+**Impact:** SVDB4 is the primary correct AP evaluation dataset; SMD is secondary.
+
+---
+
 ### Probe 26b: AP-Aware Contrastive V2 (Running)
 
 **Time:** 2026-04-11 15:19 (running)
