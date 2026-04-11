@@ -65,3 +65,27 @@ Replication started: 2026-04-11
 - **Wall time**: 1874s
 - **Notes**: none
 
+
+### 2026-04-11T15:27:45 | FD001 seed=789
+
+- **Hyperparams**: lr=0.0002,bs=32,w=32,scales=3,dm=128,nh=1
+- **Parameters**: 3,676,992
+- **Epochs run**: 61 (best epoch 41)
+- **Best val RMSE**: 12.140
+- **Test RMSE**: 12.095 (paper target: 10.61)
+- **Test Score**: 252.8 (paper target: 169)
+- **Wall time**: 1621s
+- **Notes**: none
+
+
+### 2026-04-11T15:44:17 | FD001 seed=1024
+
+- **Hyperparams**: lr=0.0002,bs=32,w=32,scales=3,dm=128,nh=1
+- **Parameters**: 3,676,992
+- **Epochs run**: 33 (best epoch 13)
+- **Best val RMSE**: 11.002
+- **Test RMSE**: 12.315 (paper target: 10.61)
+- **Test Score**: 278.4 (paper target: 169)
+- **Wall time**: 992s
+- **Notes**: none
+
