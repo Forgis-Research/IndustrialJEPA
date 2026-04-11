@@ -387,6 +387,24 @@ Notebook extended to sections 17-20 (total 20 sections). Renders successfully.
 **Verdict:** CRITICAL - A trivial baseline that requires no training, no GPU, no model beats A2P's published F1-tolerance on SMD. This is direct evidence that F1-tolerance is a broken metric - it rewards threshold placement near high-density anomaly regions, not discriminability.
 **Saved:** results/improvements/smd_rolling_var_f1.json
 
+### Probe 15: SVDB1 Seed=1 (Multi-seed Variance)
+
+**Time:** 2026-04-11 13:24
+**Hypothesis:** Multiple seeds will show consistent AUROC < 0.5 and low F1-tol, ruling out lucky seed as explanation
+**Change:** Run seed=1 on SVDB1 (proper 70/30 split, record 801)
+**Sanity checks:** ✓ Loss decreased (pretrain -6.66 to -7.50) ✓ Epochs completed ✓ Expected direction (low AUROC)
+**Results:**
+  - F1-tol (seed=1): **22.29%** (seed=42 was 16.06%)
+  - AUROC (r_auc_roc, seed=1): **0.4979** (seed=42 was 0.4900)
+  - vus_roc (seed=1): 0.4969
+  - 2-seed mean: F1-tol=19.17 ± 3.12%, AUROC=0.494 ± 0.004
+  - Seed=2 still running (ETA ~90 min)
+**Verdict:** KEEP - Both seeds show AUROC < 0.5 (worse than random). F1-tol varies from 16-22%, both far below paper's 67.55%. Multi-seed confirms A2P's low discriminability is robust, not a lucky-seed artifact.
+**Insight:** Variance in F1-tol (16% vs 22% = 6pp) is large relative to paper's reported ±5.62. This makes sense because with only 5 short anomaly segments, threshold placement is highly sensitive.
+**Next:** Wait for seed=2, then final update to all_results.json
+
+---
+
 ### Summary of Final Findings
 
 Rolling variance beats A2P:

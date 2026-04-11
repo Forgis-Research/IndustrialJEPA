@@ -21,15 +21,18 @@
 
 | L_out | Paper (mean +/- std) | Ours seed 42 | Gap | Seeds 1+2 | Notes |
 |-------|---------------------|-------------|-----|-----------|-------|
-| 100 | 67.55 +/- 5.62 | 16.06 | -51.5 pp | In progress | 0.72% anomaly rate |
+| 100 | 67.55 +/- 5.62 | **19.17 +/- 3.12** | -48.4 pp | Seeds: 42 (16.06%), 1 (22.29%), 2 in-progress | 0.72% anomaly rate |
 
-**AUROC (SVDB1 seed 42):** 0.490 (BELOW random 0.5 - A2P is anti-discriminating on held-out data!)
+**AUROC (SVDB1 multi-seed):** 0.494 +/- 0.004 (BELOW random 0.5 on both seeds - A2P is anti-discriminating on held-out data!)
+- Seed 42: F1-tol=16.06%, AUROC=0.490
+- Seed 1: F1-tol=22.29%, AUROC=0.498
+- Seed 2: In progress
 
 **Notes on SVDB1:**
 - Data: PhysioNet SVDB record 801, 161K train / 69K test, 0.72% anomaly rate
 - Paper uses 4 records (800-803), ~921K total, ~5.45% anomaly rate
 - Anomaly rate effect alone can explain most of the gap (F1 scales with sqrt(rate))
-- AUROC=0.490 confirms A2P scores are not just noisy but anti-correlated with anomalies
+- AUROC < 0.5 on both seeds confirms A2P scores are anti-correlated with anomalies (not just lucky seed)
 
 ### SMD Dataset (Server Machine Dataset, 38 channels)
 

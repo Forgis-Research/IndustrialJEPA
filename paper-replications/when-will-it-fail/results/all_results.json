@@ -161,7 +161,7 @@
     {
       "exp_id": 3,
       "dataset": "MBA_SVDB1_record801",
-      "note": "PhysioNet SVDB record 801, proper 70/30 split. 0.72% anomaly rate (grey-swan regime).",
+      "note": "Seed=2 still running. Both completed seeds AUROC < 0.5 (anti-discriminating).",
       "pred_len": 100,
       "seeds": [
         42
@@ -171,7 +171,23 @@
       "auroc_note": "BELOW random 0.5 - A2P anti-discriminates on held-out data",
       "gap_vs_paper": -51.5,
       "anomaly_rate": 0.0072,
-      "status": "COMPLETED_1_SEED"
+      "status": "partial (seed=2 in progress)",
+      "seeds_completed": [
+        42,
+        1
+      ],
+      "f1_tol_per_seed": {
+        "42": 16.06,
+        "1": 22.29
+      },
+      "auroc_per_seed": {
+        "42": 0.49,
+        "1": 0.4979
+      },
+      "f1_tol_mean": 19.17,
+      "f1_tol_std": 3.12,
+      "auroc_mean": 0.494,
+      "auroc_std": 0.004
     },
     {
       "exp_id": 4,
