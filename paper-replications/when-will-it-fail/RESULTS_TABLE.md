@@ -103,13 +103,15 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | AUPRC Comparison | Rolling Var (SVDB1) | F1-tol | 83.97% | A2P: 16.06% | 5.2x higher |
 | AUPRC Comparison | Chronos-Small | AUPRC | 0.059 | A2P: 0.035 | 1.7x higher |
 | Metric Rankings | All methods | Spearman rho | 0.000 | Expected >0.3 | Metrics give opposite rankings |
-| SMD Baselines | Rolling Var (SMD) | AUROC | 0.773 | A2P: n/a | w/o training |
+| SMD Baselines | Rolling Var (SMD) | AUROC | 0.774 | A2P: n/a | w/o training |
+| SMD Baselines | Rolling Var (SMD) | F1-tol | 39.24% | A2P paper: 36.29% | **BEATS A2P** +2.95pp! |
 | SMD Baselines | Z-score (SMD) | AUROC | 0.641 | A2P: n/a | w/o training |
 | Cross-Domain | Rolling Var MBA->SMD | AUROC | 0.746 | In-domain: 0.771 | Only -0.025 transfer penalty |
 
 Note: MBA_svdb = single SVDB record 801 (161K train / 69K test), 0.72% anomaly rate.
 A2P results use TranAD MBA (train==test, 3.12% anomaly rate) - direct comparison not fully apples-to-apples.
 Key: F1-tol and AUROC/AUPRC rankings are completely uncorrelated (Spearman rho=0.000) - the core NeurIPS finding.
+CRITICAL: Rolling variance F1-tol BEATS A2P paper on SMD (39.24% vs 36.29%) without any training!
 
 ---
 

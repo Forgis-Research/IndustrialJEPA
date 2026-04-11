@@ -808,3 +808,9 @@ FD003 Ep 140 | loss=0.0185 | probe=16.57 (best=15.64)
   Ext 200ep seed=0: frozen=19.74, e2e=14.99
 FD003 Ep 150 | loss=0.0180 | probe=15.88 (best=15.64)
 FD003 Ep 160 | loss=0.0181 | probe=16.16 (best=15.64)
+  Ext 200ep seed=1: frozen=16.45, e2e=17.06
+FD003 Ep 170 | loss=0.0164 | probe=16.37 (best=15.64)
+FD003 Ep 180 | loss=0.0173 | probe=16.71 (best=15.64)
+  Ext 200ep seed=2: frozen=18.62, e2e=13.92
+FD003 Ep 190 | loss=0.0173 | probe=16.60 (best=15.64)
+  Ext 200ep seed=3: frozen=16.18, e2e=13.35

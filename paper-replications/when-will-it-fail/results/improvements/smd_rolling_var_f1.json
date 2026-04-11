@@ -1,0 +1,12 @@
+{
+  "method": "Rolling Variance (window=100, all 38 channels)",
+  "dataset": "SMD (708K x 38, 4.16% anomaly rate)",
+  "auroc": 0.7740700852295708,
+  "auprc": 0.15442024327260528,
+  "f1_tolerance_50": 39.242295730845356,
+  "precision": 40.03257439516813,
+  "recall": 38.48261465196686,
+  "paper_a2p_f1_tol": 36.29,
+  "gap_vs_paper": 2.952295730845357,
+  "finding": "Rolling variance F1-tol=39.2% vs A2P paper 36.29%. AUROC=0.774."
+}
