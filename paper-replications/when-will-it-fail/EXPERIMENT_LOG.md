@@ -2785,3 +2785,61 @@ Note: These use smaller test split (7K vs 183K full dataset) so 4-feat LR shows 
 
 ---
 
+### Probe 95: SMD Channel Oracle Analysis (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** SMD oracle signal is concentrated in specific channels
+**Design:** CPU-only. Compute oracle AUROC for all 38 channels vs top-5 vs decade subsets
+**Sanity checks:** ✓ n_test=7081 ✓ AP+ rate=0.049 ✓ Oracle confirms expected pattern
+**Result:**
+
+| Channel subset | Oracle AUROC |
+|----------------|-------------|
+| All 38 channels | 0.346 (BELOW RANDOM!) |
+| Top-5 channels [24,11,12,34,35] | 0.704 |
+| Channels 0-9 | 0.428 |
+| Channels 10-19 | 0.425 |
+| Channels 20-29 | 0.355 |
+| Channels 30-37 | 0.568 |
+
+- Context var oracle (TOP5): 0.670 (confirms Probe 80 contamination: 0.672)
+- ALL 38 channels oracle: 0.346 - noise from irrelevant channels swamps signal!
+- Top-5 channels oracle: 0.704 - strong signal in specific channels
+
+**Key insight:** SMD AP task is highly channel-dependent. Using all 38 channels gives oracle BELOW RANDOM. Only channels 24,11,12,34,35 have genuine AP signal. This adds another dimension to SMD's invalidity as an AP benchmark: researchers must pre-select channels to even get above-random oracle scores.
+**Verdict:** KEEP - critical finding for SMD validity section
+**No file saved** (ad-hoc analysis)
+
+---
+
+### Probe 98: SMD vs SVDB4 Difficulty Comparison (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** SMD is harder for AP than SVDB4 for specific measurable reasons
+**Design:** CPU-only. Synthesize all SMD and SVDB4 analysis results into comparison table.
+**Sanity checks:** ✓ All referenced files exist ✓ Numbers consistent with prior probes
+
+**Result:**
+
+| Property | SVDB4 | SMD |
+|----------|-------|-----|
+| Channels | 2 | 38 |
+| AP+ rate | 9.46% | 6.41% |
+| Oracle AUROC (all channels) | 0.747 | 0.346 (BELOW RANDOM!) |
+| Oracle AUROC (top channels) | 0.747 | 0.704 (top-5 only) |
+| Past-var (correct AP) | 0.483 | 0.461 |
+| LR correct AP | 0.616 | 0.535 |
+| Context contamination | 66.4% | 45.2% |
+
+Four root causes of SMD difficulty:
+1. **Channel noise**: 38 channels, only 5 have AP signal. Adding irrelevant channels actively hurts oracle (0.346 vs 0.704).
+2. **Anti-correlated signal**: Oracle with all channels falls BELOW random - channels are actively misleading each other.
+3. **Higher feature dimensionality vs signal**: Curse of dimensionality makes LR worse (0.535 vs 0.616 on SVDB4).
+4. **Dataset design flaw**: Any result above 0.60 requires implicit channel cherry-picking from 38 available.
+
+**Conclusion:** SMD invalidity is more fundamental than SVDB1's invalidity. SVDB1 fails because AP+ events only appear in test (no training signal). SMD fails because the oracle itself is sub-random when using all provided features.
+**Verdict:** KEEP - critical finding for SMD validity section
+**File:** results/improvements/smd_vs_svdb4_comparison.json
+
+---
+

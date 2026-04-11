@@ -1,0 +1,14 @@
+{
+  "svdb4_oracle_auroc": 0.747,
+  "smd_oracle_auroc_all_channels": 0.346,
+  "smd_oracle_auroc_top5": 0.704,
+  "svdb4_past_var_correct_auroc": 0.483,
+  "smd_past_var_correct_auroc": 0.461,
+  "svdb4_lr_correct_auroc": 0.616,
+  "smd_lr_correct_auroc": 0.535,
+  "svdb4_context_contamination_pct": 66.4,
+  "smd_context_contamination_pct": 45.2,
+  "svdb4_channels": 2,
+  "smd_channels": 38,
+  "conclusion": "SMD invalid for AP: oracle below random with all 38 channels; only 5/38 channels have AP signal"
+}
