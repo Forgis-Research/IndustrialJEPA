@@ -58,6 +58,12 @@ coverage.xml
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Quarto intermediate build artifacts
+.quarto/
+_output/
+_site/
+_freeze/
+
 # pyenv
 .python-version
 
