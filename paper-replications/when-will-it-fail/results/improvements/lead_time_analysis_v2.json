@@ -1,0 +1,15 @@
+{
+  "analysis": "lead_time_analysis_svdb1",
+  "dataset": "SVDB1 (record 801, proper split)",
+  "anomaly_onsets": [
+    65159,
+    65349,
+    65538,
+    65727,
+    65912
+  ],
+  "methods": {
+    "rolling_var": {
+      "lead_times": [
+        null,
+        

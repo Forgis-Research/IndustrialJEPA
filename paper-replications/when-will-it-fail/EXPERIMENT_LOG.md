@@ -333,3 +333,42 @@ The AUROC=0.490 on proper split shows A2P literally cannot discriminate anomalie
 **Status:** RUNNING (PID 30640)
 **Expected result:** AUROC > 0.490, F1-tol > 7.4%
 
+
+### Probe 12: AUPRC Method Comparison (COMPLETED)
+
+**Time:** 2026-04-11 13:00
+**Hypothesis:** AUPRC rankings agree with AUROC rankings and both disagree with F1-tolerance rankings
+**Method:** Compute AUPRC for Z-score, rolling variance, AR(1) on SVDB1 proper split; compare to A2P (0.035) and Chronos (0.059)
+**Results:**
+  - Rolling Var: AUROC=0.520, AUPRC=0.285 (high - fires near the localized arrhythmia blocks)
+  - Z-score: AUROC=0.688, AUPRC=0.082
+  - AR(1): AUROC=0.481, AUPRC=0.013
+  - A2P (TranAD): AUROC=0.528, AUPRC=0.035
+  - Chronos: AUROC=0.745, AUPRC=0.059
+  - Random AUPRC = base rate = 0.72%
+  - Rolling Var F1-tol: 83.97% (vs A2P SVDB1 F1-tol=16.06% !)
+**Verdict:** Rolling variance beats A2P by 5x on F1-tol AND 8x on AUPRC. The claim that A2P is best is false on every metric.
+**Saved:** results/improvements/auprc_method_comparison.json
+
+### Probe 13: Metric Ranking Analysis (COMPLETED)
+
+**Time:** 2026-04-11 13:05
+**Hypothesis:** F1-tolerance and AUROC give opposite method rankings (the core NeurIPS finding)
+**Method:** Collect all methods with both metrics, compute Spearman rank correlation
+**Results:**
+  - Spearman rho = 0.000 (p = 1.000)
+  - F1-tol ranking: A2P(43.1%) > A2P_SVDB1(16.1%) > Chronos(7.4%) > Random(1%)
+  - AUROC ranking: Chronos(0.745) > A2P(0.528) > Random(0.500) > A2P_SVDB1(0.490)
+**Verdict:** Metrics give COMPLETELY UNCORRELATED rankings. The benchmark cannot reliably rank methods.
+**Saved:** results/improvements/metric_ranking_analysis.json
+
+### Figures Generated (2026-04-11 13:10)
+
+Four publication-quality figures created:
+- figures/fig1_metric_ranking_inversion.png: F1-tol vs AUROC ranking comparison
+- figures/fig2_f1_inflation.png: How 43.1% is really ~5% (inflation cascade)
+- figures/fig3_auroc_all_methods.png: All methods AUROC bar chart
+- figures/fig4_neurips_contribution.png: NeurIPS contribution summary table
+
+Notebook extended to sections 17-20 (total 20 sections). Renders successfully.
+

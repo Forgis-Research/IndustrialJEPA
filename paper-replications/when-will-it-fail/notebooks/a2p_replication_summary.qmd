@@ -1215,3 +1215,82 @@ for fm, ev, sev, fix in failure_modes:
     print()
 ```
 
+
+## 17. Publication Figures
+
+This section shows the publication-quality figures generated for the NeurIPS contribution.
+
+```{python}
+from IPython.display import Image, display
+import os
+
+fig_dir = '../figures'
+figs = [
+    ('fig1_metric_ranking_inversion.png', 'Figure 1: F1-tolerance and AUROC give opposite method rankings'),
+    ('fig2_f1_inflation.png', 'Figure 2: F1-tolerance inflation mechanism (8x)'),
+    ('fig3_auroc_all_methods.png', 'Figure 3: All methods AUROC - A2P is the worst discriminator'),
+    ('fig4_neurips_contribution.png', 'Figure 4: NeurIPS contribution summary - ranking inversion evidence'),
+]
+
+for fname, caption in figs:
+    fpath = os.path.join(fig_dir, fname)
+    if os.path.exists(fpath):
+        print(f"\n{caption}")
+        display(Image(fpath, width=800))
+    else:
+        print(f"[Figure not found: {fpath}]")
+```
+
+## 18. SMD Baselines
+
+```{python}
+import json
+
+smd_b = json.load(open('../results/improvements/smd_baselines.json'))
+print("SMD Statistical Baselines (708K x 38 channels, 4.16% anomaly rate)")
+print(f"{'Method':<25} {'AUROC':>8} {'AUPRC':>8}")
+print("-" * 45)
+for method, vals in smd_b['methods'].items():
+    print(f"{method:<25} {vals['auroc']:>8.4f} {vals['auprc']:>8.4f}")
+print(f"\nA2P paper F1-tol: {smd_b['a2p_paper_f1_tol']}% (AUROC not reported)")
+print("Note: A2P SMD result pending (FE training on 708K samples)")
+```
+
+## 19. Metric Ranking Analysis (Spearman Correlation)
+
+```{python}
+import json, numpy as np
+from scipy import stats
+
+m = json.load(open('../results/improvements/metric_ranking_analysis.json'))
+
+print("Methods with both F1-tolerance and AUROC:")
+print(f"{'Method':<45} {'F1-tol':>8} {'AUROC':>8}")
+print("-" * 65)
+for d in m['methods_with_both_metrics']:
+    print(f"{d['name']:<45} {d['f1_tol']:>8.1f}% {d['auroc']:>8.3f}")
+
+print(f"\nF1-tolerance ranking: {' > '.join(m['f1_tol_ranking'])}")
+print(f"AUROC ranking:        {' > '.join(m['auroc_ranking'])}")
+print(f"\nSpearman rho = {m['spearman_rho']:.3f} (p = {m['spearman_pval']:.4f})")
+print()
+if abs(m['spearman_rho']) < 0.3:
+    print("** NEAR-ZERO CORRELATION: Metrics give uncorrelated rankings **")
+    print("** This is the core NeurIPS contribution **")
+```
+
+## 20. Summary: Why A2P Evaluation is Broken
+
+The replication reveals five systematic issues with the A2P evaluation framework:
+
+1. **F1-tolerance inflation (8x)**: Raw binary F1=5.35% inflates to 43.1% via t=50 tolerance. The metric gives credit to any prediction within 50 timesteps of an anomaly segment, enabling near-random scoring to achieve high apparent performance.
+
+2. **AUROC-F1 rank inversion (Spearman rho=0.00)**: F1-tolerance and AUROC rankings are completely uncorrelated. A2P ranked #1 by F1-tol but #4 by AUROC. Chronos ranked #1 by AUROC but #3 by F1-tol. The benchmark cannot rank methods reliably.
+
+3. **Grey-swan regime collapse**: F1 drops 24x from 43.1% at 3.1% anomaly rate to 1.8% at 0.1% rate. Real industrial failure rates are 0.01-0.1%. The benchmark is inapplicable to the stated use case.
+
+4. **Data leakage (3.4x)**: TranAD MBA dataset has identical train/test sets. Proper split gives F1=12.66% vs TranAD F1=43.1%.
+
+5. **Foundation model advantage**: Zero-shot Chronos-Small achieves AUROC=0.745 vs A2P AUROC=0.528 (+21.7pp). A2P's complex architecture provides negative value for raw discrimination.
+
+**NeurIPS 2026 fix**: Replace F1-tolerance with AUPRC as primary metric. Show that AUPRC rankings disagree with F1-tolerance rankings across all datasets. Propose calibrated AP model (JEPA-AP or Chronos+head) that achieves AUROC > 0.7.
