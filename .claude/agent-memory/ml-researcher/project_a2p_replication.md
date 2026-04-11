@@ -244,6 +244,44 @@ Use: AUROC/AUPRC metrics + 100+ epochs + 5+ seeds + horizon >= 100 steps + tempo
 Supervised upper bound: 0.624 AUROC (50.6% of oracle 0.744).
 The task is achievable but A2P's evaluation masked this.
 
+## NEW CRITICAL FINDINGS (April 12, 2026 - Overnight Session 2)
+
+### Contamination Decomposition (Probes 99-101)
+- 66.5% of AP+ have ongoing anomaly in [t, t+100] = NEAR-HORIZON CONTAMINATION
+- Oracle on contaminated AP+: AUROC=0.809 (detection, not prediction)
+- Oracle on TRUE AP+ (no near-horizon): AUROC=0.603
+- **LR on TRUE AP+: AUROC=0.702 >> Oracle (0.603) by +0.099!**
+- Properly defined pure-prediction AP task: oracle=0.603, LR=0.702
+
+### Calm-Before-Storm in Strict AP+ (Probe 103)
+- True AP+ (non-contaminated) show clear rising variance in context:
+  - Steps 0-40: variance 0.35x AP- (very calm)
+  - Steps 60-100: variance 1.40x AP- (rising)
+  - Steps 140-160: variance 0.24x AP- (calm again)
+  - Steps 180-200: variance 1.50x AP- (final rise)
+- Wilcoxon p<0.0001, trend ratio = 1.62x
+- Standard AP+ shows NO trend (1.02x - dominated by contamination)
+
+### SVDB4 Artificial Block Structure (Probe 107)
+- ALL 117 anomaly blocks are EXACTLY 100 steps = pred_len (std=0, min=max=100)
+- Inter-block gaps: min=235, max=8297, mean=1465 steps
+- Dataset is ARTIFICIALLY constructed for pred_len=100
+- Temporal position feature (cos 2πt/1372) achieves AUROC=0.632 (≈ LR 0.634)
+- But LR-position correlation: rho=0.007 (p=0.54) -> LR is NOT exploiting position
+
+### Five Attacks on A2P (Probe 106)
+1. Task definition failure: 66.5% contamination (detection not prediction)
+2. Metric failure: F1-tol 8x inflation; Brier Skill=-0.117; random beats A2P
+3. Evaluation protocol failure: current labels vs future labels (0.813 vs 0.483)
+4. Dataset validity failure: SMD oracle=0.346 sub-random; SVDB1 temporal confound
+5. Baseline failure: LR (no training) beats A2P by +0.095 AUROC
+
+### SMD vs SVDB4 Comparison (Probe 98)
+- SMD oracle (all 38 channels): 0.346 (below random)
+- SMD oracle (top-5 channels): 0.704 (cherry-picked)
+- 4 root causes: channel noise, anti-correlated signal, dimensionality, implicit cherry-picking
+- SVDB4 oracle: 0.747 (valid task)
+
 ## Result Files (April 2026)
 
 All in `results/improvements/`:
