@@ -1,0 +1,12 @@
+{
+  "oracle_mlp_auroc": 0.6786632540809647,
+  "oracle_mlp_auprc": 0.17313984039426222,
+  "oracle_rolling_var_auroc": 0.7199,
+  "dataset": "SVDB4",
+  "pred_len": 100,
+  "future_window": 50,
+  "n_features": 15,
+  "hidden": 64,
+  "epochs": 30,
+  "note": "Oracle supervised MLP - shows task upper bound for AP"
+}

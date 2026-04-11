@@ -1,0 +1,16 @@
+{
+  "probe": "end_to_end_training",
+  "description": "Unfreeze AAFN during Stage 2 training (normally frozen after Stage 1 pretraining)",
+  "dataset": "MBA_svdb1, record 801, 70/30 split",
+  "f1": 28.841951930080118,
+  "precision": 30.76923076923077,
+  "recall": 60.0,
+  "auroc": 0.5067332920635026,
+  "mse": 0.7111861109733582,
+  "baseline": {
+    "f1": 16.06,
+    "auroc": 0.489952
+  },
+  "delta_f1": 12.781951930080119,
+  "delta_auroc": 0.016781292063502595
+}

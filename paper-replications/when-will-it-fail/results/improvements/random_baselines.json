@@ -1,0 +1,37 @@
+{
+  "description": "Random score F1-tol baseline (5 seeds, threshold=anomaly_rate percentile)",
+  "SMD": {
+    "anomaly_rate": 0.04156291484832764,
+    "n_segments": 327,
+    "median_segment_len": 11,
+    "random_f1tol_mean": 67.5956057647674,
+    "random_f1tol_std": 0.03180040509798635,
+    "random_f1tol_seeds": [
+      67.57327412849678,
+      67.59463387798642,
+      67.56499018999023,
+      67.58965836680677,
+      67.6554722605568
+    ],
+    "a2p_paper": 52.07,
+    "random_beats_a2p": true
+  },
+  "SVDB4": {
+    "anomaly_rate": 0.0634765625,
+    "n_segments": 117,
+    "all_segments_len_100": true,
+    "random_f1tol_mean": 68.10286921010257,
+    "random_f1tol_std": 0.04410862663544038,
+    "random_f1tol_seeds": [
+      68.18579126337123,
+      68.10244425397627,
+      68.09055416880734,
+      68.05688812963659,
+      68.07866823472136
+    ],
+    "a2p_paper": 67.55,
+    "rolling_var": 86.7,
+    "random_beats_a2p": true
+  },
+  "conclusion": "Random scores achieve 67.6% F1-tol on SMD vs A2P's 52.07% (random +15.5pp). On SVDB4: random 68.1% vs A2P 67.55% (effectively tied). F1-tol measures segment coverage, not prediction quality."
+}

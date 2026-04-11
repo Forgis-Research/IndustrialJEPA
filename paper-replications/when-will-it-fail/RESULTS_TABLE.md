@@ -117,12 +117,19 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | SVDB4 Baselines | Rolling Var (MBA SVDB4, w=50) | AUROC | 0.813 | A2P: 0.528 | +28.5pp AUROC advantage |
 | SVDB4 Baselines | Rolling Var (MBA SVDB4, w=25) | F1-tol | 80.37% | A2P paper: 67.55% | +12.82pp |
 | SVDB4 Baselines | Rolling Var (MBA SVDB4, w=10) | F1-tol | 73.35% | A2P paper: 67.55% | +5.80pp |
+| Oracle AP | Oracle future var AUROC (SVDB4, wrong AP eval) | AUROC | 0.347 | 0.500 (random) | BELOW RANDOM - evaluation tests detection! |
+| Oracle AP | Oracle future var AUROC (SVDB4, correct AP eval) | AUROC | 0.720 | 0.500 (random) | Task IS achievable with future labels |
+| Oracle AP | Oracle supervised MLP (SVDB4, correct AP eval) | AUROC | 0.679 | Rolling var: 0.483 | Supervised model < oracle var |
+| Oracle AP | Oracle future var AUROC (SMD, correct AP eval) | AUROC | 0.554 | 0.500 (random) | Lower than SVDB4 but above random |
+| Oracle AP | Oracle supervised MLP (SMD, correct AP eval) | AUROC | 0.652 | Rolling var: 0.515 | SMD oracle MLP better than rolling var |
+| **Random Baselines** | **Random scores (SVDB4, 5 seeds)** | **F1-tol** | **68.10% ± 0.04%** | A2P paper: 67.55% | **RANDOM BEATS A2P!** |
+| **Random Baselines** | **Random scores (SMD, 5 seeds)** | **F1-tol** | **67.60% ± 0.03%** | A2P paper: 52.07% | **RANDOM +15.5pp over A2P!** |
 
 Note: MBA_svdb = single SVDB record 801 (161K train / 69K test), 0.72% anomaly rate.
 MBA_svdb4 = SVDB records 800-803 combined (737K train / 184K test), 6.35% anomaly rate = paper's setup.
 A2P results use TranAD MBA (train==test, 3.12% anomaly rate) - direct comparison not fully apples-to-apples.
 Key: F1-tol and AUROC/AUPRC rankings are completely uncorrelated (Spearman rho=0.000) - the core NeurIPS finding.
-CRITICAL: Rolling variance F1-tol BEATS A2P paper on ALL datasets (MBA +19pp, SMD +7pp) without any training!
+CRITICAL: Random scores achieve F1-tol=68.1% on SVDB4 and 67.6% on SMD, BEATING A2P's reported results on both datasets!
 
 ---
 

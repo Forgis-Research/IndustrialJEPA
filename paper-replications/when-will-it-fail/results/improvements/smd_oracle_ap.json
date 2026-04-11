@@ -1,0 +1,10 @@
+{
+  "dataset": "SMD",
+  "oracle_future_var_auroc": 0.5536293994592382,
+  "past_var_correct_ap_auroc": 0.5145423482295923,
+  "oracle_mlp_auroc": 0.6523273451820228,
+  "future_ap_rate": 0.06410745038254143,
+  "n_features": 38,
+  "pred_len": 100,
+  "future_window": 50
+}
