@@ -56,6 +56,14 @@ The JEPA objective decouples from downstream RUL after early convergence.
 | AE-LSTM SSL (ref) | 13.99 | - | - | Paper |
 | STAR supervised (ref) | 10.61 | - | - | Paper |
 
+## PHM Score Results (V2 E2E vs LSTM @ 100% Labels)
+
+| Method | RMSE | PHM Score (lower=better) |
+|:-------|:----:|:------------------------:|
+| JEPA E2E V2 | 14.78 | 396+/-62 |
+| LSTM supervised | 17.11 | 442+/-142 |
+PHM improvement: 10.6% (JEPA vs LSTM)
+
 ## Success Criteria Assessment
 
 | Criterion | Target | V2 Result | Status |

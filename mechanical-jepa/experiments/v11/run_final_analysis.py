@@ -364,19 +364,24 @@ try:
     test_engines = data['test_engines']
     test_rul = data['test_rul']
 
-    # Pick 5 varied engines (short, medium, long lifetime)
-    lengths = [len(eng['data']) for eng in test_engines]
-    sorted_idx = np.argsort(lengths)
-    chosen = [sorted_idx[5], sorted_idx[20], sorted_idx[50], sorted_idx[75], sorted_idx[94]]
+    # test_engines is a dict: {engine_id: numpy_array shape (T, 14)}
+    eng_ids = sorted(test_engines.keys())
+    id_to_idx = {eid: idx for idx, eid in enumerate(eng_ids)}
+    lengths = {eid: len(test_engines[eid]) for eid in eng_ids}
+    sorted_by_len = sorted(lengths.items(), key=lambda x: x[1])
+    n_total = len(sorted_by_len)
+    # Pick short, medium-short, medium, medium-long, long
+    chosen_ids = [sorted_by_len[5][0], sorted_by_len[n_total//4][0],
+                  sorted_by_len[n_total//2][0], sorted_by_len[3*n_total//4][0],
+                  sorted_by_len[n_total-5][0]]
 
-    for i, eng_idx in enumerate(chosen):
-        eng = test_engines[eng_idx]
-        true_rul_final = test_rul[eng_idx]
-        T = len(eng['data'])
-        x_tensor = torch.tensor(eng['data'], dtype=torch.float32)
-        cycle_tensor = torch.tensor(eng['cycles'], dtype=torch.float32)
+    for i, eid in enumerate(chosen_ids):
+        eng = test_engines[eid]  # numpy array (T, 14)
+        true_rul_final = float(test_rul[id_to_idx[eid]])
+        T = len(eng)
+        x_tensor = torch.tensor(eng, dtype=torch.float32)
 
-        cut_points = range(max(5, T//4), T, max(1, T//20))
+        cut_points = list(range(max(10, T//4), T, max(1, T//20)))
         preds = []
         true_ruls = []
 
@@ -391,9 +396,9 @@ try:
             true_ruls.append(min(true_rul_final + (T - t), 125))
 
         ax = axes[i]
-        ax.plot(list(cut_points), true_ruls, 'b-', linewidth=2, label='True RUL')
-        ax.plot(list(cut_points), preds, 'r--', linewidth=2, label='Predicted RUL')
-        ax.set_title(f'Engine {eng_idx+1} (T={T})', fontsize=10)
+        ax.plot(cut_points, true_ruls, 'b-', linewidth=2, label='True RUL')
+        ax.plot(cut_points, preds, 'r--', linewidth=2, label='Predicted RUL')
+        ax.set_title(f'Engine {eid} (T={T})', fontsize=10)
         ax.set_xlabel('Cycle index (cut point)')
         if i == 0: ax.set_ylabel('RUL (cycles)')
         if i == 0: ax.legend(fontsize=8)

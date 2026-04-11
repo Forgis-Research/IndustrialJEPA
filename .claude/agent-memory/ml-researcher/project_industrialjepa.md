@@ -362,3 +362,86 @@ torch.enable_grad() overrides outer no_grad() blocks, causing OOM during evaluat
 ### Use as Baseline
 CNN-GRU-MHA (our impl) RMSE=0.0416 is the reference supervised transfer learning baseline.
 Any JEPA-based approach needs to beat or approach 0.0416 on the same transfer protocol to be compelling.
+
+---
+
+## V11: Trajectory JEPA on C-MAPSS (Completed 2026-04-11)
+
+### Goal: Pivot from bearings to C-MAPSS turbofan data for SSL pretraining
+
+**Central finding: V10 hypothesis confirmed. Bearing results were data-limited, not architecture-limited.**
+With 100 engines (vs 18 bearings), Trajectory JEPA learns genuine degradation representations.
+
+### Primary Results (FD001, V2 d=256, L=2, 1.26M params)
+
+PC1 rho = 0.814 with RUL (no failure labels in pretraining). Best SSL result on C-MAPSS FD001.
+
+| Method | RMSE @ 100% | Notes |
+|--------|------------|-------|
+| JEPA E2E (V2, ours) | **13.80 +/- 0.75** | beats AE-LSTM SSL ref (13.99) |
+| JEPA Frozen (V2, ours) | 17.81 +/- 1.67 | comparable to supervised LSTM |
+| Supervised LSTM | 17.36 +/- 1.24 | in-house baseline |
+| AE-LSTM SSL (paper) | 13.99 | only published SSL on C-MAPSS |
+| STAR supervised (paper) | 10.61 | supervised SOTA |
+
+### Label Efficiency (V2, FD001)
+
+Key crossover: JEPA beats LSTM below 20% labels.
+
+| Budget | LSTM | JEPA Frozen | JEPA E2E |
+|--------|------|-------------|---------|
+| 100% (85 eng) | 17.36+/-1.24 | 17.81+/-1.67 | 13.80+/-0.75 |
+| 50% (42 eng) | 18.30+/-0.75 | 18.71+/-1.13 | 14.93+/-0.41 |
+| 20% (17 eng) | 18.55+/-0.81 | 19.83+/-0.34 | 16.54+/-0.80 |
+| 10% (8 eng)  | 31.22+/-10.93 | 19.93+/-0.86 | 18.66+/-0.84 |
+| 5% (4 eng)   | 33.08+/-9.64  | 21.53+/-1.96 | 25.33+/-5.13 |
+
+**At 5% labels: JEPA frozen (21.53) beats LSTM (33.08) by 11 RMSE**.
+Use frozen mode (not E2E) at very low label budgets - E2E overfits with <8 engines.
+
+### Architecture Ablation (FD001, 100% labels)
+
+Width (d_model) > Depth (n_layers) at same parameter budget.
+- V1 (d=128, L=2): E2E=14.79, Frozen=21.33
+- V2 (d=256, L=2): E2E=13.80, Frozen=17.81 (PRIMARY)
+- V3 (d=128, L=3): E2E=15.68, Frozen=23.60 (WORSE than V2)
+
+### Data and Preprocessing
+- Dataset: NASA C-MAPSS FD001-FD004 at /datasets/data/cmapss/6. Turbofan.../
+- Selected 14 sensors (drop s1,5,6,10,16,18,19 as near-constant)
+- FD001/FD003: global min-max per sensor on train data
+- FD002/FD004: per-condition (KMeans k=6) min-max normalization
+- RUL cap = 125 cycles; evaluation = last-window-per-engine on canonical test
+
+### Key Insights
+1. No JEPA or MAE SSL paper existed on C-MAPSS before this work (confirmed gap)
+2. PC1 rho = 0.814 achieved WITHOUT failure-time labels in pretraining
+3. LSTM variance explodes at low labels (std=9-11); JEPA frozen stays stable (std<2)
+4. Larger d_model (V2 vs V1): frozen improves 21.33->17.81 (+17%); E2E improves less
+5. Best probe RMSE occurs at epoch 10-50, not epoch 200 (JEPA objective decouples from RUL)
+   - Implication: use probe-based early stopping for pretraining
+
+### Part G Preliminary Results (still running)
+
+FD002 in-domain (V2 architecture, per-condition normalization):
+- Frozen @ 100%: 26.33+/-0.44 (vs STAR supervised 13.47)
+- E2E @ 100%: **24.45+/-0.47**
+- Frozen @ 50%: 26.44+/-1.10
+- Larger gap vs FD001 is expected: 6 operating conditions add confound
+
+PHM Score (V2 E2E @ 100%, 5 seeds):
+- RMSE = 14.78+/-0.57 (independent run; primary is 13.80)
+- PHM = 395.7+/-62.1 (STAR paper ref: 169)
+- JEPA makes mostly early errors (overestimates RUL slightly)
+
+Cross-subset transfer (FD002 pretrain -> FD001 finetune): pending
+
+### Files
+- `experiments/v11/` - all code, checkpoints, results
+- `experiments/v11/models.py` - TrajectoryJEPA, RULProbe, SupervisedLSTM
+- `experiments/v11/data_utils.py` - CMAPSSFinetuneDataset, CMAPSSPretrainDataset
+- `experiments/v11/best_pretrain_L1_v2.pt` - primary pretrained checkpoint (V2)
+- `experiments/v11/best_pretrain_fd002.pt` - FD002 pretrained checkpoint (V2)
+- `experiments/v11/RESULTS.md`, `RESULTS_FINAL.md` - full results tables
+- `notebooks/11_v11_cmapss_trajectory_jepa.qmd` - Quarto notebook
+- `analysis/plots/v11/` - all generated plots (prediction_trajectories.png, architecture_ablation.png, etc.)
