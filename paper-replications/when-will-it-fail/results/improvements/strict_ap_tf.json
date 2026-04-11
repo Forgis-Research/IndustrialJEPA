@@ -1,0 +1,15 @@
+{
+  "probe": "102_strict_ap_tf",
+  "n_train_strict_ap": 700,
+  "n_test_strict_ap": 190,
+  "strict_tf_auroc_mean": 0.7229753837795773,
+  "strict_tf_auroc_std": 0.0046800116238896365,
+  "strict_tf_auroc_per_seed": [
+    0.7165405143490615,
+    0.724851884209058,
+    0.7275337527806125
+  ],
+  "strict_lr_auroc": 0.702,
+  "standard_oracle_auroc": 0.747,
+  "strict_oracle_auroc": 0.603
+}

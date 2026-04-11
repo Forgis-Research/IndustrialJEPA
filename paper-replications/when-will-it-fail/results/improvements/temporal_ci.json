@@ -1,0 +1,11 @@
+{
+  "probe": "131b_temporal_ci",
+  "var_only_auroc": 0.6435051347103068,
+  "var_temporal_auroc": 0.6542960952502138,
+  "delta": 0.010790960539907024,
+  "ci_lo": -0.0017742574899862666,
+  "ci_hi": 0.023939675900768193,
+  "ci_excludes_0": false,
+  "perm_p": 0.0555,
+  "significant": false
+}

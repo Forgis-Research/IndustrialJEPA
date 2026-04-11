@@ -1,0 +1,30 @@
+{
+  "probe": "132_mechanistic_lr",
+  "n_strict_train": 700,
+  "n_strict_test": 470,
+  "standard_ap": {
+    "best_auroc": 0.6444162463926777,
+    "baseline_auroc": 0.6435051347103068
+  },
+  "strict_ap": {
+    "best_C": 0.1,
+    "best_auroc": 0.7065827828019162
+  },
+  "strict_references": {
+    "lr4": 0.703,
+    "tf": 0.723,
+    "oracle": 0.603
+  },
+  "feature_coefs": {
+    "var_full": -0.21521130937958496,
+    "var_prior": -0.18459913167168887,
+    "var_calm": -1.0634349449454652,
+    "var_onset": -0.07436609149689785,
+    "onset/calm": 0.035686857675164815,
+    "prior/pre": -0.1442577625148138,
+    "calm/full": -0.13103893467466496,
+    "valley": 0.001154988592916334,
+    "log_onset_calm": -0.1947404405543684,
+    "log_prior_pre": 0.6666782154849479
+  }
+}

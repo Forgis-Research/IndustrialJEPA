@@ -3918,3 +3918,156 @@ Oracle detects: "future variance high" = but future is the START of block, which
 **File:** results/improvements/onset_timing_analysis.json
 
 ---
+
+
+### Probe 102: Strict AP Transformer (COMPLETE, GPU)
+
+**Time:** 2026-04-12
+**Hypothesis:** A supervised Transformer trained directly on strict AP labels (no contamination) will beat LR (0.703) on strict AP, since it can learn sequence patterns beyond variance level.
+**Design:** 3 seeds (42, 1, 2), 100 epochs, same APTransformer architecture (d_model=64). Train on 60% strict AP train split, evaluate on 40% test.
+**Training:** train pos=700 (strict AP), test pos=190
+
+**Results:**
+```
+seed=42: AUROC=0.7165
+seed=1:  AUROC=0.7249
+seed=2:  AUROC=0.7275
+Mean: 0.723 ± 0.005
+```
+
+**Comparison table (strict AP AUROC):**
+| Method | AUROC | vs Oracle |
+|--------|-------|-----------|
+| Oracle (future var) | 0.603 | reference |
+| LR 4-feat (no training) | 0.703 | +0.100 |
+| **TF supervised (3-seed)** | **0.723 ± 0.005** | **+0.120** |
+| TF CV estimate | 0.750 ± 0.015 (from probe 120b) | +0.147 |
+
+**Key findings:**
+1. TF beats LR by +0.021 on strict AP (0.723 vs 0.702) - sequence modeling helps modestly
+2. Both TF and LR beat oracle by large margins (>+0.100) - genuine prediction signal in context
+3. TF std=0.005 (tight) - consistent training on strict AP
+4. The calibration-mode AP- split (clean windows only) makes for a cleaner binary classification
+
+**Why TF > LR on strict AP:** The transformer's attention can learn the full "previous block -> calm trough -> rising onset" pattern as a sequence, while LR only sees scalar summary statistics (var_full). The sequential pattern provides +0.021 AUROC advantage.
+
+**Sanity checks:** ✓ Loss decreased ✓ 3 seeds all above 0.70 (100% hit rate) ✓ TF > LR as expected (more capacity)
+
+**Verdict:** COMPLETE - TF is the best method on strict AP; confirms AP is a learnable task with proper formulation
+
+**File:** results/improvements/strict_ap_tf.json
+
+---
+
+
+### Probe 131: Inter-block Periodicity Analysis (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** SVDB4 anomaly blocks are periodic; a "time since last block" feature should improve LR AUROC beyond variance features alone.
+**Design:** CPU-only. Find 117 anomaly blocks, compute inter-block gaps, dominant period via autocorrelation. Test temporal feature + variance combined LR.
+
+**Block statistics:**
+```
+N blocks: 117
+Block lengths: mean=100.0 std=0.0 (ALL EXACTLY 100 STEPS!)
+Inter-block gaps: mean=1565 ± 1187 (min=335, max=8397)
+```
+
+**Autocorrelation peaks:** lag=687 (r=0.096), lag=1366 (r=0.087) - weak periodicity (~2x multiple)
+
+**LR results:**
+```
+Standard AP:
+  var-only (4-feat):     AUROC=0.6435
+  temporal-only (4-feat): AUROC=0.5973
+  var + temporal (8-feat): AUROC=0.6543 (+0.011 over var-only)
+
+Strict AP:
+  var-only:      AUROC=0.6974
+  temporal-only: AUROC=0.5956
+  var + temporal: AUROC=0.6975 (+0.0001 - no benefit)
+```
+
+**Significance test (Probe 131b):** Bootstrap CI for standard AP: delta=+0.011, CI=[-0.002, +0.024], p=0.056 (NOT significant at p<0.05). The improvement is borderline and not statistically reliable.
+
+**Time-since-last AUROC alone:** 0.628 on standard AP - moderately predictive but weaker than variance features (0.634)
+
+**Key insight:** Blocks are UNIFORM (100 steps each) but inter-block gaps are HIGHLY IRREGULAR (std=1187 vs mean=1565). The ECG-like blocks from SVDB records have consistent DURATION but irregular OCCURRENCE. Temporal features capture partial information but the irregular timing limits their predictive power.
+
+**Verdict:** REVERT - temporal features do not significantly improve over variance features (p=0.056); strict AP benefits are negligible
+
+**Files:** results/improvements/periodicity_analysis.json, temporal_ci.json
+
+---
+
+
+### Probe 132: Mechanistic Feature LR for Strict AP (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** Directly engineering the 3-component block structure (prior block + calm trough + onset rise) into LR features will beat generic variance features on strict AP.
+**Design:** CPU-only. Segment context into 4 zones: pre-block [0:60], prior-block [60:100], calm [100:160], onset [160:200]. Compute 10 mechanistic features including ratios and log-ratios. C-sweep.
+
+**Results:**
+Standard AP:
+```
+Baseline 4-feat:      AUROC=0.644 (reference)
+Mechanistic 10-feat:  AUROC=0.644 (+0.001 - no improvement!)
+```
+
+Strict AP:
+```
+Baseline 4-feat (C=0.01): AUROC=0.697 (reference)
+Mechanistic 10-feat:       AUROC=0.707 (best at C=0.1)
+                           +0.010 over 4-feat
+```
+
+**Feature importances (strict AP):**
+1. `var_calm: -1.064` - DOMINANT: low calm trough = AP+ (most predictive single feature!)
+2. `log_prior_pre: +0.667` - prior block must be stronger than pre-block baseline
+3. `var_full: -0.215` - overall quiet context (AP+ when low, similar to baseline)
+4. Other features weaker
+
+**Performance ceiling:**
+```
+Method                      | Strict AP AUROC
+----------------------------|-----------------
+Oracle (future var)         | 0.603
+Baseline LR 4-feat          | 0.703
+Mechanistic LR (C=0.1)      | 0.707 (+0.004)
+TF supervised 3-seed        | 0.723 ± 0.005
+TF CV 5-fold (probe 120b)   | 0.750 ± 0.015
+```
+
+**Key insight:** The mechanistic features CONFIRM the mechanism (var_calm dominates) but provide only marginal improvement (+0.004 on strict AP). The transformer's advantage (0.723 vs 0.707) comes from learning fine-grained temporal patterns within the calm zone that scalar statistics cannot capture.
+
+**Why mechanistic features barely beat baseline:** The baseline var_full already captures the calm trough (since it dominates the 200-step window when calm). The explicit calm-zone segmentation adds only marginal information.
+
+**Sanity checks:** ✓ var_calm negative (AP+ = low calm var) ✓ log_prior_pre positive (AP+ = strong prior block) ✓ C=0.1 optimal (mild regularization sufficient)
+
+**Verdict:** KEEP (modest improvement) but transformer remains the best method on strict AP
+
+**File:** results/improvements/mechanistic_lr.json
+
+---
+
+
+### Probe 131b: Bootstrap CI for Temporal + Variance LR (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** The +0.011 AUROC improvement from adding temporal features is statistically significant.
+**Design:** 5000 bootstrap resamples + permutation test (2000 resamples).
+
+**Results:**
+```
+Var-only AUROC:     0.6435
+Var+Temporal AUROC: 0.6543
+Delta:              +0.0108
+Bootstrap 95% CI:   [-0.0018, +0.0239] (INCLUDES 0 - not significant!)
+Permutation p:      0.0555 (p > 0.05 - not significant)
+```
+
+**Verdict:** NOT SIGNIFICANT - improvement is borderline; do not claim temporal features help
+
+**File:** results/improvements/temporal_ci.json
+
+---

@@ -1,0 +1,20 @@
+{
+  "probe": "131_periodicity",
+  "n_blocks": 117,
+  "block_length_mean": 100.0,
+  "inter_block_gap_mean": 1564.8362068965516,
+  "inter_block_gap_std": 1186.9847771150453,
+  "dominant_period": 687,
+  "autocorr_peaks": [
+    687,
+    1366,
+    1727,
+    2428,
+    3088
+  ],
+  "tsl_auroc_std": 0.628170145971868,
+  "tsl_auroc_strict": 0.6016441427175764,
+  "ap_minus_tsl_mean": 1104.0151915455747,
+  "ap_plus_tsl_mean": 1390.5415949512335,
+  "strict_plus_tsl_mean": 1338.8076923076924
+}
