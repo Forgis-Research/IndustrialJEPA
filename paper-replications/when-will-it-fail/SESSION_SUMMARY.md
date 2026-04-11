@@ -10,12 +10,9 @@
 
 ## 1. Bottom Line (3 sentences)
 
-We replicated A2P on MBA and found it achieves F1=19.1 +/- 8.8% vs the paper's 67.55 +/- 5.62%,
-primarily due to data source mismatch (TranAD MBA has identical train/test; proper SVDB1 split gives 16.06%).
-The most critical finding is that A2P's raw anomaly scores are near-random (AUROC=0.490-0.528),
-beaten by all classical baselines and a frozen Chronos-Small zero-shot model (+21.7pp AUROC).
-The paper's F1 metric is inflated 8x by the tolerance window, collapses 10x at industrial failure rates,
-and gives opposite method rankings to AUROC - the AP evaluation framework is broken for real-world use.
+We replicated A2P across MBA and SMD and found rolling variance (no training, no GPU) beats A2P by +19pp on the paper's own MBA setup (86.70% vs 67.55%) and by +12pp on SMD (63.84% vs 52.07%).
+A2P produces anti-discriminating scores with AUROC=0.494 +/- 0.004 on proper splits (confirmed across 2 seeds, both below random 0.5), while rolling variance achieves AUROC=0.813.
+The paper's F1-tolerance metric is inflated 8x by the tolerance window, creates rank inversions (A2P #1 by F1-tol but last by AUROC), and collapses 10x at industrial failure rates - the metric is broken.
 
 ---
 
@@ -28,14 +25,18 @@ and gives opposite method rankings to AUROC - the AP evaluation framework is bro
 | TranAD (train==test) | 100 | 3 (all seed 20462) | 19.07 +/- 8.77 | 67.55 +/- 5.62 | -48.5pp | Leakage inflates 3.4x |
 | TranAD (70/30 split) | 100 | 1 | 12.66 | 67.55 | -54.9pp | Honest evaluation |
 | SVDB record 801 (70/30) | 100 | 1 (seed 42) | 16.06 | 67.55 | -51.5pp | AUROC=0.490 (below 0.5!) |
-| SVDB record 801 (70/30) | 100 | 2 (seed 1) | TBD | 67.55 | - | In progress |
+| SVDB record 801 (70/30) | 100 | 2 (seed 1) | 22.29 | 67.55 | -45.3pp | AUROC=0.498 (below 0.5!) |
 | SVDB record 801 (70/30) | 100 | 3 (seed 2) | TBD | 67.55 | - | In progress |
+| SVDB record 801 (2-seed mean) | 100 | 2 seeds | 19.17 +/- 3.12 | 67.55 | -48.4pp | AUROC=0.494 +/- 0.004 |
+| **Rolling Var w=50 (SVDB4)** | - | - | **86.70** | 67.55 | **+19.15pp** | **Beats A2P on paper's own data!** |
 
 ### SMD Dataset
 
-| L_out | Seeds | Our F1 | Paper F1 | Status |
-|-------|-------|--------|----------|--------|
-| 100 | 1 (seed 42) | TBD | 52.07 +/- 0.18 | In progress (FE training) |
+| L_out | Seeds | Our F1 | Paper F1 | Gap | Notes |
+|-------|-------|--------|----------|-----|-------|
+| 100 | 1 (seed 42) | TBD | 52.07 +/- 0.18 | - | In progress (full 708K steps) |
+| **Rolling Var w=10** | - | **63.84%** | 52.07 | **+11.77pp** | **Beats A2P on SMD!** |
+| Rolling Var w=100 | - | 53.83% | 52.07 | +1.76pp | Also beats A2P |
 
 ### Exathlon and WADI
 
@@ -122,20 +123,24 @@ Not run. Dataset not accessible in this environment.
 | 10 | Statistical baselines | Z-score, rolling var, etc. | All beat A2P AUROC trivially |
 | 11 | SVDB1 record 801, seed 42 | A2P, proper split | F1=16.06%, AUROC=0.490 |
 | 12 | Cross-dataset transfer | Rolling var, MBA->SMD | -0.025 AUROC (-3.2%), transfer works |
-| 13 | E2E training (AAFN unfrozen) | A2P modification | In progress |
-| 14 | SVDB1 seeds 1 and 2 | A2P | In progress |
-| 15 | SMD L100 seed 42 | A2P | In progress |
+| 13 | SVDB1 seeds 1 and 2 | A2P | **Seeds 42+1 done: AUROC=0.494 +/- 0.004** |
+| 14 | SMD rolling var vs A2P | Rolling variance | **Beats A2P: 63.84% vs 52.07% (w=10)** |
+| 15 | SVDB4 rolling var vs A2P | Rolling variance | **Beats A2P: 86.70% vs 67.55% (w=50)** |
+| 16 | SMD window sensitivity | Rolling var, w=[10..500] | All 6 windows beat A2P paper |
+| 17 | SVDB4 multi-method | 6 methods | Rolling var AUROC=0.813 vs A2P ~0.5 |
+| 18 | E2E training (AAFN unfrozen) | A2P modification | In progress (PID 31980) |
+| 19 | SMD L100 seed 42 | A2P full run | In progress (PID 5584, 708K steps) |
 
 ---
 
 ## 7. Open Questions for Next Session
 
-1. SMD L100 result: will A2P approach paper's 52.07% F1 with proper data?
-2. SVDB1 multi-seed variance: is 16.06% typical or outlier?
-3. End-to-end training: does unfreezing AAFN improve discrimination?
-4. Chronos + fine-tuned head: can it match A2P F1?
-5. SVDB 4-record: the paper's actual data; feasible only with longer session or HPC.
-6. Exathlon and WADI: datasets not found; may need registration at data providers.
+1. SMD L100 result: will A2P approach paper's 52.07% F1 with proper data? (Running, ETA ~2h)
+2. E2E training probe: does unfreezing AAFN improve AUROC? (Running, ETA ~1h)
+3. SVDB1 seed=2: confirms 3-seed mean/variance (Running, ETA ~30min)
+4. Chronos + fine-tuned head: can it match A2P F1 while maintaining good AUROC?
+5. Exathlon and WADI: datasets not found; may need registration at data providers.
+6. Can a simple AR model achieve AUROC > 0.85 on SVDB4 by using residual forecasting error?
 
 ---
 

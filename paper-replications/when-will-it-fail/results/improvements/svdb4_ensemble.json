@@ -1,0 +1,10 @@
+{
+  "pca_recon_auroc": 0.6422429203219957,
+  "pca_recon_auprc": 0.12611436291185874,
+  "ensemble_auroc": 0.7685378510378511,
+  "ensemble_auprc": 0.5061026188093141,
+  "best_single_auroc": 0.8126651248184095,
+  "best_single_auprc": 0.5138997341547826,
+  "a2p_auroc_tranaD": 0.528,
+  "a2p_auroc_proper_split": 0.494
+}
