@@ -142,6 +142,74 @@ Before writing to EXPERIMENT_LOG.md:
 | Perfect results (0.0 loss) | Bug: predicting input, label leakage |
 | All models perform identically | Bug: model not being used |
 | 10x worse than published SOTA | Different task/metric, or major bug |
+| Two artifacts from the same run disagree | Internal inconsistency — the headline metric is suspect, reconcile before logging |
+| Good metric + flat/degenerate diagnostic | Model is gaming the eval protocol, not solving the task |
+| Within 1 RMSE of a 10-line feature regressor | Your representation is not contributing signal the protocol can see |
+
+### The Internal Consistency Audit (MANDATORY before declaring a result)
+
+A metric is not evidence. An impressive number is not evidence. A single artifact is not evidence. Every "this works" claim must survive **cross-artifact reconciliation** before being logged as a valid result. Run this audit before every entry in EXPERIMENT_LOG.md that describes a positive result.
+
+**Rule 1 — Reconcile every artifact from the same run.**
+
+Any given run produces a set of artifacts: a scalar metric, a prediction plot, a loss curve, a probe readout, an attention map, a latent-space projection, a diagnostic JSON. They are **all measurements of the same underlying model**. They must therefore tell a single coherent story.
+
+- Flat prediction trajectory + "great" RMSE = **inconsistent = STOP**.
+- Good pretraining loss + probe RMSE that doesn't change under input shuffling = **inconsistent = STOP**.
+- High PCA-rho between representation and label + constant downstream output = **inconsistent = STOP**.
+- Train RMSE improving + val RMSE pinned flat + "it's working" = **inconsistent = STOP**.
+
+When two artifacts disagree, the disagreement **is the finding**. Log it as `⚠️ INTERNAL INCONSISTENCY`, explain both artifacts, and do not proceed with dependent experiments until reconciled. Never silently drop the artifact that disagrees with the impressive metric.
+
+**Rule 2 — Produce the diagnostic that the canonical protocol hides.**
+
+Every evaluation protocol is blind to some failure mode. Before running any "standard benchmark," **name the failure mode the standard metric cannot see**, then produce a complementary diagnostic that would catch it. Examples of protocol-blindspot pairs:
+
+| Protocol | Failure mode it misses | Required complementary diagnostic |
+|----------|------------------------|-----------------------------------|
+| RUL last-window RMSE | Within-sequence flatness, cross-example-only learning | Per-sequence prediction trajectory + within-sequence Spearman ρ |
+| Classification accuracy | Class-prior exploitation | Per-class precision/recall + confusion matrix |
+| Rare-event F1 | Threshold tuning / prior exploitation | PR-AUC + random-baseline F1 at matched prior |
+| Retrieval recall@k | Popularity bias | Recall@k conditioned on query frequency |
+| Perplexity | Memorization, repetition | Held-out-prompt generation quality + n-gram overlap vs train |
+
+Do not skip this step on the grounds that "everyone uses the standard protocol." Everyone using a protocol is exactly why an artifact that only matches the protocol is suspect.
+
+**Rule 3 — Run the trivial feature-engineered regressor lower bound.**
+
+"Predict the mean" is too loose a floor. Before celebrating any learned result, fit **a ridge regression on 5–15 obviously hand-designed features** (length, last-value, per-channel slope over last N steps, per-channel mean/std, simple counts) and evaluate on the exact same protocol with the exact same splits. This takes ~20 minutes and is the tightest cheap lower bound you can produce.
+
+- If your learned method beats the feature regressor by >1 std: your representation contributes signal. Report the margin.
+- If your learned method is within ~1 std of the feature regressor: **your representation contributes nothing the protocol can see**. This is a headline finding. Log it as such.
+
+Do this **before** running ablations, seed sweeps, or label-efficiency curves. Those experiments are meaningless if the trivial baseline already saturates the protocol.
+
+**Rule 4 — Shuffle / ablation test for any "the encoder learned X" claim.**
+
+If you claim the encoder learned a meaningful representation, prove it by breaking the encoder and measuring what happens:
+
+- Replace encoder output with **random features** of the same dimensionality → does the downstream metric collapse?
+- **Shuffle** the temporal order of the encoder input → does the output change?
+- Replace encoder output with **mean-pooled raw features** → by how much does performance drop?
+- Replace encoder output with **length-only features** (just `T_obs`) → how much of the claimed performance is length-encoded?
+
+If any of these "break" the encoder and the downstream metric barely moves, the encoder is not the source of the signal. The claim "the encoder learned X" is then false as stated, regardless of how well the full system performs.
+
+**Rule 5 — "Matched SOTA on benchmark B" ≠ "reproduced SOTA's underlying capability."**
+
+Matching a leaderboard number reproduces a *benchmark artifact*, not necessarily the capability the paper claimed. Treat matching SOTA as "interesting; now prove it survives a protocol that isn't this benchmark." The three cheapest follow-ups:
+
+1. **Out-of-distribution eval.** Run the same model on a neighboring dataset / subset without retraining. If it collapses, the benchmark was selecting for benchmark-specific features.
+2. **Alternative-metric eval.** Report the same model under a metric the benchmark does not use (within-sequence correlation, calibration, uncertainty). If the alternative metric is catastrophic, the standard metric is hiding the failure.
+3. **Shuffle / ablation test.** See Rule 4.
+
+Only after passing all three can you write "we reproduced the capability" instead of "we matched the benchmark number."
+
+**Why this section exists (cautionary case).**
+
+In the IndustrialJEPA v11 C-MAPSS work, an RMSE of 13.80 ("first SSL to beat AE-LSTM SSL") was produced alongside a prediction trajectory figure showing the model emitting a near-constant ~92 cycles across all test engines and all cycle positions. Both artifacts lived in the same experiment directory for a full session and were never reconciled. The flat figure was filed under "analysis/plots" and the RMSE was filed under "results" as if they described different things. They did not — they described the same model. The internal inconsistency between them was the most important finding of v11 and it was not logged, because the sanity checks were applied artifact-by-artifact instead of across artifacts. **Do not do this again.** Before logging any positive result, explicitly list every artifact the run produced, summarize each in one sentence, and verify that every sentence is consistent with every other sentence. If any two disagree, that is the result.
+
+---
 
 ### Statistical Rigor Requirements
 
