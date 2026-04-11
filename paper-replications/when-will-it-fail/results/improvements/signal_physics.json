@@ -1,0 +1,6 @@
+{
+  "probe": "92_signal_physics",
+  "physics_auroc": 0.6378463198741957,
+  "var_auroc": 0.6156993236154995,
+  "combined_auroc": 0.6480614188702136
+}

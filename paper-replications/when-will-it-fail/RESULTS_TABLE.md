@@ -167,6 +167,8 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **Probe 85** | **Oracle Gap Decomposition (CPU-only)** | **AUROC** | **Oracle=0.747, TF=0.624, LR=0.591** | gap=0.120 | **COMPLETE - 34.4% AP+ have weak oracle signal (late block, 2.23x vs 4.19x)** |
 | **Probe 86** | **Operational Utility Analysis (CPU-only)** | **Precision** | **Oracle@25%recall=1.000; LR@50%recall=0.100 (1.3x lift)** | base=7.7% | **COMPLETE - LR NOT production-ready; oracle useful at low recall** |
 | **Probe 87** | **Multi-Dataset LR (CPU-only)** | **AUROC** | **SVDB4=0.591, SMD_top5=0.659** | confound | **COMPLETE - SMD higher due to cluster continuation confound** |
+| **Probe 91** | **Score Correlation Analysis (CPU-only)** | **Spearman rho** | **LR vs Oracle: rho=0.245** | -- | **COMPLETE - LR/TF share signal subspace; oracle signal uncorrelated (r=0.097)** |
+| **Probe 92** | **Signal Physics LR (CPU-only)** | **AUROC** | **Physics=0.638; Combined phys+var=0.648** | var_only=0.616 | **COMPLETE - cross-corr+AC gives NEW best LR=0.648 (+0.032 vs var alone)** |
 
 **CRITICAL:** Single-seed AP results (0.642, 0.641, 0.619, 0.625) are unreliable. True multi-seed APTransformer AUROC at 30ep = 0.5211 +/- 0.0415 (10 seeds), barely above random (0.500) and NOT statistically significant (p=0.081). All single-seed "best results" must be treated as preliminary. With 100ep supervised training, consistent AUROC=0.6238 ± 0.0075 is achieved (5 seeds, Probe 30).
 

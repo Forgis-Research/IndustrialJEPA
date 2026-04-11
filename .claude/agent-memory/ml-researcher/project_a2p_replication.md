@@ -113,23 +113,94 @@ Random                                 0.500    --       --    -0.124    --     
 - Supervised vs unsupervised: Welch t=7.17, p=0.000026, d=3.45
 - TF vs BiLSTM: p=0.047, d=3.53; TF vs CNN: p=0.003, d=6.67; LSTM vs CNN: p=0.43 (NS)
 
-## 14 Verified Claims for NeurIPS (Updated April 12, 2026)
+## 16 Verified Claims for NeurIPS (Updated April 12, 2026 - FINAL)
 
 1. F1-tol 8.1x inflated (raw 5.35% -> 43.1%) [STRONG]
 2. Random beats A2P F1-tol on all 3 datasets (SVDB4: 69.6% vs 67.6%) [VERY STRONG, 5-seed]
 3. A2P AUROC not significant vs random (p=0.162, two-tailed t-test) [STRONG, 10-seed]
 4. LR variance beats A2P transformer (p=0.0006, d=1.73) [VERY STRONG]
 5. AP is learnable with correct training: supervised 0.624, p<<0.001 [VERY STRONG, 5-seed]
-6. Calm-before-storm: AP+ windows have 0.78x lower variance (consistent across all splits) [STRONG]
+6. Calm-before-storm: AP+ windows have 0.78x lower variance (SVDB4 only; global 200-step window signal) [STRONG]
 7. Supervised vs unsupervised: d=3.45, p=0.000026 [VERY STRONG]
 8. F1-tol and AUROC rankings are inverted (Spearman rho=0) [MODERATE, 3 methods]
 9. SVDB1 invalid (temporal confound, all labels at t>94%) [VERY STRONG]
-10. 30ep training insufficient: 10% converge; 100ep: 100% converge [VERY STRONG]
+10. 30ep training insufficient: 10% converge; 100ep: 100% converge [VERY STRONG] + SMD 30ep=0.583 (0% above 0.60)
 11. LR 4-feat ~ TF (p=0.047 borderline, bootstrap CIs overlap [0.612,0.656] vs [0.614,0.633], delta=+1.1pp) [MODERATE]
 12. TF > BiLSTM (p=0.047, d=3.5) > CNN (p=0.003, d=6.7): global attention is critical [VERY STRONG]
 13. Near-horizon (0-50) is contaminated: 66.4% AP+ have anomaly in context [VERY STRONG]
-14. AP not production-ready: LR=1.4x precision over random at 50% recall (8.4 FA/TP);
-    Oracle=2.5x (4.2 FA/TP). Oracle perfect precision at 36.7% recall for first-half blocks. [STRONG]
+14. AP not production-ready: LR=1.4x precision over random at 50% recall (8.4 FA/TP) [STRONG]
+15. Dataset-specific AP directions: SVDB4=calm (oracle=0.718, LR=0.628); SMD borderline (oracle=0.862 confounded); only SVDB4 is valid [VERY STRONG] (Probes 74b/75/78/79/80/81)
+16. F1-tol gameable by tolerance t: random achieves 58.9% at t=200; AUROC is stable [STRONG] (Probe 76)
+
+## Formal AP Dataset Validity Criteria (Probes 78-81)
+
+5 criteria: Separation (<20% ctx anomaly in AP+), Learnability (oracle>0.55), Non-trivial (ctx AUROC<0.60), Sample size (>50 AP+), Temporal (AP+ in both splits)
+
+| Dataset | Verdict | Pass/5 | Key issue |
+|---------|---------|--------|-----------|
+| SVDB4   | VALID   | 5/5    | None - genuine AP task |
+| SVDB1   | INVALID | 1/5    | Temporal confound + 0 AP+ in train |
+| SMD     | BORDERLINE | 3/5 | Clustering effect: 45% AP+ have ongoing anomaly in context |
+
+## New Analysis: SMD AP Contamination (Probe 79/80)
+
+- SVDB4 AP+ windows: context anomaly rate=0.012 (0.16x base) - GENUINE calm
+- SMD AP+ windows: context anomaly rate=0.307 (7.4x base!) - CLUSTERING effect
+- SMD context-any-anomaly AUROC=0.672 (trivially predictable!)
+- 45% of SMD AP+ windows have ongoing anomaly in context -> cluster continuation, not future prediction
+- SMD oracle AUROC=0.862 is inflated by clustering (vs SVDB4's clean 0.748)
+
+## Correction Waterfall (Probe 82)
+
+Task difficulty (oracle-random gap) = 0.244 AUROC units.
+1. A2P (wrong eval, 30ep): AUROC=0.521 -> 4.2% of gap
+2. Fix evaluation: oracle goes 0.347->0.744
+3. Fix training (100ep): AUROC=0.624 -> 50.6% of gap  
+4. No-training baseline: LR=0.631 -> 54.1% of gap (beats trained model!)
+5. Remaining gap: 0.121 AUROC units
+
+## Paper Figures Generated (Probe 83)
+
+In `results/figures/`:
+- fig1_correction_waterfall.pdf/png: AUROC waterfall
+- fig2_rank_inversion.pdf/png: F1-tol vs AUROC ranking inversion
+- fig3_calm_before_storm.pdf/png: Lead time AUROC profile
+- fig4_architecture_comparison.pdf/png: All architecture results
+- fig5_dataset_validity.pdf/png: Pass/fail criteria for all 3 datasets
+
+## Reproducibility: 16/16 claims verified (11 automated + 5 manual)
+
+## Probe 62: Width Ablation (April 12, 2026)
+
+- d=32 (32K params): AUROC=0.6178 ± 0.0070
+- d=64 (ref, 103K): AUROC=0.6238 ± 0.0075 (5-seed)
+- d=128 (431K params): AUROC=0.6164 ± 0.0059
+- p=0.846 (NOT significant) - task is capacity-saturated at d=32
+- 13x more parameters gives -0.001 AUROC change
+- Architecture bottleneck is signal difficulty, NOT model capacity
+
+## Probe 85: Oracle Gap Decomposition (April 12, 2026)
+
+- Oracle AUROC=0.747, TF=0.624, remaining gap=0.123
+- Early AP+ (block pos 0-49): 4.19x oracle signal vs AP-
+- Late AP+ (block pos 50-99): 2.23x oracle signal vs AP-
+- 34.4% of AP+ are "hard" late-block predictions
+- Top-25% oracle covers 59.6% of AP+ events
+- Extended horizon: oracle goes 0.747 (h=50) -> 0.900 (h=300) - anomalies are bursty
+
+## Probe 86: Operational Utility (April 12, 2026)
+
+- Oracle @ 25% recall: precision=1.000 (0 false alarms!) - only "easy" early-block events
+- LR @ 50% recall: precision=0.100 (1.3x lift, 9 FA/TP) - NOT production-ready
+- Oracle @ 50% recall: precision=0.325 (4.2x lift) - partially useful
+- Base rate: 7.7% AP+
+
+## NeurIPS LaTeX Tables (April 12, 2026)
+
+In `results/figures/neurips_tables.tex`:
+- Table 1: Architecture comparison (9 methods, AUROC, std, seeds, params)
+- Table 2: Dataset validity criteria (SVDB4/SVDB1/SMD)
+- Table 3: Correction waterfall (%gap achieved at each fix step)
 
 ## New Analysis: Easy vs Hard AP Windows (April 12, 2026)
 

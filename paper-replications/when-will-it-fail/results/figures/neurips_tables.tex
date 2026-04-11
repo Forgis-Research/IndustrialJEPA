@@ -1,0 +1,67 @@
+% NeurIPS LaTeX Tables for A2P Replication Paper
+% Generated 2026-04-12
+
+
+\begin{table}[t]
+\centering
+\caption{Architecture comparison on SVDB4 for Anomaly Prediction (AP). All supervised models trained 100 epochs on correct split. LR uses 4 hand-crafted variance features and requires no training. $\dagger$: significantly different from Transformer (Welch's $t$-test, $p<0.05$).}
+\label{tab:architecture}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Method} & \textbf{AUROC} & \textbf{Std} & \textbf{Seeds} & \textbf{Params} \\
+\midrule
+Random & 0.500 & -- & -- & -- \\
+A2P (30 ep, unsupervised) & 0.521 & 0.042 & 10 & 2.4M \\
+1D CNN (3-layer, 100 ep)$\dagger$ & 0.569 & 0.009 & 3 & 25K \\
+BiLSTM (2-layer, 100 ep)$\dagger$ & 0.581 & 0.016 & 3 & 65K \\
+\midrule
+TF $d\!=\!32$ (100 ep) & 0.618 & 0.007 & 3 & 33K \\
+TF $d\!=\!64$ (100 ep) & \textbf{0.624} & 0.008 & 5 & 103K \\
+TF $d\!=\!128$ (100 ep) & 0.616 & 0.006 & 3 & 431K \\
+LR 4-feature (no training) & 0.631 & -- & det. & 0 \\
+\midrule
+Oracle (future variance) & 0.747 & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\begin{table}[t]
+\centering
+\caption{AP dataset validity assessment. A valid AP benchmark requires all 5 criteria. \textit{Separation}: context anomaly rate in AP$^+$ windows $<$0.20. \textit{Learnability}: oracle AUROC $>$0.55. \textit{Non-trivial}: context-anomaly AUROC $<$0.60. \textit{Sample size}: $>$50 AP$^+$ examples. \textit{Temporal}: AP$^+$ in both train and test splits.}
+\label{tab:validity}
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Dataset} & \textbf{Sep.} & \textbf{Learn.} & \textbf{Non-triv.} & \textbf{Sample} & \textbf{Temporal} & \textbf{Pass/5} & \textbf{Verdict} \\
+\midrule
+SVDB4 & \ding{51} & \ding{51} & \ding{51} & \ding{51} & \ding{51} & 5/5 & \textbf{Valid} \\
+SVDB1 & \ding{55} & \ding{51} & \ding{55} & \ding{55} & \ding{55} & 1/5 & \textbf{Invalid} \\
+SMD   & \ding{55} & \ding{51} & \ding{55} & \ding{51} & \ding{51} & 3/5 & Borderline \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\begin{table}[t]
+\centering
+\caption{Evaluation correction waterfall on SVDB4. Each row fixes one flaw in A2P's evaluation. ``\% of gap'' measures progress toward oracle as a fraction of the learnable gap (oracle$-$random $= 0.244$).}
+\label{tab:waterfall}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Method} & \textbf{AUROC} & \textbf{Seeds} & \textbf{\% of Gap} \\
+\midrule
+Random & 0.500 & -- & 0\% \\
+A2P (30 ep, 10 seeds) & 0.521$\pm$0.042 & 10 & 8.6\% \\
+\midrule
+\textit{After fixing evaluation direction:} & -- & -- & -- \\
+Oracle (corrected) & 0.744 & -- & 100\% \\
+\textit{After fixing training (100 ep):} & -- & -- & -- \\
+Supervised TF & 0.624$\pm$0.008 & 5 & 50.6\% \\
+LR 4-feat (no training) & 0.631 & det. & 54.1\% \\
+\midrule
+\textit{Remaining gap:} & 0.120 & -- & 45.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
