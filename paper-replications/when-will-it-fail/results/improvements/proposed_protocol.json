@@ -1,0 +1,31 @@
+{
+  "probe": "128_proposed_protocol",
+  "strict_ap_rate": 0.03179866282546067,
+  "n_ap_plus": 1170,
+  "n_ap_minus": 35624,
+  "random": {
+    "auroc": 0.4930554835787263,
+    "auprc": 0.031293600719233594
+  },
+  "rolling_var": {
+    "auroc": 0.40989121182109056,
+    "auprc": 0.024469390594632573
+  },
+  "lr": {
+    "auroc": 0.7500135556361696,
+    "auprc": 0.070150410460484,
+    "bss": 0.025434839482885274
+  },
+  "oracle": {
+    "auroc": 0.6226734809530116,
+    "auprc": 0.04088555146183464
+  },
+  "protocol_checks": {
+    "Oracle AUROC > 0.65": false,
+    "Oracle AUPRC > 2x random": false,
+    "No contamination (strict label)": true,
+    "Random AUROC = 0.500": true,
+    "LR > random by significant margin": true,
+    "LR BSS > 0 (well-calibrated)": true
+  }
+}

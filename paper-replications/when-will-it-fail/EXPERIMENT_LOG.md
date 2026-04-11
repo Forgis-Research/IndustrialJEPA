@@ -3713,3 +3713,208 @@ Standard AP (9.47% positive rate, random AUPRC=0.095):
 **File:** results/improvements/a2p_success_analysis.json
 
 ---
+
+
+### Probe 128: Proposed Rigorous AP Protocol Validation (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** Applying a strict evaluation protocol (no contamination, oracle validity check, baseline comparison) to the AP task will reveal that even the "learnable" AP component fails the oracle validity criterion.
+**Design:** CPU-only. Load full SVDB4 dataset, compute strict AP labels (no anomaly in [t+50, t+100]). Run oracle, LR, rolling var, and random baselines. Apply proposed protocol checks.
+
+**Results (strict AP, 1170 AP+, 35624 AP-, 3.18% rate):**
+```
+Random AUROC:      0.493 (expected ~0.500 ✓)
+Rolling var AUROC: 0.410 (BELOW RANDOM - detection approach fails on strict AP)
+LR AUROC:          0.750 (highest seen on strict AP!)
+Oracle AUROC:      0.623 (fails >0.65 validity criterion)
+LR AUPRC:          0.070
+LR BSS:            +0.0254 (positive = well-calibrated)
+```
+
+**Protocol checks:**
+```
+Oracle AUROC > 0.65:                  FALSE (0.623 - fails!)
+Oracle AUPRC > 2x random:             FALSE (0.041 vs 0.031 = 1.32x only)
+No contamination (strict label):       TRUE
+Random AUROC = 0.500:                  TRUE
+LR > random by significant margin:    TRUE
+LR BSS > 0:                           TRUE
+```
+
+**Key findings:**
+1. Rolling var AUROC=0.410 BELOW RANDOM on strict AP - the standard detection heuristic FAILS when contamination is removed. This is because strict AP+ events are calm (low variance context).
+2. Oracle AUROC=0.623 fails the >0.65 validity criterion - even the perfect future-knowledge baseline barely clears random on the genuine prediction task.
+3. LR AUROC=0.750 is the highest strict AP result seen. LR uses NEGATED variance = correctly identifies calm context. The "learning" is really detecting calm-before-storm.
+4. The oracle failing its own validity check is a powerful finding: the strict AP task is at the boundary of what is reliably predictable, and a naive variance oracle does not capture the signal reliably.
+
+**Sanity checks:** ✓ random AUROC=0.493 ≈ 0.5 ✓ LR > oracle (consistent with probes 101, 116, 120b) ✓ Oracle gap consistent with probe 101 (0.622 vs 0.603 - difference due to full dataset vs stride=5)
+
+**Verdict:** COMPLETE - proposed protocol exposes fundamental limits of the AP task
+
+**File:** results/improvements/proposed_protocol.json
+
+---
+
+
+### Probe 67b: SMD Epoch Convergence (COMPLETE)
+
+**Time:** 2026-04-12
+**Hypothesis:** More training epochs (100 vs 30) will help SMD reach SVDB4-level AUROC (60%+ above 0.60 threshold).
+**Design:** 3 seeds × 2 epoch counts (30ep, 100ep), SMD top-5 channels, stride=10, explicit seeding.
+
+**Results:**
+```
+SMD 30-epoch  (3 seeds): 0.573, 0.581, 0.595 -> mean=0.583 ± 0.009 (0% above 0.60)
+SMD 100-epoch (3 seeds): 0.574, 0.539, 0.541 -> mean=0.551 ± 0.016 (0% above 0.60)
+```
+
+**SVDB4 reference (30ep):** ~10% above 0.60 // (100ep): 100% above 0.60
+
+**Key finding:** More epochs HURTS on SMD (100ep mean=0.551 vs 30ep mean=0.583, delta=-0.032). ZERO seeds exceed 0.60 at any epoch count. This contrasts sharply with SVDB4 where 100ep gives 100% above 0.60.
+
+**Why SMD lags SVDB4:** SMD has 38 channels, only top-5 used (anti-correlated noise in other 33). Even top-5 channels have weaker AP signal (oracle top-5=0.704 vs oracle SVDB4=0.720). The transformer overfits faster on SMD's noisier features when trained longer.
+
+**Sanity checks:** ✓ Loss decreased ✓ 30ep results consistent with earlier SMD probes (rolling var=0.774, LR=0.674, oracle=0.554) ✓ No NaN
+
+**Verdict:** COMPLETE - SMD harder than SVDB4; epoch count does not help; SVDB4 is the cleaner benchmark
+
+**File:** results/improvements/smd_epoch_convergence.json
+
+---
+
+
+### Probe 73b: LR + Transformer Ensemble (COMPLETE)
+
+**Time:** 2026-04-12
+**Hypothesis:** Combining LR (strong calibration, variance features) with Transformer (sequence modeling) in an ensemble will exceed either component.
+**Design:** 3-seed TF trained on SVDB4 standard AP. Ensemble via average scores and rank average. Compare to LR alone and TF 3-seed average.
+
+**Results:**
+```
+LR alone:           AUROC=0.634, AUPRC=0.134
+TF 3-seed avg:      AUROC=0.614, AUPRC=0.105 (seeds: 0.609, 0.618, 0.608)
+Ensemble (avg):     AUROC=0.618, AUPRC=0.104
+Ensemble (rank):    AUROC=0.635, AUPRC=0.106
+```
+
+**Key finding:** Ensemble (rank) matches LR alone (0.635 vs 0.634, +0.001) on AUROC, but LR AUPRC (0.134) substantially exceeds ensemble AUPRC (0.106). Adding TF scores via ensemble dilutes LR's precision advantage. The ensemble provides negligible uplift.
+
+**Why ensemble doesn't help:** LR and TF capture different (uncorrelated) signal subspaces (Probe 91: rho=0.245). But TF's signal is noisier (std=0.037 vs LR deterministic), so averaging in TF scores increases variance without proportional AUROC gain.
+
+**Conclusion:** LR alone remains the practical recommendation. Ensemble is not worth the complexity.
+
+**Sanity checks:** ✓ TF seeds consistent (0.608-0.618, tight std) ✓ Rank ensemble >= avg ensemble (expected) ✓ LR > TF (consistent with all prior probes)
+
+**Verdict:** COMPLETE - ensemble provides minimal benefit; LR is sufficient
+
+**File:** results/improvements/lr_tf_ensemble.json
+
+---
+
+
+### Probe 129: Variance Trend Slope Features for AP Prediction (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** Temporal slope of variance (decreasing = getting calmer toward the AP event) adds predictive signal beyond variance level features alone.
+**Design:** CPU-only. Divide 200-step context into 4 quarters (q1-q4), compute: level variances, overall slope, quarter-to-quarter deltas (d43, d32, d21), acceleration. Compare 12-feat LR vs 4-feat (level only) vs slope-only on standard and strict AP.
+**Sanity checks:** ✓ Standard AP: train pos=9.5%, test pos=9.5% ✓ Strict AP: 470 test positives ✓ features vary across conditions
+
+**Results:**
+
+Standard AP:
+```
+4-feat level (C=0.01):  AUROC=0.6446  (reference: 0.634)
+12-feat (level+slope):  AUROC=0.6412  (-0.003 vs 4-feat)
+slope-only (5 feats):   AUROC=0.5442  (weak standalone)
+level-only (7 feats):   AUROC=0.6414  (essentially 4-feat)
+```
+
+Strict AP:
+```
+12-feat AUROC:    0.6834  (reference strict LR: 0.703 from probe 101)
+level-only AUROC: 0.6864  (+0.003 vs 12-feat - slope HURTS slightly!)
+slope-only AUROC: 0.6069  (weaker on strict AP)
+```
+
+**Feature importances (12-feat standard AP):**
+- var_full: -0.402 (most important, negative = low var = AP+)
+- var_last100: -0.168
+- q3: -0.111
+- d43: +0.043 (POSITIVE - rising recent variance = AP+)
+- slope: -0.013 (near zero)
+
+**Slope statistics:**
+- AP- overall slope: +0.00060 (slight rise)
+- AP+ overall slope: -0.01330 (declining - variance DECREASING toward AP event on average)
+- Strict AP+ slope: +0.00745 (SLIGHTLY POSITIVE - closer to AP-)
+- d43 (q4-q3) for strict AP+: +0.205 vs AP- +0.007 - **large positive!** - RISING in last quarter
+
+**Key finding:** The d43=+0.205 for strict AP+ (vs +0.007 for AP-) reveals that in the LAST quarter of the context window, variance is RISING for strict AP+ events. This is the block onset becoming visible in the context tail.
+
+**Why slope alone fails:** The slope captures a MIXED signal - early context has PRIOR block remnants (high var), calm trough in middle, rising at end (next block onset). The net slope varies by which phase dominates.
+
+**Insight:** Slope features do NOT improve over level features. The block structure signature is already captured by the level variance features (var_full penalizes the calm trough, var_last50 captures the onset).
+
+**Verdict:** REVERT - slope features don't improve AP prediction; level-only is sufficient
+
+**File:** results/improvements/var_slope_features.json
+
+---
+
+
+### Probe 130: Block Onset Timing Relative to Context Window (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** Strict AP+ contexts show the block onset starting at a characteristic position within the context window, explaining the d43 positive trend and LR performance.
+**Design:** CPU-only. For each strict AP+ window, find when anomalies occur within context and future. Plot variance profile.
+**Sanity checks:** ✓ 1170 strict AP+ (matches probe 123) ✓ future starts in [100,149] (block onset prediction windows)
+
+**Results:**
+
+Anomaly position analysis (strict AP+, n=1170):
+```
+% with anomaly in context:        8.3% (97 windows, early q1 only)
+% with NO anomaly in context:    91.7% (1073 windows - pure prediction)
+Future anomaly starts: t+100 to t+149 (mean=t+124.6)
+  50% in [t+100, t+124]
+  50% in [t+125, t+149]
+```
+
+Variance profile (ratio to AP- baseline):
+```
+t=[0-20]:    0.63x  (BELOW - quiet after prior block)
+t=[20-40]:   0.55x  (quietest)
+t=[40-60]:   0.95x  (recovering to baseline)
+t=[60-80]:   1.47x  (ABOVE - prior block remnant visible)
+t=[80-100]:  1.38x  (prior block tail)
+t=[100-120]: 0.56x  (CALM begins)
+t=[120-140]: 0.25x  (CALMEST - deep calm trough)
+t=[140-160]: 0.14x  (VERY CALM) ← key signature
+t=[160-180]: 1.13x  (slight rise)
+t=[180-200]: 1.60x  (rising - next block beginning)
+```
+
+**The complete strict AP+ context pattern (mechanistic explanation):**
+1. t=[-200, -160]: Quiet after previous block
+2. t=[-160, -100]: Previous anomaly block remnant (1.4-1.5x baseline variance)
+3. t=[-100, -60]: SHARP DROP to deep calm (0.14x baseline at t=[-60,-40])
+4. t=[-40, -0]: RISING variance as next block begins (1.6x at last 20 steps)
+5. t=0 to t+100-149: Future anomaly block starts
+
+The LR model uses NEGATIVE var_full coefficient (-0.402) = fires when overall variance is LOW. The calm trough (t=-100 to -60) dominates the full-window variance, making var_full a reliable predictor. The oracle future_var captures [t+50, t+100] = early part of the incoming anomaly block, which starts at t+100-149 and thus is CALM during the oracle window.
+
+**AUROC of last-50 var on strict AP:**
+- last-50 var AUROC = 0.524 (barely above random)
+- This confirms: recent variance ALONE is not predictive for strict AP
+- The LR uses the FULL window mean = it captures the calm trough via var_full
+
+**Final mechanistic model:**
+Strict AP+ windows = [previous block] → [calm trough] → [next block onset at edge]
+LR detects: "overall variance low (dominated by calm trough)" = AP+
+Oracle detects: "future variance high" = but future is the START of block, which may be low
+
+**Verdict:** COMPLETE - fully explains the LR > oracle finding on strict AP
+
+**File:** results/improvements/onset_timing_analysis.json
+
+---
