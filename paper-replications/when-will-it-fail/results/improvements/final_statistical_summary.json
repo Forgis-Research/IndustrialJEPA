@@ -1,0 +1,87 @@
+{
+  "probe": "88_final_stats",
+  "n_claims": 16,
+  "n_strong": 14,
+  "claims": [
+    {
+      "n": 1,
+      "desc": "F1-tol 8.1x inflated (raw 5.35% -> 43.1%)",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 2,
+      "desc": "Random beats A2P F1-tol on all 3 datasets",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 3,
+      "desc": "A2P AUROC not significant vs random (p=0.162)",
+      "strength": "STRONG"
+    },
+    {
+      "n": 4,
+      "desc": "LR variance beats A2P transformer (p=0.0006)",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 5,
+      "desc": "AP learnable with correct training (TF 0.624, p<<0.001)",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 6,
+      "desc": "Calm-before-storm: AP+ ctx var 0.78x lower",
+      "strength": "STRONG"
+    },
+    {
+      "n": 7,
+      "desc": "Supervised vs unsupervised: d=3.45, p<<0.001",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 8,
+      "desc": "F1-tol and AUROC rank inversion (Spearman rho=0)",
+      "strength": "MODERATE"
+    },
+    {
+      "n": 9,
+      "desc": "SVDB1 invalid (all labels at t>94%)",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 10,
+      "desc": "30ep insufficient: only 10% converge; 100ep: 100%",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 11,
+      "desc": "LR ~ TF performance (p=0.18, CI overlap)",
+      "strength": "MODERATE"
+    },
+    {
+      "n": 12,
+      "desc": "TF > BiLSTM > CNN: global attention critical",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 13,
+      "desc": "Near-horizon (0-50) contaminated: 66.4% AP+",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 14,
+      "desc": "AP not production-ready: LR=1.3x lift at 50% recall",
+      "strength": "STRONG"
+    },
+    {
+      "n": 15,
+      "desc": "SVDB4 only valid: 5/5 criteria; SVDB1=1/5, SMD=3/5",
+      "strength": "VERY STRONG"
+    },
+    {
+      "n": 16,
+      "desc": "F1-tol gameable by t: random 58.9% at t=200; AUROC stable",
+      "strength": "STRONG"
+    }
+  ]
+}

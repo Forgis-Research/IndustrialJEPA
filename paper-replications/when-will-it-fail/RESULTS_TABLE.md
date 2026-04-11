@@ -152,7 +152,7 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **Correct AP: Probe 57** | **Near-horizon transformer (0-50 steps, 3 seeds)** | **AUROC** | **0.8039 +/- 0.0318 (ALL exceed oracle 0.750!)** | **Oracle near=0.750; LR near=0.646** | **COMPLETE - CONFIRMS CONTAMINATION: 66.4% AP+ have anomaly in context** |
 | Correct AP: Probe 61 | Feature ablation (LR, which features matter) | AUROC delta | last-50 var: -0.012 (most imp); ac1: +0.006 (hurts!) | ref=0.622 | COMPLETE - ac1 adds noise |
 | **Correct AP: Probe 63** | **Optimal LR: 4 features (drop ac1+var100)** | **AUROC** | **0.6308** | **8-feat: 0.6223** | **COMPLETE - simpler is better (+0.008)** |
-| Correct AP: Probe 62 | Width ablation (d=32 vs d=128, L=2 fixed) | AUROC | RUNNING | d=64: 0.6238 | Running (PID 175044, ~50+ min elapsed) |
+| **Correct AP: Probe 62** | **Width ablation (d=32 vs d=128, L=2 fixed)** | **AUROC** | **d=32: 0.6178; d=64: 0.6238[ref]; d=128: 0.6164** | d=64: 0.6238 | **COMPLETE - width DOES NOT MATTER (p=0.846); capacity-saturated at d=32** |
 | **Correct AP: Probe 67b** | **SMD epoch convergence (30ep vs 100ep, 3 seeds each)** | **AUROC** | **RUNNING** | **30ep SVDB4: 10% above 0.60; 100ep: 100%** | Running (PID 186895) |
 | **Correct AP: Probe 68b** | **AUPRC full comparison (LR vs TF 5-seed vs oracle, SVDB4)** | **AUPRC** | **RUNNING** | LR: 0.6345/0.1336; Oracle: 0.7472/0.5221 | Running (PID 187037, seeds 1-4) |
 | **Correct AP: Probe 69** | **Calm-before-storm lead time (var vs AP+ at L=25-475)** | **AUROC** | **0.679 @ L=75** | 0.500 (random) | COMPLETE - 100-step periodicity from block structure |
@@ -164,6 +164,9 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **Probe 74** | **SMD Oracle Analysis (all 38 channels)** | **AUROC** | **Oracle top-5=0.788** | **Oracle all-ch=0.742** | **COMPLETE - top-5 oracle 4.6pp higher than all-ch** |
 | **Probe 75** | **Cross-Dataset AP (SVDB4 vs SMD)** | **LR AUROC** | **SVDB4=0.628, SMD=0.700** | **Oracle: 0.718 / 0.862** | **COMPLETE - opposite directions confirmed** |
 | **Probe 76** | **Metric Robustness: F1-tol vs t** | **F1-tol** | **Random=42.1%@t=50** | AUROC stable | **COMPLETE - F1-tol gameable by t choice** |
+| **Probe 85** | **Oracle Gap Decomposition (CPU-only)** | **AUROC** | **Oracle=0.747, TF=0.624, LR=0.591** | gap=0.120 | **COMPLETE - 34.4% AP+ have weak oracle signal (late block, 2.23x vs 4.19x)** |
+| **Probe 86** | **Operational Utility Analysis (CPU-only)** | **Precision** | **Oracle@25%recall=1.000; LR@50%recall=0.100 (1.3x lift)** | base=7.7% | **COMPLETE - LR NOT production-ready; oracle useful at low recall** |
+| **Probe 87** | **Multi-Dataset LR (CPU-only)** | **AUROC** | **SVDB4=0.591, SMD_top5=0.659** | confound | **COMPLETE - SMD higher due to cluster continuation confound** |
 
 **CRITICAL:** Single-seed AP results (0.642, 0.641, 0.619, 0.625) are unreliable. True multi-seed APTransformer AUROC at 30ep = 0.5211 +/- 0.0415 (10 seeds), barely above random (0.500) and NOT statistically significant (p=0.081). All single-seed "best results" must be treated as preliminary. With 100ep supervised training, consistent AUROC=0.6238 ± 0.0075 is achieved (5 seeds, Probe 30).
 

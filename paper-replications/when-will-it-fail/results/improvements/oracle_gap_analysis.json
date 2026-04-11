@@ -1,0 +1,13 @@
+{
+  "probe": "85_oracle_gap",
+  "oracle_auroc": 0.7471857128315706,
+  "tf_auroc_5seed": 0.624,
+  "remaining_gap": 0.12318571283157065,
+  "lr8_feat_auroc": 0.588396609352636,
+  "ap_in_top25_oracle": 0.5961199294532628,
+  "ap_in_top50_oracle": 0.7548500881834215,
+  "oracle_signal_early_vs_neg": 4.19336256509608,
+  "oracle_signal_late_vs_neg": 2.2256685676162897,
+  "n_early_ap": 372,
+  "n_late_ap": 195
+}
