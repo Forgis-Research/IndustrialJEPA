@@ -3099,3 +3099,174 @@ In contrast, a simple logistic regression on multi-scale variance features:
 - Requires no neural network, no GPU, and trains in under 1 second
 
 This is not a failure of the transformer architecture - Probe 30 shows that with 100 epochs, supervised training reaches AUROC = 0.624 consistently. **The failure is specific to A2P's under-training (30 epochs) combined with evaluation on a favorable seed.**
+
+---
+
+## 38. Root Cause Analysis: The Three Failure Modes of A2P's AP Evaluation
+
+A synthesis of all probe experiments reveals three distinct failure modes that explain why A2P's AP component appears to work in the paper but fails under rigorous evaluation.
+
+### 38.1 Failure Mode 1: Evaluation Metric (F1-tol)
+
+```{python}
+print("=" * 60)
+print("FAILURE MODE 1: F1-tol is not a valid AP metric")
+print("=" * 60)
+print()
+print("Evidence:")
+print("  - Random scores achieve F1-tol = 69.6% (Probe 36)")
+print("    This BEATS A2P's reported 67.55%!")
+print()
+print("  - F1-tol and AUROC rankings are ANTI-CORRELATED:")
+print("    F1-tol:  Random (69.6%) > A2P (67.6%) > LR (56.2%)")
+print("    AUROC:   LR (59.3%) > Random (50.0%) > A2P (49.9%)")
+print()
+print("  Why F1-tol fails for AP:")
+print("  - Anomaly windows are ~100 timesteps long")
+print("  - 50-step tolerance gives credit for any prediction")
+print("    within 50 steps of a 100-step anomaly window")
+print("  - Combined: even random predictions near anomaly regions")
+print("    accumulate high F1 due to dense positive coverage")
+print()
+print("  Proposed fix: Use AUROC (ranking quality) or AUPRC")
+print("  (precision quality) as primary metrics.")
+```
+
+### 38.2 Failure Mode 2: Under-Training (Epoch Count)
+
+```{python}
+print("=" * 60)
+print("FAILURE MODE 2: 30 epochs is insufficient for AP learning")
+print("=" * 60)
+print()
+print("Evidence (from Probes 28b, 30, 33):")
+print()
+print("  Epoch count | AUROC mean | Std   | Above random?")
+print("  ------------|------------|-------|-------------")
+print("  30 epochs   | 0.5211     | 0.042 | p=0.081 (NO)")
+print("  50 epochs   | 0.6147     | 0.008 | YES")
+print("  100 epochs  | 0.624+     | 0.003 | YES")
+print()
+print("  At 30 epochs:")
+print("  - High variance (std=0.042 = 40 AUROC points range!)")
+print("  - 1/10 seeds is an outlier (0.634 = 'lucky seed')")
+print("  - NOT statistically above random (p=0.081)")
+print()
+print("  At 50+ epochs:")
+print("  - Low variance (std < 0.01 = consistent convergence)")
+print("  - All seeds converge to similar optimum")
+print("  - Reliably above random")
+print()
+print("  A2P's AP transformer uses 30 epochs in the paper.")
+print("  The authors likely selected results from a lucky seed.")
+```
+
+### 38.3 Failure Mode 3: Single-Seed Evaluation
+
+```{python}
+print("=" * 60)
+print("FAILURE MODE 3: Single-seed evaluation misrepresents capability")
+print("=" * 60)
+print()
+print("Evidence (Probe 28b, 10-seed distribution):")
+print()
+import numpy as np
+seeds = [0.5359, 0.5248, 0.5166, 0.6345, 0.5222, 0.4921, 0.4945, 0.5187, 0.4899, 0.4814]
+print(f"  10-seed distribution: {[f'{s:.4f}' for s in seeds]}")
+print(f"  Mean: {np.mean(seeds):.4f} +/- {np.std(seeds):.4f}")
+print(f"  Median: {np.median(seeds):.4f}")
+print(f"  Range: [{min(seeds):.4f}, {max(seeds):.4f}]")
+print()
+print(f"  If you pick the 'best' seed (0.6345), AUROC = 0.634")
+print(f"  If you pick the 'worst' seed (0.4814), AUROC = 0.481")
+print(f"  Difference between best and worst: {max(seeds)-min(seeds):.4f} AUROC points!")
+print()
+print("  A2P's paper reports one result per dataset.")
+print("  With 30-epoch variance, cherry-picking is inevitable,")
+print("  even unintentionally (just by trying different configurations).")
+```
+
+### 38.4 The Compound Effect
+
+```{python}
+print("=" * 60)
+print("THE COMPOUND EFFECT")
+print("=" * 60)
+print()
+print("These three failure modes interact to produce large apparent")
+print("performance that evaporates under rigorous evaluation:")
+print()
+print("  Step 1: Choose F1-tol metric (inflates all methods)")
+print("    -> Even random gets 69.6% F1-tol")
+print()
+print("  Step 2: Use 30 epochs (high seed variance)")
+print("    -> One lucky seed can give AUROC 0.15 above mean")
+print()
+print("  Step 3: Report single seed (cherry-picking risk)")
+print("    -> Locks in the lucky seed result as 'the' result")
+print()
+print("  Combined effect: A model that is indistinguishable from")
+print("  random (p=0.081) gets reported as a state-of-the-art")
+print("  anomaly predictor with 67.6% F1-tol.")
+print()
+print("  The CORRECT evaluation shows:")
+print("  - Oracle AUROC = 0.7445 (task is learnable!)")
+print("  - LR variance = 0.5929 (simple baseline)")
+print("  - Supervised TF 100ep = 0.624 (with proper training)")
+print("  - A2P 30ep (mean) = 0.521 (equivalent to random)")
+```
+
+### 38.5 Recommendations for AP Evaluation
+
+Based on this replication, we recommend that future AP papers:
+
+1. **Use AUROC as the primary metric** - F1-tol is gameable by noise; AUROC measures genuine discrimination.
+
+2. **Report AUPRC alongside AUROC** - AUROC measures ranking; AUPRC measures precision, which is critical for practical AP deployment.
+
+3. **Use at least 5 seeds** - AP training is stochastic; single-seed results are unreliable, especially at short epoch counts.
+
+4. **Train for sufficient epochs** - 30 epochs produces high-variance results; 50+ epochs is required for stable AP learning.
+
+5. **Compare against non-trivial baselines** - A simple logistic regression on multi-scale variance features (AUROC=0.593) should be beaten before claiming a method works.
+
+6. **Report the oracle AUROC** - This bounds how much signal exists; methods should be evaluated relative to oracle, not just relative to each other.
+
+---
+
+## 39. Paper Figures
+
+Publication-quality figures summarizing the key findings.
+
+### 39.1 Method Comparison
+
+```{python}
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import os
+
+BASE = '.'
+fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+
+fig_files = [
+    ('../analysis/plots/fig1_method_comparison.png', 'Figure 1: Method AUROC/AUPRC Comparison'),
+    ('../analysis/plots/fig2_transformer_seed_distribution.png', 'Figure 2: 10-Seed Distribution'),
+    ('../analysis/plots/fig3_metric_rank_inversion.png', 'Figure 3: F1-tol vs AUROC Rank Inversion'),
+    ('../analysis/plots/fig4_oracle_gap.png', 'Figure 4: Oracle Signal Gap'),
+]
+
+for ax, (fpath, title) in zip(axes.flat, fig_files):
+    if os.path.exists(fpath):
+        img = mpimg.imread(fpath)
+        ax.imshow(img)
+        ax.axis('off')
+        ax.set_title(title, fontsize=11, pad=5)
+    else:
+        ax.text(0.5, 0.5, f'Figure not found:\n{fpath}', ha='center', va='center', transform=ax.transAxes)
+        ax.axis('off')
+
+plt.tight_layout()
+plt.savefig('../analysis/plots/fig_all_combined.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("Combined figure saved.")
+```

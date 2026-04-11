@@ -1,0 +1,23 @@
+{
+  "base_lr": {
+    "auroc": 0.6160367628271044,
+    "auprc": 0.10050797374600481,
+    "brier": 0.07102501459362089,
+    "mean_pred": 0.08791144268050653
+  },
+  "platt_lr": {
+    "auroc": 0.6160367628271044,
+    "auprc": 0.10050797374600481,
+    "brier": 0.07273293095336535,
+    "mean_pred": 0.11397016985514938
+  },
+  "isotonic_lr": {
+    "auroc": 0.6116417436843428,
+    "auprc": 0.09868518089276983,
+    "brier": 0.0723109512458559,
+    "mean_pred": 0.11323495641389397
+  },
+  "calibration_improves_auroc": false,
+  "calibration_improves_auprc": false,
+  "actual_ap_rate": 0.07704851031303406
+}
