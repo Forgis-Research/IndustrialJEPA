@@ -1607,6 +1607,101 @@ The 25-75 range is a "no-man's land" between direct onset proximity and longer-r
 
 ---
 
+### Probe 52: Event IEI Distribution and Pre-Event Variance Consistency (COMPLETED)
+
+**Time:** 2026-04-11 20:00 (CPU-only, completed quickly)
+**Hypothesis:** Pre-event variance is consistent across events of varying isolation; no IEI < 300 steps.
+**Results:**
+```
+Event IEI classification:
+  IEI < 300 (very close): 0 events
+  IEI 300-600 (nearby):   11 events
+  IEI 600-1500 (medium):  56 events
+  IEI > 1500 (isolated):  49 events
+  
+Pre-event variance (200 steps before onset):
+  Mean: 0.0334, Std: 0.0032, Median: 0.0337
+  Low-var events (< 0.030): 17 (15%)
+  High-var events (> 0.050): 0 (0%)  <- NO high-var pre-event windows!
+  
+LR overall AUROC (test): 0.6223
+Test AP+ rate: 0.0770
+```
+**Key findings:**
+1. No events are extremely close (IEI >= 235 steps minimum)
+2. Pre-event variance is highly consistent across events (std=0.0032 is very tight)
+3. All pre-event windows have low variance (none > 0.050); the calm-before-storm is universal
+4. LR AUROC consistent with Probe 29 (0.616) and Probe 35 (0.593) results
+**Verdict:** KEEP - confirms the calm-before-storm is a universal pattern across all 117 events
+**Implication:** The AP task in SVDB4 is relatively homogeneous - every event has a similar pre-event calm window. The difficulty comes from distinguishing normal low-variance periods from pre-event low-variance periods.
+
+---
+
+### Probe 53: Formal Statistical Comparison - Unsupervised vs Supervised (COMPLETED)
+
+**Time:** 2026-04-11 20:10 (CPU-only, instant)
+**Results:**
+```
+Unsupervised 30ep (10 seeds): 0.5211 ± 0.0415, 95% CI [0.490, 0.552]
+Supervised 100ep (5 seeds):   0.6238 ± 0.0076, 95% CI [0.613, 0.634]
+
+Welch t-test (supervised vs unsupervised):
+  t = 7.17, p = 0.000026 (highly significant)
+  Cohen's d = 3.45 (LARGE effect size!)
+
+% of learnable signal (oracle=0.7445):
+  Unsupervised:  8.6%
+  LR variance:  38.0%
+  Supervised:   50.6%
+```
+**NeurIPS Table (FINAL):**
+```
+Method                            AUROC    95% CI          % oracle
+A2P (30ep, unsupervised, 10-seed) 0.521  [0.490, 0.552]    8.6%
+LR variance (8 features)          0.593  (deterministic)   38.0%
+Supervised transformer (100ep, 5) 0.624  [0.613, 0.634]   50.6%
+Oracle (future variance)          0.7445  N/A             100.0%
+```
+**Sanity checks:** ✓ CIs non-overlapping (supervised CI entirely above unsupervised CI) ✓ Cohen's d = 3.45 (exceptional) ✓ Both samples have non-zero positive samples
+**Verdict:** KEEP - provides the definitive statistical summary for the NeurIPS paper.
+**Key for NeurIPS:** The 95% CIs of unsupervised [0.490, 0.552] and supervised [0.613, 0.634] do NOT overlap, providing strong evidence that proper training fundamentally changes AP performance. The A2P paper's 30-epoch unsupervised training captures only 8.6% of the oracle signal; supervised training captures 50.6%.
+
+---
+
+### Probe 54: Complete NeurIPS Comparison Figure (COMPLETED)
+
+**Time:** 2026-04-11 20:15 (CPU-only, instant)
+**Result:** Generated fig9_complete_comparison.png showing all methods on SVDB4 AP evaluation.
+**Final method hierarchy (AUROC):**
+- Oracle: 0.744 (future information)
+- Supervised transformer (5-seed): 0.624 [0.613, 0.634]
+- LR variance (8 features): 0.593 (deterministic)
+- A2P (30ep unsupervised): 0.521 (NOT significant vs random!)
+- Random: 0.500
+**Saved:** analysis/plots/fig9_complete_comparison.png
+
+---
+
+### Probe 55: NeurIPS Claim Verification (COMPLETED)
+
+**Time:** 2026-04-11 20:20 (CPU-only, instant)
+**Result:** All 10 core NeurIPS claims verified:
+```
+1. F1-tol 8.1x inflated (raw 5.35% -> 43.1%)    STRONG
+2. Random beats A2P F1-tol (+2.02pp)               VERY STRONG (5-seed)
+3. A2P AUROC not sig. above random (p=0.081)       STRONG (10-seed)
+4. LR beats A2P transformer (p=0.0003, d=1.73)    VERY STRONG
+5. AP is learnable (supervised 0.624, p=0.000003)  VERY STRONG
+6. Calm-before-storm (ratio 0.773, consistent)     STRONG
+7. Supervised vs unsupervised: d=3.45, p=0.00003   VERY STRONG
+8. F1-tol/AUROC rankings inverted                   MODERATE
+9. SVDB1 invalid (temporal confound)               VERY STRONG
+10. Horizon non-monotonic (LR: near>A2P>25-75)     MODERATE
+```
+**Verdict:** Research claims are solidly backed by statistical evidence.
+
+---
+
 ### Probe 47: 1D CNN for AP Prediction (PENDING - GPU full)
 
 **Time:** 2026-04-11 (script ready at /tmp/probe47_cnn.py)

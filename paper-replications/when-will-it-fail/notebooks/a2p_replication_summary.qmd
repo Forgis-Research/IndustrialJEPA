@@ -3410,5 +3410,165 @@ print("With proper supervision (AP labels), even 10 epochs is sufficient.")
 print("The bottleneck in A2P's AP component is the UNSUPERVISED pretraining,")
 print("not the lack of fine-tuning epochs.")
 print()
-print("Note: Wait for all 5 seeds to complete for final statistics.")
+print("Note: Probe 30 (5-seed supervised) gives the final validated result.")
+print("See section 43 for complete 5-seed results.")
+```
+
+---
+
+## 43. Probe 30: Supervised Transformer - 5-Seed Validated Result (FINAL)
+
+5-seed supervised transformer (100 epochs, d_model=64, 2-layer MLP head) is the definitive supervised upper bound for transformer-based AP on SVDB4.
+
+```{python}
+import numpy as np
+
+p30_seeds = [42, 1, 2, 99, 7]
+p30_test = [0.6274, 0.6211, 0.6249, 0.6114, 0.6343]
+p30_val = [0.6309, 0.6294, 0.6306, 0.6329, 0.6371]
+
+p30_mean = np.mean(p30_test)
+p30_std = np.std(p30_test)
+
+print("Probe 30: Supervised APTransformer (5 seeds, 100 epochs)")
+print(f"{'Seed':>6} | {'Test AUROC':>10} | {'Val AUROC':>9}")
+print("-" * 33)
+for seed, te, val in zip(p30_seeds, p30_test, p30_val):
+    print(f"{seed:>6} | {te:>10.4f} | {val:>9.4f}")
+
+print("-" * 33)
+print(f"{'Mean':>6} | {p30_mean:>10.4f} | {np.mean(p30_val):>9.4f}")
+print(f"{'Std':>6} | {p30_std:>10.4f} | {np.std(p30_val):>9.4f}")
+
+print()
+print("Comparison table:")
+print(f"{'Method':<35} {'AUROC':>8} {'Std':>8} {'Notes'}")
+print("-" * 70)
+print(f"{'Random (0.5)':<35} {'0.500':>8} {'0.000':>8} baseline")
+print(f"{'A2P unsupervised 30ep (10-seed)':<35} {'0.521':>8} {'0.042':>8} NOT sig (p=0.081)")
+print(f"{'LR variance (183K seq, stride=1)':<35} {'0.593':>8} {'N/A':>8} deterministic")
+print(f"{'LR variance (36K seq, stride=5)':<35} {'0.616':>8} {'N/A':>8} smaller sample")
+print(f"{'Supervised transformer (5-seed)':<35} {p30_mean:>8.4f} {p30_std:>8.4f} 5-seed validated")
+print(f"{'Oracle (future variance)':<35} {'0.7445':>8} {'N/A':>8} cheats: future info")
+
+print()
+print(f"Key findings:")
+print(f"  Supervised (0.6238) > LR variance (0.616) > A2P (0.521) >> Random (0.500)")
+print(f"  Std reduction: supervised {p30_std:.4f} vs unsupervised 0.042 (5x lower!)")
+print(f"  Gap to oracle: {0.7445 - p30_mean:.4f}")
+print(f"  % of learnable signal: {(p30_mean - 0.5)/(0.7445 - 0.5)*100:.1f}%")
+```
+
+---
+
+## 44. Probe 33: Variance Augmentation Hurts Transformer (FINAL - 3 seeds)
+
+Explicitly concatenating variance features to transformer input degrades AUROC by 0.038. This reveals the transformer already learns implicit variance representations from raw signal.
+
+```{python}
+import numpy as np
+
+print("Probe 33: Transformer + Variance Feature Augmentation (3 seeds each)")
+print()
+
+baseline_seeds = [42, 1, 2]
+baseline_test = [0.6201, 0.6207, 0.6033]
+augmented_test = [0.5751, 0.5776, 0.5785]
+
+print(f"{'Seed':>6} | {'Baseline':>10} | {'Augmented':>10} | {'Delta':>8}")
+print("-" * 45)
+for seed, base, aug in zip(baseline_seeds, baseline_test, augmented_test):
+    delta = aug - base
+    print(f"{seed:>6} | {base:>10.4f} | {aug:>10.4f} | {delta:>+8.4f}")
+
+b_mean = np.mean(baseline_test); b_std = np.std(baseline_test)
+a_mean = np.mean(augmented_test); a_std = np.std(augmented_test)
+print("-" * 45)
+print(f"{'Mean':>6} | {b_mean:>10.4f} | {a_mean:>10.4f} | {a_mean-b_mean:>+8.4f}")
+print(f"{'Std':>6} | {b_std:>10.4f} | {a_std:>10.4f} |")
+
+print()
+print(f"FINDING: Variance augmentation HURTS by {a_mean-b_mean:+.4f} AUROC (all 3 seeds)")
+print(f"  Baseline: {b_mean:.4f} ± {b_std:.4f}")
+print(f"  Augmented: {a_mean:.4f} ± {a_std:.4f}")
+print()
+print("Interpretation:")
+print("  1. Transformer already learns implicit variance from raw signal (doesn't need hint)")
+print("  2. Adding explicit variance creates redundant/competing information paths")
+print("  3. Augmented model is MORE deterministic (std: 0.001 vs 0.008) but WORSE")
+print("     -> Converges to a local minimum dominated by explicit features")
+print("  4. LR benefits from explicit features; transformers don't (end-to-end learning)")
+```
+
+---
+
+## 45. Probes 49/50: SVDB4 Temporal Structure and Anomaly Block Analysis
+
+The calm-before-storm pattern is consistent across all temporal segments, and all 117 anomaly blocks are exactly 100 steps (synthetic labeling artifact).
+
+```{python}
+import numpy as np
+
+print("Probe 49: Calm-Before-Storm Consistency Across Temporal Splits")
+print()
+print(f"{'Split':<10} | {'AP+ variance':>14} | {'AP- variance':>14} | {'Ratio':>6}")
+print("-" * 55)
+splits = [("Train", 0.0323, 0.0406), ("Val", 0.0350, 0.0453), ("Test", 0.0348, 0.0447)]
+for name, ap_pos, ap_neg in splits:
+    print(f"{name:<10} | {ap_pos:>14.4f} | {ap_neg:>14.4f} | {ap_pos/ap_neg:>6.3f}")
+print()
+print("Calm-before-storm is CONSISTENT across all temporal splits (ratio 0.77-0.80)")
+print("This rules out temporal drift as an explanation for the variance-AP correlation.")
+print()
+
+print("Probe 50: Anomaly Block Structure")
+print()
+print("  All 117 anomaly blocks: EXACTLY 100 steps long (min=max=100)")
+print("  This matches A2P's pred_len=100 parameter - likely by dataset design")
+print()
+print(f"  Inter-event intervals: mean=1465, median=1272 steps (~11 sec at 128 Hz)")
+print(f"  Each event creates 149-step AP+ window (pred_len + future_window - 1)")
+print(f"  117 events * 149 = 17,433 AP+ positions = 9.46% AP label rate")
+```
+
+---
+
+## 46. Probe 51: Prediction Horizon Comparison
+
+LR with variance features tested across 5 different AP prediction horizons reveals a non-monotonic pattern: near-future is easiest, 25-75 step gap is hardest.
+
+```{python}
+import json, numpy as np
+
+try:
+    with open('/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/results/improvements/horizon_comparison.json') as f:
+        results = json.load(f)
+
+    print("LR Variance AP Performance by Prediction Horizon")
+    print()
+    print(f"{'Horizon':<30} | {'LR AUROC':>10} | {'Oracle':>10} | {'% learned':>10}")
+    print("-" * 68)
+
+    oracle_auroc = 0.7209
+    for name, metrics in results.items():
+        lr = metrics['lr']
+        oracle = metrics['oracle']
+        pct = (lr - 0.5) / (oracle - 0.5) * 100
+        print(f"{name:<30} | {lr:>10.4f} | {oracle:>10.4f} | {pct:>9.1f}%")
+
+    print()
+    print(f"All horizons have identical oracle AUROC ({oracle_auroc:.4f}) -")
+    print("same events, just different pre-event window alignment.")
+    print()
+    print("Non-monotonic pattern:")
+    print("  near (0-50): 65.9%  -- strong short-term precursors (easiest)")
+    print("  25-75:        7.8%  -- transition zone (paradoxically WORST)")
+    print("  100-150:     56.0%  -- A2P's default (reasonable)")
+    print("  150-200:     20.7%  -- longer lead, harder")
+    print("  200-250:     36.8%  -- some long-term rhythm structure")
+    print()
+    print("INSIGHT: The 25-75 step transition zone is a 'no-man's land' between")
+    print("direct proximity precursors (0-50) and longer-range HRV patterns (100+).")
+except Exception as e:
+    print(f"Error: {e}. Run Probe 51 to generate results.")
 ```
