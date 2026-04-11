@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: V10 complete: Trajectory JEPA h_future max |Spearman|=0.496; HC Top-3 beats All-18 3x; DCSSL corrected to 0.0822
+description: V11 complete: JEPA E2E=13.80 beats AE-LSTM SSL (13.99); cross-fault transfer (FD001->FD003 @ 10%=28.79 beats LSTM 31.22); FD002 cross-subset: helps frozen at high labels, hurts at low labels
 type: project
 ---
 
@@ -421,20 +421,35 @@ Width (d_model) > Depth (n_layers) at same parameter budget.
 5. Best probe RMSE occurs at epoch 10-50, not epoch 200 (JEPA objective decouples from RUL)
    - Implication: use probe-based early stopping for pretraining
 
-### Part G Preliminary Results (still running)
+### Part G Complete Results
 
 FD002 in-domain (V2 architecture, per-condition normalization):
-- Frozen @ 100%: 26.33+/-0.44 (vs STAR supervised 13.47)
-- E2E @ 100%: **24.45+/-0.47**
-- Frozen @ 50%: 26.44+/-1.10
-- Larger gap vs FD001 is expected: 6 operating conditions add confound
+- Frozen: 100%=26.33+/-0.44, 50%=26.44+/-1.10, 20%=27.35+/-0.48, 10%=30.03+/-1.34
+- E2E: 100%=24.45+/-0.47, 50%=24.78+/-0.33, 20%=27.13+/-0.85, 10%=27.13+/-1.22
+- STAR supervised ref = 13.47 (gap = 10.98, larger than FD001 due to 6 conditions)
 
 PHM Score (V2 E2E @ 100%, 5 seeds):
 - RMSE = 14.78+/-0.57 (independent run; primary is 13.80)
 - PHM = 395.7+/-62.1 (STAR paper ref: 169)
 - JEPA makes mostly early errors (overestimates RUL slightly)
 
-Cross-subset transfer (FD002 pretrain -> FD001 finetune): pending
+Cross-subset transfer (FD002 pretrain -> FD001 finetune, complete):
+- Frozen: 100%=17.50+/-0.83, 50%=17.43+/-0.96, 20%=19.83+/-0.62, 10%=24.45+/-2.39, 5%=21.23+/-0.99
+- E2E: 100%=17.50+/-0.33, 50%=18.08+/-1.70, 20%=17.33+/-0.59, 10%=23.41+/-2.26, 5%=22.16+/-1.85
+- KEY FINDING: FD002 pretraining helps frozen at 100% and 50% labels but HURTS at 10%.
+  E2E fine-tuning always worse than FD001 in-domain (13.80 vs 17.50 at 100%).
+  Root cause: FD002 encoder learned 6-condition representations that resist adaptation to FD001.
+
+Cross-fault transfer (FD001 pretrain -> FD003 fine-tune, frozen probe, complete):
+- 100%=24.79+/-0.56, 50%=25.91+/-0.43, 20%=27.82+/-1.45, 10%=28.79+/-0.36, 5%=28.28+/-0.24
+- Transfer cost: consistent ~7-9 RMSE vs in-domain
+- KEY: cross-fault @ 10% (28.79) still beats supervised LSTM @ 10% (31.22)
+
+Cross-both transfer (FD002 pretrain -> FD003 fine-tune, frozen probe):
+- 100%=27.24+/-0.42, 20%=35.78+/-2.76, 10%=40.86+/-3.72
+- Transfers very poorly at low labels (different conditions AND fault mode)
+
+Files: part_g_results.json, exp9_zero_shot_results.json, cross_fault_transfer.png, cross_subset_results.png
 
 ### Files
 - `experiments/v11/` - all code, checkpoints, results

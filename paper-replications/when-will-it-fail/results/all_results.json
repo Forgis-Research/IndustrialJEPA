@@ -8,36 +8,120 @@
   },
   "paper_results": {
     "MBA": {
-      "100": {"f1_mean": 67.55, "f1_std": 5.62, "source": "Table 1"},
-      "200": {"f1_mean": 74.63, "f1_std": 5.92, "source": "Table 1"},
-      "400": {"f1_mean": 69.35, "f1_std": 7.15, "source": "Table 1"}
+      "100": {
+        "f1_mean": 67.55,
+        "f1_std": 5.62,
+        "source": "Table 1"
+      },
+      "200": {
+        "f1_mean": 74.63,
+        "f1_std": 5.92,
+        "source": "Table 1"
+      },
+      "400": {
+        "f1_mean": 69.35,
+        "f1_std": 7.15,
+        "source": "Table 1"
+      }
     },
     "Exathlon": {
-      "100": {"f1_mean": 18.64, "f1_std": 0.16, "source": "Table 1"},
-      "200": {"f1_mean": 28.71, "f1_std": 0.54, "source": "Table 1"},
-      "400": {"f1_mean": 43.57, "f1_std": 1.10, "source": "Table 1"}
+      "100": {
+        "f1_mean": 18.64,
+        "f1_std": 0.16,
+        "source": "Table 1"
+      },
+      "200": {
+        "f1_mean": 28.71,
+        "f1_std": 0.54,
+        "source": "Table 1"
+      },
+      "400": {
+        "f1_mean": 43.57,
+        "f1_std": 1.1,
+        "source": "Table 1"
+      }
     },
     "SMD": {
-      "100": {"f1_mean": 36.29, "f1_std": 0.18, "source": "Table 1"},
-      "200": {"f1_mean": 42.36, "f1_std": 0.80, "source": "Table 1"},
-      "400": {"f1_mean": 48.10, "f1_std": 2.55, "source": "Table 1"}
+      "100": {
+        "f1_mean": 36.29,
+        "f1_std": 0.18,
+        "source": "Table 1"
+      },
+      "200": {
+        "f1_mean": 42.36,
+        "f1_std": 0.8,
+        "source": "Table 1"
+      },
+      "400": {
+        "f1_mean": 48.1,
+        "f1_std": 2.55,
+        "source": "Table 1"
+      }
     },
     "WADI": {
-      "100": {"f1_mean": 64.91, "f1_std": 0.47, "source": "Table 1"},
-      "200": {"f1_mean": 66.65, "f1_std": 1.93, "source": "Table 1"},
-      "400": {"f1_mean": 74.57, "f1_std": 6.37, "source": "Table 1"}
+      "100": {
+        "f1_mean": 64.91,
+        "f1_std": 0.47,
+        "source": "Table 1"
+      },
+      "200": {
+        "f1_mean": 66.65,
+        "f1_std": 1.93,
+        "source": "Table 1"
+      },
+      "400": {
+        "f1_mean": 74.57,
+        "f1_std": 6.37,
+        "source": "Table 1"
+      }
     }
   },
   "paper_ablations": {
     "table2_aaf_sap": {
-      "no_aaf_no_sap": {"MBA": 36.26, "Exathlon": 17.65, "SMD": 34.74, "WADI": 58.66, "Avg": 36.82},
-      "aaf_only": {"MBA": 50.57, "Exathlon": 17.76, "SMD": 34.87, "WADI": 62.31, "Avg": 38.89},
-      "sap_only": {"MBA": 55.95, "Exathlon": 18.29, "SMD": 36.05, "WADI": 59.36, "Avg": 42.41},
-      "full_a2p": {"MBA": 67.55, "Exathlon": 18.64, "SMD": 36.29, "WADI": 64.91, "Avg": 46.84}
+      "no_aaf_no_sap": {
+        "MBA": 36.26,
+        "Exathlon": 17.65,
+        "SMD": 34.74,
+        "WADI": 58.66,
+        "Avg": 36.82
+      },
+      "aaf_only": {
+        "MBA": 50.57,
+        "Exathlon": 17.76,
+        "SMD": 34.87,
+        "WADI": 62.31,
+        "Avg": 38.89
+      },
+      "sap_only": {
+        "MBA": 55.95,
+        "Exathlon": 18.29,
+        "SMD": 36.05,
+        "WADI": 59.36,
+        "Avg": 42.41
+      },
+      "full_a2p": {
+        "MBA": 67.55,
+        "Exathlon": 18.64,
+        "SMD": 36.29,
+        "WADI": 64.91,
+        "Avg": 46.84
+      }
     },
     "table4_shared_backbone": {
-      "not_shared": {"MBA": 51.53, "Exathlon": 18.00, "SMD": 35.60, "WADI": 60.70, "Avg": 41.45},
-      "shared": {"MBA": 67.55, "Exathlon": 18.64, "SMD": 36.29, "WADI": 64.91, "Avg": 46.84}
+      "not_shared": {
+        "MBA": 51.53,
+        "Exathlon": 18.0,
+        "SMD": 35.6,
+        "WADI": 60.7,
+        "Avg": 41.45
+      },
+      "shared": {
+        "MBA": 67.55,
+        "Exathlon": 18.64,
+        "SMD": 36.29,
+        "WADI": 64.91,
+        "Avg": 46.84
+      }
     }
   },
   "our_results": [
@@ -46,7 +130,11 @@
       "dataset": "MBA_TranAD",
       "note": "TranAD provided data - train==test leakage (7680 rows, same train/test)",
       "pred_len": 100,
-      "seeds": [20462, 20462, 20462],
+      "seeds": [
+        20462,
+        20462,
+        20462
+      ],
       "seed_note": "random_seed flag ignored by A2P code; hardcoded seed=20462 in run.py:121",
       "f1_tol_mean": 19.07,
       "f1_tol_std": 8.77,
@@ -62,7 +150,9 @@
       "dataset": "MBA_TranAD_70_30_split",
       "note": "Proper 70/30 temporal split of TranAD MBA data",
       "pred_len": 100,
-      "seeds": [42],
+      "seeds": [
+        42
+      ],
       "f1_tol": 12.66,
       "gap_vs_paper": -54.9,
       "leakage_inflation_factor": 3.41,
@@ -73,9 +163,11 @@
       "dataset": "MBA_SVDB1_record801",
       "note": "PhysioNet SVDB record 801, proper 70/30 split. 0.72% anomaly rate (grey-swan regime).",
       "pred_len": 100,
-      "seeds": [42],
+      "seeds": [
+        42
+      ],
       "f1_tol": 16.06,
-      "auroc": 0.490,
+      "auroc": 0.49,
       "auroc_note": "BELOW random 0.5 - A2P anti-discriminates on held-out data",
       "gap_vs_paper": -51.5,
       "anomaly_rate": 0.0072,
@@ -86,7 +178,10 @@
       "dataset": "MBA_SVDB1_record801",
       "note": "Seeds 1 and 2 running",
       "pred_len": 100,
-      "seeds": [1, 2],
+      "seeds": [
+        1,
+        2
+      ],
       "f1_tol": "IN_PROGRESS",
       "status": "RUNNING"
     },
@@ -95,7 +190,9 @@
       "dataset": "MBA_TranAD",
       "note": "Ablation: no shared backbone",
       "pred_len": 100,
-      "seeds": [20462],
+      "seeds": [
+        20462
+      ],
       "f1_tol": 18.58,
       "direction_correct": true,
       "paper_f1": 51.53,
@@ -106,7 +203,9 @@
       "dataset": "MBA_TranAD",
       "note": "Ablation: no AAFN cross-attention",
       "pred_len": 100,
-      "seeds": [20462],
+      "seeds": [
+        20462
+      ],
       "f1_tol": 42.55,
       "direction_correct": false,
       "direction_note": "Expected decrease (paper: 36.26), got minimal change (42.55 vs 43.1=full). Explained by train==test: AAFN has no generalization benefit in-sample.",
@@ -118,7 +217,9 @@
       "dataset": "SMD",
       "note": "Server Machine Dataset, 708K x 38 channels, 4.16% anomaly rate",
       "pred_len": 100,
-      "seeds": [42],
+      "seeds": [
+        42
+      ],
       "f1_tol": "IN_PROGRESS",
       "status": "RUNNING",
       "eta_note": "FE training on 708K samples takes ~2h per run"
@@ -188,10 +289,18 @@
       "status": "COMPLETED",
       "dataset": "MBA_svdb (single SVDB record, 0.145% anomaly rate)",
       "methods": {
-        "zscore": {"auroc": 0.675},
-        "rolling_var": {"auroc": 0.730},
-        "isoforest": {"auroc": 0.665},
-        "linear_ar": {"auroc": 0.703}
+        "zscore": {
+          "auroc": 0.675
+        },
+        "rolling_var": {
+          "auroc": 0.73
+        },
+        "isoforest": {
+          "auroc": 0.665
+        },
+        "linear_ar": {
+          "auroc": 0.703
+        }
       },
       "a2p_auroc": 0.528,
       "finding": "ALL classical baselines beat A2P AUROC. Rolling variance (0.730) nearly matches Chronos (0.745).",
@@ -200,7 +309,7 @@
     "cross_dataset_transfer": {
       "status": "COMPLETED",
       "method": "Rolling variance, MBA -> SMD via PCA",
-      "mba_indomain_auroc": 0.510,
+      "mba_indomain_auroc": 0.51,
       "smd_indomain_auroc": 0.771,
       "cross_domain_auroc": 0.746,
       "transfer_penalty_pp": 0.025,
@@ -214,6 +323,76 @@
     "chronos_mlp_head": {
       "status": "RUNNING",
       "note": "Chronos-Small + fine-tuned MLP head for improved F1-tolerance"
+    },
+    "auprc_method_comparison": {
+      "status": "COMPLETED",
+      "dataset": "MBA_svdb1 proper split",
+      "methods": {
+        "zscore": {
+          "auroc": 0.688,
+          "auprc": 0.082
+        },
+        "rolling_var": {
+          "auroc": 0.52,
+          "auprc": 0.285,
+          "f1_tol": 83.97
+        },
+        "ar1": {
+          "auroc": 0.481,
+          "auprc": 0.013
+        },
+        "chronos": {
+          "auroc": 0.745,
+          "auprc": 0.059
+        },
+        "a2p_traintest": {
+          "auroc": 0.528,
+          "auprc": 0.035
+        }
+      },
+      "random_auprc": 0.0072,
+      "finding": "Rolling variance AUPRC=0.285 (8x over A2P), F1-tol=83.97% (5x over A2P). A2P beaten on every metric.",
+      "file": "results/improvements/auprc_method_comparison.json"
+    },
+    "metric_ranking_analysis": {
+      "status": "COMPLETED",
+      "spearman_rho": 0.0,
+      "spearman_pval": 1.0,
+      "f1_tol_ranking": [
+        "A2P(43.1%)",
+        "A2P_SVDB1(16.1%)",
+        "Chronos(7.4%)",
+        "Random(1%)"
+      ],
+      "auroc_ranking": [
+        "Chronos(0.745)",
+        "A2P(0.528)",
+        "Random(0.500)",
+        "A2P_SVDB1(0.490)"
+      ],
+      "finding": "F1-tol and AUROC rankings are completely uncorrelated (Spearman rho=0.000). The benchmark cannot rank methods reliably.",
+      "file": "results/improvements/metric_ranking_analysis.json"
+    },
+    "smd_baselines": {
+      "status": "COMPLETED",
+      "dataset": "SMD (708K x 38 channels, 4.16% anomaly rate)",
+      "methods": {
+        "zscore": {
+          "auroc": 0.641,
+          "auprc": 0.114
+        },
+        "rolling_var": {
+          "auroc": 0.773,
+          "auprc": 0.154
+        },
+        "window_mse10": {
+          "auroc": 0.701,
+          "auprc": 0.129
+        }
+      },
+      "a2p_paper_f1_tol": 36.29,
+      "finding": "Rolling variance AUROC=0.773 without training. A2P AUROC not reported by paper.",
+      "file": "results/improvements/smd_baselines.json"
     }
   },
   "critical_findings": {
@@ -225,8 +404,8 @@
     },
     "auroc_near_random": {
       "auroc_traintest": 0.528,
-      "auroc_proper_split": 0.490,
-      "auroc_random_baseline": 0.500,
+      "auroc_proper_split": 0.49,
+      "auroc_random_baseline": 0.5,
       "implication": "A2P cannot discriminate anomalies in raw score space on proper held-out data."
     },
     "seed_hardcoding_bug": {

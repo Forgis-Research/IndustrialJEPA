@@ -623,3 +623,188 @@ FD003 Ep  20 | loss=0.0320 | probe=17.90 (best=17.90)
   FD001->FD003 @ 100% seed=2: 25.25
   FD002 e2e @ 20% seed=3: 26.09
   FD001->FD003 @ 100% seed=3: 24.27
+  FD001->FD003 @ 100% seed=4: 24.94
+  FD001->FD003 @ 100%: 24.79 +/- 0.56
+  FD002 e2e @ 20% seed=4: 26.11
+  FD002 e2e @ 20%: 27.13 +/- 0.85
+  FD002 frozen @ 10% seed=0: 28.40
+  FD001->FD003 @ 50% seed=0: 26.43
+  FD002 frozen @ 10% seed=1: 29.52
+  FD002 frozen @ 10% seed=2: 29.71
+  FD001->FD003 @ 50% seed=1: 25.44
+  FD002 frozen @ 10% seed=3: 30.05
+FD003 Ep  30 | loss=0.0286 | probe=18.72 (best=17.90)
+  FD002 frozen @ 10% seed=4: 32.46
+  FD002 frozen @ 10%: 30.03 +/- 1.34
+  FD001->FD003 @ 50% seed=2: 26.02
+  FD002 e2e @ 10% seed=0: 25.54
+  FD001->FD003 @ 50% seed=3: 25.37
+  FD002 e2e @ 10% seed=1: 28.68
+  FD001->FD003 @ 50% seed=4: 26.26
+  FD001->FD003 @ 50%: 25.91 +/- 0.43
+  FD002 e2e @ 10% seed=2: 26.64
+  FD001->FD003 @ 20% seed=0: 26.14
+  FD001->FD003 @ 20% seed=1: 28.18
+  FD002 e2e @ 10% seed=3: 26.35
+  FD001->FD003 @ 20% seed=2: 26.11
+FD003 Ep  40 | loss=0.0241 | probe=18.02 (best=17.90)
+  FD001->FD003 @ 20% seed=3: 29.13
+  FD002 e2e @ 10% seed=4: 28.42
+  FD002 e2e @ 10%: 27.13 +/- 1.22
+FD002 in-domain done in 32.0 min
+
+--- G.3: Cross-subset Transfer (FD002->FD001) ---
+  FD001->FD003 @ 20% seed=4: 29.54
+  FD001->FD003 @ 20%: 27.82 +/- 1.45
+  FD001->FD003 @ 10% seed=0: 28.91
+  FD001->FD003 @ 10% seed=1: 28.24
+  FD001->FD003 @ 10% seed=2: 28.51
+  FD001->FD003 @ 10% seed=3: 29.11
+  Cross-FD002->FD001 frozen @ 100% seed=0: 18.68
+  FD001->FD003 @ 10% seed=4: 29.19
+  FD001->FD003 @ 10%: 28.79 +/- 0.36
+  FD001->FD003 @ 5% seed=0: 28.35
+  FD001->FD003 @ 5% seed=1: 28.43
+  FD001->FD003 @ 5% seed=2: 28.17
+  FD001->FD003 @ 5% seed=3: 27.89
+  FD001->FD003 @ 5% seed=4: 28.58
+  FD001->FD003 @ 5%: 28.28 +/- 0.24
+
+Comparison: FD001 in-domain vs FD001->FD003 cross-fault (frozen probe)
+Budget | FD001 in-domain | FD001->FD003 | Transfer benefit
+  100%: FD001=17.81, FD003=24.79, benefit=-6.98
+  50%: FD001=18.71, FD003=25.91, benefit=-7.20
+  20%: FD001=19.83, FD003=27.82, benefit=-7.99
+  10%: FD001=19.93, FD003=28.79, benefit=-8.86
+  5%: FD001=21.53, FD003=28.28, benefit=-6.75
+
+--- Exp 9.2: FD002->FD003 cross-both transfer ---
+FD003 Ep  50 | loss=0.0256 | probe=16.91 (best=16.91)
+  Cross-FD002->FD001 frozen @ 100% seed=1: 16.60
+  FD002->FD003 @ 100% seed=0: 27.14
+  Cross-FD002->FD001 frozen @ 100% seed=2: 17.41
+  FD002->FD003 @ 100% seed=1: 27.39
+  Cross-FD002->FD001 frozen @ 100% seed=3: 18.17
+FD003 Ep  60 | loss=0.0229 | probe=16.65 (best=16.65)
+  Cross-FD002->FD001 frozen @ 100% seed=4: 16.63
+  Cross-FD002->FD001 frozen @ 100%: 17.50 +/- 0.83
+  FD002->FD003 @ 100% seed=2: 27.05
+  FD002->FD003 @ 100% seed=3: 27.94
+  Cross-FD002->FD001 e2e @ 100% seed=0: 17.26
+FD003 Ep  70 | loss=0.0233 | probe=16.77 (best=16.65)
+  FD002->FD003 @ 100% seed=4: 26.67
+  FD002->FD003 @ 100%: 27.24 +/- 0.42
+  FD002->FD003 @ 20% seed=0: 36.39
+  FD002->FD003 @ 20% seed=1: 33.39
+  Cross-FD002->FD001 e2e @ 100% seed=1: 17.13
+  FD002->FD003 @ 20% seed=2: 40.10
+  FD002->FD003 @ 20% seed=3: 36.77
+  FD002->FD003 @ 20% seed=4: 32.26
+  FD002->FD003 @ 20%: 35.78 +/- 2.76
+  FD002->FD003 @ 10% seed=0: 38.31
+  FD002->FD003 @ 10% seed=1: 36.42
+  Cross-FD002->FD001 e2e @ 100% seed=2: 18.08
+  FD002->FD003 @ 10% seed=2: 39.44
+  FD002->FD003 @ 10% seed=3: 46.73
+  FD002->FD003 @ 10% seed=4: 43.38
+  FD002->FD003 @ 10%: 40.86 +/- 3.72
+
+--- FD001 in-domain reference (frozen, seeds 0-4) ---
+FD003 Ep  80 | loss=0.0233 | probe=16.29 (best=16.29)
+  Cross-FD002->FD001 e2e @ 100% seed=3: 17.61
+  Cross-FD002->FD001 e2e @ 100% seed=4: 17.40
+  Cross-FD002->FD001 e2e @ 100%: 17.50 +/- 0.33
+  Cross-FD002->FD001 frozen @ 50% seed=0: 18.66
+FD003 Ep  90 | loss=0.0196 | probe=16.53 (best=16.29)
+  FD001 in-domain @ 100%: 15.84 +/- 0.48
+  Cross-FD002->FD001 frozen @ 50% seed=1: 16.77
+  Cross-FD002->FD001 frozen @ 50% seed=2: 16.87
+  Cross-FD002->FD001 frozen @ 50% seed=3: 18.52
+  FD001 in-domain @ 20%: 18.38 +/- 1.30
+  FD001 in-domain @ 10%: 20.10 +/- 0.72
+
+## Exp 9: Zero-shot/Few-shot Cross-subset Transfer Summary
+| Source Pretrain | Fine-tune Target | Budget | Frozen Probe RMSE |
+|:---------------:|:---------------:|:------:|:-----------------:|
+| FD001 | FD001 (in-domain) | 100% | 17.81 |
+| FD001 | FD001 (in-domain) | 50% | 18.71 |
+| FD001 | FD001 (in-domain) | 20% | 19.83 |
+| FD001 | FD001 (in-domain) | 10% | 19.93 |
+| FD001 | FD001 (in-domain) | 5% | 21.53 |
+| FD001 | FD003 (cross-fault) | 100% | 24.79 |
+| FD001 | FD003 (cross-fault) | 50% | 25.91 |
+| FD001 | FD003 (cross-fault) | 20% | 27.82 |
+| FD001 | FD003 (cross-fault) | 10% | 28.79 |
+| FD001 | FD003 (cross-fault) | 5% | 28.28 |
+| FD002 | FD003 (cross-both) | 100% | 27.24 |
+| FD002 | FD003 (cross-both) | 20% | 35.78 |
+| FD002 | FD003 (cross-both) | 10% | 40.86 |
+
+STAR supervised SOTA: FD001=10.61, FD003=10.71
+Saved cross_fault_transfer.png
+  Cross-FD002->FD001 frozen @ 50% seed=4: 16.34
+  Cross-FD002->FD001 frozen @ 50%: 17.43 +/- 0.96
+FD003 Ep 100 | loss=0.0209 | probe=15.80 (best=15.80)
+  Cross-FD002->FD001 e2e @ 50% seed=0: 19.56
+  Cross-FD002->FD001 e2e @ 50% seed=1: 17.43
+  Cross-FD002->FD001 e2e @ 50% seed=2: 20.58
+  Cross-FD002->FD001 e2e @ 50% seed=3: 16.56
+FD003 Ep 110 | loss=0.0190 | probe=15.64 (best=15.64)
+  Cross-FD002->FD001 e2e @ 50% seed=4: 16.26
+  Cross-FD002->FD001 e2e @ 50%: 18.08 +/- 1.70
+  Cross-FD002->FD001 frozen @ 20% seed=0: 20.71
+  Cross-FD002->FD001 frozen @ 20% seed=1: 19.66
+  Cross-FD002->FD001 frozen @ 20% seed=2: 19.09
+  Cross-FD002->FD001 frozen @ 20% seed=3: 20.37
+  Cross-FD002->FD001 frozen @ 20% seed=4: 19.33
+  Cross-FD002->FD001 frozen @ 20%: 19.83 +/- 0.62
+  Cross-FD002->FD001 e2e @ 20% seed=0: 17.57
+  Cross-FD002->FD001 e2e @ 20% seed=1: 17.58
+  Cross-FD002->FD001 e2e @ 20% seed=2: 16.88
+FD003 Ep 120 | loss=0.0194 | probe=15.85 (best=15.64)
+  Cross-FD002->FD001 e2e @ 20% seed=3: 16.49
+  Cross-FD002->FD001 e2e @ 20% seed=4: 18.16
+  Cross-FD002->FD001 e2e @ 20%: 17.33 +/- 0.59
+  Cross-FD002->FD001 frozen @ 10% seed=0: 23.63
+  Cross-FD002->FD001 frozen @ 10% seed=1: 28.99
+  Cross-FD002->FD001 frozen @ 10% seed=2: 22.16
+  Cross-FD002->FD001 frozen @ 10% seed=3: 24.42
+  Cross-FD002->FD001 frozen @ 10% seed=4: 23.06
+  Cross-FD002->FD001 frozen @ 10%: 24.45 +/- 2.39
+  Cross-FD002->FD001 e2e @ 10% seed=0: 25.54
+  Cross-FD002->FD001 e2e @ 10% seed=1: 26.54
+  Cross-FD002->FD001 e2e @ 10% seed=2: 22.76
+  Cross-FD002->FD001 e2e @ 10% seed=3: 20.79
+  Cross-FD002->FD001 e2e @ 10% seed=4: 21.44
+  Cross-FD002->FD001 e2e @ 10%: 23.41 +/- 2.26
+  Cross-FD002->FD001 frozen @ 5% seed=0: 22.91
+FD003 Ep 130 | loss=0.0188 | probe=16.12 (best=15.64)
+  Cross-FD002->FD001 frozen @ 5% seed=1: 20.23
+  Cross-FD002->FD001 frozen @ 5% seed=2: 21.53
+  Cross-FD002->FD001 frozen @ 5% seed=3: 21.23
+  Cross-FD002->FD001 frozen @ 5% seed=4: 20.24
+  Cross-FD002->FD001 frozen @ 5%: 21.23 +/- 0.99
+  Cross-FD002->FD001 e2e @ 5% seed=0: 24.98
+  Cross-FD002->FD001 e2e @ 5% seed=1: 22.57
+  Cross-FD002->FD001 e2e @ 5% seed=2: 21.44
+  Cross-FD002->FD001 e2e @ 5% seed=3: 19.29
+  Cross-FD002->FD001 e2e @ 5% seed=4: 22.53
+  Cross-FD002->FD001 e2e @ 5%: 22.16 +/- 1.85
+Cross-subset transfer done in 15.6 min
+
+--- Part G Summary ---
+FD002 in-domain E2E @ 100%: 24.45 +/- 0.47
+FD002 in-domain STAR ref: 13.47
+Cross-subset (FD002->FD001) E2E @ 100%: 17.50 +/- 0.33
+Cross-subset (FD002->FD001) E2E @ 10%: 23.41 +/- 2.26
+FD001 in-domain V2 E2E @ 10%: 18.66 +/- 0.84
+Transfer benefit @ 10%: -4.75 RMSE improvement (negative=worse)
+
+============================================================
+EXP 4: Extended Fine-tuning (200 epochs) - V2 @ 100%
+Hypothesis: 100 epochs is not enough for E2E convergence with full labels
+============================================================
+FD003 Ep 140 | loss=0.0185 | probe=16.57 (best=15.64)
+  Ext 200ep seed=0: frozen=19.74, e2e=14.99
+FD003 Ep 150 | loss=0.0180 | probe=15.88 (best=15.64)
+FD003 Ep 160 | loss=0.0181 | probe=16.16 (best=15.64)

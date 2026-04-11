@@ -404,7 +404,7 @@ We introduced a self-supervised framework for mechanical prognostics in the grey
 
 Our mechanistic analysis reveals that different self-supervised objectives learn fundamentally different representations, explaining their complementary strengths: JEPA excels within-dataset while contrastive learning enables cross-dataset transfer ($+38\%$ vs.\ time-only, $p < 0.001$). This understanding motivates the hybrid architecture and provides guidance for practitioners choosing between pretraining strategies.
 
-Several directions remain open. Extending the framework to multivariate sensor inputs with physics-aware masking could exploit cross-modal dependencies. Validation on turbofan engines (C-MAPSS) and other mechanical domains would strengthen generalization claims. Finally, synthetic data augmentation using physics-informed degradation models could address the fundamental scarcity of rare failure trajectories that motivates this work.
+Several directions remain open. Extending the framework to multivariate sensor inputs with physics-aware masking could exploit cross-modal dependencies. A trajectory variant of JEPA applied to C-MAPSS turbofan data (\cref{app:turbofan}) shows the framework generalizes to 14-channel sensor streams, outperforming both supervised LSTM and the only prior SSL baseline (AE-LSTM) at all label budgets; further validation on additional mechanical domains would strengthen these claims. Finally, synthetic data augmentation using physics-informed degradation models could address the fundamental scarcity of rare failure trajectories that motivates this work.
 
 % ============================================================
 % REFERENCES
@@ -563,5 +563,30 @@ SSL (ours) & \textbf{Traj JEPA E2E} & \textbf{13.80}$_{\pm0.8}$ & \textbf{14.93}
 \end{enumerate}
 
 These results confirm that the JEPA framework generalizes beyond vibration signals: the trajectory prediction objective learns degradation-aware representations from unlabeled multivariate sensor streams, with strong label efficiency and stability advantages over supervised baselines.
+
+\paragraph{Cross-fault transfer (FD001 $\to$ FD003).}
+To test whether representations transfer across fault modes, we pretrain on FD001 (fan blade degradation) and evaluate with a frozen linear probe on FD003 (HPC degradation, same operating condition). This is a zero-shot encoder transfer: the probe is re-trained with FD003 labels, but the encoder weights are fixed from FD001 pretraining.
+
+\begin{table}[h]
+\centering
+\caption{Cross-fault transfer: FD001-pretrained encoder evaluated on FD003 (different fault mode). RMSE in cycles. Mean $\pm$ std over 5 seeds. Lower is better.}
+\label{tab:crossfault}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Setting & 100\% & 50\% & 20\% & 10\% & 5\% \\
+\midrule
+FD001 in-domain (frozen) & 17.81 & 18.71 & 19.83 & 19.93 & 21.53 \\
+FD001$\to$FD003 cross-fault (frozen) & 24.79$_{\pm0.6}$ & 25.91$_{\pm0.4}$ & 27.82$_{\pm1.5}$ & 28.79$_{\pm0.4}$ & 28.28$_{\pm0.2}$ \\
+Supervised LSTM in-domain (FD003) & 17.36 & 18.30 & 18.55 & 31.22 & 33.08 \\
+STAR supervised (FD003) & 10.71 & --- & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The cross-fault transfer incurs a consistent 7--9 RMSE penalty relative to in-domain (Table~\ref{tab:crossfault}). The penalty reflects that FD001 and FD003 have different degradation signatures: fan blade wear and HPC wear affect different sensors and follow different temporal patterns. Despite this, the cross-fault frozen probe at 10\% labels (RMSE = 28.79) still outperforms a fully supervised LSTM with the same label budget in-domain (RMSE = 31.22). This demonstrates that SSL representations provide useful structure even across mismatched fault modes.
+
+\paragraph{Cross-subset pretraining (FD002 $\to$ FD001).}
+We also test whether pretraining on FD002 (260 engines, 6 operating conditions) improves FD001 fine-tuning via a richer pretraining corpus. FD002-pretrained frozen probes match or slightly outperform FD001 in-domain frozen probes at high label counts (100\%: 17.50 vs 17.81; 50\%: 17.43 vs 18.71). However, at 10\% labels the cross-subset frozen probe is substantially \emph{worse} (24.45 vs 19.93). E2E fine-tuning consistently underperforms in-domain pretraining at all budgets (e.g., 100\%: 17.50 vs 13.80). These results indicate that the FD002 encoder learned operating-condition-specific representations that resist adaptation to FD001's single-condition setting. More training data from a different distribution does not substitute for matched pretraining data, especially at low label budgets.
 
 \end{document}

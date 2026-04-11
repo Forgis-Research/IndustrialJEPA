@@ -64,6 +64,48 @@ The JEPA objective decouples from downstream RUL after early convergence.
 | LSTM supervised | 17.11 | 442+/-142 |
 PHM improvement: 10.6% (JEPA vs LSTM)
 
+## Part G: Multi-Subset Results
+
+### FD002 In-domain (V2 architecture)
+
+| Method | 100% | 50% | 20% | 10% | STAR ref |
+|:-------|:----:|:---:|:---:|:----:|:--------:|
+| JEPA frozen | 26.33+/-0.44 | 26.44+/-1.10 | 27.35+/-0.48 | 30.03+/-1.34 | 13.47 |
+| JEPA E2E | 24.45+/-0.47 | 24.78+/-0.33 | 27.13+/-0.85 | 27.13+/-1.22 | 13.47 |
+
+### Cross-subset Transfer: FD002 Pretrain -> FD001 Fine-tune
+
+| Method | 100% | 50% | 20% | 10% | 5% |
+|:-------|:----:|:---:|:---:|:----:|:--:|
+| Cross-transfer frozen | 17.50+/-0.83 | 17.43+/-0.96 | 19.83+/-0.62 | 24.45+/-2.39 | 21.23+/-0.99 |
+| Cross-transfer E2E | 17.50+/-0.33 | 18.08+/-1.70 | 17.33+/-0.59 | 23.41+/-2.26 | 22.16+/-1.85 |
+| FD001 in-domain V2 E2E (ref) | 13.80+/-0.75 | 14.93+/-0.41 | 16.54+/-0.80 | 18.66+/-0.84 | 25.33+/-5.13 |
+
+Cross-transfer benefit at 10% labels: -4.75 RMSE (positive = cross-transfer helps)
+
+## Exp 9: Cross-fault Transfer
+
+### FD001 (pretrain) -> FD003 (fine-tune, frozen probe)
+
+| Budget | FD001 in-domain frozen | FD001->FD003 cross-fault | Transfer cost |
+|:------:|:---------------------:|:------------------------:|:-------------:|
+| 100% | 17.81 | 24.79+/-0.56 | +6.98 |
+| 50% | 18.71 | 25.91+/-0.43 | +7.20 |
+| 20% | 19.83 | 27.82+/-1.45 | +7.99 |
+| 10% | 19.93 | 28.79+/-0.36 | +8.86 |
+| 5% | 21.53 | 28.28+/-0.24 | +6.75 |
+Transfer cost is consistent at 7-9 RMSE across all budgets.
+Key: cross-fault @ 10% (28.79) still beats supervised LSTM @ 10% (31.22)
+
+### FD002 (pretrain) -> FD003 (fine-tune, frozen probe, cross-both)
+
+| Budget | FD002->FD003 cross-both |
+|:------:|:------------------------:|
+| 100% | 27.24+/-0.42 |
+| 20% | 35.78+/-2.76 |
+| 10% | 40.86+/-3.72 |
+FD002->FD003 transfers poorly at low labels (cross-both = different conditions AND fault mode).
+
 ## Success Criteria Assessment
 
 | Criterion | Target | V2 Result | Status |

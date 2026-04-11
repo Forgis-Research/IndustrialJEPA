@@ -22,6 +22,8 @@ r_ext = load_json(os.path.join(EXP_DIR, 'finetune_results_ext.json'), {})
 r_mlp = load_json(os.path.join(EXP_DIR, 'finetune_results_mlp_full.json'), {})
 r_g = load_json(os.path.join(EXP_DIR, 'part_g_results.json'), {})
 r_phm = load_json(os.path.join(EXP_DIR, 'phm_score_results.json'), {})
+r_exp8 = load_json(os.path.join(EXP_DIR, 'exp8_fd3_fd4_results.json'), {})
+r_exp9 = load_json(os.path.join(EXP_DIR, 'exp9_zero_shot_results.json'), {})
 
 STAR_FD001 = 10.61
 STAR_FD002 = 13.47
@@ -220,6 +222,70 @@ if r_g:
             benefit = fd001_e2e_10 - cr_e2e_10
             w(f"Cross-transfer benefit at 10% labels: {benefit:+.2f} RMSE "
               f"(positive = cross-transfer helps)")
+        w("")
+
+# Exp 8: FD003 and FD004 in-domain
+if r_exp8:
+    w("## Exp 8: FD003 and FD004 In-domain Results")
+    w("")
+    STAR_FD003 = 10.71
+    STAR_FD004 = 14.25
+    for subset, star_ref in [('FD003', STAR_FD003), ('FD004', STAR_FD004)]:
+        sk = subset
+        if sk in r_exp8:
+            res = r_exp8[sk]
+            w(f"### {subset} (STAR supervised ref: {star_ref})")
+            w("")
+            w("| Method | 100% | 20% | 10% |")
+            w("|:-------|:----:|:---:|:---:|")
+            for mode, label in [('frozen', 'JEPA frozen'), ('e2e', 'JEPA E2E')]:
+                row = " | ".join([
+                    fmt(res.get(bk, {}).get(mode, {}).get('mean'),
+                        res.get(bk, {}).get(mode, {}).get('std', 0))
+                    for bk in ['1.0', '0.2', '0.1']
+                ])
+                w(f"| {label} | {row} |")
+            w(f"| STAR supervised | {star_ref} | - | - |")
+            e2e_100 = res.get('1.0', {}).get('e2e', {}).get('mean', float('nan'))
+            if not np.isnan(e2e_100):
+                gap = e2e_100 - star_ref
+                w(f"Gap to STAR: {gap:+.2f} RMSE")
+            w("")
+    w("")
+
+# Exp 9: Cross-fault transfer
+if r_exp9:
+    w("## Exp 9: Cross-fault Transfer")
+    w("")
+    fd001_to_fd003 = r_exp9.get('fd001_to_fd003', {})
+    fd002_to_fd003 = r_exp9.get('fd002_to_fd003', {})
+    fd001_ref_v2 = r_v2.get('jepa_frozen', {})
+
+    if fd001_to_fd003:
+        w("### FD001 (pretrain) -> FD003 (fine-tune, frozen probe)")
+        w("")
+        w("| Budget | FD001 in-domain frozen | FD001->FD003 cross-fault | Transfer cost |")
+        w("|:------:|:---------------------:|:------------------------:|:-------------:|")
+        for bk, label in [('1.0', '100%'), ('0.5', '50%'), ('0.2', '20%'), ('0.1', '10%'), ('0.05', '5%')]:
+            fd001_v = fd001_ref_v2.get(bk, {}).get('mean', float('nan'))
+            fd003_v = fd001_to_fd003.get(bk, {}).get('mean', float('nan'))
+            fd003_s = fd001_to_fd003.get(bk, {}).get('std', 0)
+            cost = fd003_v - fd001_v
+            w(f"| {label} | {fd001_v:.2f} | {fd003_v:.2f}+/-{fd003_s:.2f} | {cost:+.2f} |")
+        w("Transfer cost is consistent at 7-9 RMSE across all budgets.")
+        w(f"Key: cross-fault @ 10% ({fd001_to_fd003.get('0.1', {}).get('mean', float('nan')):.2f}) still beats supervised LSTM @ 10% (31.22)")
+        w("")
+
+    if fd002_to_fd003:
+        w("### FD002 (pretrain) -> FD003 (fine-tune, frozen probe, cross-both)")
+        w("")
+        w("| Budget | FD002->FD003 cross-both |")
+        w("|:------:|:------------------------:|")
+        for bk, label in [('1.0', '100%'), ('0.2', '20%'), ('0.1', '10%')]:
+            v = fd002_to_fd003.get(bk, {}).get('mean', float('nan'))
+            s = fd002_to_fd003.get(bk, {}).get('std', 0)
+            w(f"| {label} | {v:.2f}+/-{s:.2f} |")
+        w("FD002->FD003 transfers poorly at low labels (cross-both = different conditions AND fault mode).")
         w("")
 
 # Success Criteria

@@ -1,6 +1,6 @@
-- [A2P Replication Findings](project_a2p_replication.md) — AUROC=0.528 near-random; Chronos-Small (zero fine-tuning) beats A2P +21.7pp AUROC; MBA train==test inflates F1 3.4x; F1-tolerance 8x inflation
+- [A2P Replication Findings](project_a2p_replication.md) — AUROC=0.490 proper split (below random!); Spearman rho=0.000 F1-tol vs AUROC rankings; rolling var beats A2P on all metrics; NeurIPS: AUPRC is the fix
 - [DCSSL Replication Findings](project_dcssl_replication.md) — FPT shift is key failure mode; paper SimCLR avg≈trivial baseline; paper table had swapped columns; RUL-fix applied to cond2/3
-- [IndustrialJEPA Project Context](project_industrialjepa.md) — V11: FD001 E2E=13.80 beats AE-LSTM; FD002 E2E@100%=24.45 (harder due to 6 conditions); PHM=395.7; cross-subset transfer pending
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — V11 complete: E2E=13.80; FD002 full label curve done; cross-fault (FD001->FD003@10%=28.79 beats LSTM 31.22); FD002 pretraining helps frozen@high-labels but hurts@10%
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
 - [Bearing RUL SOTA Literature Review (April 2026)](literature_review_rul_sota.md) — FEMTO best nRMSE=0.0443; single-window RUL formulation does NOT exist; DCSSL is only SSL+RUL paper on FEMTO
