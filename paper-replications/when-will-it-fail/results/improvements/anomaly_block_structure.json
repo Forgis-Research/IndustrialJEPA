@@ -1,0 +1,11 @@
+{
+  "n_blocks": 117,
+  "mean_block_len": 100.0,
+  "median_block_len": 100.0,
+  "std_block_len": 0.0,
+  "pct_blocks_over_100": 0.0,
+  "mean_gap": 1464.8362068965516,
+  "median_gap": 1272.0,
+  "pct_gaps_under_100": 0.0,
+  "pct_gaps_under_150": 0.0
+}

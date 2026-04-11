@@ -3044,3 +3044,71 @@ This variance trajectory IS learnable by LR and explains why LR AUROC=0.702 > Or
 
 ---
 
+
+### Probe 107: SVDB4 Anomaly Block Structure (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** The contamination rate (66.5%) is explained by the anomaly block structure.
+**Design:** CPU-only. Find all anomaly blocks, measure their lengths and inter-block gaps.
+**Sanity checks:** ✓ Total anomalies = 11700 ✓ Anomaly rate 6.35% matches prior analysis
+
+**CRITICAL FINDING: ALL 117 ANOMALY BLOCKS ARE EXACTLY 100 TIMESTEPS LONG!**
+
+Block structure:
+- Number of blocks: 117
+- Block length: exactly 100 (std=0, min=100, max=100)
+- All blocks are exactly equal to pred_len!
+- Inter-block gaps: mean=1464.8, median=1272, min=235, max=8297
+- 0% of gaps < 100 steps (perfect separation)
+
+**This is NOT a natural dataset.** SVDB4 has artificial 100-step anomaly blocks with gaps of at least 235 steps. The dataset was constructed with pred_len=100 in mind.
+
+**Explanation for 66.5% contamination:**
+- With exactly-100-step blocks, each AP+ window [t+100, t+150] is covered by:
+  - A block starting in [t+100, t+150] (TRUE AP+ - block hasn't started yet at t)
+  - A block starting in [t+50, t+100] (CONTAMINATED - block starts in near-horizon)
+  - A block starting in [t, t+50] (CONTAMINATED - block started even earlier)
+  - A block that started before t and extends into [t+100, t+150] (VERY contaminated)
+- Because blocks are exactly 100 steps = pred_len, there's a perfect alignment between the prediction window and block length
+- This explains why ~66.5% of AP+ have contamination
+
+**Implication:** The SVDB4 AP task is designed to work with pred_len=100. The BLOCK STRUCTURE (100-step anomaly windows with 235+ step gaps) creates the characteristic contamination pattern. The task would have completely different properties with pred_len != 100.
+
+**File:** results/improvements/anomaly_block_structure.json
+
+---
+
+
+### Probe 108: SVDB4 Block Periodicity and Position Analysis (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** The artificial 100-step block structure creates exploitable temporal periodicity.
+**Design:** CPU-only. Test temporal position features (sin/cos with various periods) for AP prediction.
+**Sanity checks:** ✓ LR AUROC=0.634 confirmed ✓ Position period 1372 = 100+1272 (block+gap)
+
+**Result:**
+
+| Method | AUROC |
+|--------|-------|
+| LR variance 4-feat | 0.634 |
+| sin/cos(2πt/1372) [raw] | **0.632** |
+| LR trained on position features | 0.463 |
+| LR variance + position | 0.569 |
+
+**KEY FINDING:** The period-matching cosine score (cos(2πt/1372)) achieves AUROC=0.632 - almost exactly equal to LR variance (0.634)! The period 1372 = 100 (block) + 1272 (median gap) naturally matches the SVDB4 block structure.
+
+**BUT:** LR trained on position features = 0.463, and LR-position correlation = rho=0.007 (p=0.54). This means:
+1. The LR is NOT exploiting temporal position - its variance scores are uncorrelated with position
+2. The position score (raw cosine) achieves 0.632 by coincidentally matching the block structure
+3. Combining LR+position HURTS (0.569) because position adds noise to genuine variance signal
+
+**Implication for dataset validity:**
+- SVDB4 AP task is temporally predictable from dataset structure (0.632 AUROC from position alone)
+- This is separate from the LR's genuine variance-based prediction
+- The SVDB4 block structure (all blocks exactly 100 steps = pred_len) is artificial and should be noted as a limitation
+- Future AP datasets should have variable-length anomaly blocks to prevent this
+
+**File:** results/improvements/anomaly_block_structure.json, results/improvements/block_periodicity.json, results/improvements/position_vs_lr.json
+
+---
+

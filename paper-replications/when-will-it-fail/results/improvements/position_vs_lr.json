@@ -1,0 +1,8 @@
+{
+  "lr_var_auroc": 0.6338609277851524,
+  "position_auroc": 0.6322015162562865,
+  "lr_pos_auroc": 0.46285701821626435,
+  "combined_lr_auroc": 0.5686181792875943,
+  "lr_position_spearman_rho": 0.00711994521027,
+  "lr_position_spearman_p": 0.5414076510987795
+}
