@@ -2952,3 +2952,44 @@ Easy (top 40% oracle) vs Hard AP+ characteristics:
 
 ---
 
+
+### Probe 103: Calm-Before-Storm Quantification for Strict AP+ (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** Strict AP+ (non-contaminated) show a genuine "calm-before-storm" variance trajectory, explaining why LR beats oracle on this subset.
+**Design:** CPU-only. Rolling variance in 10 windows of 20 steps each across the 200-step context.
+**Sanity checks:** ✓ Wilcoxon test for rising variance ✓ n_strict_ap+=190 ✓
+
+**Result:**
+
+| Steps | Strict AP+ variance | AP- variance | Ratio |
+|-------|-------------------|-------------|-------|
+| 0-20 | 0.559 | 0.965 | **0.58x** (calm) |
+| 20-40 | 0.337 | 0.974 | **0.35x** (very calm) |
+| 60-80 | 1.231 | 0.958 | 1.28x (rising) |
+| 80-100 | 1.324 | 0.948 | 1.40x |
+| 140-160 | 0.238 | 0.978 | **0.24x** (calm again) |
+| 180-200 | 1.422 | 0.946 | **1.50x** (final rise) |
+
+Wilcoxon test (late var > early var): W=12924, p<0.0001  
+Early (steps 0-50) mean: 0.653, Late (steps 150-200) mean: 1.056, **ratio=1.62x**
+
+Comparison:
+- Standard AP+: trend ratio = 1.02x (flat - dominated by contaminated cases)
+- Negative: trend ratio = 1.00x (flat)
+- Strict AP+: trend ratio = **1.62x RISING** (p<0.0001)
+
+**KEY FINDING:** Strict AP+ (true predictions) shows the classic U-shaped pattern:
+1. Very calm at steps 0-40 (calm before storm)
+2. Rising at steps 60-100 (anomaly onset)
+3. Calm again at 140-160 (brief recovery)
+4. Final rise at 180-200 (imminent anomaly in [t+100, t+150])
+
+This variance trajectory IS learnable by LR and explains why LR AUROC=0.702 > Oracle AUROC=0.603 on strict AP+. The "oracle" (future variance) misses these because the future variance signal is weak for strict AP+ (only 1.28x AP- average). But the CONTEXT trajectory predicts them.
+
+**Implication:** A2P and the AP task definition need rethinking. Contaminated AP+ (66.5%) are detection tasks; strict AP+ (33.5%) have genuine learnable structure but the standard oracle fails to recognize it.
+
+**File:** results/improvements/calm_storm_strict.json
+
+---
+

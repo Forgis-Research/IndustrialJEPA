@@ -1,0 +1,9 @@
+{
+  "n_strict_ap_plus_test": 190,
+  "strict_early_var": 0.6531091928482056,
+  "strict_late_var": 1.0561842918395996,
+  "strict_trend_ratio": 1.6171634197235107,
+  "wilcoxon_p": 1.9442177119042236e-07,
+  "neg_trend_ratio": 0.9996433854103088,
+  "std_ap_trend_ratio": 1.022689938545227
+}

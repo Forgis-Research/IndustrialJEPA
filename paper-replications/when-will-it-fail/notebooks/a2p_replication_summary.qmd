@@ -5135,3 +5135,81 @@ print()
 print(f"Conclusion: {comp['conclusion']}")
 ```
 
+
+## Section 83: Probes 99-103 - The Contamination Crisis: Reframing the AP Task
+
+**Critical finding:** 66.5% of AP+ are NOT predictions - they're detections of ongoing anomalies.
+
+```{python}
+import json
+import numpy as np
+from pathlib import Path
+
+results_dir = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/results/improvements')
+
+# Load contamination decomp
+with open(results_dir / 'contamination_decomp.json') as f:
+    cont = json.load(f)
+
+# Load strict AP variants
+with open(results_dir / 'ap_contamination_variants.json') as f:
+    ap_var = json.load(f)
+
+# Load calm-storm strict
+with open(results_dir / 'calm_storm_strict.json') as f:
+    calm = json.load(f)
+
+print("=" * 65)
+print("AP TASK CONTAMINATION ANALYSIS")
+print("=" * 65)
+print()
+
+print(f"AP+ breakdown on SVDB4 test set:")
+print(f"  Total AP+:                              {cont['n_ap_plus']}")
+print(f"  Contaminated (ongoing in [t,t+100]):    {cont['n_contaminated_ap']} ({cont['pct_ap_contaminated']:.1%})")
+print(f"  True AP (no ongoing anomaly):           {cont['n_true_ap']} ({1-cont['pct_ap_contaminated']:.1%})")
+print()
+
+print(f"{'Subset':<45} {'Oracle AUROC':>14} {'LR AUROC':>10}")
+print("-" * 72)
+print(f"{'Contaminated AP+ vs AP-':<45} {cont['oracle_auroc_contaminated']:>14.3f} {cont['lr_auroc_contaminated']:>10.3f}")
+print(f"{'True AP+ vs AP-':<45} {cont['oracle_auroc_true']:>14.3f} {cont['lr_auroc_true']:>10.3f}")
+print(f"{'All AP+ vs AP- (standard metric)':<45} {cont['oracle_auroc_all']:>14.3f} {cont['lr_auroc_all']:>10.3f}")
+print()
+
+print("KEY FINDING: LR BEATS ORACLE on TRUE AP!")
+print(f"  True AP oracle AUROC = {cont['oracle_auroc_true']:.3f}")
+print(f"  True AP LR AUROC     = {cont['lr_auroc_true']:.3f}")
+print(f"  Delta (LR - oracle)  = +{cont['lr_auroc_true'] - cont['oracle_auroc_true']:.3f}")
+print()
+
+print("=" * 65)
+print("CALM-BEFORE-STORM PATTERN IN TRUE AP+")
+print("=" * 65)
+print()
+
+print(f"Variance trend (True AP+ vs AP-):")
+print(f"  Early context (steps 0-50):  True AP+ = {calm['strict_early_var']:.3f}x AP- ratio")
+print(f"  Late context (steps 150-200): True AP+ = {calm['strict_late_var']:.3f}x AP- ratio")
+print(f"  Late/Early ratio:            {calm['strict_trend_ratio']:.2f}x (RISING)")
+print(f"  Wilcoxon p-value:            {calm['wilcoxon_p']:.4f} (p<0.001)")
+print()
+
+print(f"Standard AP+ trend ratio: {calm['std_ap_trend_ratio']:.2f}x (FLAT = contamination dominated)")
+print(f"Negative trend ratio:     {calm['neg_trend_ratio']:.2f}x (flat)")
+print()
+
+print("INTERPRETATION:")
+print("  True AP+ (33.5% of AP+): genuine predictions with calm-then-rise pattern")
+print("    -> LR captures this rise, oracle (future var) misses it")
+print("    -> These ARE learnable with context features")
+print()
+print("  Contaminated AP+ (66.5%): detection of ongoing anomalies")
+print("    -> Oracle wins easily (future variance >> present)")
+print("    -> Inflate the 'oracle AUROC' from 0.603 to 0.747")
+print()
+print("CONCLUSION: The A2P task as defined is 66.5% anomaly detection,")
+print("  not anomaly prediction. A properly defined AP task (strict)")
+print("  has oracle=0.603 but LR=0.702 - LR BEATS the oracle!")
+```
+
