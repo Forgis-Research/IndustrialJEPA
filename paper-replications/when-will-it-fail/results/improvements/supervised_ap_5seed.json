@@ -1,0 +1,45 @@
+{
+  "method": "supervised_ap_transformer",
+  "seeds": [
+    42,
+    1,
+    2,
+    99,
+    7
+  ],
+  "mean_test_auroc": 0.6238250000519336,
+  "std_test_auroc": 0.007541415450368501,
+  "per_seed": [
+    {
+      "seed": 42,
+      "val_auroc": 0.6309226062450649,
+      "test_auroc": 0.6273892098391508
+    },
+    {
+      "seed": 1,
+      "val_auroc": 0.6294314813614453,
+      "test_auroc": 0.6211134117739928
+    },
+    {
+      "seed": 2,
+      "val_auroc": 0.6306012709042911,
+      "test_auroc": 0.6248626353651874
+    },
+    {
+      "seed": 99,
+      "val_auroc": 0.6329379957219126,
+      "test_auroc": 0.6114464729747414
+    },
+    {
+      "seed": 7,
+      "val_auroc": 0.637110751493795,
+      "test_auroc": 0.6343132703065958
+    }
+  ],
+  "comparison": {
+    "unsupervised_baseline": 0.524,
+    "oracle": 0.72,
+    "random": 0.476,
+    "delta_vs_unsupervised": 0.09982500005193362
+  }
+}

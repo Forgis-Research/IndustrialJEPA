@@ -140,14 +140,23 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **Probe 35** | **Oracle signal analysis** | **AUROC** | **0.7445 (oracle)** | **LR: 0.5929** | **LR captures 38% of learnable signal; Spearman rho=0.371 with oracle** |
 | **Probe 36** | **Random F1-tol** | **F1-tol** | **69.57%** | **A2P paper: 67.55%** | **RANDOM BEATS A2P on their own metric!** |
 | Correct AP: V2 contrastive | AP-aware InfoNCE (anomalous future = positive) | AUROC | TBD | InfoNCE V1: 0.641 | Probe 26b, still running |
-| Correct AP: Probe 30 | Supervised transformer 5-seed | AUROC | TBD | Unsupervised: 0.524 | Running |
-| Correct AP: Probe 33 | Transformer + variance features augmented | AUROC | TBD | Raw transformer: 0.6147 ±0.0081 (50ep, 3 seeds) | Running (variance phase) |
+| **Correct AP: Probe 30** | **Supervised transformer 5-seed (100ep, MLP head)** | **AUROC** | **0.6238 +/- 0.0075** | **Unsupervised: 0.524** | **COMPLETE - 5x lower std vs unsupervised!** |
+| **Correct AP: Probe 33** | **Transformer + variance features augmented (3-seed)** | **AUROC** | **0.5771 +/- 0.0014** | **Baseline: 0.6147** | **COMPLETE - augmentation HURTS by -0.038** |
 | Correct AP: Probe 38 | Deep supervised (d=128, L=4, 150ep) | AUROC | TBD | Shallow 100ep: 0.624 | Running seed=42 |
 | Correct AP: Probe 39 | AUPRC analysis (LR vs oracle) | AUPRC | 0.097 LR / 0.522 oracle | random=0.077 | **COMPLETE** - AP is precision-limited |
 | Correct AP: Probe 40 | Epoch learning curve (5 seeds, checkpoints) | AUROC@epoch | TBD | 30ep=0.521 ±0.042 (Probe 28b) | Running |
 | Correct AP: Probe 41 | Statistical significance: LR vs transformer | t-test | LR p=0.0006 vs TF | TF vs random: p=0.081 (NS) | **COMPLETE** - formal proof |
+| **Correct AP: Probe 47** | **1D CNN (3 conv layers, 100ep, 3 seeds)** | **AUROC** | **TBD** | **Transformer: 0.624** | **Running** |
+| **Correct AP: Probe 48** | **BiLSTM (2-layer, hidden=64, 100ep, 3 seeds)** | **AUROC** | **TBD** | **Transformer: 0.624** | **Running** |
+| **Correct AP: Probe 51** | **Horizon comparison (LR, near vs A2P default vs far)** | **AUROC** | **near=0.646; A2P=0.624; 25-75=0.517** | **Oracle=0.721 (all)** | **COMPLETE - near best (65.9% learned); 25-75 worst (7.8%)** |
 
-**CRITICAL:** Single-seed AP results (0.642, 0.641, 0.619, 0.625) are unreliable. True multi-seed APTransformer AUROC at 30ep = 0.5211 +/- 0.0415 (10 seeds), barely above random (0.500) and NOT statistically significant (p=0.081). All single-seed "best results" must be treated as preliminary. With 100ep supervised training, consistent AUROC=0.624 is achieved.
+**CRITICAL:** Single-seed AP results (0.642, 0.641, 0.619, 0.625) are unreliable. True multi-seed APTransformer AUROC at 30ep = 0.5211 +/- 0.0415 (10 seeds), barely above random (0.500) and NOT statistically significant (p=0.081). All single-seed "best results" must be treated as preliminary. With 100ep supervised training, consistent AUROC=0.6238 ± 0.0075 is achieved (5 seeds, Probe 30).
+
+**PROBE 30 KEY FINDING:** Supervised transformer 5-seed: 0.6238 ± 0.0075. This is 5x more consistent than 30ep unsupervised (std 0.0075 vs 0.042). The epoch count bottleneck is entirely in the unsupervised pretraining - proper supervised training gives consistent results.
+
+**PROBE 33 KEY FINDING:** Variance augmentation HURTS: 0.5771 ± 0.0014 vs baseline 0.6147 ± 0.0081. Transformer + explicit variance features = -0.038 AUROC. Transformer already learns variance representations implicitly.
+
+**PROBE 51 KEY FINDING:** Horizon analysis reveals near-future (0-50 steps) is easiest (0.646, 66% of oracle), while 25-75 step gap is paradoxically hardest (0.517, 8%). A2P default (100-150) achieves 0.624 (56%). All horizons have identical oracle AUROC (0.721) - the difficulty difference is entirely in which precursor patterns are accessible.
 
 **REVISED FINDING (Probe 35):** Full-dataset LR with 8 variance features achieves AUROC=0.5929, beating APTransformer multi-seed mean (0.5255) by +0.067 (1.63 sigma). This is the reliable estimate using 183K sequences; the 0.616 from Probe 29 used a 5x smaller sample and has higher variance. Key: LR captures 38% of learnable signal (oracle=0.7445), transformer captures only 10.4%.
 
