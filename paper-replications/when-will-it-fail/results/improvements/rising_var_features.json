@@ -1,0 +1,20 @@
+{
+  "Standard (4-feat LR)": {
+    "std_auroc": 0.6338609277851524,
+    "std_auprc": 0.12503784981097843,
+    "strict_auroc": 0.7020350779305636,
+    "strict_auprc": 0.05255730831675866
+  },
+  "Rising variance (7-feat)": {
+    "std_auroc": 0.5613160414887937,
+    "std_auprc": 0.08763214659271974,
+    "strict_auroc": 0.6730440272812033,
+    "strict_auprc": 0.04103555363740157
+  },
+  "Combined (11-feat)": {
+    "std_auroc": 0.6235552044837479,
+    "std_auprc": 0.10641469957781419,
+    "strict_auroc": 0.6971147704664087,
+    "strict_auprc": 0.04473947228850244
+  }
+}

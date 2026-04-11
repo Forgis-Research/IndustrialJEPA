@@ -171,6 +171,16 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **Probe 92** | **Signal Physics LR (CPU-only)** | **AUROC** | **Physics=0.638; Combined phys+var=0.648** | var_only=0.616 | **COMPLETE - cross-corr+AC gives NEW best LR=0.648 (+0.032 vs var alone)** |
 | **Probe 93** | **Physics+Var LR C-sweep** | **AUROC/AUPRC** | **AUROC=0.638 (+0.004 vs LR4); AUPRC=0.112 (-0.022 vs LR4)** | LR4: 0.634/0.134 | **COMPLETE - physics helps AUROC but HURTS AUPRC (false positives at high threshold)** |
 | **Probe 94** | **Polynomial LR + Tree Models** | **AUROC** | **RF=0.622; GB=0.613; PolyLR=0.594** | LR4=0.591 (test split) | **COMPLETE - RF approaches TF (0.624) without sequence modeling** |
+| **Probe 95** | **SMD Channel Oracle Analysis** | **AUROC** | **All-38ch: 0.346 (BELOW RANDOM!); Top-5: 0.704** | - | **COMPLETE - adding irrelevant channels actively hurts oracle** |
+| **Probe 98** | **SMD vs SVDB4 Difficulty** | **Summary** | **4 root causes of SMD invalidity** | - | **COMPLETE - channel noise, anti-correlation, dimensionality, implicit cherry-picking** |
+| **Probe 99** | **LR Calibration Analysis** | **BSS** | **LR BSS=+0.015 (positive!); ECE=0.005** | MBA: BSS=-0.117 | **COMPLETE - SVDB4 LR well-calibrated; oracle prec=1.000 up to 40% recall** |
+| **PROBE 100** | **Contamination Decomposition** | **AUROC** | **Contam. oracle=0.809; True AP oracle=0.603; True AP LR=0.676** | All: 0.747 | **COMPLETE - 66.5% of AP+ are detection (not prediction); LR BEATS oracle on true AP** |
+| **PROBE 101** | **Strict AP Task** | **AUROC** | **Strict oracle=0.603; Strict LR=0.702 (+0.099 over oracle!)** | Standard: LR=0.634, oracle=0.747 | **COMPLETE - properly defined pure-prediction task: LR > oracle** |
+| **PROBE 103** | **Calm-Storm Quantification** | **Variance ratio** | **True AP+: early/late ratio=1.62x (p<0.0001); Standard AP+: 1.02x (flat)** | - | **COMPLETE - genuine calm-before-storm ONLY in strict AP+; masked by contamination** |
+| Probe 67b | SMD epoch convergence (100ep, 3 seeds) | AUROC | PARTIAL: 30ep=0.583; 100ep seed42=0.574 | SVDB4 100ep: 100% above 0.60 | STILL RUNNING - seeds 1,2 pending |
+| Probe 72b | Regression vs classification target (3 seeds) | AUROC delta | PENDING | Classification TF: ~0.624 | STILL RUNNING |
+| Probe 73b | LR + TF ensemble (3 TF seeds) | AUROC | PENDING | TF: 0.624, LR: 0.631 | STILL RUNNING |
+| Probe 102 | Strict AP TF (3 seeds, 100ep) | AUROC | PENDING | Strict LR: 0.702, oracle: 0.603 | STILL RUNNING |
 
 **CRITICAL:** Single-seed AP results (0.642, 0.641, 0.619, 0.625) are unreliable. True multi-seed APTransformer AUROC at 30ep = 0.5211 +/- 0.0415 (10 seeds), barely above random (0.500) and NOT statistically significant (p=0.081). All single-seed "best results" must be treated as preliminary. With 100ep supervised training, consistent AUROC=0.6238 ± 0.0075 is achieved (5 seeds, Probe 30).
 
