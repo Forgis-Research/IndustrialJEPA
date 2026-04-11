@@ -113,7 +113,7 @@ Random                                 0.500    --       --    -0.124    --     
 - Supervised vs unsupervised: Welch t=7.17, p=0.000026, d=3.45
 - TF vs BiLSTM: p=0.047, d=3.53; TF vs CNN: p=0.003, d=6.67; LSTM vs CNN: p=0.43 (NS)
 
-## 13 Verified Claims for NeurIPS
+## 14 Verified Claims for NeurIPS (Updated April 12, 2026)
 
 1. F1-tol 8.1x inflated (raw 5.35% -> 43.1%) [STRONG]
 2. Random beats A2P F1-tol on all 3 datasets (SVDB4: 69.6% vs 67.6%) [VERY STRONG, 5-seed]
@@ -128,6 +128,18 @@ Random                                 0.500    --       --    -0.124    --     
 11. LR 4-feat = TF statistically (p=0.18, CIs overlap): complexity adds nothing [STRONG]
 12. TF > BiLSTM (p=0.047, d=3.5) > CNN (p=0.003, d=6.7): global attention is critical [VERY STRONG]
 13. Near-horizon (0-50) is contaminated: 66.4% AP+ have anomaly in context [VERY STRONG]
+14. AP not production-ready: LR=1.4x precision over random at 50% recall (8.4 FA/TP);
+    Oracle=2.5x (4.2 FA/TP). Oracle perfect precision at 36.7% recall for first-half blocks. [STRONG]
+
+## New Analysis: Easy vs Hard AP Windows (April 12, 2026)
+
+Easy AP+ (top-25% oracle): predict first half of 100-step blocks (mean pos=34.9), context calm (var=0.804 vs AP- 1.719)
+Hard AP+ (bottom-75% oracle): predict second half (mean pos=57.7), context noisy, oracle signal weak
+LR scores easy AP+ only 0.081 vs AP- 0.079 - LR FAILS to exploit the calm-before-storm for easy cases!
+LR learns "low full-window variance = AP+" (ch0_varfull coef=-0.665) but this signal doesn't separate easy from AP-.
+
+Practical utility: oracle achieves precision=1.000 at 36.7% recall (threshold=0.0929)
+These are the "easy" predictions corresponding to first-half block positions.
 
 ## Key Why: Root Causes of A2P's Failure
 
