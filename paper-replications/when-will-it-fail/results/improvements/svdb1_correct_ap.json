@@ -1,0 +1,9 @@
+{
+  "dataset": "SVDB1",
+  "anomaly_rate": 0.007233796175569296,
+  "future_ap_rate": 0.01077835648148148,
+  "oracle_future_var_auroc": 0.6919386849178966,
+  "past_var_vs_future_auroc": 0.5265914949436779,
+  "n_segments": 5,
+  "note": "Only 5 anomaly segments; future window may overlap or miss"
+}

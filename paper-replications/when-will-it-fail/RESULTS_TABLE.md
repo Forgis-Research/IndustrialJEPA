@@ -19,14 +19,15 @@
 
 ### MBA Dataset - SVDB Record 801, Proper 70/30 Split (new, overnight session)
 
-| L_out | Paper (mean +/- std) | Ours seed 42 | Gap | Seeds 1+2 | Notes |
+| L_out | Paper (mean +/- std) | Ours (3-seed) | Gap | Seeds | Notes |
 |-------|---------------------|-------------|-----|-----------|-------|
-| 100 | 67.55 +/- 5.62 | **19.17 +/- 3.12** | -48.4 pp | Seeds: 42 (16.06%), 1 (22.29%), 2 in-progress | 0.72% anomaly rate |
+| 100 | 67.55 +/- 5.62 | **24.92 +/- 8.51** | -42.6 pp | Seeds: 42 (16.06%), 1 (22.29%), 2 (36.41%) | 0.72% anomaly rate |
 
-**AUROC (SVDB1 multi-seed):** 0.494 +/- 0.004 (BELOW random 0.5 on both seeds - A2P is anti-discriminating on held-out data!)
+**AUROC (SVDB1 3-seed):** 0.499 +/- 0.008 (essentially random!)
 - Seed 42: F1-tol=16.06%, AUROC=0.490
 - Seed 1: F1-tol=22.29%, AUROC=0.498
-- Seed 2: In progress
+- Seed 2: F1-tol=36.41%, AUROC=0.508 (only seed above 0.5, barely)
+- Mean: F1-tol=24.92% ± 8.51%, AUROC=0.499 ± 0.008
 
 **Notes on SVDB1:**
 - Data: PhysioNet SVDB record 801, 161K train / 69K test, 0.72% anomaly rate

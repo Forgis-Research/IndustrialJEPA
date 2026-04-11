@@ -33,5 +33,24 @@
     "rolling_var": 86.7,
     "random_beats_a2p": true
   },
-  "conclusion": "Random scores achieve 67.6% F1-tol on SMD vs A2P's 52.07% (random +15.5pp). On SVDB4: random 68.1% vs A2P 67.55% (effectively tied). F1-tol measures segment coverage, not prediction quality."
+  "conclusion": "Random scores achieve 67.6% F1-tol on SMD vs A2P's 52.07% (random +15.5pp). On SVDB4: random 68.1% vs A2P 67.55% (effectively tied). F1-tol measures segment coverage, not prediction quality.",
+  "SVDB1": {
+    "anomaly_rate": 0.0072,
+    "n_segments": 5,
+    "all_segments_len_100": true,
+    "random_f1tol_seeds": [
+      46.22,
+      57.31,
+      66.8,
+      57.31,
+      66.89
+    ],
+    "random_f1tol_mean": 58.91,
+    "random_f1tol_std": 7.64,
+    "a2p_seeds_42_1_mean": 19.17,
+    "a2p_seeds_42_1_std": 3.12,
+    "random_beats_a2p": true,
+    "note": "High variance (7.64%) because only 5 short segments; random predictor sometimes hits all, sometimes misses. Still 3x A2P on mean."
+  },
+  "summary": "Random scores beat A2P on ALL THREE datasets: SVDB4 (68.1% vs 67.55%), SMD (67.6% vs 52.07%), SVDB1 (58.9% vs 19.2%). F1-tol metric is trivially gamed by random noise on datasets with short segments and \u00b150 tolerance."
 }

@@ -1,0 +1,29 @@
+{
+  "dataset": "MBA_svdb1",
+  "seeds": [
+    42,
+    1,
+    2
+  ],
+  "f1_tol": {
+    "seed_42": 16.063,
+    "seed_1": 22.2902,
+    "seed_2": 36.4134,
+    "mean": 24.922200000000004,
+    "std": 8.513920485103599
+  },
+  "auroc": {
+    "seed_42": 0.489952,
+    "seed_1": 0.497869,
+    "seed_2": 0.508461,
+    "mean": 0.4987606666666667,
+    "std": 0.007582526946136705
+  },
+  "paper_f1_tol": 67.55,
+  "paper_auroc_train_eq_test": 0.528,
+  "interpretation": {
+    "f1_tol": "Mean 24.92% vs paper 67.55% (proper split = -42.6pp gap)",
+    "auroc": "Mean 0.4988 vs random 0.5000 (essentially random performance)",
+    "note": "Seed 2 has AUROC=0.508 (slightly above random), while seeds 42 and 1 are below. High variance confirms A2P cannot reliably learn to discriminate anomalies on proper held-out split."
+  }
+}
