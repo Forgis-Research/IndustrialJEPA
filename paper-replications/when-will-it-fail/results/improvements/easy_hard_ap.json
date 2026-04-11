@@ -1,0 +1,27 @@
+{
+  "probe": "71_easy_hard_ap",
+  "n_ap_plus": 567,
+  "n_easy": 142,
+  "n_hard": 425,
+  "oracle_auroc": 0.7216998990408885,
+  "lr_auroc": 0.62982334232825,
+  "context_variance": {
+    "easy_last50": 0.8037877678871155,
+    "hard_last50": 1.645949363708496,
+    "apneg_last50": 1.7185217142105103
+  },
+  "future_variance": {
+    "easy": 0.3310588300228119,
+    "hard": 0.05882110446691513,
+    "apneg": 0.03231421858072281
+  },
+  "lr_scores": {
+    "easy_applus": 0.08119606294335377,
+    "hard_applus": 0.09661178238652482,
+    "apneg": 0.0789555312065805
+  },
+  "block_positions": {
+    "easy_mean": 34.91549295774648,
+    "hard_mean": 57.724279835390945
+  }
+}

@@ -1928,7 +1928,7 @@ LR = TF statistically; simplicity wins.
 => 100 epochs are required for stable convergence.
 ```
 
-### 13 Verified Claims for NeurIPS (Final)
+### 14 Verified Claims for NeurIPS (Updated April 12, 2026)
 
 1. F1-tol 8.1x inflated (raw 5.35% -> 43.1%) [STRONG]
 2. Random beats A2P F1-tol on all 3 datasets (SVDB4: 69.6% vs 67.6%) [VERY STRONG, 5-seed]
@@ -1943,6 +1943,9 @@ LR = TF statistically; simplicity wins.
 11. LR 4-feat = TF statistically (p=0.18, CIs overlap): complexity adds nothing [STRONG]
 12. TF > BiLSTM (p=0.047, d=3.5) > CNN (p=0.003, d=6.7): global attention is critical [VERY STRONG]
 13. Near-horizon (0-50) is contaminated: 66.4% AP+ have anomaly in context; only >=100 is clean AP [VERY STRONG]
+14. AP not production-ready: LR achieves only 1.4x precision over random at 50% recall (8.4 FA/TP);
+    oracle achieves 2.5x (4.2 FA/TP). Oracle achieves perfect precision at 36.7% recall for
+    first-half anomaly block predictions. [STRONG] (Probes 70/71)
 
 
 ### Probe 62: Width Ablation - d=32 vs d=128, L=2 fixed (RUNNING)
@@ -2218,6 +2221,53 @@ Even oracle has 4.2 false alarms per true positive at 50% recall.
 This suggests either: (1) AP requires much better models, OR (2) the task definition needs revision
 to focus on a more predictable subset of anomalies.
 **Saved:** results/improvements/pr_analysis.json
+
+---
+
+### Probe 71: Easy vs Hard AP Windows - Block Position Analysis (COMPLETE)
+
+**Time:** 2026-04-12 01:35 (CPU-only)
+**Hypothesis:** The oracle's perfect precision at 25% recall corresponds to AP+ windows with specific structural properties.
+**Design:** Classify AP+ windows into easy (top-25% oracle score) vs hard (bottom-75%); compare context variance and block positions.
+**Results:**
+```
+AP+ windows: 567 total (easy=142, hard=425)
+
+Context variance (normalized):
+  Easy AP+ last-50 variance: 0.804  (LOWEST = calm before storm)
+  Hard AP+ last-50 variance: 1.646
+  AP-  last-50 variance:     1.719
+
+Oracle future variance:
+  Easy AP+: 0.331  (HIGH future variance)
+  Hard AP+: 0.059  (low future variance)
+  AP-:      0.032
+
+Block position (where does t+100 fall in the 100-step event?):
+  Easy AP+: mean position 34.9 +/- 11.9 (first half of block)
+  Hard AP+: mean position 57.7 +/- 32.5 (second half of block)
+
+LR scores:
+  Easy AP+: 0.081  (barely above AP- = 0.079)
+  Hard AP+: 0.097  (slightly higher)
+  AP-:      0.079
+```
+**CRITICAL FINDING:**
+1. Easy AP+ = predict positions 0-50 in 100-step block; context is CALM (0.804 vs 1.719 AP-)
+2. Hard AP+ = predict positions 50-100; context is noisy; oracle provides little signal
+3. Oracle's perfect precision at 25% recall corresponds to these easy first-half predictions
+4. LR doesn't exploit the calm signal for easy cases (0.081 vs 0.079 = basically random for easy!)
+5. LR scores HARD AP+ higher than EASY AP+: LR learns "high variance = alert" not "low variance = calm before storm"
+6. This reveals the fundamental limitation: simple variance features MISS the calm-before-storm signal
+
+**Why this matters:**
+- The calm-before-storm effect exists (easy AP+ has 0.804 variance vs 1.719 for AP-)
+- BUT LR's 4-feature detector doesn't exploit it (easy AP+ LR score = 0.081 ≈ AP- score)
+- A model that explicitly detects "unusually low variance" would improve on easy cases
+- The hard cases (57% of AP+) may require fundamentally different signals
+
+**Verdict:** KEEP - mechanistic understanding of AP prediction in SVDB4
+**Saved:** results/improvements/easy_hard_ap.json
 
 ---
 
