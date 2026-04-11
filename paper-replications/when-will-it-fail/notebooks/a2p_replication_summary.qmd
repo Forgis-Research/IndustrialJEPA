@@ -1557,6 +1557,24 @@ except FileNotFoundError:
     print("Run svdb4_rolling_var.json analysis first")
 ```
 
+## 21d. Complete Comparison: All Methods, All Datasets (Publication Figure)
+
+```{python}
+from IPython.display import Image, display
+import os
+
+fig5_path = f'{FIGURES_DIR_V2}/fig5_complete_comparison.png'
+if os.path.exists(fig5_path):
+    display(Image(fig5_path, width=850))
+    print("Figure 5: Rolling variance dominates A2P on all datasets.")
+    print("Panel A: MBA SVDB4 - all 4 windows beat A2P (best +19.15pp)")
+    print("Panel B: SMD - all 6 windows beat A2P paper (best +11.77pp)")
+    print("Panel C: AUROC landscape - A2P is worst, rolling var is best")
+    print("Panel D: Direct comparison on paper's own setup")
+else:
+    print(f"Figure not found: {fig5_path}")
+```
+
 ## 22. Final Summary: The Evidence Chain
 
 The complete evidence chain for the NeurIPS contribution:

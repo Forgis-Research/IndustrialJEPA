@@ -1,0 +1,63 @@
+{
+  "dataset": "MBA SVDB4 (records 800-803, paper setup)",
+  "n_test": 184320,
+  "anomaly_rate": 0.0634765625,
+  "methods": {
+    "Rolling Var w=10": {
+      "auroc": 0.6849,
+      "auprc": 0.1505,
+      "f1_tol": 73.35
+    },
+    "Rolling Var w=50": {
+      "auroc": 0.8127,
+      "auprc": 0.5139,
+      "f1_tol": 86.7
+    },
+    "Rolling Var w=100": {
+      "auroc": 0.7386,
+      "auprc": 0.2382,
+      "f1_tol": 78.3
+    },
+    "Z-score (mean abs)": {
+      "auroc": 0.7506,
+      "auprc": 0.2144,
+      "f1_tol": 77.81
+    },
+    "IsolationForest": {
+      "auroc": 0.7142,
+      "auprc": 0.2093,
+      "f1_tol": 76.13
+    },
+    "MSE from mean": {
+      "auroc": 0.7642,
+      "auprc": 0.2261,
+      "f1_tol": 78.56
+    }
+  },
+  "f1_tol_ranking": [
+    "Rolling Var w=50",
+    "MSE from mean",
+    "Rolling Var w=100",
+    "Z-score (mean abs)",
+    "IsolationForest",
+    "Rolling Var w=10"
+  ],
+  "auroc_ranking": [
+    "Rolling Var w=50",
+    "MSE from mean",
+    "Z-score (mean abs)",
+    "Rolling Var w=100",
+    "IsolationForest",
+    "Rolling Var w=10"
+  ],
+  "auprc_ranking": [
+    "Rolling Var w=50",
+    "Rolling Var w=100",
+    "MSE from mean",
+    "Z-score (mean abs)",
+    "IsolationForest",
+    "Rolling Var w=10"
+  ],
+  "spearman_f1_vs_auroc": 0.942857142857143,
+  "spearman_pval": 0.004804664723032055
+}
