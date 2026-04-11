@@ -856,10 +856,11 @@ Mean AUROC: 0.524 +/- 0.037 (oracle: 0.720)
 **CRITICAL FINDING:** Probe 24's AUROC=0.642 was a lucky single-seed result. True multi-seed performance is 0.524 +/- 0.037. This is only marginally above random (0.50) and dramatically lower than oracle (0.720).
 
 **Root cause analysis:**
-1. Seed 42 happens to initialize the attention heads in a particularly effective configuration for this time series.
+1. **CRITICAL METHODOLOGICAL NOTE**: Probe 24's `transformer_ap.py` had NO explicit seeding at all. The 0.642 came from the DEFAULT PyTorch initialization at that moment - an unrepeatable random state. When Probe 27 sets `torch.manual_seed(42)` before model creation, seed=42 gives 0.573, not 0.642. This confirms: 0.642 was NOT reproducible even with seed=42.
 2. High variance (0.037) indicates the model is not robustly learning the AP signal.
 3. Seeds 1 and 2 perform near-random (0.492-0.503), suggesting the AP signal is very difficult to detect.
 4. The cosine LR schedule helps on lucky seeds but doesn't overcome initialization sensitivity.
+5. The 5-seed experiment (Probe 28) with explicit seeding shows seed=42 gives 0.573 (not 0.642), confirming the original result is non-reproducible.
 
 **Implications for all prior probes:**
 - APTransformer 0.642 is NOT the true best result - it's the best of one seed.

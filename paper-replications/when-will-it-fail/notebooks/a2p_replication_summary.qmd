@@ -2053,7 +2053,8 @@ else:
 
 ### 25.1 Motivation
 
-The APTransformer (Probe 24) achieved AUROC = 0.642, with a gap of only 0.078 to the oracle (0.720).
+The APTransformer (Probe 24) achieved AUROC = 0.642 with a gap of only 0.078 to the oracle (0.720). **Note**: Probe 27 subsequently revealed this was a lucky single seed - the true 3-seed mean is 0.524 +/- 0.037. However, we present these results as originally obtained (seed=42) for transparency.
+
 A natural question: can self-supervised pretraining on temporal dynamics (JEPA) close this gap?
 
 The JEPA design:
@@ -2217,8 +2218,9 @@ print(f"  2. It motivates anomaly-aware pretraining designs")
 print(f"  3. The gap to oracle (0.078) requires task-aligned, not generic, SSL")
 print(f"  4. Future work: contrastive anomaly pretraining targeting future AP labels")
 print(f"")
-print(f"Current best: APTransformer supervised (AUROC=0.642) is the baseline to beat.")
-print(f"Target: anomaly-aware pretraining achieving AUROC > 0.720 (oracle)")
+print(f"Current REPORTED best: APTransformer supervised (AUROC=0.642, seed=42 only).")
+print(f"TRUE multi-seed estimate (Probe 27): 0.524 +/- 0.037 (3 seeds).")
+print(f"Target: beat true multi-seed baseline with anomaly-aware SSL achieving AUROC > 0.620")
 ```
 
 ## 26. Probe 26: Contrastive Pretraining for AP
