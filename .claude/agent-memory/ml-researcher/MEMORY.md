@@ -1,6 +1,6 @@
 - [A2P Replication Findings](project_a2p_replication.md) — Rolling var BEATS A2P by +19pp MBA/+12pp SMD no training; AUROC=0.494+/-0.004 (below random, 2-seed confirmed); AUPRC is NeurIPS fix
 - [DCSSL Replication Findings](project_dcssl_replication.md) — FPT shift is key failure mode; paper SimCLR avg≈trivial baseline; paper table had swapped columns; RUL-fix applied to cond2/3
-- [IndustrialJEPA Project Context](project_industrialjepa.md) — V11: E2E=13.80; MLP probe=15.88 (beats linear 17.81); FD003 E2E=15.37 beats LSTM; ext fine-tuning no benefit; FD004 pretraining running
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — V11 ALL DONE: E2E=13.80; MLP=15.88; FD003 E2E=15.37; FD004 E2E=25.62 (6cond hard); cross-fault 28.79@10%; ext fine-tuning no help
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
 - [Bearing RUL SOTA Literature Review (April 2026)](literature_review_rul_sota.md) — FEMTO best nRMSE=0.0443; single-window RUL formulation does NOT exist; DCSSL is only SSL+RUL paper on FEMTO

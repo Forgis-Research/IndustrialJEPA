@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: V11 complete: JEPA E2E=13.80 beats AE-LSTM SSL (13.99); cross-fault transfer (FD001->FD003 @ 10%=28.79 beats LSTM 31.22); FD002 cross-subset: helps frozen at high labels, hurts at low labels
+description: V11 ALL COMPLETE: E2E=13.80; MLP=15.88; FD003 E2E=15.37; FD004 E2E=25.62 (hard-6cond); ext fine-tuning no help
 type: project
 ---
 
@@ -449,7 +449,49 @@ Cross-both transfer (FD002 pretrain -> FD003 fine-tune, frozen probe):
 - 100%=27.24+/-0.42, 20%=35.78+/-2.76, 10%=40.86+/-3.72
 - Transfers very poorly at low labels (different conditions AND fault mode)
 
-Files: part_g_results.json, exp9_zero_shot_results.json, cross_fault_transfer.png, cross_subset_results.png
+### Ablation Results (Exp 4, 5, 6)
+
+Extended fine-tuning (200ep vs 100ep):
+- E2E 200ep: 14.82+/-1.27 vs standard 13.80 (WORSE - no benefit from longer training)
+- Frozen 200ep: 18.09+/-1.50 vs standard 17.81 (WORSE)
+- CONCLUSION: 100-epoch standard fine-tuning already converges. Longer schedules overfit val set.
+
+MLP Probe (2-layer, 128 hidden) vs linear probe (frozen encoder):
+- 100%: MLP=15.88+/-0.68 vs linear=17.81 (+1.93 RMSE, +11% improvement)
+- 50%: MLP=15.97+/-0.92 vs linear=18.71 (+2.74 RMSE)
+- 20%: MLP=17.43+/-0.45 vs linear=19.83 (+2.40 RMSE)
+- 10%: MLP=20.28+/-1.30 vs linear=19.93 (-0.35 RMSE, slightly WORSE)
+- 5%: MLP=21.35+/-2.57 vs linear=21.53 (similar)
+- CONCLUSION: MLP probe improves at high labels (nonlinear structure in representations), 
+  but linear probe has better inductive bias at very low labels
+
+### FD003 In-domain Results (Exp 8, complete)
+
+FD003 has single operating condition, 2 fault modes (fan blade + HPC combined). STAR=10.71.
+- Frozen @ 100%: 19.25+/-3.19 (high variance due to outlier seed 2=25.61)
+- E2E @ 100%: 15.37+/-0.89 (beats supervised LSTM 17.36!)
+- Frozen @ 20%: 21.39+/-1.06
+- E2E @ 20%: 20.14+/-2.40
+- Frozen @ 10%: 32.62+/-2.37
+- E2E @ 10%: 21.54+/-1.47 (vs LSTM 31.22 - 30% advantage confirmed)
+
+### FD004 Results (COMPLETE)
+
+FD004 pretraining done in 36.8 min, best probe RMSE = 16.74 at Ep 60, early stopped at Ep 160.
+212 train, 37 val, 248 test. 6 operating conditions + 2 fault modes (hardest subset). STAR=14.25.
+
+- Frozen @ 100%: 29.35+/-0.61
+- E2E @ 100%: 25.62+/-0.26
+- Frozen @ 20%: 30.78+/-0.28
+- E2E @ 20%: 27.16+/-0.41
+- Frozen @ 10%: 31.08+/-0.15
+- E2E @ 10%: 29.03+/-0.55
+- Gap to STAR: +11.37 RMSE (FD004 is the hardest; even STAR FD004=14.25 is harder than FD001=10.61)
+- Very low variance (std<=0.55) confirms stable predictions on hardest subset
+- E2E > frozen at ALL budgets (consistent direction)
+- Current V2 d_model=256 insufficient for 6-condition settings; capacity scaling needed
+
+All Exp 8 results saved to: experiments/v11/exp8_fd3_fd4_results.json
 
 ### Files
 - `experiments/v11/` - all code, checkpoints, results
@@ -457,6 +499,9 @@ Files: part_g_results.json, exp9_zero_shot_results.json, cross_fault_transfer.pn
 - `experiments/v11/data_utils.py` - CMAPSSFinetuneDataset, CMAPSSPretrainDataset
 - `experiments/v11/best_pretrain_L1_v2.pt` - primary pretrained checkpoint (V2)
 - `experiments/v11/best_pretrain_fd002.pt` - FD002 pretrained checkpoint (V2)
+- `experiments/v11/finetune_results_ext.json` - Exp4 extended fine-tuning results
+- `experiments/v11/finetune_results_mlp_full.json` - Exp6 MLP probe all budgets
 - `experiments/v11/RESULTS.md`, `RESULTS_FINAL.md` - full results tables
 - `notebooks/11_v11_cmapss_trajectory_jepa.qmd` - Quarto notebook
-- `analysis/plots/v11/` - all generated plots (prediction_trajectories.png, architecture_ablation.png, etc.)
+- `analysis/plots/v11/finetuning_ablations.png` - Exp4/6 ablation plot
+- `analysis/plots/v11/` - all generated plots

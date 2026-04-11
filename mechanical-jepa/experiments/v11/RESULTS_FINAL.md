@@ -99,6 +99,27 @@ PHM improvement: 10.6% (JEPA vs LSTM)
 
 Cross-transfer benefit at 10% labels: -4.75 RMSE (positive = cross-transfer helps)
 
+## Exp 8: FD003 and FD004 In-domain Results
+
+### FD003 (STAR supervised ref: 10.71)
+
+| Method | 100% | 20% | 10% |
+|:-------|:----:|:---:|:---:|
+| JEPA frozen | 19.25+/-3.19 | 21.39+/-1.06 | 32.62+/-2.37 |
+| JEPA E2E | 15.37+/-0.89 | 20.14+/-2.40 | 21.54+/-1.47 |
+| STAR supervised | 10.71 | - | - |
+Gap to STAR: +4.66 RMSE
+
+### FD004 (STAR supervised ref: 14.25)
+
+| Method | 100% | 20% | 10% |
+|:-------|:----:|:---:|:---:|
+| JEPA frozen | 29.35+/-0.61 | 30.78+/-0.28 | 31.08+/-0.15 |
+| JEPA E2E | 25.62+/-0.26 | 27.16+/-0.41 | 29.03+/-0.55 |
+| STAR supervised | 14.25 | - | - |
+Gap to STAR: +11.37 RMSE
+
+
 ## Exp 9: Cross-fault Transfer
 
 ### FD001 (pretrain) -> FD003 (fine-tune, frozen probe)

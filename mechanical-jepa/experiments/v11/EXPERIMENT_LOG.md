@@ -967,3 +967,68 @@ FD004: 212 train, 37 val, 248 test
   FD004 model params: 1,256,192
 FD004 Ep   1 | loss=0.0313 | probe=30.40 (best=30.40)
 FD004 Ep  10 | loss=0.0249 | probe=18.02 (best=18.02)
+FD004 Ep  20 | loss=0.0333 | probe=17.47 (best=17.47)
+FD004 Ep  30 | loss=0.0324 | probe=17.50 (best=17.47)
+FD004 Ep  40 | loss=0.0282 | probe=18.02 (best=17.47)
+FD004 Ep  50 | loss=0.0252 | probe=17.74 (best=17.47)
+FD004 Ep  60 | loss=0.0226 | probe=16.74 (best=16.74)
+FD004 Ep  70 | loss=0.0324 | probe=18.30 (best=16.74)
+FD004 Ep  80 | loss=0.0305 | probe=17.57 (best=16.74)
+FD004 Ep  90 | loss=0.0260 | probe=18.01 (best=16.74)
+FD004 Ep 100 | loss=0.0274 | probe=17.92 (best=16.74)
+FD004 Ep 110 | loss=0.0273 | probe=17.97 (best=16.74)
+FD004 Ep 120 | loss=0.0263 | probe=18.29 (best=16.74)
+FD004 Ep 130 | loss=0.0274 | probe=18.16 (best=16.74)
+FD004 Ep 140 | loss=0.0250 | probe=17.72 (best=16.74)
+FD004 Ep 150 | loss=0.0255 | probe=17.62 (best=16.74)
+  FD004 early stop at ep 160
+FD004 pretraining done in 36.8 min. Best probe RMSE: 16.74
+
+FD004 Fine-tuning at 100% and 20%...
+  FD004 frozen @ 100% seed=0: 28.31
+  FD004 frozen @ 100% seed=1: 29.20
+  FD004 frozen @ 100% seed=2: 30.19
+  FD004 frozen @ 100% seed=3: 29.56
+  FD004 frozen @ 100% seed=4: 29.46
+  FD004 frozen @ 100%: 29.35 +/- 0.61
+  FD004 e2e @ 100% seed=0: 26.10
+  FD004 e2e @ 100% seed=1: 25.42
+  FD004 e2e @ 100% seed=2: 25.67
+  FD004 e2e @ 100% seed=3: 25.44
+  FD004 e2e @ 100% seed=4: 25.49
+  FD004 e2e @ 100%: 25.62 +/- 0.26
+  FD004 frozen @ 20% seed=0: 30.44
+  FD004 frozen @ 20% seed=1: 31.03
+  FD004 frozen @ 20% seed=2: 30.54
+  FD004 frozen @ 20% seed=3: 30.74
+  FD004 frozen @ 20% seed=4: 31.16
+  FD004 frozen @ 20%: 30.78 +/- 0.28
+  FD004 e2e @ 20% seed=0: 26.75
+  FD004 e2e @ 20% seed=1: 26.80
+  FD004 e2e @ 20% seed=2: 27.89
+  FD004 e2e @ 20% seed=3: 27.09
+  FD004 e2e @ 20% seed=4: 27.26
+  FD004 e2e @ 20%: 27.16 +/- 0.41
+  FD004 frozen @ 10% seed=0: 30.98
+  FD004 frozen @ 10% seed=1: 31.24
+  FD004 frozen @ 10% seed=2: 30.88
+  FD004 frozen @ 10% seed=3: 31.26
+  FD004 frozen @ 10% seed=4: 31.02
+  FD004 frozen @ 10%: 31.08 +/- 0.15
+  FD004 e2e @ 10% seed=0: 29.18
+  FD004 e2e @ 10% seed=1: 28.72
+  FD004 e2e @ 10% seed=2: 29.32
+  FD004 e2e @ 10% seed=3: 28.14
+  FD004 e2e @ 10% seed=4: 29.76
+  FD004 e2e @ 10%: 29.03 +/- 0.55
+
+FD004 Summary:
+  E2E @ 100%: 25.62 vs STAR 14.25
+  Frozen @ 100%: 29.35
+  E2E @ 20%: 27.16
+
+## Exp 8: All-subset Summary
+| Subset | JEPA E2E@100% | JEPA Frozen@100% | STAR ref |
+|:------:|:-------------:|:----------------:|:--------:|
+| FD003 | 15.37+/-0.89 | 19.25 | 10.71 |
+| FD004 | 25.62+/-0.26 | 29.35 | 14.25 |
