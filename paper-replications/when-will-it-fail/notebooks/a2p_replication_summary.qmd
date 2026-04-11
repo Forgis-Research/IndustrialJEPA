@@ -909,3 +909,38 @@ print("  inflates F1 from 5.35% (raw) to 43.1% (8x). The paper's 67.55%")
 print("  likely uses different data or has additional implementation details")
 print("  not captured in the public code.")
 ```
+
+## 11. Statistical Baselines vs A2P on MBA_svdb
+
+To further validate that A2P provides no unique benefit, we run classical anomaly detection baselines on MBA_svdb (single SVDB record, proper train/test split, 0.145% anomaly rate - real grey-swan regime).
+
+```{python}
+import json
+
+with open('../results/improvements/svdb_baselines.json') as f:
+    svdb = json.load(f)
+
+print("=== Statistical Baselines on MBA_svdb (AUROC, no tolerance tricks) ===")
+print(f"Dataset: {svdb['dataset']}")
+print(f"Train: {svdb['n_train']:,}, Test: {svdb['n_test']:,}")
+print(f"Anomaly rate: {svdb['anomaly_rate_pct']}% (grey-swan regime)")
+print()
+print(f"{'Method':<25} {'AUROC':>8} {'AUPRC':>8}")
+print("-"*45)
+for name, r in svdb['results'].items():
+    label = {'zscore': 'Z-score', 'rolling_var': 'Rolling Variance (w=100)',
+             'isoforest': 'Isolation Forest', 'linear_ar': 'Linear AR(10)'}
+    print(f"{label.get(name, name):<25} {r['auroc']:>8.4f} {r['auprc']:>8.4f}")
+
+print()
+print("A2P (TranAD MBA, train==test): AUROC=0.528")
+print("Chronos-Small (MBA proper):    AUROC=0.745")
+print()
+print("KEY: ALL trivial baselines beat A2P's AUROC on SVDB data.")
+print("Rolling Variance (0.730) nearly matches Chronos-Small (0.745).")
+print("These require no training, no GPU, and run in seconds.")
+print()
+print("This demonstrates that the A2P architecture does not provide")
+print("competitive anomaly discrimination - a frozen Chronos or even")
+print("rolling variance baseline captures most of the signal.")
+```

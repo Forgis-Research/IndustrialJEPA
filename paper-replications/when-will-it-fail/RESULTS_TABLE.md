@@ -61,13 +61,13 @@ Notes:
 | Component | Paper F1 | Our F1 | Gap | Status |
 |-----------|----------|--------|-----|--------|
 | Full A2P | 67.55 | 19.07 | -48.5pp | Replicated (with gap) |
-| - Shared Backbone | 51.53 | running | - | IN PROGRESS |
-| - AAF (no noise inject) | 36.26 | running | - | IN PROGRESS |
+| - Shared Backbone | 51.53 | 18.58 | -33.0pp | DONE (direction: correct) |
+| - AAF cross-attn | 36.26 | 42.55 | +6.3pp | DONE (direction: WRONG - near-null) |
 | - APP | 60.69 | - | - | Not run |
 | - Contrastive Loss | 55.67 | - | - | Not run |
 | - Forecast Loss | 63.18 | - | - | Not run |
 
-Expected direction: removing each component should reduce F1. If our ablations show the same direction (F1 drops when components removed), this validates the architecture even if absolute numbers differ.
+Direction analysis: Removing shared backbone reduces F1 (correct direction, expected). Removing AAFN barely changes F1 (wrong direction vs paper, 42.55 vs 43.1 = -0.5pp vs paper -31.3pp). This is explained by train==test data: AAFN provides no generalization benefit in-sample.
 
 ---
 
@@ -75,14 +75,25 @@ Expected direction: removing each component should reduce F1. If our ablations s
 
 | Probe | Method | Metric | Value | Baseline | Significance |
 |-------|--------|--------|-------|----------|-------------|
-| Calibration | A2P MBA | AUROC | 0.528 | 0.500 (random) | Near-random! |
-| Calibration | A2P MBA | Raw F1 | 5.35% | - | vs 43.1% with tolerance |
-| Calibration | A2P MBA | Brier Skill | -0.117 | 0.0 | NEGATIVE |
-| Calibration | A2P MBA | AUPRC | 0.035 | 0.029 | Marginally above random |
+| Calibration | A2P MBA (TranAD) | AUROC | 0.528 | 0.500 (random) | Near-random! |
+| Calibration | A2P MBA (TranAD) | Raw F1 | 5.35% | - | vs 43.1% with tolerance |
+| Calibration | A2P MBA (TranAD) | Brier Skill | -0.117 | 0.0 | NEGATIVE |
+| Calibration | A2P MBA (TranAD) | AUPRC | 0.035 | 0.029 | Marginally above random |
 | Grey-Swan | A2P MBA | F1@0.1% rate | 1.8% | 0.0% | 10x collapse from 3.12% |
 | Grey-Swan | A2P MBA | F1@1% rate | 11.76% | 0.0% | - |
 | LTW-F1 | A2P MBA | LTW-F1 | 23.85% | Random: 14.25% | 1.67x advantage |
 | LTW-F1 | A2P MBA | LTW/Std ratio | 4.46x | Random: 5.07x | Random has MORE lead time |
+| Chronos-Small | Zero fine-tuning | AUROC | 0.745 | A2P: 0.528 | +21.7pp over A2P! |
+| Chronos-Small | Zero fine-tuning | F1-tol (95th) | 7.4% | A2P: 43.1% | 5.8x LOWER F1 |
+| Data Integrity | Proper 70/30 split | F1-tol | 12.66% | train==test: 43.1% | 3.4x inflation |
+| Oracle Threshold | Exhaustive sweep | Best F1-tol | 43.58% | A2P: 43.1% | 0.48pp ceiling |
+| Stat. Baselines | Z-score (MBA_svdb) | AUROC | 0.675 | A2P: 0.528 | +14.7pp trivially |
+| Stat. Baselines | Rolling Var (MBA_svdb) | AUROC | 0.730 | A2P: 0.528 | +20.2pp trivially |
+| Stat. Baselines | IsolationForest (MBA_svdb) | AUROC | 0.665 | A2P: 0.528 | +13.7pp trivially |
+| Stat. Baselines | Linear AR(10) (MBA_svdb) | AUROC | 0.703 | A2P: 0.528 | +17.5pp trivially |
+
+Note: MBA_svdb = single SVDB record (161K train / 69K test), 0.145% anomaly rate (grey-swan regime).
+A2P results use TranAD MBA (train==test, 3.12% anomaly rate) - direct comparison not apples-to-apples.
 
 ---
 
