@@ -37,6 +37,13 @@ The JEPA objective decouples from downstream RUL after early convergence.
 | STAR 2024 (from paper) | 10.61 | - | - | - | - |
 | AE-LSTM SSL (from paper) | 13.99 | - | - | - | - |
 
+## FD001 MLP Probe (V2 frozen encoder, 2-layer MLP head)
+
+| Method | 100% | 50% | 20% | 10% | 5% |
+|:-------|:----:|:---:|:---:|:---:|:--:|
+| Linear probe (frozen) | 17.81+/-1.67 | 18.71+/-1.13 | 19.83+/-0.34 | 19.93+/-0.86 | 21.53+/-1.96 |
+| MLP probe (frozen) | 15.88+/-0.68 | 15.97+/-0.92 | 17.43+/-0.45 | 20.28+/-1.30 | 21.35+/-2.57 |
+
 ## FD001 Architecture Ablation: V3 (d_model=128, n_layers=3, 499K params)
 
 | Method | 100% | 50% | 20% | 10% | 5% |
@@ -55,6 +62,15 @@ The JEPA objective decouples from downstream RUL after early convergence.
 | LSTM supervised | 17.36+/-1.24 | - | 66K | - |
 | AE-LSTM SSL (ref) | 13.99 | - | - | Paper |
 | STAR supervised (ref) | 10.61 | - | - | Paper |
+
+## Fine-tuning Ablation: Extended Epochs (V2 @ 100%)
+
+| Method | RMSE | Notes |
+|:-------|:----:|:------|
+| V2 E2E 100ep (standard) | 13.80+/-0.75 | patience=20 |
+| V2 E2E 200ep (extended) | 14.82+/-1.27 | patience=30 |
+| V2 frozen 100ep (standard) | 17.81+/-1.67 | patience=20 |
+| V2 frozen 200ep (extended) | 18.09+/-1.50 | patience=30 |
 
 ## PHM Score Results (V2 E2E vs LSTM @ 100% Labels)
 

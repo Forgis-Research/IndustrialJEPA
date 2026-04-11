@@ -814,3 +814,156 @@ FD003 Ep 180 | loss=0.0173 | probe=16.71 (best=15.64)
   Ext 200ep seed=2: frozen=18.62, e2e=13.92
 FD003 Ep 190 | loss=0.0173 | probe=16.60 (best=15.64)
   Ext 200ep seed=3: frozen=16.18, e2e=13.35
+FD003 Ep 200 | loss=0.0161 | probe=16.70 (best=15.64)
+FD003 pretraining done in 33.8 min. Best probe RMSE: 15.64
+
+FD003 Fine-tuning at 100% and 20%...
+  FD003 frozen @ 100% seed=0: 18.13
+  FD003 frozen @ 100% seed=1: 17.44
+  Ext 200ep seed=4: frozen=19.46, e2e=14.79
+
+  Ext frozen @ 100%: 18.09 +/- 1.50
+  Ext E2E @ 100%: 14.82 +/- 1.27
+  vs standard (100ep): frozen=17.81, e2e=13.80
+  Elapsed: 11.5 min
+
+## Exp 4: Extended Fine-tuning (200 epochs, patience=30)
+**Time**: 2026-04-11 13:13
+**Hypothesis**: More fine-tuning epochs help convergence
+**Result**: E2E 200ep=14.82 vs 100ep=13.80
+**Verdict**: NO IMPROVEMENT
+**Next**: Standard 100ep is sufficient
+
+============================================================
+EXP 5: MLP Probe (2-layer) vs Linear Probe - V2 Frozen @ 100%
+Hypothesis: Linear probe understimates frozen encoder quality
+============================================================
+  FD003 frozen @ 100% seed=2: 25.61
+  MLP probe seed=0: 17.86
+  FD003 frozen @ 100% seed=3: 17.72
+  MLP probe seed=1: 16.58
+  FD003 frozen @ 100% seed=4: 17.35
+  FD003 frozen @ 100%: 19.25 +/- 3.19
+  MLP probe seed=2: 16.54
+  MLP probe seed=3: 15.76
+  FD003 e2e @ 100% seed=0: 15.33
+  MLP probe seed=4: 16.04
+
+  MLP probe @ 100%: 16.55 +/- 0.72
+  vs linear probe: 17.81 +/- 1.67
+  Improvement: 1.26 RMSE
+  Elapsed: 2.1 min
+
+## Exp 5: MLP Probe vs Linear Probe (frozen encoder, V2)
+**Time**: 2026-04-11 13:15
+**Hypothesis**: Nonlinear probe better exploits frozen embeddings
+**Result**: MLP=16.55 vs Linear=17.81
+**Verdict**: MLP helps - representations are nonlinearly useful
+
+============================================================
+EXP 6: MLP Probe at All Label Budgets
+Hypothesis: MLP probe advantage is stronger at low labels
+============================================================
+  MLP probe @ 100% seed=0: 15.75
+  MLP probe @ 100% seed=1: 16.12
+  FD003 e2e @ 100% seed=1: 17.03
+  MLP probe @ 100% seed=2: 15.70
+  MLP probe @ 100% seed=3: 16.98
+  FD003 e2e @ 100% seed=2: 14.76
+  MLP probe @ 100% seed=4: 14.87
+  MLP probe @ 100%: 15.88 +/- 0.68
+  FD003 e2e @ 100% seed=3: 14.49
+  MLP probe @ 50% seed=0: 17.48
+  MLP probe @ 50% seed=1: 16.53
+  FD003 e2e @ 100% seed=4: 15.26
+  FD003 e2e @ 100%: 15.37 +/- 0.89
+  MLP probe @ 50% seed=2: 15.61
+  FD003 frozen @ 20% seed=0: 22.31
+  FD003 frozen @ 20% seed=1: 21.36
+  FD003 frozen @ 20% seed=2: 19.46
+  MLP probe @ 50% seed=3: 14.94
+  FD003 frozen @ 20% seed=3: 22.40
+  FD003 frozen @ 20% seed=4: 21.41
+  FD003 frozen @ 20%: 21.39 +/- 1.06
+  MLP probe @ 50% seed=4: 15.28
+  MLP probe @ 50%: 15.97 +/- 0.92
+  FD003 e2e @ 20% seed=0: 21.38
+  MLP probe @ 20% seed=0: 17.91
+  MLP probe @ 20% seed=1: 16.62
+  FD003 e2e @ 20% seed=1: 23.12
+  MLP probe @ 20% seed=2: 17.75
+  FD003 e2e @ 20% seed=2: 16.66
+  MLP probe @ 20% seed=3: 17.52
+  FD003 e2e @ 20% seed=3: 21.51
+  MLP probe @ 20% seed=4: 17.35
+  MLP probe @ 20%: 17.43 +/- 0.45
+  MLP probe @ 10% seed=0: 18.58
+  FD003 e2e @ 20% seed=4: 18.04
+  FD003 e2e @ 20%: 20.14 +/- 2.40
+  MLP probe @ 10% seed=1: 20.96
+  FD003 frozen @ 10% seed=0: 29.97
+  FD003 frozen @ 10% seed=1: 32.26
+  MLP probe @ 10% seed=2: 20.37
+  FD003 frozen @ 10% seed=2: 31.54
+  MLP probe @ 10% seed=3: 19.20
+  FD003 frozen @ 10% seed=3: 32.31
+  MLP probe @ 10% seed=4: 22.27
+  MLP probe @ 10%: 20.28 +/- 1.30
+  FD003 frozen @ 10% seed=4: 37.05
+  FD003 frozen @ 10%: 32.62 +/- 2.37
+  MLP probe @ 5% seed=0: 25.49
+  MLP probe @ 5% seed=1: 21.40
+  MLP probe @ 5% seed=2: 18.63
+  FD003 e2e @ 10% seed=0: 20.48
+  MLP probe @ 5% seed=3: 18.68
+  MLP probe @ 5% seed=4: 22.55
+  MLP probe @ 5%: 21.35 +/- 2.57
+
+--- MLP Probe Label Efficiency Summary ---
+Budget | Linear Probe | MLP Probe | Improvement
+  100%   | 17.81         | 15.88      | 1.93
+  50%   | 18.71         | 15.97      | 2.74
+  20%   | 19.83         | 17.43      | 2.40
+  10%   | 19.93         | 20.28      | -0.34
+  5%   | 21.53         | 21.35      | 0.18
+
+============================================================
+REMAINING EXPERIMENTS COMPLETE
+Finished: 2026-04-11 13:22
+============================================================
+
+## Final Architecture Comparison (FD001, 100% labels)
+| Model | E2E RMSE | Frozen RMSE | Params |
+|:------|:--------:|:-----------:|:------:|
+| V1 (d=128, L=2) | 14.79+/-0.92 | 21.33+/-0.32 | 366K |
+| V2 (d=256, L=2) | 13.80+/-0.75 | 17.81+/-1.67 | 1.26M |
+| V3 (d=128, L=3) | 15.68+/-0.82 | 23.60+/-0.60 | 499K |
+| LSTM supervised | 17.36+/-1.24 | - | - |
+| AE-LSTM SSL ref | 13.99 | - | - |
+| STAR supervised | 10.61 | - | - |
+
+## Final Label Efficiency (V2, FD001)
+| Budget | LSTM | V2 Frozen | V2 MLP Probe | V2 E2E |
+|:------:|:----:|:---------:|:------------:|:------:|
+| 100% | 17.36+/-1.24 | 17.81 | 15.88 | 13.80 |
+| 50% | 18.30+/-0.75 | 18.71 | 15.97 | 14.93 |
+| 20% | 18.55+/-0.81 | 19.83 | 17.43 | 16.54 |
+| 10% | 31.22+/-10.93 | 19.93 | 20.28 | 18.66 |
+| 5% | 33.08+/-9.64 | 21.53 | 21.35 | 25.33 |
+  FD003 e2e @ 10% seed=1: 23.83
+  FD003 e2e @ 10% seed=2: 21.05
+  FD003 e2e @ 10% seed=3: 22.54
+  FD003 e2e @ 10% seed=4: 19.77
+  FD003 e2e @ 10%: 21.54 +/- 1.47
+
+FD003 Summary:
+  E2E @ 100%: 15.37 vs STAR 10.71
+  Frozen @ 100%: 19.25
+  E2E @ 20%: 20.14
+
+--- FD004 ---
+Loading FD004...
+FD004: 212 train, 37 val, 248 test
+  FD004 model params: 1,256,192
+FD004 Ep   1 | loss=0.0313 | probe=30.40 (best=30.40)
+FD004 Ep  10 | loss=0.0249 | probe=18.02 (best=18.02)
