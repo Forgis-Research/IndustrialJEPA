@@ -1,0 +1,7 @@
+{
+  "dataset": "SMD_first_100K",
+  "oracle_future_var_auroc": 0.5536842149052613,
+  "lr_multi_scale_auroc": 0.5285457205529599,
+  "future_ap_rate": 0.0421,
+  "note": "5-channel features, stride=10, LR classifier"
+}

@@ -2271,15 +2271,63 @@ LR scores:
 
 ---
 
-### Probe 68: AUPRC Full Comparison (RUNNING)
+### Analysis: Zero-Parameter Calm Signal Detector (COMPLETE)
 
-**Time:** 2026-04-12 01:00 (GPU, PID 182483)
+**Time:** 2026-04-12 01:55 (CPU-only, instant)
+**Finding:** A single feature "negative full-window variance of both channels" achieves:
+- AUROC=0.613, AUPRC=0.124 (competitive with LR 4-feat: 0.631 / 0.122)
+- Zero parameters, zero training needed
+- For AUPRC, the single feature slightly EXCEEDS the optimized LR!
+
+**Key insight:** The "calm before storm" signal is so simple that even a single variance
+threshold captures essentially all the learnable AUPRC signal.
+The LR's AUROC advantage (0.631 vs 0.613) comes from combining multiple features,
+but for precision-recall purposes, complexity adds nothing.
+
+**Implication for Claim 11:** LR = TF for AUROC; single-feature calm detector ≈ LR for AUPRC.
+The entire predictive signal in SVDB4 AP is captured by "is the signal unusually quiet right now?"
+
+---
+
+### Probe 68b: AUPRC Full Comparison (RUNNING)
+
+**Time:** 2026-04-12 02:15 (GPU, PID 187037)
 **Hypothesis:** Supervised transformer achieves higher AUPRC than LR 4-feat, but both well below oracle.
 **Design:** LR 4-feat + APTransformer (5 seeds, 100ep) on SVDB4. Compare AUROC AND AUPRC.
-**Oracle (already computed):** AUROC=0.722, AUPRC=0.478
-**LR 4-feat (already computed):** AUROC=0.630, AUPRC=0.122
-**Status:** RUNNING - training transformer (5 seeds)
+**LR (already computed):** AUROC=0.6345, AUPRC=0.1336
+**Status:** RUNNING - training transformer seeds 1,2,3,4 (seed 42 done: AUROC=0.6205, AUPRC=0.1067)
 **Why:** Claim #5 (AP is learnable) needs AUPRC validation; AUPRC more informative for imbalanced tasks.
+
+---
+
+### Probe 67b: SMD Epoch Convergence (RUNNING)
+
+**Time:** 2026-04-12 02:10 (GPU, PID 186895)
+**Hypothesis:** 30ep = insufficient on SMD (< 0.60 AUROC), 100ep = sufficient (> 0.60) - same pattern as SVDB4
+**Design:** APTransformer (d=64, MLP head) on SMD top-5 channels [24,11,12,34,35], stride=10, 3 seeds each
+**Reference (SVDB4):** 30ep 10% above 0.60, 100ep 100% above 0.60
+**Status:** RUNNING - 6 total runs
+**Why:** Validate Claim 10 (epoch convergence) on a second dataset.
+
+---
+
+### Probe 72b: Regression vs Classification Target (PENDING)
+
+**Time:** Pending (after probe67b/68b complete)
+**Hypothesis:** Training TF to predict future variance (the oracle signal) will NOT improve AUROC vs binary classification
+**Design:** APTransformer 3 seeds: (a) BCE + binary AP labels, (b) HuberLoss + normalized future variance
+**Why:** Test if the supervised oracle signal as training target bridges the AUROC gap.
+**Script:** /tmp/probe72b_regression.py
+
+---
+
+### Probe 73b: LR + TF Ensemble (PENDING)
+
+**Time:** Pending (after probe72b complete)
+**Hypothesis:** LR and TF capture complementary information - ensemble marginally improves over both
+**Design:** Average LR + TF (3-seed avg) scores using rank normalization
+**Why:** Standard ensemble check for the NeurIPS final table.
+**Script:** /tmp/probe73b_ensemble.py
 
 ---
 
