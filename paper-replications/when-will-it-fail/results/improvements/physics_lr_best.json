@@ -1,0 +1,8 @@
+{
+  "probe": "93_physics_lr_best",
+  "best_C": 0.01,
+  "test_auroc": 0.6384902977462852,
+  "test_auprc": 0.11150005911165588,
+  "lr4feat_auroc": 0.6345,
+  "lr4feat_auprc": 0.1336
+}
