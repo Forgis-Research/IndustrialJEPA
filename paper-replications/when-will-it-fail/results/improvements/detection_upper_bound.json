@@ -1,0 +1,11 @@
+{
+  "probe": "105_detection_upper_bound",
+  "detection_auroc": 0.45641931684334514,
+  "detection_auprc": 0.0770485120260905,
+  "context_var_auroc": 0.47645390988049013,
+  "hybrid_auroc": 0.7266273684363594,
+  "oracle_auroc": 0.7471857128315706,
+  "lr_auroc": 0.634,
+  "p_ap_given_anomaly": 0.0,
+  "p_ap_given_no_anomaly": 0.08378897607326508
+}

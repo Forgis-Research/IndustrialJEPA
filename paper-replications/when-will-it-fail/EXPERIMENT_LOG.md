@@ -2993,3 +2993,54 @@ This variance trajectory IS learnable by LR and explains why LR AUROC=0.702 > Or
 
 ---
 
+
+### Probe 104: Rising Variance Feature Test (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** A "variance acceleration" feature (late/early ratio) should capture strict AP+ better than raw variance.
+**Design:** CPU-only. Test 3 feature sets: standard 4-feat, 7-feat rising variance, 11-feat combined.
+**Sanity checks:** ✓ Standard LR confirmed 0.634/0.702 on standard/strict AP
+
+**Result:**
+
+| Feature Set | Standard AP AUROC | Strict AP AUROC |
+|------------|-------------------|----------------|
+| Standard 4-feat (negated var) | 0.634 | 0.702 |
+| Rising var 7-feat (ratios) | 0.561 | 0.673 |
+| Combined 11-feat | 0.624 | 0.697 |
+
+**Key finding:** The standard 4-feature LR (negated variance) already captures the rising pattern better than explicit "variance ratio" features. The negated last-50 variance [-var[-50:]] is most discriminative, and it correlates with the rising trend because high last-50 variance = high anomaly onset signal.
+**Conclusion:** Standard LR features are sufficient; no gain from explicit rise features.
+**File:** results/improvements/rising_var_features.json
+
+---
+
+### Probe 105: Detection Upper Bound Analysis (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** Simple detection (current anomaly state) explains most of LR's performance.
+**Design:** CPU-only. Compute AUROC of "current anomaly label" as a score for AP task.
+**Sanity checks:** ✓ Contamination definition verified: anomaly in [t, t+100] not [t-50, t]
+
+**Result:**
+
+| Method | AUROC |
+|--------|-------|
+| Perfect anomaly detection (current state) | 0.456 (BELOW random!) |
+| Context variance proxy | 0.477 |
+| Oracle future variance | 0.747 |
+| Hybrid (detection + oracle) | 0.727 |
+| LR 4-feat | 0.634 |
+
+**SURPRISING FINDING:** Detection (knowing if anomaly is currently happening) gives AUROC=0.456 on the AP task - BELOW RANDOM! P(AP+ | current anomaly) ≈ 0.000. This is because:
+- "Contaminated" AP+: anomaly starts in [t, t+100], NOT in context window [t-200, t]
+- The contamination is FUTURE contamination (anomaly starts soon), not CURRENT detection
+- So having a current anomaly does NOT predict the future anomaly (they're from different time blocks)
+- The AP task is NOT solvable by anomaly detection - it genuinely requires temporal prediction
+- This validates the strict AP+ definition and the contamination analysis findings
+
+**Implication:** Previous probe's finding of "66.5% contamination" means "66.5% AP+ will have anomaly in [t, t+100] before the prediction window" NOT "66.5% AP+ have current anomalies." The LR's performance comes from true temporal pattern detection, not from confusing current anomalies with future ones.
+**File:** results/improvements/detection_upper_bound.json
+
+---
+
