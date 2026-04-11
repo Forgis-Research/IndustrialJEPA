@@ -1,11 +1,26 @@
 {
-  "oracle_auroc": 0.3468662622409581,
-  "oracle_auprc": 0.04581981095769498,
-  "past_var_auroc": 0.8126651248184095,
-  "past_var_auprc": 0.5138997341547826,
-  "shifted_auroc": 0.44854257808515713,
-  "shifted_auprc": 0.05309823461696588,
-  "pred_len": 100,
-  "window": 50,
-  "dataset": "SVDB4"
+  "svdb4": {
+    "oracle_auroc": 0.3469,
+    "oracle_auprc": 0.0458,
+    "past_var_auroc": 0.8127,
+    "past_var_auprc": 0.5139,
+    "shifted_auroc": 0.4485,
+    "shifted_auprc": 0.0531,
+    "pred_len": 100,
+    "window": 50,
+    "anomaly_rate": 0.0635,
+    "finding": "Oracle AUROC=0.347 (BELOW RANDOM!) - future var doesn't predict current anomaly labels"
+  },
+  "smd": {
+    "oracle_auroc": 0.6360,
+    "oracle_auprc": 0.0787,
+    "past_var_auroc": 0.7371,
+    "past_var_auprc": 0.1814,
+    "shifted_auroc": 0.6333,
+    "pred_len": 100,
+    "window": 50,
+    "anomaly_rate": 0.0416,
+    "finding": "Past detection (0.737) beats oracle prediction (0.636) - evaluation rewards detection not prediction"
+  },
+  "conclusion": "On SVDB4: oracle AUROC=0.347 (below random), proving current label ≠ future anomaly. On SMD: oracle > random but past var still beats oracle (0.737 vs 0.636). Both confirm F1-tolerance rewards anomaly detection proximity, not true future prediction."
 }
