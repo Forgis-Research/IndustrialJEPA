@@ -1982,29 +1982,39 @@ Stride=5 validation: 4-feature (var50+varfull) = 0.6308 vs 8-feat ref 0.6223 -> 
 
 ---
 
-### Probe 57: Near-Horizon Transformer (0-50 steps, PARTIAL - seed=42 done)
+### Probe 57: Near-Horizon Transformer (0-50 steps, COMPLETE - 3 seeds)
 
-**Time:** 2026-04-11 21:45 (running, GPU, seeds 1&2 in progress)
+**Time:** 2026-04-11 21:45 - 23:15 (COMPLETE)
 **Hypothesis:** Transformer should match or exceed LR's 0.646 on near-horizon (0-50 steps).
 **Design:** APTransformer (d=64, L=2, sinusoidal PE) on labels: anomaly in [t, t+50].
-**Partial results:**
+**Results:**
 ```
-seed=42: val=0.8013, test=0.7590  *** EXTREMELY HIGH ***
+seed=42: val=0.8013, test=0.7590
+seed=1:  val=0.9115, test=0.8293
+seed=2:  val=0.8996, test=0.8234
 
-Near-horizon oracle (future var in test positions): 0.7498
+Near-horizon transformer (0-50, 3 seeds): 0.8039 +/- 0.0318
+Near-horizon oracle: 0.7498
 Near-horizon LR (from Probe 51): 0.6456
-
-Transformer seed=42 (0.759) > Oracle (0.750)!
+A2P default transformer (5-seed): 0.6238
 ```
-**CRITICAL OBSERVATION:** Seed=42 transformer EXCEEDS the future-variance oracle!
-This means the transformer found information in the past 200 steps that BEYOND what future variance can predict.
-- Oracle uses var(signal[t:t+50]) = future variance
-- Transformer uses signal[t-200:t] = past context only
-- Past signal appears MORE predictive than future variance for [t:t+50]
-- This makes sense: anomalies have "calm before storm" signature that persists for 200+ steps
-- The 200-step context captures the FULL calm-before-storm window
-- Need seeds 1&2 to confirm this is not a lucky seed
-**Status:** RUNNING - seeds 1&2 in progress
+**Sanity checks:** FAILED - results ABOVE ORACLE by ALL 3 seeds
+**Verdict:** KEEP (but as EVIDENCE OF CONTAMINATION, not valid AP result)
+**DEFINITIVE FINDING:** ALL 3 seeds exceed the oracle AUROC (0.750).
+This DEFINITIVELY CONFIRMS that near-horizon (0-50) is contaminated:
+1. Transformer gets 0.804 ± 0.032 vs oracle 0.750 -> impossible for valid AP task
+2. Model is NOT predicting future events - it's detecting CURRENT ongoing anomalies
+3. 66.4% of AP+ labels have anomaly already in the 200-step context window (Probe 64)
+4. The 200-step context [t-200, t] already CONTAINS the anomaly for most "future" labels
+5. This means near-horizon is essentially anomaly DETECTION with a future-shifted label
+
+**Key implication:** A2P's design (horizon 100-150 with 100-step blocks) is accidentally correct.
+The 100-step gap ensures no context-label overlap. Our near-horizon experiment confirms:
+-> Only horizons >= block_length (100 steps) are valid AP evaluations.
+-> The "non-monotonic" difficulty (near=easy, 25-75=hard, 100-150=medium) in Probe 51 was an ARTIFACT.
+-> Near-horizon appears easiest because it's actually anomaly detection (trivially easy).
+-> A2P default (100-150) is the only clean evaluation.
+**Saved:** results/improvements/near_horizon_transformer.json
 
 
 ### Probe 64: Near-Horizon Context Contamination Analysis (COMPLETE)

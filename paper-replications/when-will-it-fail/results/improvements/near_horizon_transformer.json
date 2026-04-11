@@ -1,0 +1,31 @@
+{
+  "model": "APTransformer (d_model=64, 2L, near horizon 0-50)",
+  "horizon": {
+    "start": 0,
+    "end": 50
+  },
+  "seeds": [
+    42,
+    1,
+    2
+  ],
+  "per_seed": [
+    {
+      "seed": 42,
+      "val_auroc": 0.8013258103378273,
+      "test_auroc": 0.7590489555783452
+    },
+    {
+      "seed": 1,
+      "val_auroc": 0.9114526066842312,
+      "test_auroc": 0.8293428895280247
+    },
+    {
+      "seed": 2,
+      "val_auroc": 0.8996157619116771,
+      "test_auroc": 0.8234260423011975
+    }
+  ],
+  "mean_test_auroc": 0.8039392958025225,
+  "std_test_auroc": 0.03183404104998501
+}
