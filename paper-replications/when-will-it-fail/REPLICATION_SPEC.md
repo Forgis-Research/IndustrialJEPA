@@ -2,192 +2,98 @@
 
 **Paper:** "When Will It Fail?: Anomaly to Prompt for Forecasting Future Anomalies in Time Series"
 **Authors:** Min-Yeong Park, Won-Jeong Lee, Seong Tae Kim, Gyeong-Moon Park
-**Venue:** ICML 2025 (Proceedings of the 42nd International Conference on Machine Learning, pp. 48086-48103)
-**arXiv:** 2506.23596
+**Venue:** ICML 2025, PMLR 267
+**Affiliation:** Kyung Hee University / Korea University
+**arXiv:** 2506.23596v1 (30 Jun 2025)
 **Official code:** https://github.com/KU-VGI/AP
+**Local PDF:** `when-will-it-fail-2025.pdf`
 
 ---
 
 ## Task: Anomaly Prediction (AP)
 
-Given an observed input window X_in of length L_in and C channels, predict binary anomaly labels over the future unobserved window of length L_out. This is distinct from:
-- **Anomaly Detection (AD):** detect anomalies in the observed signal
-- **Forecasting (F):** predict future signal values
+Given input signal `X_in ∈ R^(L_in × C)`, produce binary anomaly labels
+`O ∈ R^(L_out)` over the **future (unarrived) window** of length `L_out`.
+This is distinct from:
 
-AP is evaluated without point adjustment (unlike most AD work), which makes the metric harder.
-
----
-
-## Target Numbers (Table 1 from paper)
-
-F1 (tolerance t) averaged over 3 seeds. L_in = L_out for each experiment.
-
-| Dataset | Channels | L_out=100 | L_out=200 | L_out=400 |
-|---------|----------|-----------|-----------|-----------|
-| MBA | 2 | 67.55 +/- 5.62 | 72.40 +/- 5.41 | 71.34 +/- 3.92 |
-| Exathlon | 19 | 34.18 +/- 1.32 | 45.27 +/- 5.38 | 55.65 +/- 5.74 |
-| SMD | 38 | 52.07 +/- 1.88 | 54.64 +/- 2.36 | 56.40 +/- 1.57 |
-| WADI | 123 | 29.87 +/- 2.03 | 35.97 +/- 2.13 | 48.96 +/- 3.38 |
-| **Avg** | | **46.84** | **53.08** | **58.89** |
-
-Key baselines (L_out=100 avg F1):
-- Best single baseline: ~41 F1
-- A2P beats best baseline by ~6 F1 points on average
+- **Forecasting**: predict `X_hat_out` only, no anomaly labels
+- **Anomaly detection (AD)**: detect anomalies in the **observed** signal
+- **AP (this paper)**: predict **when** abnormal events will occur in the future
 
 ---
 
-## Method: A2P Architecture
+## Method: A2P = AAF + SAP
 
-Two-stage framework with shared PatchTST transformer backbone.
+Two-stage framework with shared transformer backbone `theta`:
 
-### Stage 1: Pretraining (AAF + APP)
+### Stage 1 - Pretraining
+1. **Anomaly-Aware Forecasting Network (AAF)**: cross-attention module that learns the relationship between anomalies in a prior signal `X_in^z` (with injected anomalies from 5 types: seasonal, global, trend, contextual, shapelet - following Darban et al. 2025) and their following anomalies in `X_out^z`. Trained with BCE-style loss against a binary anomaly probability target `y_out^z`.
 
-**Anomaly-Aware Forecasting (AAF) - AAFN.py:**
-- Cross-attention module where query=predicted window, key=injected-anomaly input
-- Learns to predict anomaly probability in the future given anomaly patterns in the past
-- 5 synthetic anomaly types (global, contextual, seasonal, trend, shapelet) from Darban et al. 2025
-- FE_model (encoder+decoder autoencoder) identifies high-error timesteps for adaptive injection
-- Loss: MSE between AAFN output and binary anomaly labels
+2. **Anomaly Prompt Pool (APP)**: `M` learnable (key, prompt) pairs `(k_m, p_m)` where `p_m ∈ R^(L_z × D)`. A three-layer transformer feature extractor `f_ftr` with a [CLS] token produces a query from the reconstructed input. Top-N prompts (cosine similarity) are attached to the input embedding. Trained with Divergence loss `L_D` = `-KL(A(X_in^p_tilde) || A(X_in_tilde)) - lambda_k * gamma(f_ftr(X_in^r), k_m)` to push pseudo-normal and anomaly-infused embeddings apart and pull selected keys toward their normal queries.
 
-**Synthetic Anomaly Prompting (SAP) / Anomaly Prompt Pool (APP):**
-- M learnable (key, prompt) pairs in the pool (default M=10, prompt_num=3, top_k=3)
-- CLS-token query from 3-layer transformer selects top-K prompts by cosine similarity
-- Divergence loss: KL divergence pushes prompt-infused embeddings away from clean embeddings
-- Signal-adaptive: injection focuses on high-reconstruction-error timesteps
+3. **Forecasting loss** `L_F`: `0.5 * (||X_hat_out - X_out||^2 + ||X_hat_out^z - X_out^z||^2)` pretrains `theta_F`.
 
-**Shared backbone training:**
-- Forecasting loss on both clean and anomaly-injected inputs
-- Backbone shared between F model (PatchTST) and AD model (AnomalyTransformer)
+### Stage 2 - Main training (AAF and APP frozen)
+- **Anomaly-aware forecasting loss**: `L_AF = g(X_in, X_hat_out) dot ||X_hat_out - X_out||^2` where `g(.)` is the frozen AAF producing anomaly probability (up-weights abnormal timesteps).
+- **Reconstruction loss**: `L_R = 0.5 * (||X_in - X_in^p,r||^2 + ||X_in - X_in^r||^2)` where `X_in^p` uses APP-attached anomaly prompts. Forces the model to de-anomalize prompt-infused inputs back to normal.
 
-### Stage 2: Main Training (AAF+APP frozen)
+### Total objective
+`L_Total = λ_AAF L_AAF + λ_D L_D + λ_F L_F` (pretrain) + `λ_R L_R + λ_AF L_AF` (main). All λ = 1.
 
-- **L_AF:** forecasting loss weighted by anomaly probability from AAFN
-- **L_R:** reconstruction loss on predicted window (forces backbone to undo anomalies)
-- Combined: L = recon_coeff * L_AD + af_coeff * L_AF
-
-### Test Time Inference
-
-1. Forward X_in through F model -> X_hat_out (predicted future values)
-2. Run X_hat_out through AD model (AnomalyTransformer) -> anomaly score per timestep
-3. Threshold anomaly score at percentile = (1 - anomaly_ratio) to get binary predictions
-4. Threshold set using combined train+test energy scores (no separate validation)
-
----
-
-## Architecture Details
-
-| Component | Implementation |
-|-----------|---------------|
-| Backbone F | PatchTST (patch_len=10, stride=8, e_layers=3, d_model=256) |
-| Backbone AD | AnomalyTransformer (win_size=L_out, same d_model, n_heads=8) |
-| FE model | Conv autoencoder (FE.py) |
-| AAFN | Single-layer MultiheadAttention + Linear proj |
-| Prompt pool | Learnable embeddings, cosine nearest-neighbor lookup |
-| Shared layers | QKV projections at layers 0,1,2 shared between F and AD |
+### Test time
+Forward `X_in` through shared backbone `theta` → forecast `X_hat_out`.
+Reconstruct `X_hat_out^r = theta(X_hat_out)`. Compute anomaly score
+from `(X_hat_out, X_hat_out^r)` following Xu et al. 2022 (AnomalyTransformer scheme).
 
 ---
 
 ## Datasets
 
-| Name | Channels | Train size | Test size | Anomaly % | Source |
-|------|----------|------------|-----------|-----------|--------|
-| MBA | 2 | 7,680 | 7,680 | ~3.1% | MIT-BIH Arrhythmia Database (PhysioNet) |
-| SMD | 38 | 708,405 | 708,420 | 4.16% | Server Machine Dataset |
-| Exathlon | 19 | varies (8 subsets) | varies | ~5% | Exathlon benchmark |
-| WADI | 123 | large | large | ~5% | Water Distribution (iTrust SUTD) |
+| Dataset   | Domain             | Dimensions | Notes |
+|-----------|--------------------|:----------:|-------|
+| MBA       | ECG (MIT-BIH SVDB) | 2          | Moody & Mark 2001. Supraventricular arrhythmia. |
+| Exathlon  | Spark telemetry    | 19 (x 8)   | Jacob et al. 2020. |
+| SMD       | Server machine     | 38         | Su et al. 2019a. 5-week internet company. |
+| WADI      | Water distribution | 123        | Ahmed et al. 2017. |
 
-Local paths:
-- MBA: `/mnt/sagemaker-nvme/ad_datasets/MBA/`
-- SMD: `/mnt/sagemaker-nvme/ad_datasets/SMD/`
+Standard TS-AD public benchmarks. **Do not re-download if already present** in `C:/Users/Jonaspetersen/dev/IndustrialJEPA/mechanical-datasets/` or common cache dirs; the Anomaly-Transformer / TSAD-Eval toolboxes distribute these.
 
 ---
 
-## Evaluation Protocol
+## Target Results (Table 1, F1 score, L_in = 100)
 
-**F1 with tolerance t (no point adjustment):**
-- Tolerance window: the paper uses tolerance=50 by default
-- Threshold: percentile(combined_train+test_energy, 100 - anormly_ratio)
-- anormly_ratio: set to the actual anomaly percentage in the test set per dataset
-- MBA: anormly_ratio ~1.0 (paper default)
-- SMD: anormly_ratio ~4.16
+Paper reports F1-with-tolerance (no point adjustment). A2P rows:
 
-**Key distinction from PA (point adjustment):**
-- Standard AD papers use PA: if any prediction hits within an anomaly segment, the whole segment counts
-- A2P explicitly does NOT use PA - raw F1 only
-- This makes numbers lower but more honest
+| L_out | MBA | Exathlon | SMD | WADI | Avg F1 |
+|:-----:|:---:|:--------:|:---:|:----:|:------:|
+| 100   | 67.55 +/- 5.62 | 18.64 +/- 0.16 | 36.29 +/- 0.18 | 64.91 +/- 0.47 | **46.84** |
+| 200   | 74.63 +/- 5.92 | 28.71 +/- 0.54 | 42.36 +/- 0.80 | 66.65 +/- 1.93 | **53.08** |
+| 400   | 69.35 +/- 7.15 | 43.57 +/- 1.10 | 48.10 +/- 2.55 | 74.57 +/- 6.37 | **58.89** |
+
+Baselines: all combinations of forecasters (PatchTST, MICN, GPT2, iTransformer, FITS) x AD (AnomalyTransformer, DCDetector, CAD). Best baseline avg F1 values to beat: 41.55 (L=100), 41.38 (L=200), 41.18 (L=400).
+
+### Ablations to reproduce
+
+- **Table 2**: AAF/SAP on-off (4 cells, L_in=L_out=100)
+- **Table 3**: L_D and L_F on-off
+- **Table 4**: Shared backbone on-off (51.53 -> 67.55 MBA)
+- **Table 5**: Anomaly probability in L_AF (MBA F1 64.20 -> 67.55)
+- **Table 6**: MSE forecasting on MBA (A2P 0.788 / 0.864 / 0.930 vs PatchTST 1.174 / 1.261 / 1.272)
 
 ---
 
-## Default Hyperparameters (from run.sh)
+## Validation Protocol
 
-```
-AD_model=AT
-model=PatchTST
-joint_epochs=5
-cross_attn_epochs=5
-d_model=256
-contrastive_loss_coeff=1.0
-forecast_loss_coeff=1.0
-cross_attn_loss_coeff=1.0
-recon_loss_coeff=1.0
-af_loss_coeff=1.0
-prompt_num=3, pool_size=10, top_k=3
-cross_attn_nhead=1
-noise_step=100
-batch_size=8
-lr=0.0001
-```
+- Seeds: 3 (match paper)
+- Metric: F1 with tolerance `t` (no point adjustment). Paper does **not** use PA.
+- Threshold: "percentage of anomalies in test data" protocol from Shen et al. 2020a
+- L_in = 100; L_out in {100, 200, 400}
+- Optimizer / LR / batch size: match official repo or infer from appendix A.2
 
 ---
 
 ## Success Criteria
 
-- Phase 1 done: MBA F1 within 5 points of paper (>= 62.55) for at least 1 seed
-- Phase 2 done: SMD F1 within 10 points of paper (>= 42.07) for at least 1 seed
-- Full replication: avg F1 within 5 points of paper across MBA + SMD
+Our replication is "close enough" when A2P avg F1 on all 4 datasets at L_out = 100 is within **3 points** of paper (i.e., avg F1 >= 43.8). Stretch goal: within **1 point**.
 
----
-
-## Replication Command (MBA, L_out=100)
-
-```bash
-cd /home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/AP
-python3 run.py \
-  --random_seed 0 \
-  --root_path /mnt/sagemaker-nvme/ad_datasets/MBA \
-  --dataset MBA \
-  --model_id F+AD_100_100 \
-  --seq_len 100 --pred_len 100 --win_size 100 \
-  --step 100 --noise_step 100 \
-  --joint_epochs 5 \
-  --share \
-  --AD_model AT \
-  --d_model 256 \
-  --noise_injection \
-  --pretrain_noise \
-  --contrastive_loss \
-  --forecast_loss \
-  --cross_attn --cross_attn_epochs 5 \
-  --cross_attn_nheads 1 \
-  --ftr_idx 0
-```
-
----
-
-## Files
-
-```
-when-will-it-fail/
-  AP/                    - official code (git clone KU-VGI/AP)
-  results/               - per-run JSON files
-    all_results.json     - aggregated results matching dcssl schema
-    RESULTS_TABLE.md     - paper vs ours comparison
-    improvements/        - improvement probe results
-  figures/               - matplotlib figures
-  notebooks/             - Quarto .qmd files
-  REPLICATION_SPEC.md    - this file
-  EXPERIMENT_LOG.md      - chronological experiment log
-  RECON_NOTES.md         - code archaeology notes
-  IMPROVEMENT_IDEAS.md   - NeurIPS improvement ideas
-  SESSION_SUMMARY.md     - final session summary
-```
+A partial-success path: if dataset acquisition is blocked, demonstrate the method works on **MBA alone** (smallest, 2D, public, easy) and document the gap.

@@ -1,0 +1,24 @@
+{
+  "dataset": "MBA_svdb",
+  "n_train": 161280,
+  "n_test": 69120,
+  "anomaly_rate_pct": 0.145,
+  "results": {
+    "zscore": {
+      "auroc": 0.6753,
+      "auprc": 0.0134
+    },
+    "rolling_var": {
+      "auroc": 0.7296,
+      "auprc": 0.0054
+    },
+    "isoforest": {
+      "auroc": 0.6652,
+      "auprc": 0.0531
+    },
+    "linear_ar": {
+      "auroc": 0.7025,
+      "auprc": 0.004
+    }
+  }
+}

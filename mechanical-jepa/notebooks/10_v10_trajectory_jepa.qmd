@@ -339,6 +339,103 @@ The trajectory JEPA, while architecturally sound and showing genuine learning, i
 18 episodes. It would be better motivated with 5-10× more run-to-failure episodes.
 
 
+## SOTA Benchmark: V10 vs Reproduced Published Methods
+
+We compare V10 results against two published RUL methods that we have **reproduced in our own
+repositories** with verified numbers. We report only values we have reproduced ourselves, plus
+the paper's published numbers for reference.
+
+### Methods Benchmarked
+
+**1. CNN-GRU-MHA** [@yu2024cnngrumha]
+Yu et al., *Applied Sciences* 2024, 14(19), 9039. DOI: [10.3390/app14199039](https://doi.org/10.3390/app14199039).
+Supervised transfer learning: 6-layer CNN + 2-head multi-head attention + 2-layer GRU + FC head.
+DWT denoising (sym8, level 3) + min-max normalization. Train on source bearing, freeze CNN+GRU,
+fine-tune FC on target. Evaluated on 12 FEMTO cross-condition transfer experiments.
+Replication code: `cnn-gru-mha-replication/` (PyTorch port).
+
+**2. DCSSL** [@shen2026dcssl]
+Shen et al., *Scientific Reports* 2026. DOI: [10.1038/s41598-026-38417-7](https://doi.org/10.1038/s41598-026-38417-7).
+Self-supervised dual-dimensional contrastive learning: dilated causal CNN (TCN) backbone with
+temporal + instance contrastive losses, random cropping + timestamp masking, fine-tuning head for RUL.
+Evaluated on 11 FEMTO test bearings across 3 conditions.
+Replication code: `dcssl-replication/`.
+
+### Important: Protocol Differences
+
+The three methods use **different evaluation protocols**. Directly comparing numeric RMSE values
+across rows is misleading. We list each method under its own protocol.
+
+| Method | Training Paradigm | Train/Test Split | Dataset | Metric | Labels |
+|:-------|:------------------|:-----------------|:--------|:------:|:------:|
+| CNN-GRU-MHA | Supervised + transfer | Cross-condition transfer (1→2, 1→3, etc.) | FEMTO (H channel only) | RMSE | Linear $(N-i)/N$ |
+| DCSSL | Self-supervised + fine-tune | Per-condition (1_1,1_2 → 1_3..1_7, etc.) | FEMTO (both channels) | MSE | Piecewise w/ FPT |
+| V10 Traj JEPA | Self-supervised + probe | Cut-point on mixed episodes | FEMTO+XJTU-SY | RMSE | Linear |
+| V10 HC+LSTM | Supervised | Cut-point on mixed episodes | FEMTO+XJTU-SY | RMSE | Linear |
+
+### Reproduced Results (our own verified numbers)
+
+| Method | Protocol | Paper Reports | We Reproduced | Delta | Status |
+|:-------|:--------:|:-------------:|:-------------:|:-----:|:------:|
+| **CNN-GRU-MHA** [@yu2024cnngrumha] | FEMTO cross-condition (avg 12 transfers) | 0.0443 RMSE | **0.0424 ± 0.009** | −4.3% | EXACT |
+| **DCSSL** [@shen2026dcssl] | FEMTO per-condition (avg 11 bearings) | 0.0375 MSE | **0.0807 MSE** | +115% | PARTIAL |
+
+: SOTA replication status. Only the CNN-GRU-MHA paper number is fully reproduced; DCSSL replication
+diverges and should be treated with caution. {#tbl-reproduction}
+
+**CNN-GRU-MHA**: Exact replication achieved (0.0424 vs paper 0.0443, within 10%). Our implementation
+uses PyTorch (paper used TensorFlow 2.5.0) but follows the specification exactly. See
+`cnn-gru-mha-replication/results/RESULTS.md` for per-transfer breakdown.
+
+**DCSSL**: Our implementation is approximately 2× worse than the paper (MSE 0.0807 vs 0.0375).
+Likely causes: exact hyperparameters and the contrastive anchor construction details are
+under-specified in the paper. This means we cannot reliably cite DCSSL's 0.0375 as a benchmark
+we can match.
+
+### Benchmark Table (Apples-to-Apples NOT Possible)
+
+There is no single benchmark that covers all three methods fairly. Instead, we report each on its
+**native protocol** with reproduced numbers where available:
+
+| Method | Protocol | Metric | Value | Source |
+|:-------|:--------:|:------:|:-----:|:-------|
+| **V10 HC+LSTM Top-3** (ours, supervised) | V10 cut-point, FEMTO+XJTU | RMSE | **0.0250 ± 0.005** | `experiments/v10/RESULTS.md` |
+| **V10 HC+LSTM Top-5** (ours, supervised) | V10 cut-point, FEMTO+XJTU | RMSE | 0.0293 ± 0.010 | `experiments/v10/RESULTS.md` |
+| **V10 HC+LSTM All-18** (ours, supervised) | V10 cut-point, FEMTO+XJTU | RMSE | 0.0715 ± 0.019 | `experiments/v10/RESULTS.md` |
+| **V10 Traj JEPA E2E** (ours, SSL+finetune) | V10 cut-point, FEMTO+XJTU | RMSE | 0.1548 ± 0.018 | `experiments/v10/RESULTS.md` |
+| **V10 Traj JEPA probe** (ours, SSL+probe) | V10 cut-point, FEMTO+XJTU | RMSE | 0.2113 ± 0.004 | `experiments/v10/RESULTS.md` |
+| **CNN-GRU-MHA** [@yu2024cnngrumha] (supervised+TL, reproduced) | FEMTO cross-condition, avg 12 | RMSE | 0.0424 ± 0.009 | `cnn-gru-mha-replication/results/RESULTS.md` |
+| CNN-GRU-MHA [@yu2024cnngrumha] (as published, unreproduced cells) | FEMTO cross-condition | RMSE | 0.0443 | Yu et al. 2024, Table 4 |
+| **DCSSL** [@shen2026dcssl] (SSL+finetune, our replication) | FEMTO per-condition, avg 11 | MSE | 0.0807 | `dcssl-replication/results/RESULTS_TABLE.md` |
+| DCSSL [@shen2026dcssl] (as published, unreproduced) | FEMTO per-condition | MSE | 0.0375 | Shen et al. 2026, Table 3 |
+| DCSSL [@shen2026dcssl] (FEMTO only, all bearings) | FEMTO per-condition | RMSE | 0.0822 | Shen et al. 2026, Table 4 |
+
+: All methods with reproduced numbers (bold) and paper values (unbolded). Each row uses its own
+protocol — cross-row comparison is not valid. {#tbl-benchmark}
+
+### Interpretation
+
+1. **On our V10 cut-point protocol**, HC+LSTM with just 3 spectral features (RMSE = 0.0250)
+   is our strongest method. Trajectory JEPA is 6.2× worse in this regime.
+
+2. **On the CNN-GRU-MHA cross-condition protocol**, the published method achieves RMSE = 0.0424
+   (reproduced). This is a stronger protocol than ours because it uses source-to-target domain
+   transfer with linear labels.
+
+3. **On the DCSSL per-condition protocol**, the published result (MSE = 0.0375) is one we
+   could not reproduce (we got 0.0807). We cannot claim to beat or match DCSSL without closing
+   this reproduction gap.
+
+4. **What V10 does not claim**: V10 does not claim SOTA or beating either published method.
+   The honest position is: trajectory JEPA is architecturally sound (embedding quality improved
+   4× over V9 patch JEPA) but under-performs supervised HC+LSTM at our current data scale.
+
+![SOTA benchmark: V10 methods (cut-point protocol) vs reproduced CNN-GRU-MHA (FEMTO cross-condition)
+and our DCSSL replication (FEMTO per-condition). Each bar uses its own native evaluation protocol
+— not directly comparable, shown to illustrate the gap between SSL and supervised transfer learning
+on this problem.](plots/v10/v10_results_comparison.png){#fig-sota-benchmark width=100%}
+
+
 ## Corrections from V9
 
 The V9 notebook cited DCSSL (Shen et al.) RMSE = 0.131. This number does not appear in the

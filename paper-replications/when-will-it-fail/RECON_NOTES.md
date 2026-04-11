@@ -1,186 +1,213 @@
-# A2P Code Recon Notes
+# Phase 0 Recon Notes: A2P Official Repository
 
-**Date:** 2026-04-10
-**Repo:** https://github.com/KU-VGI/AP (cloned to `AP/`)
-
----
-
-## File-to-Section Mapping
-
-| File | Paper Section |
-|------|--------------|
-| `AAFN.py` | Sec 3.2 - Anomaly-Aware Forecasting Network (AAF). Also contains `train_cross_attn()`. |
-| `FE.py` | Sec 3.2 - Feature extractor autoencoder (FE_model). Used by inject_amplify_learnable to find high-error timesteps for adaptive injection. |
-| `shared_model.py` | Sec 3.1 - SharedModel wraps PatchTST (F) + AnomalyTransformer (AD) with shared QKV layers. |
-| `AD_models/AT_model/AnomalyTransformer.py` | Sec 3.3 + Xu et al. 2022 - AnomalyTransformer backbone for AD |
-| `AD_models/AT_model/prompt.py` | Sec 3.3 - Anomaly Prompt Pool (APP) implementation |
-| `F_models/PatchTST.py` | Sec 3.1 - PatchTST forecasting backbone |
-| `solvers/joint_solver.py` | Sec 3 - Full training loop: train_noise_and_cross() = Stage 1, train() = Stage 2, test() = evaluation |
-| `utils/injection.py` | Sec 3.2 - 5 anomaly injection types + signal-adaptive injection with FE |
-| `config/parser.py` | All hyperparameters + `set_data_config()` which sets channel counts per dataset |
-| `run.py` | Main entry point, runs seeds loop, calls run_single_dataset() |
-| `vus/` | VUS-ROC/PR metrics (bundled, from https://github.com/TheDatumOrg/VUS) |
+**Repo:** https://github.com/KU-VGI/AP  
+**Read date:** 2026-04-10  
+**Reader:** ml-researcher agent
 
 ---
 
-## Hyperparameters: Config vs Hardcoded
+## Repository Layout
 
-### Config file / CLI (configurable):
-- `joint_epochs` (default 5 in run.sh) - Stage 1 pretraining epochs
-- `cross_attn_epochs` (default 5) - AAFN pretraining epochs
-- `d_model` (default 256)
-- `pool_size` (default 10) - prompt pool size M
-- `prompt_num` (default 3) - prompts prepended per input
-- `top_k` (default 3) - top-K prompts selected from pool
-- `seq_len`, `pred_len`, `win_size` - window sizes
-- `anormly_ratio` (default 1.0) - anomaly percentage for thresholding
-- `noise_injection`, `cross_attn`, `share`, `forecast_loss`, `contrastive_loss` - flags
-
-### Hardcoded:
-- FE training: 10 epochs hardcoded in `train_ftr_extractor()` (joint_solver.py:255)
-- AAFN learning rate: 5e-5 hardcoded in `train_cross_attn()` (AAFN.py:17)
-- Temperature for AD anomaly score: 50 hardcoded in `calc_series_prior_loss_test()` (base.py:38)
-- Contrastive loss in pretraining: loss = cross_attn_loss1 + cross_attn_loss2 only (cross_attn_loss3, cross_attn_loss4 tracked but not used in backward pass)
-- Main training LR decay: TST scheduler (every epoch)
-
----
-
-## Dataset Format Expected
-
-All datasets loaded as `.npy` files:
 ```
-<root_path>/<DATASET>_train.npy  - shape (N_train, C)
-<root_path>/<DATASET>_test.npy   - shape (N_test, C)
-<root_path>/<DATASET>_test_label.npy - shape (N_test,) binary 0/1
+AP/
+├── AD_models/AT_model/       # AnomalyTransformer AD branch
+├── F_models/                 # PatchTST / MICN / GPT2 / iTransformer forecasting branch
+├── config/parser.py          # All CLI arguments and set_data_config()
+├── data_provider/
+│   ├── data_factory.py       # Dataset routing and normalisation
+│   └── data_loader.py        # F_AD_Dataset - windowed dataset class
+├── layers/                   # PatchTST backbone, Transformer layers, RevIN, Embed
+├── solvers/
+│   ├── base.py               # Base_Solver: threshold, detection_adjustment, get_scores
+│   └── joint_solver.py       # Solver: full train/test pipeline
+├── utils/
+│   ├── injection.py          # Anomaly injection (5 types: global, contextual, trend, shapelet, seasonal)
+│   ├── metrics.py            # Regression metrics (MAE/MSE/RMSE - NOT F1)
+│   ├── tools.py              # EarlyStopping, StandardScaler, adjust_lr
+│   └── utils.py              # fix_seed, my_kl_loss
+├── vus/                      # VUS-ROC / VUS-PR metric library
+├── AAFN.py                   # Anomaly-Aware Forecasting Network + train_cross_attn()
+├── FE.py                     # Feature extractor (3-layer Transformer with [CLS] token)
+├── shared_model.py           # SharedModel: wraps AD+F branches with shared theta layers
+├── run.py                    # Entry point
+└── run.sh                    # Reference launch script
 ```
 
-Exception: PSM uses CSV. Exathlon has sub-dataset variants (exathlon_1, exathlon_2, ..., exathlon_10).
+---
 
-Standard scaler fit on train, applied to both train and test.
+## Paper Section to Code Mapping
+
+| Paper section | Code file | Key class / function |
+|---------------|-----------|----------------------|
+| Section 3.2 (Shared backbone) | `shared_model.py` | `SharedModel` - shares QKV projections across AT and PatchTST via `--share` flag |
+| Section 3.3 (AAF) | `AAFN.py` | `AAFN` class + `train_cross_attn()` pretraining loop |
+| Section 3.3 (APP) | `solvers/joint_solver.py` + `shared_model.py` | Prompt pool in `SharedModel.calc_losses()`, KL divergence loss |
+| Section 3.3 (Anomaly injection) | `utils/injection.py` | `inject_amplify_learnable()` - 5 types, learnable scales |
+| Section 3.3 (Feature extractor f_ftr) | `FE.py` | `FE_model` (Transformer with CLS token) |
+| Section 3.4 (Main training L_AF) | `solvers/joint_solver.py` | `train()` - AAFN output gates MSE loss |
+| Section 3.4 (L_R reconstruction) | `shared_model.py` | `calc_losses()` - prompt-infused vs clean reconstruction |
+| Section 3.6 (Test time) | `solvers/joint_solver.py` | `test()` -> `test_from_predicted()` |
+| Section 4 (F1-with-tolerance metric) | `solvers/base.py` | `detection_adjustment()` + `get_scores()` |
 
 ---
 
-## F1-with-Tolerance Implementation (Critical)
+## Key Hyperparameters
 
-From `solvers/base.py::detection_adjustment()`:
+All from `config/parser.py` and `run.sh`:
+
+| Parameter | Default | Notes |
+|-----------|---------|-------|
+| `seq_len` | 100 | L_in |
+| `pred_len` | 100 / 200 / 400 | L_out |
+| `win_size` | 100 | AD window (= seq_len) |
+| `step` | pred_len | stride between test windows |
+| `d_model` | 256 | transformer hidden dim |
+| `joint_epochs` | 5 | main training epochs (paper: 5) |
+| `cross_attn_epochs` | 5 | AAF pretraining epochs |
+| `noise_step` | 100 | injection cadence |
+| `anormly_ratio` | from `set_data_config()` | dataset-specific anomaly % for threshold |
+| `pool_size` | 10 | M = number of prompts in APP |
+| `top_k` | 3 | N = top-N prompts selected |
+| `prompt_num` | 3 | prompt token length L_z |
+| Loss coefficients | all 1.0 | lambda_AAF = lambda_D = lambda_F = lambda_R = lambda_AF = 1.0 |
+| lr | 0.0001 | Adam |
+| batch_size | 8 | from parser default |
+| patience | 20 | early stopping |
+
+**Data path:** `/local_datasets/AD_datasets/MBA` - hardcoded in run.sh, must be overridden with `--root_path`.
+
+---
+
+## Dataset Format
+
+From `data_provider/data_factory.py`:
+
+- Files expected: `{dataset}_train.npy`, `{dataset}_test.npy`, `{dataset}_test_label.npy`
+- PSM exception: `.csv` format
+- Sub-datasets (exathlon, NAB, UCR): `{dataset}_labels.npy`
+- Normalisation: `StandardScaler` is imported but appears applied outside the Dataset class; `reorganize()` in `data_factory.py` applies it on load
+- `anormly_ratio` is set by `set_data_config(args)` based on dataset name - this controls the threshold percentile (100 - ratio)
+
+**CRITICAL:** The `anormly_ratio` parameter is what implements the "percentage of anomalies in test data" threshold protocol from the paper. This is NOT learned - it is set to the known anomaly prevalence of each dataset.
+
+---
+
+## F1-with-Tolerance Implementation
+
+This is the most important metric detail. From `base.py`:
+
 ```python
-# adj_tolerance = 50 (default)
-for i in range(len(gt)):
-    if gt[i] == 1 and AT_detected[i] == 1:
-        # Mark window gt[i-50:i+50] as detected if those are anomaly timesteps
-        for j in range(i, i-tol, -1):  # backward 50 steps
-            if gt[j] == 0: break
-            AT_detected[j] = 1
-        for j in range(i, i+tol):      # forward 50 steps
-            if gt[j] == 0: break
-            AT_detected[j] = 1
+def detection_adjustment(self, AT_detected_ori, gt, tol):
+    for i in range(len(gt)):
+        if gt[i] == 1 and AT_detected[i] == 1 and not anomaly_state:
+            anomaly_state = True
+            for j in range(i, i-tol, -1):  # backward window
+                if gt[j] == 0: break
+                AT_detected[j] = 1          # fill back
+            for j in range(i, i+tol):       # forward window
+                if gt[j] == 0: break
+                AT_detected[j] = 1          # fill forward
+        elif gt[i] == 0:
+            anomaly_state = False
 ```
 
-This is a RESTRICTED tolerance adjustment: only expands a TRUE POSITIVE to neighboring anomaly timesteps within a window. It does NOT flip true negatives.
+**Interpretation:** Once the model correctly hits at least one timestep within an anomaly segment, ALL timesteps within `tol` steps of that hit (that are also ground-truth anomaly) get credited as correct predictions. This is materially different from point adjustment (PA) in that:
+- It does NOT credit the entire anomaly segment - it only fills within `tol` steps of the actual hit.
+- It requires the model to correctly identify at least one timestep (PA requires only 1 hit anywhere in the entire anomaly segment).
 
-**Compare to standard PA (point adjustment):**
-- PA: if any prediction in anomaly segment is 1, mark WHOLE segment as 1
-- A2P tolerance: only expands detections that already hit the anomaly, within window size 50
-
-This is more conservative than PA but less conservative than raw F1. The paper claims this avoids the "free ride" problem of PA while being robust to minor timing errors in prediction.
+**However,** the paper argues this is stricter than PA. In practice, if `tol` is large enough and anomaly segments are contiguous, it approaches PA behaviour. The tolerance `tol` value is set via `--tolerance` arg (default appears to be the window size or pred_len - exact value in parser not confirmed from the summary).
 
 ---
 
-## Threshold Setting
+## Bugs and Mismatches Found
 
-```python
-# From base.py::get_threshold()
-combined_energy = np.concatenate([train_energy, test_energy], axis=0)
-thresh = np.percentile(combined_energy, 100 - anormly_ratio)
-```
+### Bug 1: Single seed in run.py
+`run.py` line: `random_seeds = [20462]` - **hardcoded single seed**. The paper reports results over 3 seeds (mean ± std). The only way to run 3 seeds is to modify `random_seeds` manually or call `run.py` three times with different `--random_seed` values. This is not documented in the README.
 
-- Uses BOTH train and test energy to set threshold
-- `anormly_ratio` = expected anomaly % (default 1.0)
-- This is a percentile threshold that flags top-1% of energy as anomalous
-- IMPORTANT: uses test data to set threshold -> this is technically information leakage, but standard in AD literature
+### Bug / Opacity 2: F1 metric identity
+The code computes four distinct F1 variants per run:
+- `f1_gt` - AD on ground-truth future signal (oracle upper bound)
+- `f1_gt_adj` - same, with detection_adjustment
+- `f1_pred` - AD on predicted future signal (the actual AP task)
+- `f1_pred_adj` - same, with detection_adjustment
 
----
+The paper's Table 1 numbers correspond to `f1_pred` (or `f1_pred_adj`?) - this is ambiguous from the code summary. The output line `F1: {f1_pred_list}` and `AD F1: {f1_pred_adj_list}` suggests the primary metric is `f1_pred` and the adjusted version is secondary. **This requires confirmation by running the code** - if the paper uses `f1_pred_adj` (which has detection_adjustment applied), that is structurally similar to PA despite their claim.
 
-## Bugs / Issues Found
+### Bug / Design 3: Threshold on train+test combined energy
+`get_threshold()` concatenates train_energy and test_energy, then takes the `100 - anormly_ratio` percentile. Using test data in threshold calibration is a mild form of data leakage - the threshold sees the test distribution before evaluation. This is the standard protocol in AnomalyTransformer and is disclosed, but it means the threshold is not strictly train-only.
 
-### 1. AAFN losses 3 and 4 are not backpropagated
-In `AAFN.py::train_cross_attn()`:
-```python
-loss = cross_attn_loss1 + cross_attn_loss2  # only these two
-loss.backward()
-```
-`cross_attn_loss3` (N-N) and `cross_attn_loss4` (AN-N) are tracked but not included in backward. This may be intentional (supervised only on injected pairs) but is undocumented.
+### Mismatch 4: Loss coefficient notation
+Paper Eq. 8 shows `L_Total = lambda_AAF * L_AAF + lambda_D * L_D + lambda_F * L_F` (pretraining) and `lambda_R * L_R + lambda_AF * L_AF` (main). CLI flags are `--contrastive_loss_coeff`, `--forecast_loss_coeff`, `--cross_attn_loss_coeff`, `--recon_loss_coeff`, `--af_loss_coeff`. The mapping:
+- `cross_attn_loss_coeff` = lambda_AAF
+- `contrastive_loss_coeff` = lambda_D
+- `forecast_loss_coeff` = lambda_F
+- `recon_loss_coeff` = lambda_R
+- `af_loss_coeff` = lambda_AF
 
-### 2. train_loss list never appended in Stage 2
-In `joint_solver.py::train()`:
-```python
-train_loss = []
-for i, batch in enumerate(self.train_loader):
-    # ... training loop ...
-    # train_loss.append(total_loss.item()) <- MISSING
-train_loss = np.average(train_loss)  # This averages empty list -> NaN, but error not caught
-```
-Loss is printed per-batch but the epoch average is broken. Does not affect model - only logging.
+All default to 1.0, consistent with paper.
 
-### 3. Random seed in run.py
-The run.py uses `random_seeds = [20462]` hardcoded for single-seed runs, then calls `fix_seed()`. The `--random_seed` flag passed as arg overrides within `run_seeds()` loop. For 3-seed experiments, need to modify `random_seeds` list in run.py or pass multiple seeds.
+### Mismatch 5: Epochs are very low
+`joint_epochs=5` and `cross_attn_epochs=5`. Ten total training epochs seems very low for a transformer on multivariate TS data. The paper states "training takes at most 1 hour on WADI" which is consistent with very few epochs if each epoch over WADI's 123D signal at batch_size=8 is expensive. This means the model is highly sensitive to learning rate and batch size choices.
 
-### 4. MBA dataset format mismatch
-The paper says "2-dimensional ECG" (2 channels). The original MIT-BIH database has 2 ECG channels per recording. Our MBA prep from TranAD xlsx format preserves this correctly.
-
-However, the paper's reported 3.x% anomaly ratio on MBA suggests labels cover arrhythmias (V + F beat types from TranAD). This matches our conversion: 3.12% anomaly in test set.
-
-### 5. anormly_ratio parameter
-In run.sh, `anormly_ratio` is set to 1.0 (default). This means the threshold is set at the 99th percentile of combined energy. For MBA with 3.12% anomaly rate, this is slightly miscalibrated. Setting `anormly_ratio=3.12` might improve MBA results.
+### Observation 6: No data download script
+The repo contains no `download_data.sh` or similar. Data must be sourced externally. Standard TSAD community `.npy` files are available from the AnomalyTransformer repo (https://github.com/thuml/Anomaly-Transformer) which also provides MBA, WADI, SMD, MSL, etc. in the expected `.npy` format.
 
 ---
 
-## Datasets Notes
+## Environment Notes
 
-### MBA (MIT-BIH Arrhythmia)
-- Source: PhysioNet/MIT-BIH via TranAD repo xlsx files
-- 2 channels: ECG1, ECG2
-- 7,680 samples train, 7,680 samples test
-- Anomaly types: V (ventricular ectopic), F (fusion beats) - 24 anomalous beats in test
-- Anomaly ratio: 3.12% (240/7680 with window=5 around each anomalous beat)
-- Local path: `/mnt/sagemaker-nvme/ad_datasets/MBA/`
-
-### SMD (Server Machine Dataset)
-- Source: HuggingFace thuml/Time-Series-Library
-- 38 channels, 708K timesteps train + test
-- Anomaly ratio: 4.16%
-- Local path: `/mnt/sagemaker-nvme/ad_datasets/SMD/`
+- PyTorch 2.0.0 + CUDA (multi-version CUDA libs in requirements.txt)
+- `dgl==1.1.3` is listed but may not be directly used by A2P (could be a leftover dependency)
+- Python environment is reproducible via `environment.yml`
+- `vus/` directory implements VUS-ROC/VUS-PR metrics (Paparrizos et al. 2022 VLDB) - these are reported alongside F1 but are NOT the primary metric in Table 1
 
 ---
 
-## Architecture Cost (Paper Fig 7)
-- MBA: ~2.3M params, ~10 GFLOPs, ~30 min train
-- WADI: ~3.6M params, ~25 GFLOPs, ~1h train
-
----
-
-## Run Command for Full Replication
+## Run Command (exact, for MBA replication)
 
 ```bash
-cd /home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/AP
+# Clone
+git clone https://github.com/KU-VGI/AP.git AP/
 
-# MBA, L_out=100 (paper default)
-python3 run.py \
-  --random_seed 0 \
-  --root_path /mnt/sagemaker-nvme/ad_datasets/MBA \
-  --dataset MBA \
-  --model_id F+AD_100_100 \
-  --seq_len 100 --pred_len 100 --win_size 100 \
-  --step 100 --noise_step 100 \
-  --joint_epochs 5 \
-  --share \
-  --AD_model AT \
-  --d_model 256 \
-  --noise_injection \
-  --pretrain_noise \
-  --contrastive_loss \
-  --forecast_loss \
-  --cross_attn --cross_attn_epochs 5 \
-  --cross_attn_nheads 1 \
-  --ftr_idx 0
+# Install
+cd AP && pip install -r requirements.txt
+
+# Download data (from AnomalyTransformer repo or PhysioNet for MBA)
+# Place as: /path/to/data/MBA_train.npy, MBA_test.npy, MBA_test_label.npy
+
+# Run MBA, L_out=100, 3 seeds
+for seed in 0 1 2; do
+  python -u run.py \
+    --random_seed $seed \
+    --root_path /path/to/data \
+    --dataset MBA \
+    --model_id F+AD_100_100 \
+    --seq_len 100 --pred_len 100 --win_size 100 \
+    --step 100 --noise_step 100 \
+    --joint_epochs 5 \
+    --share \
+    --AD_model AT \
+    --d_model 256 \
+    --noise_injection \
+    --pretrain_noise \
+    --contrastive_loss \
+    --forecast_loss \
+    --cross_attn --cross_attn_epochs 5 \
+    --cross_attn_nheads 1
+done
 ```
+
+**Note:** `run.py` hardcodes `random_seeds = [20462]` - to run multiple seeds, either edit this list or pass `--random_seed` and call the script repeatedly.
+
+---
+
+## Data Availability Summary
+
+| Dataset | Source | Format | Status |
+|---------|--------|--------|--------|
+| MBA | AnomalyTransformer repo (GitHub) or PhysioNet MIT-BIH SVDB | `.npy` | Publicly available |
+| SMD | AnomalyTransformer repo | `.npy` | Publicly available |
+| WADI | iTrust Singapore (request form) | CSV -> `.npy` | Gated - requires registration |
+| Exathlon | LDAP Zurich / Jacob et al. 2020 arXiv | `.npy` | Publicly available |
+
+AnomalyTransformer dataset pack (thuml) includes MBA, SMD, MSL, SMAP, PSM, SWAT - likely also the pre-processed versions A2P expects.
