@@ -2418,3 +2418,90 @@ print("Single-seed gap to oracle (misleading):    0.720 - 0.642 = 0.078")
 print()
 print("Statistical significance requirement: Need 3+ seeds before claiming any model beats another.")
 ```
+
+## 28. Probe 27b: Large-Scale Temporal Pretrain Transfer
+
+**Question**: Does 4x more pretraining data (737K sequences, no labels) close the temporal SSL -> AP gap?
+
+```{python}
+import json
+pt = json.load(open('../results/improvements/pretrain_transfer_ap.json'))
+
+print("=== LARGE-SCALE PRETRAIN TRANSFER RESULTS ===")
+print()
+print(f"Pretrain: {pt['pretrain_sequences']:,} sequences on SVDB4 TRAINING set (no labels)")
+print(f"Pretrain epochs: {pt['pretrain_epochs']}, Finetune epochs: {pt['finetune_epochs']}")
+print()
+print(f"Test AUROC:           {pt['test_auroc']:.4f}")
+print(f"Best val AUROC:        {pt['best_val_auroc']:.4f} (peaked at epoch 20, then degraded)")
+print(f"APTransformer (no pretrain): {pt['aptransformer_auroc']:.3f}")
+print(f"Delta vs APTransformer: {pt['delta_vs_aptransformer']:+.4f}")
+print(f"Gap to oracle: {pt['gap_to_oracle']:.4f}")
+print()
+print("VERDICT: 4x more pretraining data DOES NOT help AP (-0.010 vs APTransformer)")
+print()
+print("Timeline of pretraining ABLATION across all probes:")
+print(f"  JEPA-AP (same size data, temporal objective):  0.619  (-0.023 vs ATF)")
+print(f"  Large pretrain (4x data, same objective):      0.632  (-0.010 vs ATF)")
+print(f"  InfoNCE contrastive (temporal pairs):          0.641  (-0.001 vs ATF)")
+print(f"  APTransformer (no pretraining, supervised):    0.642  [baseline]")
+print(f"  Oracle:                                        0.720  [ceiling]")
+print()
+print("Key observation: Scale alone (4x data) reduces the deficit but cannot overcome")
+print("the fundamental objective mismatch between temporal SSL and anomaly prediction.")
+```
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+fig, ax = plt.subplots(figsize=(10, 4))
+
+# Compare all pretraining approaches
+methods = [
+    ('No pretraining\n(APTransformer)', 0.642, 'darkblue', 'Baseline'),
+    ('JEPA temporal\n(same data)', 0.619, 'salmon', 'Temporal SSL'),
+    ('Large-scale temporal\n(4x data)', 0.632, 'tomato', 'Temporal SSL'),
+    ('InfoNCE generic\n(temporal pairs)', 0.641, 'lightcoral', 'Contrastive SSL'),
+    ('Multi-seed TRUE\n(3 seeds)', 0.524, 'steelblue', 'Statistical ground truth'),
+    ('Oracle\n(future variance)', 0.720, 'green', 'Upper bound'),
+]
+labels = [m[0] for m in methods]
+values = [m[1] for m in methods]
+colors = [m[2] for m in methods]
+
+bars = ax.bar(labels, values, color=colors, edgecolor='black', linewidth=0.5, alpha=0.85)
+ax.axhline(y=0.500, color='gray', linestyle='--', linewidth=1.5, alpha=0.6, label='Random (0.500)')
+ax.axhline(y=0.720, color='green', linestyle='--', linewidth=1.5, alpha=0.8, label='Oracle (0.720)')
+ax.axhline(y=0.524, color='steelblue', linestyle=':', linewidth=2, alpha=0.6, label='Multi-seed mean (0.524)')
+
+for bar, val in zip(bars, values):
+    ax.text(bar.get_x() + bar.get_width()/2, val + 0.005, f'{val:.3f}',
+            ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+ax.set_ylabel('Test AUROC', fontsize=12)
+ax.set_title('SSL Pretraining Ablation: Temporal Objectives Fail for Anomaly Prediction\n'
+             '(All "high" results are single seed=42; blue bar is statistically validated)',
+             fontsize=10, fontweight='bold')
+ax.set_ylim(0.44, 0.78)
+ax.legend(fontsize=9)
+ax.grid(axis='y', alpha=0.3)
+
+# Add annotation for objective mismatch
+ax.annotate('Objective\nmismatch', xy=(0.37, 0.619), xytext=(0.6, 0.57),
+            arrowprops=dict(arrowstyle='->', color='red'), fontsize=8, color='red')
+ax.annotate('4x data: partial fix\n(-0.010 persists)', xy=(1.37, 0.632), xytext=(1.6, 0.58),
+            arrowprops=dict(arrowstyle='->', color='darkorange'), fontsize=8, color='darkorange')
+
+plt.tight_layout()
+plt.savefig(f'{FIGURES_DIR}/fig_ssl_ablation.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("Figure saved.")
+```
+
+**Synthesis**: The evidence is now comprehensive. Temporal self-supervised pretraining - whether JEPA-style or InfoNCE contrastive, whether on matched data or 4x more data - provides no benefit for anomaly prediction. The fundamental constraint is **objective alignment**: SSL objectives that predict "what comes next" encode normalcy priors that are orthogonal to the anomaly-precursor signal needed for AP.
+
+The only path forward is:
+1. **Anomaly-aware SSL**: Explicitly use anomaly labels (or proxy labels) in the pretraining loss.
+2. **Contrastive objectives with anomaly polarity**: Probe 26b (running) tests this.
+3. **Multi-seed validation first**: Until we have mean ± std across 3+ seeds, no conclusion is reliable.

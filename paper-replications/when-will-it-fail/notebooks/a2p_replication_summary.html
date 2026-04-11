@@ -3293,6 +3293,7 @@ window.Quarto = {
   <li><a href="#what-would-help-anomaly-aware-pretraining" id="toc-what-would-help-anomaly-aware-pretraining" class="nav-link" data-scroll-target="#what-would-help-anomaly-aware-pretraining">26.2 What Would Help: Anomaly-Aware Pretraining</a></li>
   </ul></li>
   <li><a href="#probe-27-multi-seed-statistical-validation" id="toc-probe-27-multi-seed-statistical-validation" class="nav-link" data-scroll-target="#probe-27-multi-seed-statistical-validation">27. Probe 27: Multi-Seed Statistical Validation</a></li>
+  <li><a href="#probe-27b-large-scale-temporal-pretrain-transfer" id="toc-probe-27b-large-scale-temporal-pretrain-transfer" class="nav-link" data-scroll-target="#probe-27b-large-scale-temporal-pretrain-transfer">28. Probe 27b: Large-Scale Temporal Pretrain Transfer</a></li>
   </ul>
 </nav>
 </div>
@@ -3330,7 +3331,7 @@ window.Quarto = {
 </header>
 
 
-<div id="d56c077f" class="cell" data-execution_count="1">
+<div id="8c84ffd6" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -3355,7 +3356,7 @@ Please view our Getting Started page to access the most up-to-date information o
 Installed kernel version: 1.0.9 
 Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3373,7 +3374,7 @@ Applying the following default arguments:
 <section id="why-ap-matters" class="level3">
 <h3 class="anchored" data-anchor-id="why-ap-matters">Why AP Matters</h3>
 <p>In industrial monitoring, the goal is not “is it failing?” but “when will it fail?” A system that detects failures 10 minutes before they happen has far more operational value than one that detects them the instant they occur.</p>
-<div id="07fa1895" class="cell" data-execution_count="2">
+<div id="ea31236d" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
@@ -3420,7 +3421,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3446,7 +3447,7 @@ Applying the following default arguments:
 <li>AAFN and APP are frozen during Stage 2</li>
 </ul>
 <p><strong>Threshold:</strong> <code>percentile(energy_train + energy_test, 100 - anormly_ratio)</code> where <code>anormly_ratio=1.0</code> (default, so threshold at 99th percentile)</p>
-<div id="b23eebe4" class="cell" data-execution_count="3">
+<div id="2b008ddd" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">6</span>))</span>
@@ -3505,7 +3506,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3530,7 +3531,7 @@ Applying the following default arguments:
 <h3 class="anchored" data-anchor-id="mba-dataset">3.1 MBA Dataset</h3>
 <p>The MIT-BIH Supraventricular Arrhythmia Database (MBA) has 2-channel ECG recordings.</p>
 <p><strong>Data source note:</strong> The paper uses “4 patients” from PhysioNet SVDB. The TranAD-derived version available on HuggingFace (7680 x 2, 3.12% anomaly rate) appears to have <strong>identical train and test sets</strong> (train.xlsx == test.xlsx row-for-row). This is a fundamental data integrity issue that may explain the large gap from paper results.</p>
-<div id="daeef8b7" class="cell" data-execution_count="4">
+<div id="b8e308f4" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Replication results summary</span></span>
@@ -3582,13 +3583,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="147b6e80" class="cell" data-execution_count="5">
+<div id="03a4f54d" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">5</span>))</span>
@@ -3634,7 +3635,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3653,7 +3654,7 @@ Applying the following default arguments:
 </section>
 <section id="critical-finding-auroc-and-score-discrimination" class="level2">
 <h2 class="anchored" data-anchor-id="critical-finding-auroc-and-score-discrimination">4. Critical Finding: AUROC and Score Discrimination</h2>
-<div id="e8e5aab6" class="cell" data-execution_count="6">
+<div id="fe664b7b" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load calibration results from saved JSON (A2P scores computed in prior session)</span></span>
@@ -3688,13 +3689,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="fb0c03c2" class="cell" data-execution_count="7">
+<div id="edfe55ab" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calibration plots - use stored summary statistics (raw scores from session in /tmp/)</span></span>
@@ -3767,7 +3768,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3781,7 +3782,7 @@ Applying the following default arguments:
 <section id="grey-swan-regime-what-happens-at-low-anomaly-rates" class="level3">
 <h3 class="anchored" data-anchor-id="grey-swan-regime-what-happens-at-low-anomaly-rates">5.1 Grey-Swan Regime: What Happens at Low Anomaly Rates?</h3>
 <p>Real industrial failure events are rare (0.01% - 0.1%). MBA has a 3.12% anomaly rate. How does A2P perform at realistic rates?</p>
-<div id="b0b5eb92" class="cell" data-execution_count="8">
+<div id="a85c519e" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>gs_results <span class="op">=</span> json.load(<span class="bu">open</span>(<span class="ss">f&#39;</span><span class="sc">{</span>IMPROVEMENTS_DIR<span class="sc">}</span><span class="ss">/grey_swan_test.json&#39;</span>))</span>
@@ -3820,7 +3821,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3830,7 +3831,7 @@ Applying the following default arguments:
 </section>
 <section id="lead-time-weighted-f1-does-a2p-predict-early" class="level3">
 <h3 class="anchored" data-anchor-id="lead-time-weighted-f1-does-a2p-predict-early">5.2 Lead-Time-Weighted F1: Does A2P Predict Early?</h3>
-<div id="8d0362bb" class="cell" data-execution_count="9">
+<div id="edcc5f71" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ltw_results <span class="op">=</span> json.load(<span class="bu">open</span>(<span class="ss">f&#39;</span><span class="sc">{</span>IMPROVEMENTS_DIR<span class="sc">}</span><span class="ss">/ltw_f1_analysis.json&#39;</span>))</span>
@@ -3889,7 +3890,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3900,7 +3901,7 @@ Applying the following default arguments:
 </section>
 <section id="architecture-ablation-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="architecture-ablation-comparison">6. Architecture Ablation Comparison</h2>
-<div id="386ebf29" class="cell" data-execution_count="10">
+<div id="b4f65677" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Paper ablation results (Table 2 from paper, MBA L=100)</span></span>
@@ -3944,7 +3945,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -3954,7 +3955,7 @@ Applying the following default arguments:
 </section>
 <section id="b.-data-integrity-finding-train-test" class="level2">
 <h2 class="anchored" data-anchor-id="b.-data-integrity-finding-train-test">6b. Data Integrity Finding: Train == Test</h2>
-<div id="c6a0ff52" class="cell" data-execution_count="11">
+<div id="3a7d9063" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json <span class="im">as</span> json_module</span>
@@ -3977,13 +3978,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="4a4535c2" class="cell" data-execution_count="12">
+<div id="5115bd4c" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load MBA data to show identity visually (SVDB1 as proxy since TranAD data in /tmp)</span></span>
@@ -4042,7 +4043,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4058,7 +4059,7 @@ Applying the following default arguments:
 </section>
 <section id="b.-foundation-model-baseline-chronos-small-zero-fine-tuning" class="level2">
 <h2 class="anchored" data-anchor-id="b.-foundation-model-baseline-chronos-small-zero-fine-tuning">5b. Foundation Model Baseline (Chronos-Small, Zero Fine-Tuning)</h2>
-<div id="74d9ccae" class="cell" data-execution_count="13">
+<div id="54df9159" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Chronos-Small results</span></span>
@@ -4083,13 +4084,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="485c382a" class="cell" data-execution_count="14">
+<div id="92ac1200" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">4.5</span>))</span>
@@ -4142,14 +4143,14 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
 <p><strong>Nuanced finding:</strong> The two metrics (AUROC vs F1-tolerance) give completely OPPOSITE conclusions about A2P vs Chronos.</p>
-<div id="5e3325a8" class="cell" data-execution_count="15">
+<div id="afde87ef" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Metric comparison table</span></span>
@@ -4180,7 +4181,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4190,7 +4191,7 @@ Applying the following default arguments:
 </section>
 <section id="failure-mode-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="failure-mode-analysis">7. Failure Mode Analysis</h2>
-<div id="409ff2d9" class="cell" data-execution_count="16">
+<div id="10677f2c" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== A2P Failure Modes and Root Causes ===</span><span class="ch">\n</span><span class="st">&quot;</span>)</span>
@@ -4244,7 +4245,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4330,7 +4331,7 @@ Applying the following default arguments:
 </section>
 <section id="b.-metric-analysis-the-full-pa-equivalence" class="level2">
 <h2 class="anchored" data-anchor-id="b.-metric-analysis-the-full-pa-equivalence">9b. Metric Analysis: The Full PA Equivalence</h2>
-<div id="f0f4a7bb" class="cell" data-execution_count="17">
+<div id="9799561e" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== Tolerance t=50 vs Full Point Adjustment ===&quot;</span>)</span>
@@ -4358,7 +4359,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4367,7 +4368,7 @@ Applying the following default arguments:
 </section>
 <section id="session-summary" class="level2">
 <h2 class="anchored" data-anchor-id="session-summary">10. Session Summary</h2>
-<div id="cdc7a7ec" class="cell" data-execution_count="18">
+<div id="eb42d5bf" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== Replication Session Summary ===&quot;</span>)</span>
@@ -4413,7 +4414,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4423,7 +4424,7 @@ Applying the following default arguments:
 <section id="statistical-baselines-vs-a2p-on-mba_svdb" class="level2">
 <h2 class="anchored" data-anchor-id="statistical-baselines-vs-a2p-on-mba_svdb">11. Statistical Baselines vs A2P on MBA_svdb</h2>
 <p>To further validate that A2P provides no unique benefit, we run classical anomaly detection baselines on MBA_svdb (single SVDB record, proper train/test split, 0.145% anomaly rate - real grey-swan regime).</p>
-<div id="7604e014" class="cell" data-execution_count="19">
+<div id="12706cb8" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -4458,7 +4459,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4469,7 +4470,7 @@ Applying the following default arguments:
 <h2 class="anchored" data-anchor-id="new-experiments-svdb1-proper-split-overnight-session">12. New Experiments: SVDB1 Proper Split (Overnight Session)</h2>
 <p>This session ran A2P on SVDB record 801 with a proper 70/30 temporal train/test split. This is closer to the paper’s intended evaluation than the TranAD train==test setup.</p>
 <p><strong>Dataset:</strong> PhysioNet SVDB record 801, 161K train / 69K test, 0.72% anomaly rate.</p>
-<div id="3f27b180" class="cell" data-execution_count="20">
+<div id="31890c42" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -4502,13 +4503,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="e645e990" class="cell" data-execution_count="21">
+<div id="809b90c4" class="cell" data-execution_count="21">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>fig_s1, axes_s1 <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
@@ -4551,7 +4552,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4561,7 +4562,7 @@ Applying the following default arguments:
 <section id="b.-multi-seed-svdb1-results-robustness-check" class="level2">
 <h2 class="anchored" data-anchor-id="b.-multi-seed-svdb1-results-robustness-check">12b. Multi-Seed SVDB1 Results (Robustness Check)</h2>
 <p>Running multiple seeds rules out lucky-seed explanations for the low AUROC finding.</p>
-<div id="8020556e" class="cell" data-execution_count="22">
+<div id="df6bea5a" class="cell" data-execution_count="22">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -4606,13 +4607,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="83066558" class="cell" data-execution_count="23">
+<div id="ba176290" class="cell" data-execution_count="23">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
@@ -4656,7 +4657,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4666,7 +4667,7 @@ Applying the following default arguments:
 <section id="cross-dataset-transfer-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="cross-dataset-transfer-analysis">13. Cross-Dataset Transfer Analysis</h2>
 <p>A2P always evaluates within a single dataset. We tested whether anomaly structure generalizes across domains using a rolling variance detector (no model training required).</p>
-<div id="92652e27" class="cell" data-execution_count="24">
+<div id="257f6a5c" class="cell" data-execution_count="24">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
@@ -4695,7 +4696,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4705,7 +4706,7 @@ Applying the following default arguments:
 </section>
 <section id="comprehensive-method-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="comprehensive-method-comparison">14. Comprehensive Method Comparison</h2>
-<div id="fa7fd6a6" class="cell" data-execution_count="25">
+<div id="848fb726" class="cell" data-execution_count="25">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>fig_cmp, axes_cmp <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
@@ -4766,7 +4767,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4838,7 +4839,7 @@ Applying the following default arguments:
 </section>
 <section id="failure-mode-summary" class="level2">
 <h2 class="anchored" data-anchor-id="failure-mode-summary">16. Failure Mode Summary</h2>
-<div id="3099d3f7" class="cell" data-execution_count="26">
+<div id="f7459d00" class="cell" data-execution_count="26">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>failure_modes <span class="op">=</span> [</span>
@@ -4870,7 +4871,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4880,7 +4881,7 @@ Applying the following default arguments:
 <section id="publication-figures" class="level2">
 <h2 class="anchored" data-anchor-id="publication-figures">17. Publication Figures</h2>
 <p>This section shows the publication-quality figures generated for the NeurIPS contribution.</p>
-<div id="443d6a7d" class="cell" data-execution_count="27">
+<div id="6da12d1a" class="cell" data-execution_count="27">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Image, display</span>
@@ -4905,7 +4906,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4914,7 +4915,7 @@ Applying the following default arguments:
 </section>
 <section id="smd-baselines" class="level2">
 <h2 class="anchored" data-anchor-id="smd-baselines">18. SMD Baselines</h2>
-<div id="7f94cb70" class="cell" data-execution_count="28">
+<div id="7dbfbd3d" class="cell" data-execution_count="28">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -4931,7 +4932,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4940,7 +4941,7 @@ Applying the following default arguments:
 </section>
 <section id="metric-ranking-analysis-spearman-correlation" class="level2">
 <h2 class="anchored" data-anchor-id="metric-ranking-analysis-spearman-correlation">19. Metric Ranking Analysis (Spearman Correlation)</h2>
-<div id="14992c6b" class="cell" data-execution_count="29">
+<div id="aeaaa76d" class="cell" data-execution_count="29">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json, numpy <span class="im">as</span> np</span>
@@ -4965,7 +4966,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -4986,7 +4987,7 @@ Applying the following default arguments:
 </section>
 <section id="critical-rolling-variance-beats-a2p-on-smd" class="level2">
 <h2 class="anchored" data-anchor-id="critical-rolling-variance-beats-a2p-on-smd">21. Critical: Rolling Variance Beats A2P on SMD</h2>
-<div id="a674fb1e" class="cell" data-execution_count="30">
+<div id="f5b80fc6" class="cell" data-execution_count="30">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5017,7 +5018,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5027,7 +5028,7 @@ Applying the following default arguments:
 <section id="b.-window-sensitivity-rolling-variance-vs-a2p-paper-smd" class="level2">
 <h2 class="anchored" data-anchor-id="b.-window-sensitivity-rolling-variance-vs-a2p-paper-smd">21b. Window Sensitivity: Rolling Variance vs A2P Paper (SMD)</h2>
 <p>With 6 different window sizes, rolling variance covers a range of F1-tolerance values:</p>
-<div id="66c3a6b1" class="cell" data-execution_count="31">
+<div id="f7e42c0a" class="cell" data-execution_count="31">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5100,7 +5101,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5110,7 +5111,7 @@ Applying the following default arguments:
 <section id="c.-the-papers-own-setup-svdb4-records-800-803-combined" class="level2">
 <h2 class="anchored" data-anchor-id="c.-the-papers-own-setup-svdb4-records-800-803-combined">21c. The Paper’s Own Setup: SVDB4 (Records 800-803 Combined)</h2>
 <p>The strongest test: does rolling variance beat A2P on the <strong>exact dataset configuration from the paper</strong>? Paper uses SVDB records 800-803, combined into 737K train / 184K test (6.35% anomaly rate).</p>
-<div id="37eb3223" class="cell" data-execution_count="32">
+<div id="ca9094dc" class="cell" data-execution_count="32">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5152,13 +5153,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="8e62f7a5" class="cell" data-execution_count="33">
+<div id="6959dc39" class="cell" data-execution_count="33">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
@@ -5197,7 +5198,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5207,7 +5208,7 @@ Applying the following default arguments:
 <section id="c2.-paradigm-breaking-oracle-ap-auroc-test" class="level2">
 <h2 class="anchored" data-anchor-id="c2.-paradigm-breaking-oracle-ap-auroc-test">21c2. PARADIGM-BREAKING: Oracle AP AUROC Test</h2>
 <p><strong>The deepest finding:</strong> If we gave a model perfect knowledge of the future (oracle), what AUROC would it achieve on the AP evaluation?</p>
-<div id="3524f3ff" class="cell" data-execution_count="34">
+<div id="6bd2e650" class="cell" data-execution_count="34">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5252,13 +5253,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="dd09f8b2" class="cell" data-execution_count="35">
+<div id="60884d56" class="cell" data-execution_count="35">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
@@ -5311,7 +5312,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5321,7 +5322,7 @@ Applying the following default arguments:
 <section id="c3.-correct-ap-evaluation-predict-future-anomaly-labels" class="level2">
 <h2 class="anchored" data-anchor-id="c3.-correct-ap-evaluation-predict-future-anomaly-labels">21c3. Correct AP Evaluation: Predict Future Anomaly Labels</h2>
 <p>The fundamental question: when evaluated against FUTURE anomaly labels (the actual task), can rolling variance or A2P predict future anomalies?</p>
-<div id="caa71270" class="cell" data-execution_count="36">
+<div id="087965c2" class="cell" data-execution_count="36">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb72"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json, matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -5361,13 +5362,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="7ec80294" class="cell" data-execution_count="37">
+<div id="a4ea3395" class="cell" data-execution_count="37">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
@@ -5449,7 +5450,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5458,7 +5459,7 @@ Applying the following default arguments:
 </section>
 <section id="d.-complete-comparison-all-methods-all-datasets-publication-figure" class="level2">
 <h2 class="anchored" data-anchor-id="d.-complete-comparison-all-methods-all-datasets-publication-figure">21d. Complete Comparison: All Methods, All Datasets (Publication Figure)</h2>
-<div id="f4b8fdbe" class="cell" data-execution_count="38">
+<div id="940a05d9" class="cell" data-execution_count="38">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb76"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Image, display</span>
@@ -5478,7 +5479,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5487,7 +5488,7 @@ Applying the following default arguments:
 </section>
 <section id="e.-tolerance-window-sensitivity-f1-tol-inflates-random-scores-to-68" class="level2">
 <h2 class="anchored" data-anchor-id="e.-tolerance-window-sensitivity-f1-tol-inflates-random-scores-to-68">21e. Tolerance Window Sensitivity: F1-tol Inflates Random Scores to 68%</h2>
-<div id="d68ce2ce" class="cell" data-execution_count="39">
+<div id="1f0df700" class="cell" data-execution_count="39">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -5583,7 +5584,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5592,7 +5593,7 @@ Applying the following default arguments:
 </section>
 <section id="f.-definitive-random-vs-a2p-comparison-5-seeds" class="level2">
 <h2 class="anchored" data-anchor-id="f.-definitive-random-vs-a2p-comparison-5-seeds">21f. Definitive Random vs A2P Comparison (5 Seeds)</h2>
-<div id="ac8e5e65" class="cell" data-execution_count="40">
+<div id="ec67773c" class="cell" data-execution_count="40">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb80"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -5671,7 +5672,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5696,7 +5697,7 @@ Applying the following default arguments:
 </section>
 <section id="b.-complete-evidence-chain-figure" class="level2">
 <h2 class="anchored" data-anchor-id="b.-complete-evidence-chain-figure">22b. Complete Evidence Chain Figure</h2>
-<div id="967f842a" class="cell" data-execution_count="41">
+<div id="c744f484" class="cell" data-execution_count="41">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb82"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Image, display</span>
@@ -5714,7 +5715,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5731,7 +5732,7 @@ Applying the following default arguments:
 </section>
 <section id="results" class="level3">
 <h3 class="anchored" data-anchor-id="results">25.2 Results</h3>
-<div id="f39ce54f" class="cell" data-execution_count="42">
+<div id="061a5b84" class="cell" data-execution_count="42">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb84"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5765,7 +5766,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5774,7 +5775,7 @@ Applying the following default arguments:
 </section>
 <section id="the-jepa-pretraining-objective-mismatch" class="level3">
 <h3 class="anchored" data-anchor-id="the-jepa-pretraining-objective-mismatch">25.3 The JEPA Pretraining Objective Mismatch</h3>
-<div id="7fb0292e" class="cell" data-execution_count="43">
+<div id="0e0acdca" class="cell" data-execution_count="43">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb86"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
@@ -5821,7 +5822,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5834,7 +5835,7 @@ Applying the following default arguments:
 <p><strong>Pretraining objective:</strong> Minimize MSE between predicted and actual future signal - Learns: smooth temporal dynamics, typical signal patterns - Rewards: accuracy on normal segments (which dominate the dataset)</p>
 <p><strong>Fine-tuning objective:</strong> Classify future window as anomalous or normal - Needs: sensitivity to unusual patterns that precede anomalies - Rewards: high response when signal deviates from normal before anomaly onset</p>
 <p>The mismatch means the pretrained representations may actually hinder fine-tuning by encoding a “normalcy prior” that works against detecting anomaly precursors.</p>
-<div id="d1d59afb" class="cell" data-execution_count="44">
+<div id="0ec1dce3" class="cell" data-execution_count="44">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb88"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== Objective Alignment Analysis ===</span><span class="ch">\n</span><span class="st">&quot;</span>)</span>
@@ -5868,7 +5869,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5885,7 +5886,7 @@ Applying the following default arguments:
 <li><p><strong>Multi-task pretraining</strong>: Jointly predict future signal values (temporal) AND future anomaly probability (supervised signal). Using known anomaly labels during pretraining.</p></li>
 </ol>
 <p>The key insight: <strong>SSL pretraining for AP must be anomaly-aware, not just temporally predictive.</strong></p>
-<div id="9f7279bb" class="cell" data-execution_count="45">
+<div id="8067530e" class="cell" data-execution_count="45">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb90"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== Summary: Probe 25 Key Finding ===</span><span class="ch">\n</span><span class="st">&quot;</span>)</span>
@@ -5904,7 +5905,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5919,7 +5920,7 @@ Applying the following default arguments:
 <p><strong>Hypothesis</strong>: Generic temporal contrastive pretraining (InfoNCE: each context aligns with its corresponding future) builds better temporal representations than supervised training from scratch.</p>
 <p><strong>Architecture</strong>: Dual-encoder (context 200-step + future 50-step), d_model=64, proj_dim=32, 228K params.</p>
 <p><strong>Result</strong>: AUROC=0.641, essentially identical to APTransformer (0.642). Delta = -0.001.</p>
-<div id="196c4738" class="cell" data-execution_count="46">
+<div id="243ea733" class="cell" data-execution_count="46">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb92"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
@@ -5959,7 +5960,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -5975,7 +5976,7 @@ Applying the following default arguments:
 <li><p><strong>Time-shifted contrastive</strong>: Create positive pairs from (window at t, anomalous window at t+pred_len) and negative pairs from (window at t, normal window at t+pred_len). This is the AP objective in SSL form.</p></li>
 </ol>
 <p>The core design requirement: <strong>the pretraining task must explicitly encode the AP signal into the representation</strong>.</p>
-<div id="00ce7a95" class="cell" data-execution_count="47">
+<div id="8487ec30" class="cell" data-execution_count="47">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb94"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== Pretraining Objective Alignment Analysis ===</span><span class="ch">\n</span><span class="st">&quot;</span>)</span>
@@ -5995,7 +5996,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -6006,7 +6007,7 @@ Applying the following default arguments:
 <section id="probe-27-multi-seed-statistical-validation" class="level2">
 <h2 class="anchored" data-anchor-id="probe-27-multi-seed-statistical-validation">27. Probe 27: Multi-Seed Statistical Validation</h2>
 <p><strong>Critical question</strong>: Is APTransformer AUROC=0.642 (Probe 24) reproducible, or was it a lucky single seed?</p>
-<div id="1a2d6d8b" class="cell" data-execution_count="48">
+<div id="3206765b" class="cell" data-execution_count="48">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb96"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>ms <span class="op">=</span> json.load(<span class="bu">open</span>(<span class="ss">f&#39;</span><span class="sc">{</span>IMPROVEMENTS_DIR<span class="sc">}</span><span class="ss">/aptransformer_multiseed.json&#39;</span>))</span>
@@ -6035,13 +6036,13 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
-<div id="84881e91" class="cell" data-execution_count="49">
+<div id="65701027" class="cell" data-execution_count="49">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb98"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
@@ -6102,7 +6103,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -6112,7 +6113,7 @@ Applying the following default arguments:
 <p>The APTransformer’s AUROC=0.642 (Probe 24) was a <strong>lucky single-seed result</strong>. Seed=42 was 3.2 standard deviations above the mean across 3 seeds.</p>
 <p>True multi-seed performance: - Mean AUROC: 0.524 +/- 0.037 (barely above random 0.500) - Seeds 1 and 2 perform near-random (0.492-0.503) - True gap to oracle: 0.196, not 0.078</p>
 <p><strong>Implications:</strong> 1. All single-seed AP results (JEPA 0.619, scratch 0.625, InfoNCE 0.641) should be treated as preliminary pending multi-seed validation. 2. The AP task on SVDB4 appears to be near-random for most model initializations. 3. The “evidence chain” in Step 8 needs updating: the true supervised baseline is ~0.524, not 0.642. 4. This makes the oracle gap (0.196) even harder to close, reinforcing that F1-tolerance as a metric is misleading - the true signal is very weak.</p>
-<div id="96d3a840" class="cell" data-execution_count="50">
+<div id="97e52e25" class="cell" data-execution_count="50">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb100"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Updated evidence chain with multi-seed correction</span></span>
@@ -6139,12 +6140,114 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 02930d76-6b01-40cd-8725-a80fd5866680
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
+</section>
+<section id="probe-27b-large-scale-temporal-pretrain-transfer" class="level2">
+<h2 class="anchored" data-anchor-id="probe-27b-large-scale-temporal-pretrain-transfer">28. Probe 27b: Large-Scale Temporal Pretrain Transfer</h2>
+<p><strong>Question</strong>: Does 4x more pretraining data (737K sequences, no labels) close the temporal SSL -&gt; AP gap?</p>
+<div id="cb0460d2" class="cell" data-execution_count="51">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb102-2"><a href="#cb102-2" aria-hidden="true" tabindex="-1"></a>pt <span class="op">=</span> json.load(<span class="bu">open</span>(<span class="st">&#39;../results/improvements/pretrain_transfer_ap.json&#39;</span>))</span>
+<span id="cb102-3"><a href="#cb102-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb102-4"><a href="#cb102-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;=== LARGE-SCALE PRETRAIN TRANSFER RESULTS ===&quot;</span>)</span>
+<span id="cb102-5"><a href="#cb102-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb102-6"><a href="#cb102-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Pretrain: </span><span class="sc">{</span>pt[<span class="st">&#39;pretrain_sequences&#39;</span>]<span class="sc">:,}</span><span class="ss"> sequences on SVDB4 TRAINING set (no labels)&quot;</span>)</span>
+<span id="cb102-7"><a href="#cb102-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Pretrain epochs: </span><span class="sc">{</span>pt[<span class="st">&#39;pretrain_epochs&#39;</span>]<span class="sc">}</span><span class="ss">, Finetune epochs: </span><span class="sc">{</span>pt[<span class="st">&#39;finetune_epochs&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb102-8"><a href="#cb102-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb102-9"><a href="#cb102-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Test AUROC:           </span><span class="sc">{</span>pt[<span class="st">&#39;test_auroc&#39;</span>]<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb102-10"><a href="#cb102-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Best val AUROC:        </span><span class="sc">{</span>pt[<span class="st">&#39;best_val_auroc&#39;</span>]<span class="sc">:.4f}</span><span class="ss"> (peaked at epoch 20, then degraded)&quot;</span>)</span>
+<span id="cb102-11"><a href="#cb102-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;APTransformer (no pretrain): </span><span class="sc">{</span>pt[<span class="st">&#39;aptransformer_auroc&#39;</span>]<span class="sc">:.3f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb102-12"><a href="#cb102-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Delta vs APTransformer: </span><span class="sc">{</span>pt[<span class="st">&#39;delta_vs_aptransformer&#39;</span>]<span class="sc">:+.4f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb102-13"><a href="#cb102-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Gap to oracle: </span><span class="sc">{</span>pt[<span class="st">&#39;gap_to_oracle&#39;</span>]<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb102-14"><a href="#cb102-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb102-15"><a href="#cb102-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;VERDICT: 4x more pretraining data DOES NOT help AP (-0.010 vs APTransformer)&quot;</span>)</span>
+<span id="cb102-16"><a href="#cb102-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb102-17"><a href="#cb102-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Timeline of pretraining ABLATION across all probes:&quot;</span>)</span>
+<span id="cb102-18"><a href="#cb102-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  JEPA-AP (same size data, temporal objective):  0.619  (-0.023 vs ATF)&quot;</span>)</span>
+<span id="cb102-19"><a href="#cb102-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  Large pretrain (4x data, same objective):      0.632  (-0.010 vs ATF)&quot;</span>)</span>
+<span id="cb102-20"><a href="#cb102-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  InfoNCE contrastive (temporal pairs):          0.641  (-0.001 vs ATF)&quot;</span>)</span>
+<span id="cb102-21"><a href="#cb102-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  APTransformer (no pretraining, supervised):    0.642  [baseline]&quot;</span>)</span>
+<span id="cb102-22"><a href="#cb102-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;  Oracle:                                        0.720  [ceiling]&quot;</span>)</span>
+<span id="cb102-23"><a href="#cb102-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb102-24"><a href="#cb102-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Key observation: Scale alone (4x data) reduces the deficit but cannot overcome&quot;</span>)</span>
+<span id="cb102-25"><a href="#cb102-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;the fundamental objective mismatch between temporal SSL and anomaly prediction.&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<div id="45ac6a54" class="cell" data-execution_count="52">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
+<span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-6"><a href="#cb104-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare all pretraining approaches</span></span>
+<span id="cb104-7"><a href="#cb104-7" aria-hidden="true" tabindex="-1"></a>methods <span class="op">=</span> [</span>
+<span id="cb104-8"><a href="#cb104-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&#39;No pretraining</span><span class="ch">\n</span><span class="st">(APTransformer)&#39;</span>, <span class="fl">0.642</span>, <span class="st">&#39;darkblue&#39;</span>, <span class="st">&#39;Baseline&#39;</span>),</span>
+<span id="cb104-9"><a href="#cb104-9" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&#39;JEPA temporal</span><span class="ch">\n</span><span class="st">(same data)&#39;</span>, <span class="fl">0.619</span>, <span class="st">&#39;salmon&#39;</span>, <span class="st">&#39;Temporal SSL&#39;</span>),</span>
+<span id="cb104-10"><a href="#cb104-10" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&#39;Large-scale temporal</span><span class="ch">\n</span><span class="st">(4x data)&#39;</span>, <span class="fl">0.632</span>, <span class="st">&#39;tomato&#39;</span>, <span class="st">&#39;Temporal SSL&#39;</span>),</span>
+<span id="cb104-11"><a href="#cb104-11" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&#39;InfoNCE generic</span><span class="ch">\n</span><span class="st">(temporal pairs)&#39;</span>, <span class="fl">0.641</span>, <span class="st">&#39;lightcoral&#39;</span>, <span class="st">&#39;Contrastive SSL&#39;</span>),</span>
+<span id="cb104-12"><a href="#cb104-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&#39;Multi-seed TRUE</span><span class="ch">\n</span><span class="st">(3 seeds)&#39;</span>, <span class="fl">0.524</span>, <span class="st">&#39;steelblue&#39;</span>, <span class="st">&#39;Statistical ground truth&#39;</span>),</span>
+<span id="cb104-13"><a href="#cb104-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&#39;Oracle</span><span class="ch">\n</span><span class="st">(future variance)&#39;</span>, <span class="fl">0.720</span>, <span class="st">&#39;green&#39;</span>, <span class="st">&#39;Upper bound&#39;</span>),</span>
+<span id="cb104-14"><a href="#cb104-14" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb104-15"><a href="#cb104-15" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [m[<span class="dv">0</span>] <span class="cf">for</span> m <span class="kw">in</span> methods]</span>
+<span id="cb104-16"><a href="#cb104-16" aria-hidden="true" tabindex="-1"></a>values <span class="op">=</span> [m[<span class="dv">1</span>] <span class="cf">for</span> m <span class="kw">in</span> methods]</span>
+<span id="cb104-17"><a href="#cb104-17" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [m[<span class="dv">2</span>] <span class="cf">for</span> m <span class="kw">in</span> methods]</span>
+<span id="cb104-18"><a href="#cb104-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-19"><a href="#cb104-19" aria-hidden="true" tabindex="-1"></a>bars <span class="op">=</span> ax.bar(labels, values, color<span class="op">=</span>colors, edgecolor<span class="op">=</span><span class="st">&#39;black&#39;</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>, alpha<span class="op">=</span><span class="fl">0.85</span>)</span>
+<span id="cb104-20"><a href="#cb104-20" aria-hidden="true" tabindex="-1"></a>ax.axhline(y<span class="op">=</span><span class="fl">0.500</span>, color<span class="op">=</span><span class="st">&#39;gray&#39;</span>, linestyle<span class="op">=</span><span class="st">&#39;--&#39;</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>, alpha<span class="op">=</span><span class="fl">0.6</span>, label<span class="op">=</span><span class="st">&#39;Random (0.500)&#39;</span>)</span>
+<span id="cb104-21"><a href="#cb104-21" aria-hidden="true" tabindex="-1"></a>ax.axhline(y<span class="op">=</span><span class="fl">0.720</span>, color<span class="op">=</span><span class="st">&#39;green&#39;</span>, linestyle<span class="op">=</span><span class="st">&#39;--&#39;</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>, alpha<span class="op">=</span><span class="fl">0.8</span>, label<span class="op">=</span><span class="st">&#39;Oracle (0.720)&#39;</span>)</span>
+<span id="cb104-22"><a href="#cb104-22" aria-hidden="true" tabindex="-1"></a>ax.axhline(y<span class="op">=</span><span class="fl">0.524</span>, color<span class="op">=</span><span class="st">&#39;steelblue&#39;</span>, linestyle<span class="op">=</span><span class="st">&#39;:&#39;</span>, linewidth<span class="op">=</span><span class="dv">2</span>, alpha<span class="op">=</span><span class="fl">0.6</span>, label<span class="op">=</span><span class="st">&#39;Multi-seed mean (0.524)&#39;</span>)</span>
+<span id="cb104-23"><a href="#cb104-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-24"><a href="#cb104-24" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bar, val <span class="kw">in</span> <span class="bu">zip</span>(bars, values):</span>
+<span id="cb104-25"><a href="#cb104-25" aria-hidden="true" tabindex="-1"></a>    ax.text(bar.get_x() <span class="op">+</span> bar.get_width()<span class="op">/</span><span class="dv">2</span>, val <span class="op">+</span> <span class="fl">0.005</span>, <span class="ss">f&#39;</span><span class="sc">{</span>val<span class="sc">:.3f}</span><span class="ss">&#39;</span>,</span>
+<span id="cb104-26"><a href="#cb104-26" aria-hidden="true" tabindex="-1"></a>            ha<span class="op">=</span><span class="st">&#39;center&#39;</span>, va<span class="op">=</span><span class="st">&#39;bottom&#39;</span>, fontsize<span class="op">=</span><span class="dv">9</span>, fontweight<span class="op">=</span><span class="st">&#39;bold&#39;</span>)</span>
+<span id="cb104-27"><a href="#cb104-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-28"><a href="#cb104-28" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">&#39;Test AUROC&#39;</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb104-29"><a href="#cb104-29" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">&#39;SSL Pretraining Ablation: Temporal Objectives Fail for Anomaly Prediction</span><span class="ch">\n</span><span class="st">&#39;</span></span>
+<span id="cb104-30"><a href="#cb104-30" aria-hidden="true" tabindex="-1"></a>             <span class="st">&#39;(All &quot;high&quot; results are single seed=42; blue bar is statistically validated)&#39;</span>,</span>
+<span id="cb104-31"><a href="#cb104-31" aria-hidden="true" tabindex="-1"></a>             fontsize<span class="op">=</span><span class="dv">10</span>, fontweight<span class="op">=</span><span class="st">&#39;bold&#39;</span>)</span>
+<span id="cb104-32"><a href="#cb104-32" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="fl">0.44</span>, <span class="fl">0.78</span>)</span>
+<span id="cb104-33"><a href="#cb104-33" aria-hidden="true" tabindex="-1"></a>ax.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb104-34"><a href="#cb104-34" aria-hidden="true" tabindex="-1"></a>ax.grid(axis<span class="op">=</span><span class="st">&#39;y&#39;</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb104-35"><a href="#cb104-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-36"><a href="#cb104-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Add annotation for objective mismatch</span></span>
+<span id="cb104-37"><a href="#cb104-37" aria-hidden="true" tabindex="-1"></a>ax.annotate(<span class="st">&#39;Objective</span><span class="ch">\n</span><span class="st">mismatch&#39;</span>, xy<span class="op">=</span>(<span class="fl">0.37</span>, <span class="fl">0.619</span>), xytext<span class="op">=</span>(<span class="fl">0.6</span>, <span class="fl">0.57</span>),</span>
+<span id="cb104-38"><a href="#cb104-38" aria-hidden="true" tabindex="-1"></a>            arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">&#39;-&gt;&#39;</span>, color<span class="op">=</span><span class="st">&#39;red&#39;</span>), fontsize<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">&#39;red&#39;</span>)</span>
+<span id="cb104-39"><a href="#cb104-39" aria-hidden="true" tabindex="-1"></a>ax.annotate(<span class="st">&#39;4x data: partial fix</span><span class="ch">\n</span><span class="st">(-0.010 persists)&#39;</span>, xy<span class="op">=</span>(<span class="fl">1.37</span>, <span class="fl">0.632</span>), xytext<span class="op">=</span>(<span class="fl">1.6</span>, <span class="fl">0.58</span>),</span>
+<span id="cb104-40"><a href="#cb104-40" aria-hidden="true" tabindex="-1"></a>            arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">&#39;-&gt;&#39;</span>, color<span class="op">=</span><span class="st">&#39;darkorange&#39;</span>), fontsize<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">&#39;darkorange&#39;</span>)</span>
+<span id="cb104-41"><a href="#cb104-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb104-42"><a href="#cb104-42" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb104-43"><a href="#cb104-43" aria-hidden="true" tabindex="-1"></a>plt.savefig(<span class="ss">f&#39;</span><span class="sc">{</span>FIGURES_DIR<span class="sc">}</span><span class="ss">/fig_ssl_ablation.png&#39;</span>, dpi<span class="op">=</span><span class="dv">150</span>, bbox_inches<span class="op">=</span><span class="st">&#39;tight&#39;</span>)</span>
+<span id="cb104-44"><a href="#cb104-44" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb104-45"><a href="#cb104-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Figure saved.&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 69c89f14-3821-498b-8b79-9d23b7c583ab
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<p><strong>Synthesis</strong>: The evidence is now comprehensive. Temporal self-supervised pretraining - whether JEPA-style or InfoNCE contrastive, whether on matched data or 4x more data - provides no benefit for anomaly prediction. The fundamental constraint is <strong>objective alignment</strong>: SSL objectives that predict “what comes next” encode normalcy priors that are orthogonal to the anomaly-precursor signal needed for AP.</p>
+<p>The only path forward is: 1. <strong>Anomaly-aware SSL</strong>: Explicitly use anomaly labels (or proxy labels) in the pretraining loss. 2. <strong>Contrastive objectives with anomaly polarity</strong>: Probe 26b (running) tests this. 3. <strong>Multi-seed validation first</strong>: Until we have mean ± std across 3+ seeds, no conclusion is reliable.</p>
 </section>
 
 </main>

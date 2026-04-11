@@ -1,0 +1,17 @@
+{
+  "model": "Large-scale temporal pretrain (737K train seqs) + finetune",
+  "dataset": "SVDB4",
+  "evaluation": "correct_AP",
+  "test_auroc": 0.6321826902902677,
+  "test_auprc": 0.11955412707984853,
+  "best_val_auroc": 0.644588197251653,
+  "oracle_auroc": 0.72,
+  "aptransformer_auroc": 0.642,
+  "gap_to_oracle": 0.08781730970973223,
+  "delta_vs_aptransformer": -0.00981730970973227,
+  "pretrain_sequences": 36852,
+  "finetune_sequences": 36794,
+  "pretrain_data": "SVDB4 training set (737K, no anomaly labels)",
+  "pretrain_epochs": 30,
+  "finetune_epochs": 50
+}

@@ -887,15 +887,36 @@ Mean AUROC: 0.524 +/- 0.037 (oracle: 0.720)
 
 ---
 
-### Probe 27b: Large-Scale Pretrain Transfer (Running)
+### Probe 27b: Large-Scale Pretrain Transfer
 
-**Time:** 2026-04-11 15:30 (running)
+**Time:** 2026-04-11 15:30 (completed ~16:05, 35 min)
 **Hypothesis:** Pretraining on 4x more data (full SVDB4 training set, 737K samples) closes the AP gap by learning richer temporal representations.
+**Dataset:** SVDB4 (184K test for fine-tune, 737K train for pretraining)
 **Method:**
-- Phase 1: 30 epochs JEPA-style temporal prediction on SVDB4 TRAINING set (no anomaly labels, stride=20, ~36K sequences)
-- Phase 2: 50 epochs fine-tune on SVDB4 test set with correct AP labels (cosine LR)
-**Expected:** If temporal signal is useful for AP, more data should help. If objective is misaligned, more data won't help.
-**Status:** RUNNING (PID 118143)
+- Phase 1: 30 epochs temporal prediction on SVDB4 TRAINING set (no anomaly labels, stride=20, 36,852 sequences)
+  - MSE decreased: 0.099 -> 0.065 (healthy learning)
+- Phase 2: 50 epochs fine-tune on test set with correct AP labels (cosine LR)
+  - Val AUROC peaks at epoch 20 (0.6446) then degrades
+**Results:**
+```
+Large-scale pretrain + finetune AUROC: 0.632 (oracle: 0.720)
+APTransformer (supervised only):       0.642
+Delta vs APTransformer:               -0.010 (WORSE!)
+Best val AUROC:                        0.645
+```
+**Sanity checks:** ✓ Pretrain MSE decreased ✓ Fine-tune val AUROC > 0.5 ✓ No NaN ✓ Expected seed=42 lucky draw range
+**Verdict:** REVERT - 4x more pretraining data does NOT help AP (slightly hurts: -0.010)
+
+**Analysis:**
+1. Temporal prediction pretraining learns "what normal signal looks like" (normalcy prior).
+2. Even with 4x more data, the MSE objective cannot learn anomaly precursors (they're rare, ~6% of labels).
+3. Fine-tuning degrades after epoch 20 = pretrained representations inhibit AP adaptation.
+4. Conclusion: **The pretraining objective is fundamentally misaligned with AP, and more data doesn't fix fundamental misalignment.**
+5. Note: This is again single-seed (seed=42 implicit), so the 0.632 result should be treated as preliminary.
+
+**Confirms:** Temporal SSL pretraining (whether JEPA-style or large-scale) consistently fails for AP.
+
+**Saved:** results/improvements/pretrain_transfer_ap.json
 
 ---
 

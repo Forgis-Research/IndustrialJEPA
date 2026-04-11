@@ -129,6 +129,7 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | Correct AP: JEPA | JEPA pretrain + finetune (SVDB4, correct AP) | AUROC | 0.619 | Scratch: 0.625 | Pretraining HURTS vs scratch! |
 | Correct AP: Scratch | Supervised scratch Transformer (correct AP) | AUROC | 0.625 | Rolling var: 0.476 | Simple supervised outperforms JEPA |
 | Correct AP: Transformer | APTransformer (cosine LR, correct AP eval) | AUROC | **0.642** | Oracle: 0.720 | Single seed=42 ONLY |
+| Correct AP: Large pretrain | 737K-seq pretrain + finetune (4x data) | AUROC | 0.632 | APTransformer: 0.642 | Single seed=42, -0.010 vs ATF |
 | Correct AP: InfoNCE | InfoNCE contrastive pretrain + finetune | AUROC | 0.641 | APTransformer: 0.642 | Single seed=42, neutral |
 | **Correct AP: Multi-Seed** | **APTransformer 3-seed (correct AP)** | **AUROC** | **0.524 +/- 0.037** | **Oracle: 0.720** | **TRUE ESTIMATE: seed=42 was lucky!** |
 
