@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Best published results on FEMTO/XJTU-SY RUL, standard evaluation protocol, self-supervised RUL approaches, PHM 2012 metric, single-window formulation gap">
+
+<title>literature_review_rul_sota</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="literature_review_rul_sota_files/libs/clipboard/clipboard.min.js"></script>
+<script src="literature_review_rul_sota_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="literature_review_rul_sota_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="literature_review_rul_sota_files/libs/quarto-html/popper.min.js"></script>
+<script src="literature_review_rul_sota_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="literature_review_rul_sota_files/libs/quarto-html/anchor.min.js"></script>
+<link href="literature_review_rul_sota_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="literature_review_rul_sota_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="literature_review_rul_sota_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="literature_review_rul_sota_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="literature_review_rul_sota_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<p>Focused review conducted April 2026 for positioning IndustrialJEPA against SOTA.</p>
+<section id="standard-evaluation-protocol-critical-to-understand" class="level2">
+<h2 class="anchored" data-anchor-id="standard-evaluation-protocol-critical-to-understand">Standard Evaluation Protocol (Critical to Understand)</h2>
+<section id="how-published-papers-define-the-rul-regression-target" class="level3">
+<h3 class="anchored" data-anchor-id="how-published-papers-define-the-rul-regression-target">How Published Papers Define the RUL Regression Target</h3>
+<p>The dominant convention (used by ~90% of papers):</p>
+<p>RUL_normalized(t) = (T_total - t) / T_total</p>
+<p>This yields a value in [0, 1] where 1.0 = brand new, 0.0 = failure. Some papers use a piecewise-linear label that caps at 1.0 for the “healthy phase” before a detected degradation onset point, then decays linearly to 0.</p>
+</section>
+<section id="what-is-actually-predicted" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-actually-predicted">What Is Actually Predicted</h3>
+<p>Almost all papers do <strong>point-to-point (P2P) regression on the full trajectory</strong>: given every window in a run-to-failure trajectory, predict the normalized RUL at each timestep. This is the standard benchmark task — the model sees sequential windows and outputs a prediction for each one.</p>
+<p>A minority of papers do <strong>sequence-to-point (S2P)</strong>: given a subsequence of windows, predict the RUL at the last timestep.</p>
+<p><strong>Neither paradigm is what IndustrialJEPA’s task formulation describes.</strong> The project task is: given ONE short window (0.1s-1.3s), without any temporal context or ordering information, predict RUL as a percentage. This is a truly different setup.</p>
+</section>
+<section id="end-of-life-eol-threshold-femtopronostia" class="level3">
+<h3 class="anchored" data-anchor-id="end-of-life-eol-threshold-femtopronostia">End-of-Life (EOL) Threshold (FEMTO/PRONOSTIA)</h3>
+<p>The PRONOSTIA rig stops each test when vibration amplitude exceeds 20 g. This is the EOL marker. RUL is measured backward from this point.</p>
+</section>
+<section id="dataset-splits-femto" class="level3">
+<h3 class="anchored" data-anchor-id="dataset-splits-femto">Dataset Splits (FEMTO)</h3>
+<p>Three operating conditions (sub-datasets). Sub-datasets 1 and 2: 2 training runs + 5 test runs each. Sub-dataset 3: 1 test run. Standard practice uses sub-datasets 1 and 2 for comparison; sub-dataset 3 is rarely included due to small size.</p>
+</section>
+<section id="input-window" class="level3">
+<h3 class="anchored" data-anchor-id="input-window">Input Window</h3>
+<p>The standard window size in the <code>rul-datasets</code> library is 2560 samples. At 25.6 kHz this is exactly 0.1 seconds. Papers vary widely — many use extracted statistical features (RMS, kurtosis, etc.) over a 10-second recording interval rather than raw samples.</p>
+<hr>
+</section>
+</section>
+<section id="femtopronostia-sota-results-normalized-rul-in-01" class="level2">
+<h2 class="anchored" data-anchor-id="femtopronostia-sota-results-normalized-rul-in-01">FEMTO/PRONOSTIA SOTA Results (Normalized RUL in [0,1])</h2>
+<p>Metric is normalized RMSE (nRMSE) and MAE, where values are on the 0-1 scale. Lower is better.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Year</th>
+<th>RMSE (FEMTO)</th>
+<th>MAE (FEMTO)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CNN-GRU-MHA (transfer learning)</td>
+<td>2024</td>
+<td><strong>0.0443</strong></td>
+<td>–</td>
+<td>Applied Sci 14/19/9039; transfer learning, small sample</td>
+</tr>
+<tr class="even">
+<td>Bi-LSTM-Transformer + EMD</td>
+<td>2025</td>
+<td>0.0563</td>
+<td>0.0469</td>
+<td>Applied Sci 15/17/9529; XJTU primary, FEMTO also tested</td>
+</tr>
+<tr class="odd">
+<td>TCN-Transformer parallel</td>
+<td>2025</td>
+<td>~0.12 (inferred)</td>
+<td>–</td>
+<td>Sensors 25/11/3571 PMC12158285; FEMTO+XJTU; 14.6% RMSE improvement over TCN-SA</td>
+</tr>
+<tr class="even">
+<td>MDSCT (Multi-scale Separable Conv+Transformer)</td>
+<td>2024</td>
+<td>0.124</td>
+<td>0.100</td>
+<td>PMC11481647; FEMTO+XJTU</td>
+</tr>
+<tr class="odd">
+<td>HIWSAN (Health Indicator-Weighted Subdomain Align.)</td>
+<td>2025</td>
+<td>~0.12</td>
+<td>~0.10</td>
+<td>Sensors 25/15/4536; cross-condition transfer</td>
+</tr>
+<tr class="even">
+<td>CVT (baseline in MDSCT paper)</td>
+<td>2024</td>
+<td>0.131</td>
+<td>0.112</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>TCN-SA (baseline in MDSCT paper)</td>
+<td>2024</td>
+<td>0.148</td>
+<td>0.114</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>DCNN (baseline)</td>
+<td>2024</td>
+<td>0.175</td>
+<td>0.145</td>
+<td>On XJTU-SY</td>
+</tr>
+<tr class="odd">
+<td>TcLstmNet-CBAM</td>
+<td>2025</td>
+<td>~3.1 absolute min</td>
+<td>–</td>
+<td>Scientific Reports; PHM2012+XJTU-SY; different scale</td>
+</tr>
+</tbody>
+</table>
+<p>The CNN-GRU-MHA result of 0.0443 appears to be among the best reported on FEMTO as of early 2025. The MDSCT paper (Heliyon/PMC 2024) provides the cleanest apples-to-apples comparison table.</p>
+<p>Note: results are NOT fully comparable across papers due to: - Different subsets of FEMTO used (some use all 3 conditions, some just 1-2) - Different degradation onset detection methods (affects how many windows are labeled) - Different normalization conventions</p>
+</section>
+<section id="xjtu-sy-sota-results" class="level2">
+<h2 class="anchored" data-anchor-id="xjtu-sy-sota-results">XJTU-SY SOTA Results</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Year</th>
+<th>RMSE (XJTU-SY)</th>
+<th>MAE (XJTU-SY)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bi-LSTM-Transformer + EMD</td>
+<td>2025</td>
+<td><strong>0.0563</strong></td>
+<td>0.0469</td>
+<td>Applied Sci 15/17/9529</td>
+</tr>
+<tr class="even">
+<td>CNN-GRU-MHA (transfer)</td>
+<td>2024</td>
+<td>0.0693</td>
+<td>–</td>
+<td>Applied Sci 14/19/9039</td>
+</tr>
+<tr class="odd">
+<td>TCN-Transformer parallel</td>
+<td>2025</td>
+<td>–</td>
+<td>–</td>
+<td>Sensors 25/11/3571; XJTU also tested</td>
+</tr>
+<tr class="even">
+<td>MDSCT</td>
+<td>2024</td>
+<td>0.160</td>
+<td>0.134</td>
+<td>PMC11481647</td>
+</tr>
+<tr class="odd">
+<td>SAGCN-SA</td>
+<td>2024</td>
+<td>0.170</td>
+<td>–</td>
+<td>Best in that paper</td>
+</tr>
+<tr class="even">
+<td>TCN-SA (baseline)</td>
+<td>2024</td>
+<td>0.194</td>
+<td>0.158</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>CVAER (envelope spectrum + VAE)</td>
+<td>2024</td>
+<td>28.47 min</td>
+<td>–</td>
+<td>Absolute time, not normalized</td>
+</tr>
+</tbody>
+</table>
+<p>The XJTU-SY dataset is less standardized than FEMTO — papers sometimes report per-bearing results, sometimes averages over condition groups.</p>
+<hr>
+</section>
+<section id="the-phm-2012-challenge-scoring-function" class="level2">
+<h2 class="anchored" data-anchor-id="the-phm-2012-challenge-scoring-function">The PHM 2012 Challenge Scoring Function</h2>
+<p>The original 2012 challenge used an <strong>asymmetric score function</strong> based on percent error, not RMSE. The formula (from Nectoux et al.&nbsp;2012 and widely cited):</p>
+<p>For each bearing i: Er_i = (RUL_predicted - RUL_true) / RUL_true * 100 (percent error)</p>
+<pre><code>if Er_i &lt;= 0 (early prediction):  score_i = -log(1 - Er_i/100)^C1   [penalizes less]
+if Er_i &gt; 0  (late prediction):   score_i = log(1 + Er_i/100)^C2   [penalizes more]</code></pre>
+<p>Final score = (1/N) * sum(score_i) where N = 11 test bearings</p>
+<p>The exact penalty coefficients C1, C2 are in the original PDF (not fully accessible via web). Late predictions (predicting longer life than actual) are penalized more heavily, reflecting the safety-critical nature of maintenance.</p>
+<p>The competition winner achieved a total score of ~0.28.</p>
+<p>Crucially: the PHM 2012 metric is NOT normalized RMSE — it is a percent-error-based score function applied to a <strong>single final RUL estimate</strong> per bearing (made at a specific fraction of the bearing’s life). This is conceptually different from the whole-trajectory RMSE that most recent papers report.</p>
+<p>Post-2015 literature has largely abandoned the PHM score in favor of normalized RMSE/MAE on the full trajectory, which is more interpretable and allows finer comparison.</p>
+<hr>
+</section>
+<section id="self-supervised-representation-learning-approaches-to-rul" class="level2">
+<h2 class="anchored" data-anchor-id="self-supervised-representation-learning-approaches-to-rul">Self-Supervised / Representation Learning Approaches to RUL</h2>
+<section id="existing-work" class="level3">
+<h3 class="anchored" data-anchor-id="existing-work">Existing Work</h3>
+<p><strong>DCSSL (2026)</strong> — “A novel dual-dimensional contrastive self-supervised learning-based framework for rolling bearing RUL prediction.” Scientific Reports 2026. Stage 1: Random cropping + timestamp masking to build positive pairs. Temporal-level and instance-level contrastive loss. Stage 2: Fine-tune RUL regression head. Dataset: FEMTO/PRONOSTIA. Claims to outperform supervised SOTA. Relevance: Closest existing work to IndustrialJEPA’s SSL + RUL framing.</p>
+<p><strong>HNCPM (Hard Negative Contrastive Prediction Model, ~2023)</strong> — Contrastive learning with hard negative samples (selected by cosine similarity), GRU regression module, decoder for reconstruction. Encoder learns representations, GRU predicts RUL.</p>
+<p><strong>Contrastive SSL for incipient fault detection (Reliability Eng. 2022)</strong> — Pretrains encoder with contrastive objective on healthy vs degraded windows, then extracts health indicator. Not direct RUL regression.</p>
+<p><strong>Semi-supervised transfer learning (MDPI Sensors 2025)</strong> — Anti-self-healing health indicator + semi-supervised transfer. Some self-supervised elements but primarily supervised RUL.</p>
+<p><strong>RULSurv (2024)</strong> — Survival analysis (CoxPH, RSF) on XJTU-SY with censoring-aware training. Not self-supervised but novel framing with probabilistic output. XJTU-SY C1 MAE: 12.6 minutes (Random Survival Forests). Different metric from nRMSE.</p>
+<p><strong>CVAER (2024)</strong> — Convolutional Variational Autoencoder for Regression. Uses averaged envelope spectra (AES) as input. Trains one VAE + regression head per bearing lifecycle. XJTU-SY best RMSE: 28.47 minutes. This is the closest thing to single-spectrum prediction: each timestamp’s AES is fed independently to predict RUL. But they still train on the full trajectory (supervised on time-ordered windows).</p>
+</section>
+<section id="what-does-not-exist" class="level3">
+<h3 class="anchored" data-anchor-id="what-does-not-exist">What Does NOT Exist</h3>
+<ul>
+<li>JEPA + RUL: no paper exists (confirmed gap from earlier search)</li>
+<li>MAE pretraining specifically for bearing RUL regression (pretraining on healthy vibration, then fine-tuning on limited run-to-failure labels): not published</li>
+<li>JEPA pretrained on large multi-source vibration corpus, then fine-tuned for RUL: not published</li>
+<li>Any paper that explicitly treats RUL as a <strong>position-agnostic single-window problem</strong></li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="the-single-window-rul-problem-does-it-exist-in-literature" class="level2">
+<h2 class="anchored" data-anchor-id="the-single-window-rul-problem-does-it-exist-in-literature">The Single-Window RUL Problem: Does It Exist in Literature?</h2>
+<section id="the-direct-answer-no-not-as-a-formal-formulation" class="level3">
+<h3 class="anchored" data-anchor-id="the-direct-answer-no-not-as-a-formal-formulation">The Direct Answer: No, Not as a Formal Formulation</h3>
+<p>No published paper defines the task as: “Given one short vibration window, with no knowledge of where in the bearing’s lifecycle this window comes from, predict RUL as a percentage.”</p>
+<p>All existing methods require either: 1. <strong>Sequential context</strong>: A series of windows in temporal order, so the model can see the degradation trend 2. <strong>Online position information</strong>: The model knows which timestep in the lifecycle the current window corresponds to 3. <strong>Degradation onset detection first</strong>: The model first detects when degradation begins (a separate module), then predicts RUL from that onset point</p>
+</section>
+<section id="the-closest-existing-work" class="level3">
+<h3 class="anchored" data-anchor-id="the-closest-existing-work">The Closest Existing Work</h3>
+<p><strong>CVAER (Convolutional VAER, 2024)</strong>: Makes a RUL prediction from each individual envelope spectrum. The model doesn’t explicitly see history — it predicts from a single snapshot. BUT the training procedure is supervised on full trajectories (the model learns the mapping from spectrum shape to position in lifecycle), and the spectrum is time-averaged over 10s recordings (not a raw 0.1s vibration burst). Published in PMC (Sensors/MDPI family), so not a top-venue paper.</p>
+<p><strong>DMW-Trans (IEEE 2023)</strong>: Deep Multiscale Window-based Transformer that explicitly argues single-window approaches fail because they miss cross-temporal information. It proposes multiscale feature maps as a solution. This paper directly acknowledges the single-window problem but treats it as a weakness to overcome, not a feature to exploit.</p>
+</section>
+<section id="why-the-single-window-formulation-is-novel" class="level3">
+<h3 class="anchored" data-anchor-id="why-the-single-window-formulation-is-novel">Why the Single-Window Formulation Is Novel</h3>
+<p>The conventional wisdom (stated explicitly in DMW-Trans 2023 and the survey literature) is that single-window RUL estimation is fundamentally limited — you need temporal context. Our hypothesis: a sufficiently powerful pretrained representation (JEPA embeddings) can encode enough physical information about degradation state from a single window to regress RUL without temporal context. If true, this is both novel and practically significant: it enables RUL estimation from a single accelerometer capture, with no historical data and no assumption about where in the lifecycle the window sits.</p>
+<hr>
+</section>
+</section>
+<section id="cross-dataset-transfer-results-femto---xjtu-sy" class="level2">
+<h2 class="anchored" data-anchor-id="cross-dataset-transfer-results-femto---xjtu-sy">Cross-Dataset Transfer Results (FEMTO &lt;-&gt; XJTU-SY)</h2>
+<p>This is rare but does exist. Key papers:</p>
+<p><strong>ERCDAN (Enhanced Residual Conv Domain Adaptation Network, Reliability Eng. &amp; System Safety 2024)</strong> DOI: 10.1016/j.ress.2024.110516 (ScienceDirect). Uses CBAM + residual conv + MK-MMD domain adaptation. Validates on PHM2012, XJTU-SY, and EBFL datasets in cross-machine transfer scenarios. Does not report normalized RUL RMSE — uses a different scale. Architecture: CNN feature extractor + CBAM + MK-MMD + RUL regressor.</p>
+<p><strong>Cross-condition/cross-platform adversarial domain adaptation (Scientific Reports 2021, still widely cited)</strong> PMC8766616. Uses 12 transfer tasks between FEMTO conditions and XJTU-SY conditions. First paper to explicitly frame cross-platform (FEMTO-&gt;XJTU) as a formal benchmark.</p>
+<p><strong>CNN-Bi-LSTM Domain Adaptation (Sensors 2024)</strong> MDPI 1424-8220/24/21/6906. PHM2012 as source, tests cross-condition transfer within FEMTO. Does not test cross-dataset (FEMTO-&gt;XJTU) directly.</p>
+<p><strong>HIWSAN (Health Indicator-Weighted Subdomain Alignment Network, Sensors 2025)</strong> MDPI 1424-8220/25/15/4536. Cross-condition transfer, combined FEMTO+XJTU evaluation. Average MAE 0.0989, average RMSE 0.1189 across both datasets (not separate per-dataset numbers).</p>
+<p>Key insight: Cross-dataset transfer (train on FEMTO, test on XJTU-SY or vice versa) is an active but small sub-field. No paper does it as a single-window JEPA transfer problem. Most use domain adaptation (DANN, MMD), not representation pretraining. This is a gap IndustrialJEPA can fill.</p>
+</section>
+<section id="top-papers-to-compare-against" class="level2">
+<h2 class="anchored" data-anchor-id="top-papers-to-compare-against">Top Papers to Compare Against</h2>
+<p>Priority papers to include as baselines in any IndustrialJEPA RUL paper:</p>
+<section id="tier-1-must-compare-standard-baselines" class="level3">
+<h3 class="anchored" data-anchor-id="tier-1-must-compare-standard-baselines">Tier 1: Must-Compare (Standard Baselines)</h3>
+<ol type="1">
+<li><p><strong>MDSCT (Multi-scale Deep Separable Convolution Transformer, Heliyon 2024)</strong> PMC11481647. Provides clean comparison table on both FEMTO and XJTU-SY. FEMTO nRMSE: 0.124. XJTU-SY nRMSE: 0.160. Why: Most recent clean benchmark with multiple baselines.</p></li>
+<li><p><strong>CNN-GRU-MHA with Transfer Learning (Applied Sciences 2024)</strong> MDPI 2076-3417/14/19/9039. nRMSE 0.0443 on FEMTO (best reported). Why: Current best result on FEMTO (if reproducible).</p></li>
+<li><p><strong>DCSSL (Dual-Dimensional Contrastive SSL, Scientific Reports 2026)</strong> Nature/s41598-026-38417-7. Self-supervised + RUL on FEMTO. Why: The only SSL-based RUL paper on FEMTO — direct methodological competitor.</p></li>
+</ol>
+</section>
+<section id="tier-2-important-context" class="level3">
+<h3 class="anchored" data-anchor-id="tier-2-important-context">Tier 2: Important Context</h3>
+<ol start="4" type="1">
+<li><p><strong>CVAER (Envelope Spectra + Probabilistic VAE, PMC 2024)</strong> PMC11597903. XJTU-SY, 28.47 min RMSE. Why: Closest thing to per-spectrum (single-snapshot) prediction; establishes feasibility of the single-window formulation even if not framed that way.</p></li>
+<li><p><strong>Bi-LSTM-Transformer + EMD (Applied Sciences 2025)</strong> MDPI 2076-3417/15/17/9529. RMSE 0.0563 on XJTU-SY, validated on FEMTO. Why: Strong 2025 supervised baseline for fair comparison.</p></li>
+</ol>
+</section>
+<section id="tier-3-cite-for-context" class="level3">
+<h3 class="anchored" data-anchor-id="tier-3-cite-for-context">Tier 3: Cite for Context</h3>
+<ol start="6" type="1">
+<li><p><strong>Nectoux et al.&nbsp;2012</strong> — PRONOSTIA platform description, PHM challenge setup. Cite as: “Nectoux, P. et al.&nbsp;PRONOSTIA: An experimental platform for bearings accelerated degradation tests. IEEE PHM 2012 Challenge.” HAL: hal-00719503.</p></li>
+<li><p><strong>RULSurv (arXiv 2405.01614, 2024)</strong> — Survival analysis framing, censoring-aware. Methodologically distinct; useful to cite as alternative probabilistic approach.</p></li>
+<li><p><strong>OpenMAE (ACM IMWUT 2025)</strong> — MAE pretraining on vibration signals. Closest foundation-model competitor on the pretraining side (not RUL specifically).</p></li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="key-positioning-takeaways-for-industrialjepa" class="level2">
+<h2 class="anchored" data-anchor-id="key-positioning-takeaways-for-industrialjepa">Key Positioning Takeaways for IndustrialJEPA</h2>
+<section id="what-we-would-be-the-first-to-do" class="level3">
+<h3 class="anchored" data-anchor-id="what-we-would-be-the-first-to-do">What We Would Be the First to Do</h3>
+<ol type="1">
+<li>Apply JEPA pretraining to bearing RUL prediction (no prior work)</li>
+<li>Define and solve the single-window position-agnostic RUL task (no prior formulation)</li>
+<li>Show that JEPA embeddings carry sufficient degradation state information for single-window RUL regression</li>
+</ol>
+</section>
+<section id="how-to-frame-the-contribution" class="level3">
+<h3 class="anchored" data-anchor-id="how-to-frame-the-contribution">How to Frame the Contribution</h3>
+<p>Existing narrative in the field: “Single-window RUL estimation is a known weakness — you need temporal context to predict RUL.”</p>
+<p>Our counter-claim: “A JEPA representation learned from large multi-source vibration data encodes physical degradation state in a single window’s embedding. With no temporal context, our model achieves competitive RUL prediction — suggesting the signal is rich enough; the failure mode was lack of a strong enough representation.”</p>
+</section>
+<section id="target-metrics-to-beat" class="level3">
+<h3 class="anchored" data-anchor-id="target-metrics-to-beat">Target Metrics to Beat</h3>
+<ul>
+<li>FEMTO nRMSE: beat 0.0443 (CNN-GRU-MHA) with no temporal context. If we get &lt;0.10 without temporal context vs their 0.0443 with full trajectory, the story is still strong.</li>
+<li>XJTU-SY nRMSE: beat 0.170 (SAGCN-SA) without temporal context.</li>
+<li>A meaningful result: showing that our single-window approach gets within 2x of trajectory-based SOTA would be a strong result justifying the new problem formulation.</li>
+</ul>
+<p><strong>Why:</strong> IndustrialJEPA must be positioned against these numbers so reviewers see exactly where we stand relative to methods that use orders of magnitude more temporal context. <strong>How to apply:</strong> When writing the experiment section, explicitly state: “We compare against Tier 1 baselines, noting that all baselines use full degradation trajectory context while our method uses only a single window.”</p>
+<hr>
+</section>
+</section>
+<section id="probabilistic-rul-methods-added-april-2026" class="level2">
+<h2 class="anchored" data-anchor-id="probabilistic-rul-methods-added-april-2026">Probabilistic RUL Methods (Added April 2026)</h2>
+<section id="method-comparison-for-uncertainty-quantification" class="level3">
+<h3 class="anchored" data-anchor-id="method-comparison-for-uncertainty-quantification">Method Comparison for Uncertainty Quantification</h3>
+<p>Four main paradigms for producing a distribution rather than a point estimate:</p>
+<p><strong>1. Heteroscedastic Neural Network (HNN)</strong> Output two scalars: predicted mean mu and log-variance log(sigma^2). Loss = NLL under Gaussian. Cost: zero overhead vs standard regression — one forward pass, two output neurons. Trains end-to-end. Can attach to any encoder+MLP head with a 2-line change. Limitation: assumes Gaussian output; cannot model heavy-tailed or multimodal failure distributions. Papers flag “pitfalls of heteroscedastic estimation” — overconfident when data is non-Gaussian (arXiv 2203.09168). BUT: for RUL in [0,1] with near-Gaussian error distribution, HNN is the lowest-overhead option.</p>
+<p><strong>2. Monte Carlo Dropout (MCD)</strong> Keep dropout active at inference; run N forward passes (typically 30-100); treat the sample mean as prediction, variance as uncertainty. Cost: N x inference cost. For LSTM architectures, dropout already applied between LSTM layers, so zero architectural change needed. Implementation: 3 lines of code. Quality: approximates a GP posterior. Weakness: MCD uncertainty estimates are unreliable when dropout rate is too low or network is over-parameterized (arXiv 2512.14851). Recent work (2025) shows improvements via stable output layers. Practical guidance: use 50 forward passes, dropout rate 0.1-0.3.</p>
+<p><strong>3. Deep Ensembles (DE)</strong> Train M independent models with different random seeds (typically M=5). Average predictions; variance across predictions is uncertainty. Cost: M x training cost, M x inference cost. Cannot run in parallel on single GPU. Quality: consistently BEST calibrated uncertainty in benchmarks. Key finding from the UQ benchmark paper (Reliability Eng. &amp; System Safety 2025, DOI: 10.1016/j.ress.2024.005854): DE &gt; MCD &gt; HNN for calibration on N-CMAPSS. For deployment: DE is practical when M=5 and model is small (LSTM at 1M params is fine).</p>
+<p><strong>4. Evidential Deep Learning (EDL)</strong> Output the parameters of a higher-order distribution (e.g., Normal-Inverse-Gamma) in one forward pass. Decomposes uncertainty into aleatoric (data) + epistemic (model). Cost: single forward pass, same as HNN. Quality: good in theory; in practice, EDL often underestimates uncertainty and requires careful regularization. Paper: “Remaining Useful Life Prediction with Uncertainty Quantification Using Evidential Deep Learning” (JAISCR 2025, on C-MAPSS). Best for: production systems where separate forward passes are impossible.</p>
+<p><strong>5. Quantile Regression (QR)</strong> Train a separate head for each quantile (e.g., q=0.1, 0.5, 0.9). Pinball loss per quantile. Cost: K x output neurons but single forward pass. Gives prediction intervals directly. Paper: “Quantile Regression Network for cross-domain bearing RUL prediction” (ScienceDirect 2024); average interval coverage 91.25% on bearing datasets, interval width 16.65%. State Space Model + Simultaneous Quantile Regression (SQR) paper (arXiv 2506.17018) shows SSM handles long sequences efficiently. Practical for IndustrialJEPA: can replace single output neuron with 3-5 quantile outputs, minimal change.</p>
+<p><strong>6. Gaussian Process (GP) for RUL</strong> Sparse GP with time-aware spatiotemporal kernel (SAGE Pub 2025). Full probabilistic output. Cost: O(n^2) to O(nm^2) with sparse approximation. Does not compose easily with deep encoder. Best use: as a final layer on top of frozen encoder embeddings (Deep Kernel Learning). Paper: “Sparse Gaussian process regression with time-aware spatiotemporal kernel for bearing RUL and uncertainty quantification” (SAGE 2025).</p>
+</section>
+<section id="lowest-overhead-ranking-for-encoderlstm-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="lowest-overhead-ranking-for-encoderlstm-architecture">Lowest Overhead Ranking for Encoder+LSTM Architecture</h3>
+<p>Ranked from cheapest to most expensive to add: 1. HNN — zero overhead, 2 output neurons, 1 loss function change 2. Quantile regression (3-5 quantiles) — zero overhead, K output neurons, K loss terms 3. EDL — zero overhead, 4 output neurons, specialized loss 4. MCD — N x inference, 3 lines of code, no training change 5. GP on frozen embeddings — O(nm^2), separate fitting step 6. Deep Ensembles — M x all costs</p>
+<p><strong>Recommendation for IndustrialJEPA:</strong> HNN as the primary approach (zero cost), with MCD (N=50 passes) as a validation check that uncertainty estimates are consistent.</p>
+</section>
+<section id="outputting-pfailure-t-as-a-curve-over-future-time" class="level3">
+<h3 class="anchored" data-anchor-id="outputting-pfailure-t-as-a-curve-over-future-time">Outputting P(failure | t) as a Curve Over Future Time</h3>
+<p>This is exactly what survival analysis produces. Two distinct paradigms:</p>
+<p><strong>Survival Analysis (RULSurv framing)</strong> arXiv 2405.01614 (2024), code: github.com/thecml/rulsurv. - Uses KL divergence of frequency spectrum as health indicator to detect fault onset - Trains Cox Proportional Hazards, Weibull AFT, Random Survival Forest (RSF) on XJTU-SY - Output: S(t) = P(T &gt; t | x) — the probability the bearing survives past time t - Equivalently: F(t) = 1 - S(t) = P(failure by time t | current sensor reading) - RSF outperformed CoxPH and neural survival models; XJTU-SY C1 MAE: 12.6 minutes - Key insight: survival function gives user a full curve; they pick their own risk threshold (e.g., replace when P(failure by end of shift) &gt; 0.2) - Limitation: requires knowing the reference time origin (when degradation started)</p>
+<p><strong>Weibull Proportional Hazards Model (WPHM)</strong> Classical approach in PHM. KPCA-WPHM-SCNs (2024, TIMC journal): uses kernel PCA health indicator + WPHM to estimate reliability function R(t). Then fits neural network to the hazard rate curve. Produces both R(t) curve and point RUL estimate.</p>
+<p><strong>Neural Network Survival Models</strong> DeepHit, DeepSurv: treat survival as classification over discrete time bins. Output is a discrete probability distribution over failure times. These can be bolted onto any encoder with a survival head.</p>
+<p><strong>The Key Distinction for IndustrialJEPA</strong> If we output P(failure by time t) rather than RUL%, the end user can: 1. Set their own risk threshold (replace at P&gt;0.3 vs P&gt;0.1 depending on criticality) 2. Quantify the planning horizon (95% CI on time-to-failure) 3. Integrate with cost functions for optimal replacement scheduling</p>
+<p>This framing is genuinely more useful than a single RUL% number and has not been combined with JEPA pretraining. Novel contribution opportunity.</p>
+<hr>
+</section>
+</section>
+<section id="dataset-inventory-run-to-failure-episodes-added-april-2026" class="level2">
+<h2 class="anchored" data-anchor-id="dataset-inventory-run-to-failure-episodes-added-april-2026">Dataset Inventory: Run-to-Failure Episodes (Added April 2026)</h2>
+<section id="how-many-episodes-do-published-papers-use" class="level3">
+<h3 class="anchored" data-anchor-id="how-many-episodes-do-published-papers-use">How Many Episodes Do Published Papers Use?</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Paper</th>
+<th>Dataset</th>
+<th># Training Episodes</th>
+<th># Test Episodes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CNN-GRU-MHA (2024)</td>
+<td>FEMTO</td>
+<td>4 (conditions 1+2)</td>
+<td>10</td>
+</tr>
+<tr class="even">
+<td>MDSCT (2024)</td>
+<td>FEMTO + XJTU-SY</td>
+<td>4 + 3 = 7</td>
+<td>10 + 12</td>
+</tr>
+<tr class="odd">
+<td>DCSSL (2026)</td>
+<td>FEMTO</td>
+<td>4</td>
+<td>10</td>
+</tr>
+<tr class="even">
+<td>RULSurv (2024)</td>
+<td>XJTU-SY</td>
+<td>cross-val, 15 total</td>
+<td>cross-val</td>
+</tr>
+<tr class="odd">
+<td>Typical bearing RUL paper</td>
+<td>FEMTO or XJTU</td>
+<td>4-7</td>
+<td>5-15</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The field routinely publishes with 4-7 training episodes.</strong> 23 episodes is NOT small by this community’s standards — it is above average. However, FEMTO has only 4 training episodes in the standard split. Papers regularly publish with those 4 episodes.</p>
+</section>
+<section id="dataset-episode-counts-corrected-and-complete" class="level3">
+<h3 class="anchored" data-anchor-id="dataset-episode-counts-corrected-and-complete">Dataset Episode Counts (Corrected and Complete)</h3>
+<p><strong>FEMTO/PRONOSTIA (2012)</strong> - Total: 17 bearings (3 operating conditions) - Condition 1 (1800 rpm, 4 kN): 2 train + 5 test = 7 bearings - Condition 2 (1650 rpm, 4.2 kN): 2 train + 5 test = 7 bearings - Condition 3 (1500 rpm, 5 kN): 0 train + 3 test = 3 bearings - Standard benchmark uses conditions 1+2 = 4 train, 10 test (14 bearings total) - All 17 can be used if you include condition 3 and use cross-validation</p>
+<p><strong>XJTU-SY (2019)</strong> - Total: 15 bearings (3 operating conditions, 5 bearings each) - Condition 1 (2100 rpm, 12 kN): 5 bearings - Condition 2 (2250 rpm, 11 kN): 5 bearings - Condition 3 (2400 rpm, 10 kN): 5 bearings - All 15 run to failure. Standard split varies by paper (some use all 15 with LOO or cross-val; some use 3 conditions as train/val/test) - Our V8 uses only 7 — this is leaving 8 episodes on the table. Can add all 15.</p>
+<p><strong>IMS/NASA (2004)</strong> - 3 test runs (datasets 1, 2, 3), each with 4 bearings on a shaft = 12 bearing signals - BUT only Bearing 3 in test 1, Bearing 3 in test 2, Bearing 1 in test 3, Bearing 3 in test 3 reached failure (4 actual run-to-failure trajectories in the strict sense) - Many papers treat all 4 bearings per run as independent RUL episodes despite only some failing (the others are right-censored) - Commonly used but benchmark results are messier than FEMTO/XJTU-SY - Sampling: 1 second vibration snapshot every 10 minutes</p>
+<p><strong>Additional Datasets (Beyond the Big Three)</strong></p>
+<ul>
+<li><p><strong>University of Ferrara (2024)</strong>: 6 accelerated run-to-failure tests on self-aligning double-row ball bearings. Data descriptor: ScienceDirect DOI: 10.1016/j.dib.2024… Published 2024; not yet widely benchmarked.</p></li>
+<li><p><strong>Zenodo Run-to-Failure (Aimiyekagbon 2024)</strong>: Ball bearings under time-varying load and speed conditions. DOI: 10.5281/zenodo.10805043. Novel: time-varying conditions. Size: not specified in search results.</p></li>
+<li><p><strong>Mendeley Run-to-Failure (2024)</strong>: Single bearing, failed at 128 hours. DOI: 10.17632/5hcdd3tdvb.6. Very small — 1 episode.</p></li>
+<li><p><strong>Paderborn Zwoelf (2024 Zenodo)</strong>: New Paderborn dataset with time-varying load/speed. Not the KA/KI fault classification dataset — a separate RUL-focused release.</p></li>
+<li><p><strong>PHM Society datasets</strong>: Various challenge datasets. PHM 2012 = FEMTO. PHM 2023 competition had a gearbox dataset, not bearing RUL specifically.</p></li>
+<li><p><strong>DIRG (Politecnico di Torino)</strong>: Internal dataset occasionally published. Not confirmed as a standardized public benchmark.</p></li>
+<li><p><strong>MFPT (2013)</strong>: Machinery Failure Prevention Technology. Has run-to-failure data but rarely used for RUL benchmarks. More common for fault classification.</p></li>
+</ul>
+<p><strong>Total publicly available run-to-failure episodes (conservative count):</strong> FEMTO (17) + XJTU-SY (15) + IMS (4 strict / 12 liberal) + Ferrara (6) + others (~5-10) = roughly 45-55 clean run-to-failure episodes exist in the literature.</p>
+</section>
+<section id="is-23-episodes-too-few" class="level3">
+<h3 class="anchored" data-anchor-id="is-23-episodes-too-few">Is 23 Episodes Too Few?</h3>
+<p>No.&nbsp;Context: - Standard FEMTO benchmark: 4 training episodes - Standard XJTU-SY benchmark: 3-5 training episodes per condition - Most top-venue RUL papers: 4-7 training episodes - 23 episodes is more than any single-dataset paper uses for training</p>
+<p>The real concern is <strong>diversity of degradation trajectories</strong>, not count: - FEMTO 4 train episodes are all at 2 operating conditions (deterministic setup) - Our 23 come from 2 datasets, 5 operating conditions — better coverage - But all are inner/outer race failures; ball failures are rare in public data</p>
+</section>
+<section id="data-augmentation-for-run-to-failure-episodes" class="level3">
+<h3 class="anchored" data-anchor-id="data-augmentation-for-run-to-failure-episodes">Data Augmentation for Run-to-Failure Episodes</h3>
+<p>Three approaches from the literature:</p>
+<p><strong>1. Dynamic Time Warping (DTW) augmentation</strong> Stretch or compress a known trajectory to simulate faster/slower degradation. Paper: “RUL Prediction by data augmentation technique based on DTW” (ScienceDirect 2020). Produces virtual run-to-failure episodes with different lifespans. Widely cited. Risk: DTW-stretched trajectories may not honor physical constraints.</p>
+<p><strong>2. VAE-GAN synthesis</strong> Train a Variational Autoencoder + GAN on degradation feature sequences. Paper: “Remaining Useful Life Prediction Method Enhanced by Data Augmentation and Similarity Fusion” (MDPI 2024). Generates synthetic degradation time series. Can increase episode count 3-5x. Most complex to implement.</p>
+<p><strong>3. Degradation model + Sobol sampling</strong> Parametric degradation model (Paris law, Wiener process), sample parameters from Sobol sequence. Each sample = one synthetic episode. Physics-grounded. Produces unlimited synthetic episodes, but requires knowing the physics model.</p>
+<p><strong>4. Window-level augmentation (within episodes)</strong> Jitter, time shift, magnitude warping within each window. Does NOT increase episode count but increases per-episode sample diversity. Already standard practice.</p>
+<p><strong>5. Autoregressive model augmentation</strong> “Data augmentation of multivariate sensor time series using autoregressive models” (arXiv 2410.16419, Oct 2024). Fits AR model to healthy segment, extrapolates degradation.</p>
+<p>Practical recommendation: DTW augmentation is lowest effort, well-cited, and produces interpretable results. Can easily 3x episode count without changing architecture. VAE-GAN is higher effort with marginal benefit given we have 23 real episodes.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

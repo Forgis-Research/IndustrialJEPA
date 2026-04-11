@@ -4,3 +4,4 @@
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
 - [Bearing RUL SOTA Literature Review (April 2026)](literature_review_rul_sota.md) — FEMTO best nRMSE=0.0443; single-window RUL formulation does NOT exist; DCSSL is only SSL+RUL paper on FEMTO
+- [C-MAPSS Turbofan RUL SOTA Review (April 2026)](literature_review_cmapss_rul.md) — Supervised SOTA FD001=10.61 (STAR 2024); SSL gap=+32%; no JEPA/MAE on C-MAPSS; leakage warning for RMSE<9
