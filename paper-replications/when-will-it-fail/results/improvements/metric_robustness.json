@@ -1,0 +1,7 @@
+{
+  "lr_auroc": 0.5979846089288571,
+  "random_auroc": 0.4990773978308332,
+  "a2p_auroc_reference": 0.521,
+  "analysis": "F1-tol is gameable by tolerance expansion; AUROC is stable",
+  "key_finding": "AUROC ranking is stable; F1-tol ranking reverses with tolerance"
+}

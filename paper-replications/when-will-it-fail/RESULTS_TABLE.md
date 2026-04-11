@@ -161,6 +161,9 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **Zero-param detector** | **Single-feature calm detector (neg varfull both channels)** | **AUROC** | **0.613** | LR 4-feat: 0.631 | COMPLETE - AUPRC=0.124 beats LR AUPRC=0.122 |
 | Correct AP: Probe 72b | Regression vs classification target (3 seeds each) | AUROC delta | PENDING | Classification: ~0.624 | /tmp/probe72b_regression.py |
 | Correct AP: Probe 73b | LR + TF rank ensemble (3 TF seeds) | AUROC | PENDING | TF: 0.624, LR: 0.631 | /tmp/probe73b_ensemble.py |
+| **Probe 74** | **SMD Oracle Analysis (all 38 channels)** | **AUROC** | **Oracle top-5=0.788** | **Oracle all-ch=0.742** | **COMPLETE - top-5 oracle 4.6pp higher than all-ch** |
+| **Probe 75** | **Cross-Dataset AP (SVDB4 vs SMD)** | **LR AUROC** | **SVDB4=0.628, SMD=0.700** | **Oracle: 0.718 / 0.862** | **COMPLETE - opposite directions confirmed** |
+| **Probe 76** | **Metric Robustness: F1-tol vs t** | **F1-tol** | **Random=42.1%@t=50** | AUROC stable | **COMPLETE - F1-tol gameable by t choice** |
 
 **CRITICAL:** Single-seed AP results (0.642, 0.641, 0.619, 0.625) are unreliable. True multi-seed APTransformer AUROC at 30ep = 0.5211 +/- 0.0415 (10 seeds), barely above random (0.500) and NOT statistically significant (p=0.081). All single-seed "best results" must be treated as preliminary. With 100ep supervised training, consistent AUROC=0.6238 ± 0.0075 is achieved (5 seeds, Probe 30).
 

@@ -1,0 +1,28 @@
+{
+  "oracle_top5_auroc": 0.7332424262079592,
+  "oracle_direction": "high_var->AP+",
+  "context_full_var_auroc": 0.6356221401512187,
+  "ap_direction": "high_var",
+  "context_var_ratio": 1.9608806371688843,
+  "ap_plus_context_var": 0.0035397650208324194,
+  "ap_minus_context_var": 0.0018051915103569627,
+  "temporal_chunks": {
+    "0-50": 0.5658625602557925,
+    "50-100": 0.5852858194079505,
+    "100-150": 0.6006950493391092,
+    "150-200": 0.623497793717037
+  },
+  "lr_auroc": 0.5350777147100949,
+  "lr_auprc": 0.07348510942290715,
+  "lr_pct_oracle": 23.139642713418333,
+  "n_sequences": 14162,
+  "ap_positive_rate": 0.06432707607746124,
+  "top_channels_used": [
+    12,
+    11,
+    8,
+    24,
+    9
+  ],
+  "stride": 50
+}

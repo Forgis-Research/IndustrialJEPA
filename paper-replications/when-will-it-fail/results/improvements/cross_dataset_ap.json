@@ -1,0 +1,27 @@
+{
+  "svdb4": {
+    "name": "SVDB4",
+    "n_sequences": 36794,
+    "ap_positive_rate": 0.09474370628595352,
+    "oracle_mean_ch_auroc": 0.6632492344972714,
+    "oracle_combined_auroc": 0.7179523632949232,
+    "lr_auroc": 0.6276462816509931,
+    "lr_auprc": 0.13501754940387672,
+    "lr_pct_oracle": 58.566137903385794,
+    "signal_direction": "calm",
+    "full_var_auroc_raw": 0.3868834690880234
+  },
+  "smd_top5": {
+    "name": "SMD_top5",
+    "n_sequences": 70807,
+    "ap_positive_rate": 0.06427330523729324,
+    "oracle_mean_ch_auroc": 0.7169863241836224,
+    "oracle_combined_auroc": 0.8619171018589813,
+    "lr_auroc": 0.7000034256736851,
+    "lr_auprc": 0.10597524317569595,
+    "lr_pct_oracle": 55.26222017317524,
+    "signal_direction": "storm",
+    "full_var_auroc_raw": 0.7050786929948135
+  },
+  "datasets_differ": true
+}
