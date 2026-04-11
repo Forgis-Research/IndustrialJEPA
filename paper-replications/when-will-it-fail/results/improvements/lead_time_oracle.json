@@ -1,0 +1,14 @@
+{
+  "probe": "137_lead_time_oracle",
+  "oracle_aurocs": {
+    "oracle_1step": 0.5187461372434986,
+    "oracle_5step": 0.5598316389987736,
+    "oracle_10step": 0.6062985603674466,
+    "oracle_25step": 0.7093546965360911,
+    "oracle_50step": 0.6226734809530116,
+    "oracle_75step": 0.6981800298847796,
+    "oracle_near": 0.3908785683712699,
+    "oracle_context_last50": 0.5483740194356633
+  },
+  "lead_time_analysis": {}
+}
