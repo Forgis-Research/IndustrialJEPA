@@ -1940,7 +1940,7 @@ LR = TF statistically; simplicity wins.
 8. F1-tol and AUROC rankings are inverted (Spearman rho=0) [MODERATE, 3 methods]
 9. SVDB1 invalid (temporal confound, all labels at t>94%) [VERY STRONG]
 10. 30ep training insufficient: 10% converge; 100ep: 100% converge [VERY STRONG]
-11. LR 4-feat = TF statistically (p=0.18, CIs overlap): complexity adds nothing [STRONG]
+11. LR 4-feat ~ TF (p=0.047 borderline; bootstrap CIs overlap; delta=+1.1pp): complexity adds marginal benefit [MODERATE]
 12. TF > BiLSTM (p=0.047, d=3.5) > CNN (p=0.003, d=6.7): global attention is critical [VERY STRONG]
 13. Near-horizon (0-50) is contaminated: 66.4% AP+ have anomaly in context; only >=100 is clean AP [VERY STRONG]
 14. AP not production-ready: LR achieves only 1.4x precision over random at 50% recall (8.4 FA/TP);

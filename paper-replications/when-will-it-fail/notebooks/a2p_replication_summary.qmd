@@ -3978,44 +3978,21 @@ Do our key findings (epoch convergence, architecture hierarchy) generalize beyon
 ```{python}
 import json, os, numpy as np
 
-smd_file = '/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/results/improvements/smd_validation.json'
-if os.path.exists(smd_file):
-    with open(smd_file) as f:
-        sv = json.load(f)
-
-    print("SMD Cross-Dataset Validation (top-5 channels by AP AUROC)")
-    print("=" * 60)
-    print()
-    print("PART 1: Epoch Convergence")
-    for ep in ['30', '100']:
-        key = f'transformer_{ep}ep'
-        r = sv['results'][key]
-        print(f"  {ep}ep: {r['mean']:.4f} +/- {r['std']:.4f}  ({r['pct_above_060']:.0f}% above 0.60)")
-    print()
-    print("  SVDB4 reference: 30ep = 10%, 100ep = 100% above 0.60")
-    print()
-    print("PART 2: Architecture Hierarchy")
-    for arch in ['transformer', 'lstm', 'cnn']:
-        key = f'arch_{arch}'
-        r = sv['results'][key]
-        print(f"  {arch.upper():12s}: {r['mean']:.4f} +/- {r['std']:.4f}")
-    print()
-    print("  SVDB4 reference: TF=0.6238, LSTM=0.5805, CNN=0.5691")
-    print()
-    print("  Hierarchy confirmed across datasets:", end=" ")
-    tf = sv['results']['arch_transformer']['mean']
-    lstm = sv['results']['arch_lstm']['mean']
-    cnn = sv['results']['arch_cnn']['mean']
-    if tf > lstm > cnn:
-        print("YES (TF > LSTM > CNN)")
-    elif tf > lstm and tf > cnn:
-        print("PARTIAL (TF best but LSTM/CNN order differs)")
-    else:
-        print("UNEXPECTED - see details")
+smd_ep_file = '/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/results/improvements/smd_epoch_convergence.json'
+print("NOTE: Probe 67 (full SMD) was replaced by Probe 67b (focused epoch convergence only).")
+print("Architecture hierarchy on SMD is still pending (Probe 67b focuses on epoch convergence).")
+print("See Section 58 for epoch convergence results.")
+print()
+if os.path.exists(smd_ep_file):
+    with open(smd_ep_file) as f:
+        se = json.load(f)
+    r30 = se['results']['30ep']; r100 = se['results']['100ep']
+    print(f"SMD Epoch Convergence Summary (Probe 67b):")
+    print(f"  30ep: {r30['mean']:.4f} +/- {r30['std']:.4f}  ({r30['pct_above_060']:.0f}% above 0.60)")
+    print(f"  100ep: {r100['mean']:.4f} +/- {r100['std']:.4f}  ({r100['pct_above_060']:.0f}% above 0.60)")
+    print(f"  SVDB4 reference: 30ep = 10%, 100ep = 100% above 0.60")
 else:
-    print("Probe 67 still running. Re-render when complete.")
-    print("Testing: epoch convergence (30ep vs 100ep) and architecture hierarchy on SMD.")
-    print("SMD setup: top-5 channels [24,11,12,34,35], 70K sequences, stride=10.")
+    print("Probe 67b still running. See Section 58 when complete.")
 ```
 
 ## 57. Probe 68: AUPRC Analysis - Complete Comparison
