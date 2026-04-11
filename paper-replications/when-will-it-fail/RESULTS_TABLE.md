@@ -178,7 +178,7 @@ Direction analysis: Removing shared backbone reduces F1 (correct direction, expe
 | **PROBE 101** | **Strict AP Task** | **AUROC** | **Strict oracle=0.603; Strict LR=0.702 (+0.099 over oracle!)** | Standard: LR=0.634, oracle=0.747 | **COMPLETE - properly defined pure-prediction task: LR > oracle** |
 | **PROBE 103** | **Calm-Storm Quantification** | **Variance ratio** | **True AP+: early/late ratio=1.62x (p<0.0001); Standard AP+: 1.02x (flat)** | - | **COMPLETE - genuine calm-before-storm ONLY in strict AP+; masked by contamination** |
 | **Probe 67b** | **SMD epoch convergence (30ep vs 100ep, 3 seeds)** | **AUROC** | **30ep=0.583±0.009; 100ep=0.551±0.016** | SVDB4 100ep: 100% above 0.60 | **COMPLETE - 0% of SMD seeds above 0.60 at ANY epoch count; 100ep HURTS** |
-| Probe 72b | Regression vs classification target (3 seeds) | AUROC delta | PENDING | Classification TF: ~0.624 | STILL RUNNING |
+| **Probe 72b** | **Regression vs classification target (3 seeds each)** | **AUROC** | **Classification=0.612±0.005; Regression=0.554±0.001** | Classification: ~0.612 | **COMPLETE - Regression HURTS by -0.058; noisy oracle window causes regression failure** |
 | **Probe 73b** | **LR + TF ensemble (3 TF seeds, rank avg)** | **AUROC** | **Ensemble=0.635; LR=0.634; TF=0.614** | TF: 0.624, LR: 0.631 | **COMPLETE - Ensemble matches LR; LR AUPRC=0.134 >> Ensemble=0.106** |
 | Probe 102 | Strict AP TF (3 seeds, 100ep) | AUROC | PENDING | Strict LR: 0.702, oracle: 0.603 | STILL RUNNING |
 | **Probe 128** | **Rigorous AP Protocol (strict, full dataset)** | **AUROC** | **LR=0.750; Oracle=0.623 (FAILS >0.65); Rolling var=0.410 (BELOW RANDOM!)** | Strict oracle: 0.622 | **COMPLETE - oracle validity criterion FAILS; rolling var BELOW RANDOM on strict AP** |

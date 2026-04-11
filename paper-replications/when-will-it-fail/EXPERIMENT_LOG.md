@@ -4396,3 +4396,30 @@ Wait - the binary oracle k=50 AUROC=0.968 is NOT 1.0 because the oracle var is c
 **File:** results/improvements/lead_time_oracle.json
 
 ---
+
+
+### Probe 72b: Regression Target vs Binary Classification for AP (COMPLETE, GPU)
+
+**Time:** 2026-04-12
+**Hypothesis:** Training the transformer to regress to future variance (oracle signal) as a proxy target will improve AP AUROC vs direct binary classification.
+**Design:** 3 seeds x 2 objectives (binary classification, variance regression), 100 epochs, standard AP, SVDB4 60/40 split.
+
+**Results:**
+```
+                         AUROC              AUPRC
+Classification (3-seed): 0.612 ± 0.005     0.104
+Regression (3-seed):     0.554 ± 0.001     0.091
+Delta (reg - cls):       -0.058 (REGRESSION HURTS!)
+```
+
+**Key finding:** Regression target SIGNIFICANTLY WORSE than binary classification. All 3 regression seeds [0.554, 0.553, 0.556] below all classification seeds [0.609, 0.618, 0.608].
+
+**Why regression hurts:** Future variance at [t+100, t+150] is a NOISY oracle (early block = low variance even for AP+ events). Oracle AUROC = 0.622 = barely above random. Regressing to a noisy signal teaches wrong features.
+
+**Sanity checks:** ✓ Classification AUROC=0.612 consistent with probe 73b TF seeds ✓ Regression std very tight (±0.001) = consistent failure, not variance
+
+**Verdict:** COMPLETE - regression target HURTS; binary classification is correct training objective
+
+**File:** results/improvements/regression_vs_classification.json
+
+---
