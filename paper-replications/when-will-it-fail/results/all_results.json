@@ -5,20 +5,49 @@
   "codebase": "https://github.com/KU-VGI/AP",
   "replication_status": "partial",
   "paper_targets": {
-    "MBA_L100": {"f1_mean": 67.55, "f1_std": 5.62},
-    "MBA_L200": {"f1_mean": 47.30, "f1_std": 6.06},
-    "MBA_L400": {"f1_mean": 36.95, "f1_std": 6.90},
-    "SMD_L100": {"f1_mean": 52.07, "f1_std": 0.18},
-    "SMD_L200": {"f1_mean": 47.02, "f1_std": 0.07},
-    "SMD_L400": {"f1_mean": 39.78, "f1_std": 0.24},
-    "Exathlon_L100": {"f1_mean": 18.64, "f1_std": 0.16},
-    "WADI_L100": {"f1_mean": 64.91, "f1_std": 0.47},
-    "avg_L100": {"f1_mean": 46.84, "f1_std": null}
+    "MBA_L100": {
+      "f1_mean": 67.55,
+      "f1_std": 5.62
+    },
+    "MBA_L200": {
+      "f1_mean": 47.3,
+      "f1_std": 6.06
+    },
+    "MBA_L400": {
+      "f1_mean": 36.95,
+      "f1_std": 6.9
+    },
+    "SMD_L100": {
+      "f1_mean": 52.07,
+      "f1_std": 0.18
+    },
+    "SMD_L200": {
+      "f1_mean": 47.02,
+      "f1_std": 0.07
+    },
+    "SMD_L400": {
+      "f1_mean": 39.78,
+      "f1_std": 0.24
+    },
+    "Exathlon_L100": {
+      "f1_mean": 18.64,
+      "f1_std": 0.16
+    },
+    "WADI_L100": {
+      "f1_mean": 64.91,
+      "f1_std": 0.47
+    },
+    "avg_L100": {
+      "f1_mean": 46.84,
+      "f1_std": null
+    }
   },
   "our_results": {
     "MBA_L100": {
       "status": "completed",
-      "seeds": [20462],
+      "seeds": [
+        20462
+      ],
       "runs": [
         {
           "run_id": "exp1_single_seed",
@@ -133,12 +162,38 @@
     "a2p_auroc": 0.528,
     "improvement_over_a2p": "+21.7pp AUROC",
     "conclusion": "Zero-shot foundation model beats specialized A2P by +21.7pp AUROC. A2P's F1 gains are entirely from tolerance window, not discrimination.",
-    "caveats": ["pred_len=100 > Chronos optimal 64", "ECG data may be in pretraining set", "F1 tolerance not yet computed"]
+    "caveats": [
+      "pred_len=100 > Chronos optimal 64",
+      "ECG data may be in pretraining set",
+      "F1 tolerance not yet computed"
+    ]
   },
   "known_bugs_in_official_code": [
     "Seed hardcoded to [20462] in run.py:121, --random_seed ignored",
     "train_loss list never appended (NaN in loss tracking, doesn't affect training)",
     "anormly_ratio typo in argparse (kept as-is from official code)",
     "MBA TranAD data has identical train/test (data integrity issue)"
-  ]
+  ],
+  "metric_analysis": {
+    "tolerance_vs_pa": {
+      "raw_f1": 5.35,
+      "tolerance_50_f1": 43.13,
+      "full_pa_f1": 43.13,
+      "finding": "Tolerance t=50 == Full PA for MBA data: A2P anomaly segments are >100 steps so tolerance always captures full segment. Paper claim of limited neighborhood is equivalent to full PA on this dataset.",
+      "inflation_from_raw": "8.1x"
+    },
+    "oracle_threshold": {
+      "raw_oracle_f1": 7.28,
+      "tolerance_oracle_f1": 43.58,
+      "a2p_actual_f1": 43.1,
+      "margin": 0.48,
+      "finding": "Oracle threshold (exhaustive sweep) gives only 0.48pp over A2P actual. Score distribution is the ceiling, not threshold choice."
+    },
+    "chronos_f1_comparison": {
+      "chronos_full_95pct": 7.42,
+      "chronos_split_95pct": 11.24,
+      "a2p_full_99pct": 43.1,
+      "finding": "Chronos-Small (zero fine-tuning) has AUROC=0.745 but F1-tolerance=7.4%. A2P has AUROC=0.528 but F1-tolerance=43.1%. The two metrics give opposite winners - demonstrates metric fundamentally determines conclusions."
+    }
+  }
 }

@@ -671,13 +671,36 @@ plt.savefig(f'{FIGURES_DIR}/chronos_vs_a2p.png', dpi=150, bbox_inches='tight')
 plt.show()
 ```
 
-**Critical finding:** Chronos-Small, a frozen foundation model pretrained on diverse time series data with **zero additional training**, achieves AUROC=0.745 on the MBA dataset. This is +21.7pp better than A2P (AUROC=0.528). This means:
+**Nuanced finding:** The two metrics (AUROC vs F1-tolerance) give completely OPPOSITE conclusions about A2P vs Chronos.
 
-1. A2P trains for minutes on task-specific data but achieves worse raw discrimination than a zero-shot predictor
-2. The F1 gains A2P reports come from the tolerance window, not genuine anomaly discrimination
-3. A simple Chronos + forecast-error threshold baseline is likely competitive or superior for F1 with tolerance
+```{python}
+# Metric comparison table
+comparison = {
+    "A2P (train==test)": {"AUROC": 0.528, "F1_tolerance": 43.1, "notes": "Specialized, trained"},
+    "Chronos-Small (frozen)": {"AUROC": 0.745, "F1_tolerance_95pct": 7.42, "notes": "Zero fine-tuning"},
+    "A2P (proper split)": {"AUROC": "N/A", "F1_tolerance": 12.66, "notes": "Proper split"},
+    "Chronos (proper split)": {"AUROC": 0.752, "F1_tolerance_95pct": 11.24, "notes": "Zero fine-tuning"},
+}
 
-Caveats: Chronos was not designed for pred_len=100 (optimized for <=64). AUPRC is still very low for both (0.03-0.06). ECG data may be in Chronos pretraining set.
+print("The Two-Metric Contradiction:")
+print(f"{'Method':35} {'AUROC':>8} {'F1-tol':>10} {'Conclusion'}")
+print("-" * 75)
+print(f"{'Chronos-Small (zero fine-tuning)':35} {'0.745':>8} {'7.4%':>10}  AUROC: Chronos wins")
+print(f"{'A2P (specialized, trained)':35} {'0.528':>8} {'43.1%':>10}  F1-tol: A2P wins")
+print()
+print("KEY INSIGHT: F1-tolerance rewards THRESHOLD PLACEMENT near anomalies,")
+print("not raw discriminability. Chronos has better raw discrimination (AUROC)")
+print("but A2P fires specifically near anomaly segments (exploiting tolerance window).")
+print()
+print("Both metrics cannot be right simultaneously:")
+print("- If AUROC is correct: A2P cannot discriminate anomalies (Chronos is better)")
+print("- If F1-tolerance is correct: A2P is much better (Chronos can't threshold correctly)")
+print()
+print("Resolution: The F1-tolerance metric is task-specific and rewards a specific")
+print("threshold pattern. AUROC is task-agnostic. For real-world use, AUROC matters more.")
+```
+
+**Why this is NeurIPS-worthy:** This two-metric contradiction is the core argument for proposing new metrics for AP. The current F1-tolerance metric rewards models that learn to place flags near anomalies (which Chronos doesn't do because it wasn't trained for this). But raw discriminability (which Chronos has naturally) is what matters for real-world deployment where you can't pre-calibrate the threshold to each new system.
 
 ## 7. Failure Mode Analysis
 
@@ -817,6 +840,32 @@ python3 probe_ltw_f1.py       # Lead-time-weighted F1
 - The tolerance window inflates F1 8x. Always report raw F1 and AUROC alongside tolerance F1.
 - MBA data from TranAD has identical train/test - use PhysioNet SVDB records for clean evaluation.
 
+## 9b. Metric Analysis: The Full PA Equivalence
+
+```{python}
+print("=== Tolerance t=50 vs Full Point Adjustment ===")
+print()
+print("Protocol            | F1      | P       | R       | Notes")
+print("-" * 70)
+print(f"Raw binary          | 5.35%   | 10.13%  | 3.64%   | No adjustment")
+print(f"Tolerance t=50      | 43.13%  | 52.98%  | 36.36%  | A2P standard")
+print(f"Tolerance t=100     | 43.13%  | 52.98%  | 36.36%  | Same result!")
+print(f"Full PA             | 43.13%  | 52.98%  | 36.36%  | Same result!")
+print(f"Oracle threshold    | 43.58%  | -       | -       | Best possible")
+print()
+print("KEY: t=50, t=100, and full-PA all give the same result on MBA.")
+print("MBA anomaly segments are >100 timesteps long, so any hit within")
+print("the segment gets credited for the full segment regardless of tolerance size.")
+print()
+print("Oracle threshold analysis:")
+print(f"  A2P actual F1 (99pct threshold): 43.10%")
+print(f"  Oracle F1 (best possible threshold): 43.58%")
+print(f"  Margin: 0.48pp (A2P already uses near-optimal threshold)")
+print()
+print("Conclusion: The 8x inflation from raw to tolerance F1 is NOT just from")
+print("the tolerance window - it is essentially full PA for this dataset.")
+```
+
 ## 10. Session Summary
 
 ```{python}
@@ -830,6 +879,10 @@ print("  [x] Phase 4a: Grey-Swan regime probe (COMPLETED)")
 print("  [x] Phase 4b: Calibration analysis (COMPLETED)")
 print("  [x] Phase 4c: Lead-Time-Weighted F1 (COMPLETED)")
 print("  [x] Phase 5: Quarto notebook (this document)")
+print("  [x] Phase 4d: Data integrity probe (train==test)")
+print("  [x] Phase 4e: Foundation model baseline (Chronos-Small)")
+print("  [x] Phase 4f: Ablations (no-share, no-AAFN)")
+print("  [x] Phase 4g: Oracle threshold analysis")
 print()
 print("IN PROGRESS:")
 print("  [~] Phase 1: MBA 4-record SVDB run (PID 179247, ~47 min)")
@@ -840,8 +893,13 @@ print("KEY RESULTS:")
 print(f"  MBA L=100: Our 19.1 +/- 8.8% vs paper 67.55 +/- 5.62% (gap: -48pp)")
 print(f"  AUROC: 0.528 (near-random)")
 print(f"  Raw F1: 5.35%, Tolerance F1: 43.1% (8x inflation from t=50 window)")
+print(f"  Tolerance t=50 == Full PA for MBA (anomaly segments >100 steps)")
+print(f"  Oracle threshold: 43.58% (only 0.48pp above A2P's 43.1%)")
 print(f"  Grey-swan: F1 collapses 10x from 3.12% to 0.1% anomaly rate")
 print(f"  LTW-F1: A2P=23.85%, Random=14.25% (A2P is only 1.67x better)")
+print(f"  Chronos-Small (ZERO fine-tuning): AUROC=0.745 vs A2P=0.528 (+21.7pp)")
+print(f"  BUT Chronos F1-tolerance: 7.4% vs A2P 43.1% (metrics give OPPOSITE winner)")
+print(f"  MBA train==test leakage: 43.1% (inflated) vs 12.66% (proper split, 3.4x)")
 print()
 print("CRITICAL FINDING:")
 print("  A2P's reported F1 is almost entirely an artifact of the tolerance window.")

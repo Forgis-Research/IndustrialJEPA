@@ -1,3 +1,4 @@
+- [A2P Replication Findings](project_a2p_replication.md) — AUROC=0.528 near-random; Chronos-Small (zero fine-tuning) beats A2P +21.7pp AUROC; MBA train==test inflates F1 3.4x; F1-tolerance 8x inflation
 - [DCSSL Replication Findings](project_dcssl_replication.md) — FPT shift is key failure mode; paper SimCLR avg≈trivial baseline; paper table had swapped columns; RUL-fix applied to cond2/3
 - [IndustrialJEPA Project Context](project_industrialjepa.md) — V9 complete: JEPA+Prob-LSTM RMSE=0.0868 PICP@90%=0.910; dataset compatibility protocol (MAFAULDA excluded, KL>2.0 threshold)
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used

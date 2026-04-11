@@ -1,0 +1,11 @@
+{
+  "probe": "oracle_threshold_analysis",
+  "method": "Exhaustive threshold sweep on A2P scores (train==test setup)",
+  "raw_oracle_f1": 7.28,
+  "tolerance_oracle_f1": 43.58,
+  "a2p_actual_f1": 43.1,
+  "a2p_threshold_pct": 99.0,
+  "oracle_threshold_pct": 98.5,
+  "key_finding": "Oracle threshold search gives F1=43.58% - only 0.48pp above A2P actual (43.1%). A2P already uses near-optimal threshold (99pct). The score distribution itself is the bottleneck, not the threshold. Maximum achievable F1 with these scores is ~43.6%, far below paper paper claim of 67.55%. This means ~24pp gap is fundamental and cannot be closed by threshold tuning.",
+  "implication_for_paper_gap": "Our 43.1% (train==test) vs paper 67.55%: gap of 24pp is NOT from threshold choice. It is from data source difference (paper uses proper SVDB data). The paper result of 67.55% requires genuine out-of-sample generalization."
+}

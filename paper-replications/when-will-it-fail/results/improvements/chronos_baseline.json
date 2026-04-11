@@ -31,5 +31,29 @@
     "AUPRC is very low for both (0.035-0.064) suggesting both are far from perfect",
     "Chronos was not optimized for pred_len=100 (recommends <=64)",
     "ECG data may be in Chronos training set (data contamination possible)"
-  ]
+  ],
+  "f1_tolerance_comparison": {
+    "chronos_full_thresh_95": {
+      "f1_tolerance": 7.42,
+      "precision": 6.47,
+      "recall": 8.7,
+      "flagged_pct": 4.0,
+      "threshold_pct": 95
+    },
+    "chronos_split_thresh_95": {
+      "f1_tolerance": 11.24,
+      "precision": 9.26,
+      "recall": 14.29,
+      "flagged_pct": 4.3,
+      "threshold_pct": 95
+    },
+    "a2p_full_thresh_99": {
+      "f1_tolerance": 43.1,
+      "threshold_pct": 99
+    },
+    "a2p_split_thresh_anormly_ratio": {
+      "f1_tolerance": 12.66
+    }
+  },
+  "nuanced_finding": "Chronos has better AUROC (0.745 vs 0.528) but worse F1 tolerance (7.4% vs 43.1%). This is because A2P specifically trains to fire near anomaly segments (exploiting the tolerance window). Chronos fires at high-MSE windows but these do not necessarily align with the 50-step tolerance window. Key insight: F1-tolerance rewards task-specific training for threshold placement, not raw discriminability. AUROC rewards discriminability regardless of threshold."
 }
