@@ -4278,3 +4278,58 @@ The strict AP task is genuinely predictable with appropriate features. Both LR a
 **File:** results/improvements/cv_20bin.json
 
 ---
+
+
+### Probe 136: 20-bin LR on Standard AP + Cross-Task Transfer (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** The 20-bin LR template (strong on strict AP) also improves standard AP and demonstrates task-specific behavior via transfer test.
+**Design:** CPU-only. Apply 20-bin LR to standard AP, strict AP, and cross-task transfer (strict-trained model evaluated on standard AP labels).
+
+**Results (SVDB4, 60/40 split):**
+```
+                        Standard AP  Strict AP
+20-bin LR (C=0.1/1.0): 0.661        0.781
+4-feat LR (baseline):   0.644        0.697
+Improvement:            +0.017       +0.084
+```
+
+**Cross-task transfer:** Strict-trained model on standard AP labels: **0.615** (lower than standard-trained 0.661). This validates that strict and standard AP are different tasks with different optimal features.
+
+**Key finding:** Standard AP shows smaller improvement from 20-bin features (+0.017 vs +0.084 for strict AP). This is because standard AP contains 66.4% contaminated events where the calm-before-storm template doesn't apply (those are detection events, not prediction).
+
+**File:** results/improvements/20bin_std_ap.json
+
+---
+
+
+### Probe 136b: 20-bin LR on SMD Dataset (COMPLETE, CPU-only)
+
+**Time:** 2026-04-12
+**Hypothesis:** The SVDB4 20-bin variance template (calm trough + block onset) will transfer to SMD.
+**Design:** SMD top-5 channels by MAD (channels 4,23,25,6,5). Same 20-bin features, stride=10.
+
+**Results (SMD, 60/40 split):**
+```
+20-bin LR (C=0.001): AUROC=0.601
+4-feat LR baseline:  AUROC=0.591
+Oracle (future var): AUROC=0.442 (BELOW RANDOM!)
+```
+
+**Key finding:** SMD 20-bin is worse than SVDB4 (0.601 vs 0.781), and the oracle is BELOW RANDOM (0.442). This confirms the SMD invalidity finding from probe 95/98:
+1. SMD oracle below random = measuring future variance on noisy channels is anti-correlated with actual anomalies
+2. The calm-before-storm block structure (SVDB4) does NOT exist in SMD
+3. SMD channels have anti-correlation noise: even top-5 MAD channels mix signal and noise
+4. More bins don't help on SMD because the temporal profile is noisy, not structured
+
+**Implication:** The 20-bin template is specific to SVDB4's block structure (uniform 100-step ECG-like anomaly blocks with consistent calm periods). It does not generalize to SMD's irregular anomaly patterns.
+
+**Cross-dataset comparison (strict AP):**
+| Dataset | Oracle | LR 4-feat | LR 20-bin |
+|---------|--------|-----------|-----------|
+| SVDB4   | 0.648  | 0.759     | 0.791     |
+| SMD     | 0.442  | 0.591     | 0.601     |
+
+**File:** results/improvements/smd_20bin.json
+
+---

@@ -1,0 +1,8 @@
+{
+  "probe": "136_20bin_std_ap",
+  "svdb4_results": {
+    "std_C0.1": 0.6606230003186234,
+    "strict_C1.0": 0.7807260742829154
+  },
+  "strict_to_standard_transfer": 0.6147194366896522
+}
