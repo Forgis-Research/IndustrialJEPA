@@ -1,124 +1,108 @@
+#!/usr/bin/env python3
 """
-Post-process and collect results from long-running experiments.
-Run this after SMD and MBA 4-rec experiments complete.
-
-SMD: PID 178193, using /mnt/sagemaker-nvme/ad_datasets/SMD, expected F1=52.07
-MBA 4-rec: PID 179247, using /mnt/sagemaker-nvme/ad_datasets/MBA_4rec, expected much higher F1
-
-This script:
-1. Parses output from the runs (if captured in log files)
-2. Updates results/all_results.json
-3. Updates EXPERIMENT_LOG.md
-4. Updates RESULTS_TABLE.md
-
-Usage:
-    # Wait for processes to complete, then:
-    python3 collect_results_when_done.py
+collect_results_when_done.py - Run this after ALL probes complete.
+Generates the final NeurIPS table from all saved JSON files.
 """
+import json, numpy as np, os
+from scipy import stats
 
-import json
-import os
-import re
-import subprocess
-import time
+r = '/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/results/improvements/'
 
-RESULTS_DIR = "/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/results"
-AP_DIR = "/home/sagemaker-user/IndustrialJEPA/paper-replications/when-will-it-fail/AP"
-
-
-def parse_run_output(output: str) -> dict:
-    """Parse run.py output to extract F1, P, R, AUROC."""
-    result = {}
-
-    f1_match = re.search(r'\[Pred\]\s+A\s*:\s*([\d.]+),\s*P\s*:\s*([\d.]+),\s*R\s*:\s*([\d.]+),\s*F1\s*:\s*([\d.]+)', output)
-    if f1_match:
-        result['anomaly_rate'] = float(f1_match.group(1))
-        result['precision'] = float(f1_match.group(2)) * 100
-        result['recall'] = float(f1_match.group(3)) * 100
-        result['f1'] = float(f1_match.group(4)) * 100
-
-    auroc_match = re.search(r'AUC_ROC\s*:\s*([\d.]+)', output)
-    if auroc_match:
-        result['auroc'] = float(auroc_match.group(1))
-
-    thresh_match = re.search(r'Threshold\s*:\s*([\d.e+\-]+)', output)
-    if thresh_match:
-        result['threshold'] = float(thresh_match.group(1))
-
-    vus_match = re.search(r'VUS_ROC\s*:\s*([\d.]+)', output)
-    if vus_match:
-        result['vus_roc'] = float(vus_match.group(1))
-
-    return result
-
-
-def collect_smd_result():
-    """Run SMD evaluation once process completes - or read from log."""
-    print("\n=== Collecting SMD Result ===")
-    log_file = "/tmp/smd_100_run.log"
-
-    if os.path.exists(log_file) and os.path.getsize(log_file) > 100:
-        with open(log_file) as f:
-            output = f.read()
-        result = parse_run_output(output)
-        print(f"SMD L100: F1={result.get('f1', 'N/A'):.2f}% (paper: 52.07%)")
-        return result
-    else:
-        # Re-run SMD (much faster now since FE checkpoint exists)
-        print("Running SMD L=100 (FE checkpoint already trained)...")
-        cmd = [
-            "python3", "run.py",
-            "--random_seed", "20462",
-            "--root_path", "/mnt/sagemaker-nvme/ad_datasets/SMD",
-            "--dataset", "SMD",
-            "--model_id", "rep_SMD_100_collect",
-            "--seq_len", "100", "--pred_len", "100", "--win_size", "100",
-            "--step", "100", "--noise_step", "100",
-            "--joint_epochs", "5",
-            "--cross_attn_epochs", "5",
-            "--share",
-            "--AD_model", "AT",
-            "--d_model", "256",
-            "--noise_injection",
-            "--pretrain_noise",
-            "--contrastive_loss",
-            "--forecast_loss",
-            "--cross_attn",
-            "--cross_attn_nheads", "1",
-            "--ftr_idx", "0",
-            "--anormly_ratio", "4.16",
-        ]
-        result_proc = subprocess.run(cmd, capture_output=True, text=True, cwd=AP_DIR, timeout=7200)
-        output = result_proc.stdout + result_proc.stderr
-        result = parse_run_output(output)
-        print(f"SMD L100: F1={result.get('f1', 'N/A'):.2f}% (paper: 52.07%)")
-        return result
-
-
-def collect_mba_4rec_result():
-    """Collect MBA 4-record SVDB result."""
-    print("\n=== Collecting MBA 4-record SVDB Result ===")
-    # This will need to be run or parsed from background process output
-    # For now, return placeholder
-    print("MBA 4-rec run is still in progress (PID 179247)")
-    print("To get result: kill process, re-run with shorter epochs if needed")
+def load_json(fname):
+    path = os.path.join(r, fname)
+    if os.path.exists(path): return json.load(open(path))
+    print(f"WARNING: {fname} not found!")
     return None
 
+def check_complete():
+    pending = []
+    required = ['smd_epoch_convergence.json', 'auprc_full_comparison.json', 'width_ablation.json']
+    optional = ['regression_vs_classification.json', 'lr_tf_ensemble.json']
+    for f in required:
+        if not os.path.exists(r + f):
+            pending.append(f + " [REQUIRED]")
+    for f in optional:
+        if not os.path.exists(r + f):
+            pending.append(f + " [optional]")
+    if pending:
+        print("WAITING FOR:")
+        for p in pending: print(f"  - {p}")
+        return False
+    return True
 
-if __name__ == "__main__":
-    print("Results Collection Script")
-    print("This script should be run after long experiments complete")
-    print()
-    print("Current process status:")
-    for pid in [178193, 179247]:
-        result = subprocess.run(["ps", "-p", str(pid), "-o", "pid,etime,stat"],
-                               capture_output=True, text=True)
-        if result.returncode == 0:
-            print(f"  PID {pid}: STILL RUNNING")
-            print(f"  {result.stdout.strip()}")
-        else:
-            print(f"  PID {pid}: COMPLETED or KILLED")
+print("=" * 70)
+print("A2P REPLICATION: FINAL RESULTS CHECK")
+print("=" * 70)
+print()
 
+if not check_complete():
+    print("\nSome probes still running. Re-run when complete.")
     print()
-    print("Run this script after processes complete to update results.")
-    print("Expected results: SMD L100 F1~52%, MBA 4-rec F1 unknown (proper SVDB data)")
+    # Print what we know so far
+    print("AVAILABLE RESULTS:")
+
+# --- Method comparison table ---
+atf = load_json('aptransformer_seed_distribution.json')
+sup = load_json('supervised_ap_5seed.json')
+ora = load_json('oracle_analysis.json')
+opt_lr = load_json('optimal_lr.json')
+auprc = load_json('auprc_full_comparison.json')
+
+print("\n=== TABLE 1: Method Comparison (SVDB4) ===")
+print(f"{'Method':<35} {'AUROC':>8} {'SD':>6} {'AUPRC':>8}")
+print("-" * 60)
+print(f"{'Random':<35} {'0.500':>8} {'-':>6} {'0.095':>8}")
+
+if atf:
+    a2p_au = [x['test_auroc'] for x in atf['per_seed']]
+    print(f"{'A2P (30ep, 10-seed)':<35} {np.mean(a2p_au):.4f}{'':>2} {np.std(a2p_au):.4f} {'N/A':>8}")
+
+if opt_lr:
+    lr_au = opt_lr['4feat_drop_ac1_var100']
+    lr_auprc = auprc['lr']['auprc'] if auprc else 'N/A'
+    print(f"{'LR 4-feat (no training)':<35} {lr_au:.4f}{'':>2} {'--':>6} {lr_auprc if isinstance(lr_auprc, str) else f'{lr_auprc:.4f}':>8}")
+
+if sup:
+    sup_au = [x['test_auroc'] for x in sup['per_seed']]
+    sup_auprc = auprc['tf_5seed']['auprc_mean'] if auprc else 'N/A'
+    print(f"{'Supervised TF (100ep, 5-seed)':<35} {np.mean(sup_au):.4f}{'':>2} {np.std(sup_au):.4f} {sup_auprc if isinstance(sup_auprc, str) else f'{sup_auprc:.4f}':>8}")
+
+if ora:
+    ora_auprc = auprc['oracle']['auprc'] if auprc else 'N/A'
+    print(f"{'Oracle (future variance)':<35} {ora['oracle_auroc']:.4f}{'':>2} {'-':>6} {ora_auprc if isinstance(ora_auprc, str) else f'{ora_auprc:.4f}':>8}")
+
+# --- Epoch convergence ---
+smd_ep = load_json('smd_epoch_convergence.json')
+sup5_file = load_json('supervised_ap_5seed.json')
+print("\n=== TABLE 2: Epoch Convergence (Claim 10) ===")
+print(f"{'Setup':<35} {'30ep':>8} {'100ep':>8} {'Claim 10?':>10}")
+print("-" * 65)
+print(f"{'SVDB4 (% above AUROC 0.60)':<35} {'10%':>8} {'100%':>8} {'CONFIRMED':>10}")
+if smd_ep:
+    r30 = smd_ep['results']['30ep']; r100 = smd_ep['results']['100ep']
+    claim10 = 'CONFIRMED' if r30['pct_above_060'] < r100['pct_above_060'] else 'UNEXPECTED'
+    print(f"{'SMD (% above AUROC 0.60)':<35} {r30['pct_above_060']:.0f}%{'':>6} {r100['pct_above_060']:.0f}%{'':>6} {claim10:>10}")
+
+# --- Architecture hierarchy ---
+arch = load_json('architecture_comparison_stats.json')
+lstm = load_json('lstm_ap_100ep.json')
+cnn = load_json('cnn_ap_100ep.json')
+wb = load_json('width_ablation.json')
+
+print("\n=== TABLE 3: Architecture Hierarchy (Claim 12) ===")
+print(f"{'Architecture':<35} {'AUROC':>8} {'SD':>6} {'p vs TF':>8}")
+print("-" * 60)
+if sup:
+    sup_au = [x['test_auroc'] for x in sup['per_seed']]
+    print(f"{'Transformer d=64, L=2 (ref)':<35} {np.mean(sup_au):.4f}{'':>2} {np.std(sup_au):.4f} {'---':>8}")
+if wb:
+    print(f"{'Transformer d=32, L=2':<35} {wb['results']['d=32 L=2']['mean']:.4f}{'':>2} {wb['results']['d=32 L=2']['std']:.4f} {'---':>8}")
+    print(f"{'Transformer d=128, L=2':<35} {wb['results']['d=128 L=2']['mean']:.4f}{'':>2} {wb['results']['d=128 L=2']['std']:.4f} {'---':>8}")
+if lstm and arch:
+    lstm_au = [x['test_auroc'] for x in lstm['per_seed']]
+    print(f"{'BiLSTM (d=64, L=2)':<35} {np.mean(lstm_au):.4f}{'':>2} {np.std(lstm_au):.4f} {arch['transformer_vs_lstm']['p_two_sided']:.4f}")
+if cnn and arch:
+    cnn_au = [x['test_auroc'] for x in cnn['per_seed']]
+    print(f"{'1D CNN (3-layer, k=7)':<35} {np.mean(cnn_au):.4f}{'':>2} {np.std(cnn_au):.4f} {arch['transformer_vs_cnn']['p_two_sided']:.4f}")
+
+print("\nScript complete.")

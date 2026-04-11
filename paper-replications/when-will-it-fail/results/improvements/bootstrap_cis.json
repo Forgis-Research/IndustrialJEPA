@@ -1,0 +1,25 @@
+{
+  "probe": "75_bootstrap_cis",
+  "lr_4feat": {
+    "mean": 0.6342654928315701,
+    "ci_lo": 0.6121768027109471,
+    "ci_hi": 0.6560600744162179
+  },
+  "oracle": {
+    "mean": 0.7472538941657895,
+    "ci_lo": 0.7214796246547273,
+    "ci_hi": 0.7723399816574211
+  },
+  "rolling_var_50": {
+    "mean": 0.4765189130607758,
+    "ci_lo": 0.45318468051728494,
+    "ci_hi": 0.5005066394762318
+  },
+  "rolling_var_50_ap_corrected": {
+    "note": "AUROC using -var(last-50) as AP signal (calm=AP+). vs +var=0.477 (wrong direction)",
+    "auroc_wrong_sign": 0.4765,
+    "auroc_correct_sign": 0.5235,
+    "full_window_var": 0.6157
+  },
+  "note": "rolling_var_50 in main entry had wrong sign. For AD (current anomaly), +var is correct. For AP (future anomaly), calm-before-storm = -var is correct."
+}

@@ -1702,7 +1702,7 @@ Oracle (future variance)          0.7445  N/A             100.0%
 ```
 1. F1-tol 8.1x inflated (raw 5.35% -> 43.1%)    STRONG
 2. Random beats A2P F1-tol (+2.02pp)               VERY STRONG (5-seed)
-3. A2P AUROC not sig. above random (p=0.081)       STRONG (10-seed)
+3. A2P AUROC not sig. above random (p=0.162 two-tailed, p=0.081 one-sided) STRONG (10-seed)
 4. LR beats A2P transformer (p=0.0003, d=1.73)    VERY STRONG
 5. AP is learnable (supervised 0.624, p=0.000003)  VERY STRONG
 6. Calm-before-storm (ratio 0.773, consistent)     STRONG
@@ -1886,7 +1886,7 @@ Method                                AUROC    95% CI          % Oracle  Seeds
 -----------------------------------------------------------------------------------
 Random                                0.500  N/A                0.0%      N/A
 A2P (30ep unsupervised, 10-seed)      0.521  [0.490, 0.552]    8.6%      10
-LR 4-feature (var50+varfull, no train)0.631  [0.608, 0.652]   ~50%       bootstrap
+LR 4-feature (var50+varfull, no train)0.635  [0.612, 0.656]   ~50%       bootstrap(1000)
 Supervised transformer (5-seed, 100ep)0.624  [0.617, 0.630]   50.6%     5
 Oracle (future variance)              0.744  N/A              100.0%     N/A
 
@@ -1932,7 +1932,7 @@ LR = TF statistically; simplicity wins.
 
 1. F1-tol 8.1x inflated (raw 5.35% -> 43.1%) [STRONG]
 2. Random beats A2P F1-tol on all 3 datasets (SVDB4: 69.6% vs 67.6%) [VERY STRONG, 5-seed]
-3. A2P AUROC not significant vs random (p=0.081) [STRONG, 10-seed]
+3. A2P AUROC not significant vs random (p=0.162 two-tailed, p=0.081 one-sided) [STRONG, 10-seed]
 4. LR variance beats A2P transformer (p=0.0006, d=1.73) [VERY STRONG]
 5. AP is learnable with correct training: supervised 0.624, p<<0.001 [VERY STRONG, 5-seed]
 6. Calm-before-storm: AP+ windows have 0.78x lower variance (p<0.001, consistent across all splits) [STRONG]
