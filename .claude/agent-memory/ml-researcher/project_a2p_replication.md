@@ -433,3 +433,47 @@ All in `results/improvements/`:
 | RF 60-bin (600-step) | 0.790 ± 0.024 | |
 | TF supervised (50ep) | 0.723 ± 0.005 | No benefit from extended ctx |
 | Theoretical ceiling | 0.968 | |
+
+## NEW CRITICAL FINDINGS (April 12, 2026 - Overnight Session 5: Probes 174-207)
+
+### Feature Implementation Validation (Probe 207)
+- **CRITICAL**: Original 0.820 uses `.var()` (global variance) on (10, 2) bin array = variance over ALL 20 elements
+- NOT `.var(axis=0).mean()` (per-channel mean variance) which gives 0.795
+- Global var includes inter-channel differences - more expressive for multi-channel ECG
+- Result is confirmed reproducible: 9.8s build time with vectorized numpy
+
+### TF Extended Context Catastrophic Failure (Probe 174)
+- TF 600-step (50ep, 3-seed): 0.512 ± 0.032 (near-random!)
+- TF 200-step (50ep, ref): 0.723 ± 0.005
+- **Delta: -0.211** (TF DROPS 21pp, while LR GAINS +0.029)
+- Confirms: 3-zone temporal pattern is FUNDAMENTALLY LINEAR; TF cannot exploit raw sequences
+
+### New Best: 0.828 with LR+RF Ensemble (Probes 201, 206)
+- Base+MaxVar (120-feat): 0.823 ± 0.014 (+0.003 over 0.820)
+- LR+RF Ensemble on Base+MaxVar: **0.828 ± 0.014** (NEW BEST, +0.008)
+- Improvement chain: 0.820 → 0.823 (add max-channel var) → 0.828 (ensemble)
+
+### Cross-Patient Generalization Fails (Probe 204)
+- Train SVDB4, test SVDB1: AUROC = **0.463 (BELOW RANDOM!)**
+- The 3-zone pattern is PATIENT-SPECIFIC, not generalizable
+- Must state clearly: result is within-patient monitoring only
+
+### Bin Size Sweep (Probe 205)
+- 10-step bins (60 features) is optimal
+- Finer (5-step, 120-feat): 0.766 (overfits)
+- Coarser (20-step, 30-feat): 0.799 (information loss)
+
+### Feature Additions That Don't Help
+- + Cross-channel correlation: 0.819 (-0.001)
+- + Variance derivatives: 0.819 (-0.001)
+- Zone aggregation (15-feat): 0.712 (-0.108)
+- Only max per-channel var adds value (+0.003)
+
+### Updated Final Strict AP Leaderboard
+| Method | AUROC | Notes |
+|--------|-------|-------|
+| **LR+RF Ensemble (Base+MaxVar)** | **0.828 ± 0.014** | **NEW BEST** |
+| LR Base+MaxVar (120-feat) | 0.823 ± 0.014 | |
+| LR 60-bin global_var (600-step) | 0.820 ± 0.012 | Clean single-feature result |
+| TF 600-step (near-random) | 0.512 ± 0.032 | FAILS on extended context |
+| Theoretical ceiling | 0.968 | |
