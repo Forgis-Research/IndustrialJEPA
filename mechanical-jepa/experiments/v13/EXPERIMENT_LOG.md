@@ -75,6 +75,39 @@ mapping from JEPA latent space to RUL. An MLP head might capture more complex st
 4. mlp_bn: Linear(256,64)->BN->ReLU->Linear(64,1)->Sigmoid
 
 **Script**: experiments/v13/exp2_probe_variants.py
-**Status**: Script written, waiting for GPU capacity after Exp 1 completes
+**Status**: RUNNING (PID 289905, launched ~03:15 UTC Apr 12)
+Expected runtime: ~30 min (4 probes x 5 seeds x ~30-50s/run)
+
+---
+
+## Exp V13-3: More Window Cuts During Fine-Tuning (Prepared)
+
+**Time**: 2026-04-12 ~03:30 UTC (prepared)
+**Hypothesis**: The major bottleneck is training data size during fine-tuning.
+STAR uses ALL windows per engine (stride=1, ~15,000 windows = 176/engine).
+JEPA uses only n_cuts_per_engine=5 = 425 windows. This is a 35x difference.
+
+**Analysis**:
+- STAR: 15,000 train windows across 85 engines (176 avg/engine)
+- JEPA baseline: 5 cuts x 85 engines = 425 windows
+- Ratio: 35x more data for STAR
+
+**Variants** (n_cuts_per_engine):
+1. 5 (current baseline)
+2. 10
+3. 20
+4. 50
+5. 176 (STAR-equivalent, ~15K windows)
+
+**Script**: experiments/v13/exp3_more_cuts.py
+**Status**: Script written, will launch after Exp 2 completes (GPU ~88% utilized)
+
+**Kill criterion**: If 176 cuts doesn't get within 1 RMSE of STAR (i.e., doesn't reach 13.2),
+the data quantity hypothesis is wrong and we need architectural changes.
+
+**Prior evidence for this hypothesis**:
+- Exp 1: Fine-tuning schedule not the bottleneck
+- Exp 2: Probe architecture (pending results)
+- Training data quantity is the next largest unexplored variable
 
 ---

@@ -512,7 +512,7 @@ Component & Hyperparameter & Value \\
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.7\textwidth]{figures/v8_pretrain_history.pdf}
-\caption{JEPA V8 pretraining loss curve. The model achieves its best validation loss at epoch 2 (0.0166), after which training and validation losses diverge. This instability on heterogeneous multi-source data is a known limitation: the best checkpoint must be selected early, preventing full benefit from extended pretraining. We address this with early stopping based on probe RMSE at epoch 50.}
+\caption{JEPA V8 pretraining loss curve. The model achieves its best validation loss at epoch 2 (0.0168), after which training and validation losses diverge. This instability on heterogeneous multi-source data is a known limitation: the best checkpoint must be selected early, preventing full benefit from extended pretraining. We address this with early stopping based on probe RMSE at epoch 50.}
 \label{fig:pretrain_history}
 \end{figure}
 
@@ -545,7 +545,7 @@ Transformer + HC & 0.070 & 0.114 & +0.044 \\
 \toprule
 Config & LR & EMA & Mask & Best Val Loss & Verdict \\
 \midrule
-Default & $10^{-4}$ & 0.996 & 62.5\% & 0.0166 (ep.\ 2) & \textbf{Best} \\
+Default & $10^{-4}$ & 0.996 & 62.5\% & 0.0168 (ep.\ 2) & \textbf{Best} \\
 Lower LR & $3 \times 10^{-5}$ & 0.996 & 62.5\% & 0.0172 & Similar \\
 Fixed LR & $10^{-5}$ & 0.996 & 62.5\% & 0.0189 & Worse \\
 High EMA & $10^{-4}$ & 0.999 & 62.5\% & 0.0178 & Worse \\
@@ -598,7 +598,7 @@ SSL (ours) & \textbf{Traj JEPA E2E} & \textbf{14.23}$_{\pm0.4}$ & \textbf{14.93}
   \item \textbf{Competitive with prior SSL on C-MAPSS}: Traj JEPA E2E ($14.23 \pm 0.39$ across 5 seeds) matches AE-LSTM SSL (13.99) within 1.7\% - the only published SSL result on C-MAPSS FD001 - without using failure-time labels during pretraining. Unlike AE-LSTM, we evaluate at five label budgets, demonstrating consistent advantage over a supervised LSTM from 10\% to 100\% labels.
   \item \textbf{Outperforms supervised LSTM at all label budgets}: At 10\% labels (8 training engines), JEPA E2E achieves RMSE 18.66 vs LSTM 31.22 --- a 40\% reduction. Frozen JEPA (19.93) also substantially outperforms LSTM (31.22).
   \item \textbf{Genuine within-engine tracking} (\cref{fig:cmapss_tracking}): We rigorously verify that the RMSE improvement reflects real degradation tracking, not population-mean regression. Median within-engine Spearman $\rho = 0.841$ across 100 test engines (65/100 engines have $\rho > 0.7$). Shuffling $h_\text{past}$ context vectors across engines at inference time degrades RMSE from 13.98 to $55.45 \pm 1.62$ ($+41.5$ cycles, 5 seeds), confirming that each embedding is engine-specific and not a fixed bias.
-  \item \textbf{Health index recovery without labels}: A linear Ridge probe trained on frozen $h_\text{past}$ embeddings recovers the simulator's health index with validation $R^2 = 0.926$ (target: 0.7), robust across three health index parameterizations ($R^2 \in [0.917, 0.926]$). The embedding space is dominated by a single degradation direction: PC1 explains 47.6\% of variance and correlates with the health index at $|\rho| = 0.797$, while PC2 and PC3 have $|\rho| \leq 0.15$.
+  \item \textbf{Health index recovery without labels}: A linear Ridge probe trained on frozen $h_\text{past}$ embeddings recovers the simulator's health index with validation $R^2 = 0.926$ (target: 0.7), robust across three health index parameterizations ($R^2 \in [0.917, 0.926]$). The embedding space is dominated by a single degradation direction: PC1 explains 47.6\% of variance and correlates with the health index at $|\rho| = 0.797$, while PC2 and PC3 have $|\rho| \leq 0.16$.
   \item \textbf{Stability at low labels}: JEPA frozen std = 0.34--2.0 across all budgets vs LSTM std = 9--11, a 5--30$\times$ variance reduction critical for industrial deployment.
 \end{enumerate}
 
@@ -645,7 +645,7 @@ Setting & 100\% & 50\% & 20\% & 10\% & 5\% \\
 \midrule
 FD001 in-domain (frozen) & 17.81 & 18.71 & 19.83 & 19.93 & 21.53 \\
 FD001$\to$FD003 cross-fault (frozen) & 24.79$_{\pm0.6}$ & 25.91$_{\pm0.4}$ & 27.82$_{\pm1.5}$ & 28.79$_{\pm0.4}$ & 28.28$_{\pm0.2}$ \\
-Supervised LSTM in-domain (FD003) & 17.36 & 18.30 & 18.55 & 31.22 & 33.08 \\
+Supervised LSTM (FD001 reference architecture) & 17.36 & 18.30 & 18.55 & 31.22 & 33.08 \\
 STAR (paper, FD003) & 10.71 & --- & --- & --- & --- \\
 STAR (replic., FD003) & 12.74$_{\pm0.1}$ & --- & --- & --- & --- \\
 \bottomrule
