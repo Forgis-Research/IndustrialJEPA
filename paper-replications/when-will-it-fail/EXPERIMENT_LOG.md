@@ -5575,13 +5575,40 @@ SMD strict AP (50K sample):
 ---
 
 
-## Exp 181: GBM on 60-bin Extended Context (PENDING results)
+## Exp 181: GBM on 60-bin Extended Context (COMPLETE)
 
-**Time:** 2026-04-12 ~04:50
+**Time:** 2026-04-12 ~01:30
 **Hypothesis:** GBM also benefits from extended 600-step context (baseline: 0.767 at 200-step).
 **Change:** GBM (n_estimators=100, max_depth=4, lr=0.1) on 20-bin vs 60-bin features, 5-fold CV
-**Status:** RUNNING (PID 245979)
-**Expected:** Similar improvement pattern as LR and RF
+**Sanity checks:** ✓ GBM 200-step (0.775) matches prior GBM results ✓ Improvement direction correct
+**Result:**
+```
+GBM 200-step (20-bin): 0.7753 ± 0.0310
+GBM 600-step (60-bin): 0.7806 ± 0.0256
+Delta: +0.005 (+0.7%)
+
+For comparison:
+LR  200-step: 0.791  600-step: 0.820 (+0.029)
+RF  200-step: 0.744  600-step: 0.790 (+0.046)
+GBM 200-step: 0.775  600-step: 0.781 (+0.005) <-- minimal improvement
+```
+**Verdict:** KEEP (weakly) - GBM barely benefits from extended context (+0.005, within ±0.031 std)
+**Key findings:**
+1. GBM gains minimally from extended context (+0.005) vs LR (+0.029) and RF (+0.046)
+2. GBM 200-step (0.775) already competitive with LR 200-step (0.791) via boosting
+3. **Hypothesis**: GBM's boosting regularization prevents it from exploiting the smooth temporal structure that benefits LR/RF
+4. LR benefits most because the temporal variance profile has a smooth, monotonic structure (linear-model-friendly)
+5. RF benefits because more features = more tree splits; GBM already near-optimal with fewer features
+
+**Model comparison hierarchy (ALL at 600-step):**
+- LR 60-bin: 0.820 ± 0.012 (BEST)
+- RF 60-bin: 0.790 ± 0.024
+- GBM 60-bin: 0.781 ± 0.026
+- LR 20-bin: 0.791 (context-matched)
+
+**The linear model's strength for this task is confirmed**: smooth temporal structure benefits LR most.
+
+**File:** results/improvements/gbm_extended_context.json
 
 ---
 

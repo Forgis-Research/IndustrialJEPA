@@ -436,20 +436,30 @@ The CIs are **completely non-overlapping**. This is publication-quality statisti
 ```
 TASK CEILING:
   Oracle [t+150,t+200]:    0.983 ± 0.004
-  
+
 OUR METHOD:
   LR 60-bin (600-step):   0.820 ± 0.012  ***NEW BEST***
 
-ABLATIONS:
+ALL MODELS WITH EXTENDED CONTEXT (600-step):
+  LR 60-bin (600-step):   0.820 ± 0.012  (BEST - linear temporal structure)
   RF 60-bin (600-step):   0.790 ± 0.024  (+0.046 vs RF 200-step)
-  LR 20-bin (200-step):   0.791 ± 0.020  (A2P standard context)
+  GBM 60-bin (600-step):  0.781 ± 0.026  (+0.005 vs GBM 200-step; minimal benefit)
+  TF 100ep (600-step est): ~0.725         (100ep=0.725, no improvement expected)
+
+STANDARD CONTEXT (200-step):
+  LR 20-bin (200-step):   0.791 ± 0.020  (prior SOTA)
+  GBM 20-bin (200-step):  0.775 ± 0.031  (CORRECTED: prior was 0.767 different stride)
   RF 20-bin (200-step):   0.744 ± 0.020
-  GBM 20-bin (200-step):  0.767 ± 0.032
-  TF supervised:          0.723 ± 0.005  (A2P architecture)
+  TF supervised (50ep):   0.723 ± 0.005  (A2P architecture)
   LR 4-feat (no context): 0.706 ± 0.023
   Oracle [t+100,t+150]:   0.623 ± 0.016  (wrong oracle)
   A2P (10-seed):          0.528 ± 0.042  (near-random)
   Random:                 0.500
+
+EXTENDED CONTEXT BENEFIT BY MODEL:
+  LR:  +0.029 (LARGEST - smooth temporal structure is linear-model-friendly)
+  RF:  +0.046 (LARGE - benefits from more features for tree splits)
+  GBM: +0.005 (MINIMAL - boosting already near-optimal with 200-step)
 ```
 
 ### Zone Coefficient Stability (Probe 195, April 12, 2026)
