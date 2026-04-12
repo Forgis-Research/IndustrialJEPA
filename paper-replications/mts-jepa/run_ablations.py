@@ -32,7 +32,7 @@ def make_ablation_config(ablation_name, base_config=None):
     if base_config is None:
         base_config = {
             'lr': 5e-4, 'weight_decay': 1e-5, 'n_epochs': 50,
-            'patience': 10, 'patience_start': 25, 'max_grad_norm': 0.5,
+            'patience': 10, 'patience_start': 40, 'max_grad_norm': 0.5,
             'd_model': 128, 'd_out': 128, 'n_codes': 64, 'tau': 0.1,
             'patch_length': 20, 'n_patches': 5, 'n_encoder_layers': 3,
             'n_heads': 4, 'dropout': 0.1, 'ema_rho': 0.996,
@@ -86,6 +86,19 @@ def run_ablation(ablation_name, dataset_name, seed=42, device='cuda'):
 
     ckpt_dir = os.path.join(RESULTS_DIR, dataset_name, ablation_name, f"seed{seed}")
 
+    # For no_codebook ablation, we still use the standard model but zero out
+    # codebook losses — the codebook module remains but its losses are disabled.
+    # True codebook removal would require architectural changes to the downstream
+    # pipeline which expects code distributions. Instead, we observe whether
+    # removing codebook losses causes the collapse the paper predicts.
+    if config.pop('_no_codebook', False):
+        # Zero all codebook-related losses AND prediction losses (operating in continuous space)
+        config['loss_config']['kl_scale'] = 0.0
+        config['loss_config']['lambda_emb'] = 0.0
+        config['loss_config']['lambda_com'] = 0.0
+        config['loss_config']['lambda_ent_sample'] = 0.0
+        config['loss_config']['lambda_ent_batch'] = 0.0
+
     result = run_single_experiment(
         dataset_name, seed, data_dict,
         device=device, config=config,
@@ -95,7 +108,7 @@ def run_ablation(ablation_name, dataset_name, seed=42, device='cuda'):
     result['ablation'] = ablation_name
 
     # Save
-    os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.join(RESULTS_DIR, f"{dataset_name}_{ablation_name}_seed{seed}.json")), exist_ok=True)
     result_path = os.path.join(RESULTS_DIR, f"{dataset_name}_{ablation_name}_seed{seed}.json")
     with open(result_path, 'w') as f:
         json.dump(result, f, indent=2, default=str)

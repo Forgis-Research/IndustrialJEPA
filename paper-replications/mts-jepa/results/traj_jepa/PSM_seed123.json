@@ -1,0 +1,20 @@
+{
+  "dataset": "PSM",
+  "seed": 123,
+  "method": "TrajectoryJEPA",
+  "n_params": 579840,
+  "pretrain": {
+    "best_val_loss": 0.09861351400613785,
+    "wall_time_seconds": 33.69896340370178
+  },
+  "downstream": {
+    "f1": 50.877192982456144,
+    "auc": 45.55744199207696,
+    "precision": 34.93975903614458,
+    "recall": 93.54838709677419,
+    "threshold": 0.36000000000000004,
+    "n_test": 176,
+    "n_anomalous": 62,
+    "anomaly_rate": 0.3522727272727273
+  }
+}

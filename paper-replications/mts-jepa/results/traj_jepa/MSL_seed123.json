@@ -1,0 +1,20 @@
+{
+  "dataset": "MSL",
+  "seed": 123,
+  "method": "TrajectoryJEPA",
+  "n_params": 580864,
+  "pretrain": {
+    "best_val_loss": 0.024077492766082287,
+    "wall_time_seconds": 14.77973461151123
+  },
+  "downstream": {
+    "f1": 21.686746987951807,
+    "auc": 56.53846153846154,
+    "precision": 12.162162162162163,
+    "recall": 100.0,
+    "threshold": 0.01,
+    "n_test": 148,
+    "n_anomalous": 18,
+    "anomaly_rate": 0.12162162162162163
+  }
+}

@@ -12,20 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-# Import V11 components
-V11_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       '..', '..', 'mechanical-jepa', 'experiments', 'v11')
-sys.path.insert(0, V11_DIR)
-
-try:
-    from models import (
-        TransformerEncoder, TransformerEncoderLayer,
-        SensorProjection,
-    )
-    V11_AVAILABLE = True
-except ImportError:
-    V11_AVAILABLE = False
-    print("WARNING: V11 Trajectory JEPA modules not available")
+# Self-contained — all components defined below. No V11 imports to avoid path conflicts.
 
 
 class TrajectoryJEPAForAnomalyPrediction(nn.Module):

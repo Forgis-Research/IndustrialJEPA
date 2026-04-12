@@ -1,0 +1,24 @@
+{
+  "dataset": "PSM",
+  "seed": 42,
+  "n_params": 1474100,
+  "pretrain": {
+    "best_epoch": 49,
+    "val_loss": 0.28727279901504515,
+    "wall_time_seconds": 88.25457310676575,
+    "codebook_utilization": 1.0,
+    "codebook_perplexity": 61.382023063865866
+  },
+  "downstream": {
+    "f1": 48.03921568627451,
+    "auc": 49.32088285229202,
+    "precision": 34.50704225352113,
+    "recall": 79.03225806451613,
+    "threshold": 0.01,
+    "n_test": 176,
+    "n_anomalous": 62,
+    "anomaly_rate": 0.3522727272727273,
+    "val_f1": 57.798165137614674
+  },
+  "ablation": "no_downsampling"
+}
