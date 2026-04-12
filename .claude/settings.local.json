@@ -105,7 +105,10 @@
       "WebFetch(domain:www.sciencedirect.com)",
       "WebFetch(domain:ideas.repec.org)",
       "WebFetch(domain:academic.oup.com)",
-      "WebFetch(domain:proceedings.iclr.cc)"
+      "WebFetch(domain:proceedings.iclr.cc)",
+      "Bash(\"/c/Users/Jonaspetersen/AppData/Local/Programs/Quarto/bin/quarto.exe\" publish:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)"
     ]
   }
 }
