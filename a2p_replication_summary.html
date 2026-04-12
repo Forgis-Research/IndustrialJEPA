@@ -3424,6 +3424,42 @@ window.Quarto = {
 
 </header>
 
+<div class="callout callout-style-default callout-important callout-titled" style="border-left: 4px solid #dc3545; padding: 1.5em; margin: 2em 0; background: #fff5f5;">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container"><i class="callout-icon"></i></div>
+<div class="callout-title-container flex-fill"><strong>TL;DR — The A2P Paper Does Not Replicate</strong></div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We ran 227 probes against Park et al. "When Will It Fail?" (ICML 2025). <strong>The headline claim does not hold.</strong> Five independent lines of evidence:</p>
+<ol>
+<li><strong>A random baseline beats A2P on its own metric.</strong> Random anomaly scores achieve F1-tol = 69.57% on SVDB4; the paper reports 67.55%. The F1-with-tolerance metric is so loose that random noise outperforms the published method.</li>
+<li><strong>Train==test data leakage.</strong> The paper trains and evaluates on the same MBA sequence. A proper 70/30 split drops F1-tol from 43.1% to 12.66% (3.4&times; inflation).</li>
+<li><strong>AUROC is near-random.</strong> A2P achieves AUROC 0.528 on MBA (random = 0.500). Meanwhile, a zero-parameter rolling-variance detector gets 0.730 &mdash; no training, no neural network, no paper.</li>
+<li><strong>66% task contamination.</strong> 66.5% of "anomaly prediction" positive windows contain anomalies already present in the context window. The paper reports "prediction" performance that is mostly <em>detection</em> of anomalies the model can already see.</li>
+<li><strong>Rolling variance dominates.</strong> On SMD (the paper's multi-channel dataset), rolling variance at w=100 matches A2P to within 0.04pp (52.11% vs 52.07% F1-tol). On SVDB4, it beats A2P by +19.15pp.</li>
+</ol>
+<p><strong>However, a genuine prediction signal does exist.</strong> When the task is properly defined ("strict AP" &mdash; removing contaminated windows where anomalies are already visible), a calm-before-the-storm mechanism is detectable: variance drops to 0.14&times; baseline in the 100 cycles before anomaly blocks. A logistic regression with 20-bin variance features achieves <strong>0.791 AUROC</strong> on strict AP (5-fold CV), beating both the supervised transformer (0.723) and the oracle (0.629). The mechanism is real; the paper's evaluation of it is not.</p>
+</div>
+</div>
+
+<div class="callout callout-style-default callout-tip callout-titled" style="border-left: 4px solid #198754; padding: 1em; margin: 1em 0 2em 0; background: #f0fff4;">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container"><i class="callout-icon"></i></div>
+<div class="callout-title-container flex-fill"><strong>Reading Guide</strong></div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This notebook documents 227 probes across 6 overnight sessions. The TL;DR above summarizes the conclusion. Below:</p>
+<ul>
+<li><strong>Sections 1&ndash;10</strong>: Initial replication attempt + first red flags (F1 inflation, near-random AUROC, data leakage)</li>
+<li><strong>Sections 11&ndash;50</strong>: Systematic baseline comparison, oracle analysis, metric critique</li>
+<li><strong>Sections 50&ndash;70</strong>: The contamination discovery, strict AP task definition, mechanistic analysis</li>
+<li><strong>Sections 70&ndash;87</strong>: Final validation, publication-ready figures, 10-seed confirmation</li>
+</ul>
+<p>Use the table of contents (left sidebar) to jump to specific probes. Every probe has a hypothesis, result, and verdict.</p>
+</div>
+</div>
+
+<hr>
 
 <div id="8be6af73" class="cell" data-execution_count="1">
 <details class="code-fold">
