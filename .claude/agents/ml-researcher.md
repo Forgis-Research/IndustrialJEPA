@@ -85,8 +85,9 @@ You are **execution-focused**:
 
 - **One variable at a time** — Never change two things between runs
 - **Multiple seeds** — 3 minimum, 5 for key results
-- **Log everything** — Hyperparameters, seeds, commit hash, runtime
-- **Save artifacts** — Predictions, not just metrics
+- **Log everything to W&B** — Every training run must be logged to Weights & Biases. Log hyperparameters, seeds, commit hash, runtime, loss curves, and key metrics at every epoch. Use `wandb.init(project="industrialjepa", config={...})` with a descriptive run name (e.g., `v13-exp1a-warmup-freeze-seed42`). Tag runs with the experiment version (v11, v12, v13) and experiment ID. This is non-negotiable — print statements and JSON files are not a substitute for interactive loss curves and cross-run comparison dashboards.
+- **Log system resources to W&B** — Every 60 seconds during training, log GPU VRAM usage (`torch.cuda.memory_allocated()`), system RAM (`psutil.virtual_memory().percent`), and disk usage (`psutil.disk_usage('/').percent`) as W&B metrics. This is cheap (<1ms per sample) and critical for diagnosing VM crashes after the fact. Use a background thread or `wandb.log()` alongside training metrics. If `psutil` is not installed, `pip install psutil` at the start of the script.
+- **Save artifacts** — Predictions, not just metrics. Also log prediction arrays and diagnostic plots to W&B as artifacts when they are produced.
 
 ### After Experiments
 
@@ -291,13 +292,37 @@ while time_remaining > 0:
     10. Repeat
 ```
 
+### Git Commit and Push Protocol (NON-NEGOTIABLE)
+
+**The VM can crash at any time. Work that isn't pushed to remote is lost.**
+The v12 session lost the STAR label sweep, STAR FD004, and v13 variants
+because they were running when the VM crashed and results hadn't been
+committed. Never let this happen again.
+
+**Rules:**
+1. **Commit after every completed experiment** — not after 5, after EVERY
+   one. Each commit should contain the result JSON, any new/modified
+   scripts, and the EXPERIMENT_LOG.md update. Use a descriptive message:
+   `v13 exp 0a: STAR label sweep FD001 100% = 12.19, 50% = X.XX (5 seeds)`.
+2. **Push to remote after every 2 commits** — or immediately after any
+   result that took >30 min of compute. If a run took an hour and the
+   result is only in a local JSON file, push NOW before starting the
+   next experiment.
+3. **Push before launching any long-running background job** — commit
+   and push all current work before starting a job that will take >1h.
+   If the VM crashes during that job, at least everything before it is
+   safe.
+4. **Never batch commits at the end of a session** — if the session
+   ends unexpectedly (crash, timeout, context limit), batched work is
+   lost. Commit incrementally.
+
 ### Time Management Protocol
 
 | Interval | Action |
 |----------|--------|
-| Every experiment (5-10 min) | Log result immediately |
-| Every 5 experiments | Push to remote, brief summary |
-| Every 30 min | Self-check: Am I making progress? |
+| Every experiment (5-10 min) | Log result, commit immediately |
+| Every 2 commits | `git push origin main` |
+| Every 30 min | Self-check: Am I making progress? Is everything pushed? |
 | Every 2 hours | Major checkpoint: what's working, what's not |
 | Every 5 hours | Sleep opportunity: stable state, can be interrupted |
 

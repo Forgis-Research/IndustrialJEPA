@@ -103,6 +103,42 @@ change to the existing V11 architecture and most directly addresses the normaliz
 
 ## V13 Execution Order
 
+### Phase 0 — Carry-over from v12 crash (RUN FIRST, gates narrative)
+
+The VM crashed during v12 before these completed. They must finish before
+any v13 hypothesis work begins — the STAR label sweep is a kill criterion
+for the entire label-efficiency narrative.
+
+0a. **STAR label-efficiency sweep (FD001)** — the v12 Phase 2 job that
+    never finished. Using `paper-replications/star/run_experiments.py`:
+    - Label budgets: 100% (already done = 12.19), 50%, 20%, 10%, 5%
+    - 5 seeds per budget, same seeds as v11 JEPA (42, 123, 456, 789, 1024)
+    - Output: `experiments/v13/star_label_efficiency.json`
+    - **Kill criterion**: if STAR@20% <= 14 RMSE, the label-efficiency
+      pitch is dead; paper pivots to H.I. recovery headline.
+    - Launch in background, collect when done.
+
+0b. **STAR FD004** — also crashed mid-run. Complete the 5-seed sweep.
+    Output: `experiments/v13/star_fd004_results.json`
+
+0c. **From-scratch ablation** (from ADDENDUM) — same V2 architecture,
+    same E2E protocol, random init instead of pretrained. 5 seeds at
+    100%, 20%, 10%, 5%. Output: `experiments/v13/from_scratch_ablation.json`
+    This quantifies the pretraining contribution under E2E.
+
+0d. **Length-vs-content ablation** (from ADDENDUM) — inference only,
+    ~15 min. Constant-input test, length-matched swap, temporal shuffle.
+    Output: `experiments/v13/length_vs_content_ablation.json`
+    This closes the last loophole on the representation-quality claim.
+
+**Decision point after Phase 0**: read STAR label sweep results and
+from-scratch ablation before proceeding. If STAR@20% < 14, skip
+Hypotheses 1-3 and go straight to FD002 fix + paper rewrite. If
+from-scratch delta < 1 RMSE, the E2E number is not an SSL result and
+the paper must lead exclusively with frozen/H.I. claims.
+
+### Phase 1 — Hypothesis testing (only if Phase 0 clears)
+
 1. First: Hypothesis 1a (warmup-freeze) - quick, cheap, tests fine-tuning
 2. Second: Hypothesis 1d (L2 weight decay) - addresses high variance at 5% labels
 3. Third: Hypothesis 2b (longer horizon) - addresses predictor range
@@ -126,9 +162,9 @@ V13 dir: mechanical-jepa/experiments/v13/
 
 ---
 
-## V12 STAR Label Sweep (Still Running)
+## V12 STAR Label Sweep (CRASHED — now Phase 0a above)
 
-Once Phase 2 completes, the kill criterion determines narrative direction:
+Once Phase 0a completes, the kill criterion determines narrative direction:
 
 - If STAR@20% > 16 (JEPA@20% = 16.54): label-efficiency pitch is STRONG
 - If STAR@20% in [14, 16]: label-efficiency pitch survives (JEPA frozen is competitive)
