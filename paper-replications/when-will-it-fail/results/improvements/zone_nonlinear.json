@@ -1,0 +1,9 @@
+{
+  "probe": "203_zone_nonlinear",
+  "results": {
+    "zone_agg_lr": {
+      "mean": 0.7122360362107375,
+      "std": 0.02047362178841583
+    }
+  }
+}

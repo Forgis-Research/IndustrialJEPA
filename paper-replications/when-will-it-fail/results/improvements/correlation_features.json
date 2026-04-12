@@ -1,0 +1,14 @@
+{
+  "probe": "200_correlation_features",
+  "results": {
+    "corr_only": {
+      "mean": 0.7581342218326003,
+      "std": 0.02186642761960623
+    },
+    "base_plus_corr": {
+      "mean": 0.8191220873980418,
+      "std": 0.015208529046883523
+    },
+    "note": "CORRECTED: uses global bin var (original probe 165 method)"
+  }
+}

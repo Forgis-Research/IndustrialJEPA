@@ -1,0 +1,9 @@
+{
+  "probe": "202_variance_derivatives",
+  "results": {
+    "base_plus_derivatives": {
+      "mean": 0.8193946486864707,
+      "std": 0.012408245975894716
+    }
+  }
+}

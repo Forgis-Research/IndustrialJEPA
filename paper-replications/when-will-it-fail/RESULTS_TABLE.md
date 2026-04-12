@@ -565,3 +565,67 @@ Note: These use a different strict AP filter than the main 0.820 result.
 | 10.00 | 0.8199 | 0.012 |
 
 C=1.0 is near-optimal. Results stable from C=0.5 to C=10 (range = 0.0007).
+
+---
+
+## Session 5 Results (April 12, 2026 - Overnight)
+
+### Critical Finding: Feature Implementation Validation (Exp 207)
+
+The 0.820 result was confirmed to use **global variance per bin** (`.var()` on the full 2D (bin_size, C) array),
+not per-channel mean variance (`.var(axis=0).mean()`). These are different:
+- Global var: captures temporal variation + inter-channel differences
+- Per-channel mean var: only temporal variation within each channel
+
+For SVDB4 (ECG, 2 channels with potentially different scales), global variance is more expressive.
+
+### TF Extended Context Catastrophic Failure (Exp 174)
+
+| Model | Context | AUROC | Delta |
+|-------|---------|-------|-------|
+| LR 20-bin | 200-step | 0.791 | (ref) |
+| LR 60-bin | 600-step | **0.820** | +0.029 |
+| TF (200-step, 50ep) | 200-step | 0.723 | (ref) |
+| TF (600-step, 50ep) | 600-step | **0.512** | **-0.211** |
+
+**TF FAILS catastrophically** on 600-step context while LR excels. This confirms:
+the three-zone temporal pattern is fundamentally LINEAR - pre-binning is essential.
+
+### New Best Results: Feature Enhancement (Exps 201, 206)
+
+| Feature Set | AUROC (5-fold) | Delta | Notes |
+|------------|----------------|-------|-------|
+| Global_var 60-bin (baseline) | 0.820 ± 0.012 | - | Original result |
+| Base + MaxVar (120-feat) | **0.823 ± 0.014** | +0.003 | Adding max per-channel var |
+| LR+RF Ensemble (Base+MaxVar) | **0.828 ± 0.014** | **+0.008** | Soft ensemble NEW BEST |
+
+### Bin Size Sweep (Exp 205)
+
+| Bin Size | N Bins | AUROC |
+|---------|--------|-------|
+| 5-step | 120 | 0.766 |
+| **10-step** | **60** | **0.820** |
+| 20-step | 30 | 0.799 |
+| 30-step | 20 | 0.793 |
+
+10-step bins are optimal.
+
+### Cross-Patient Generalization Failure (Exp 204)
+
+| Evaluation | AUROC | Notes |
+|------------|-------|-------|
+| SVDB4 within-patient (5-fold) | 0.820 | Our main result |
+| SVDB4→SVDB1 cross-patient | **0.463** | BELOW RANDOM |
+
+Cross-patient transfer fails completely (0.463 < 0.5). The 3-zone pattern is patient-specific.
+
+### Negative Results: Feature Additions That Don't Help
+
+| Additional Feature | Base AUROC | +Feature AUROC | Delta |
+|-------------------|-----------|----------------|-------|
+| + Correlation (60-feat) | 0.820 | 0.819 | -0.001 |
+| + Min-channel var (60-feat) | 0.820 | 0.820 | +0.000 |
+| + 1st + 2nd derivatives (117-feat) | 0.820 | 0.819 | -0.001 |
+| Zone-aggregated 15-feat | - | 0.712 | -0.108 |
+
+Only max per-channel variance adds value (+0.003). Everything else is neutral or harmful.

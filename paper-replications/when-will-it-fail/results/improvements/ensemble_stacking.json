@@ -1,0 +1,18 @@
+{
+  "probe": "206_ensemble_stacking_corrected",
+  "note": "Uses global var + max per-channel var (120 features total)",
+  "results": {
+    "lr_120feat": {
+      "mean": 0.8227307763037436,
+      "std": 0.013625720599400183
+    },
+    "rf_120feat": {
+      "mean": 0.8132856076248969,
+      "std": 0.01810486482562992
+    },
+    "ensemble_5050": {
+      "mean": 0.8275732359536233,
+      "std": 0.014342188722714595
+    }
+  }
+}
