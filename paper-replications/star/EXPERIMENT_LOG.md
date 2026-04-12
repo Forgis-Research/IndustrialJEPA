@@ -168,3 +168,63 @@ Replication started: 2026-04-11
 - **Wall time**: 1699s
 - **Notes**: none
 
+
+### 2026-04-11T23:18:21 | FD003 seed=42
+
+- **Hyperparams**: lr=0.0002,bs=32,w=48,scales=1,dm=128,nh=1
+- **Parameters**: 1,220,890
+- **Epochs run**: 53 (best epoch 33)
+- **Best val RMSE**: 10.978
+- **Test RMSE**: 12.832 (paper target: 10.71)
+- **Test Score**: 296.0 (paper target: 202)
+- **Wall time**: 814s
+- **Notes**: none
+
+
+### 2026-04-11T23:38:36 | FD003 seed=123
+
+- **Hyperparams**: lr=0.0002,bs=32,w=48,scales=1,dm=128,nh=1
+- **Parameters**: 1,220,890
+- **Epochs run**: 101 (best epoch 81)
+- **Best val RMSE**: 10.292
+- **Test RMSE**: 12.621 (paper target: 10.71)
+- **Test Score**: 270.2 (paper target: 202)
+- **Wall time**: 1215s
+- **Notes**: none
+
+
+### 2026-04-11T23:53:57 | FD003 seed=456
+
+- **Hyperparams**: lr=0.0002,bs=32,w=48,scales=1,dm=128,nh=1
+- **Parameters**: 1,220,890
+- **Epochs run**: 60 (best epoch 40)
+- **Best val RMSE**: 10.956
+- **Test RMSE**: 12.728 (paper target: 10.71)
+- **Test Score**: 319.2 (paper target: 202)
+- **Wall time**: 921s
+- **Notes**: none
+
+
+### 2026-04-12T00:10:58 | FD003 seed=789
+
+- **Hyperparams**: lr=0.0002,bs=32,w=48,scales=1,dm=128,nh=1
+- **Parameters**: 1,220,890
+- **Epochs run**: 55 (best epoch 35)
+- **Best val RMSE**: 10.300
+- **Test RMSE**: 12.865 (paper target: 10.71)
+- **Test Score**: 308.7 (paper target: 202)
+- **Wall time**: 1022s
+- **Notes**: none
+
+
+### 2026-04-12T00:27:11 | FD003 seed=1024
+
+- **Hyperparams**: lr=0.0002,bs=32,w=48,scales=1,dm=128,nh=1
+- **Parameters**: 1,220,890
+- **Epochs run**: 54 (best epoch 34)
+- **Best val RMSE**: 9.577
+- **Test RMSE**: 12.635 (paper target: 10.71)
+- **Test Score**: 281.5 (paper target: 202)
+- **Wall time**: 972s
+- **Notes**: none
+
