@@ -62,9 +62,9 @@ come from the model architecture or pretraining representation quality.
 
 ---
 
-## Exp V13-2: Non-Linear Probe Head Variants (Prepared, not yet started)
+## Exp V13-2: Non-Linear Probe Head Variants (COMPLETE)
 
-**Time**: 2026-04-12 ~02:45 UTC (prepared)
+**Time**: 2026-04-12 ~02:45 UTC (prepared), ~03:38 UTC (complete)
 **Hypothesis**: Linear probe (Linear->Sigmoid) may be too simple for the non-linear
 mapping from JEPA latent space to RUL. An MLP head might capture more complex structure.
 
@@ -75,8 +75,27 @@ mapping from JEPA latent space to RUL. An MLP head might capture more complex st
 4. mlp_bn: Linear(256,64)->BN->ReLU->Linear(64,1)->Sigmoid
 
 **Script**: experiments/v13/exp2_probe_variants.py
-**Status**: RUNNING (PID 289905, launched ~03:15 UTC Apr 12)
-Expected runtime: ~30 min (4 probes x 5 seeds x ~30-50s/run)
+**Seeds**: 5 seeds [42, 123, 456, 789, 1024]
+
+**Final results (all 4 probes)**:
+- linear_baseline: 14.480 +/- 0.547 (reference)
+- mlp_small: 14.497 +/- 0.384 (delta: +0.017) [NO IMPROVEMENT]
+- mlp_large: 14.401 +/- 0.616 (delta: -0.079) [NOISE - within std]
+- mlp_bn: 16.071 +/- 2.193 (delta: +1.591) [WORSE + UNSTABLE - BN in small batches]
+
+**Sanity checks**: All RMSE in 14-16 range (expected). mlp_bn instability flagged:
+seed 42 RMSE=20.4 while other seeds 14-15. This is BatchNorm instability in E2E mode
+(batch size may be too small for stable BN statistics during fine-tuning).
+
+**KEY FINDING: Probe architecture is NOT the bottleneck.**
+All MLP variants perform identically to linear probe (within noise). The JEPA latent
+space appears to already produce a near-linear RUL manifold - adding non-linearity
+in the probe head adds nothing. The STAR gap (14.48 vs 12.19 = 2.3 RMSE) must
+come from: (a) training data quantity, (b) encoder capacity, or (c) architecture design.
+
+**Verdict**: REVERT all non-baseline variants. Confirmed: E2E + linear probe is correct.
+
+**Next**: Exp 3 - data quantity hypothesis (n_cuts_per_engine sweep).
 
 ---
 
@@ -100,14 +119,15 @@ JEPA uses only n_cuts_per_engine=5 = 425 windows. This is a 35x difference.
 5. 176 (STAR-equivalent, ~15K windows)
 
 **Script**: experiments/v13/exp3_more_cuts.py
-**Status**: Script written, will launch after Exp 2 completes (GPU ~88% utilized)
+**Status**: RUNNING (PID 299352, launched ~03:38 UTC Apr 12)
+Expected runtime: ~75 min (5 cuts variants x 5 seeds x ~30-60s/run, longer for 176 cuts)
 
 **Kill criterion**: If 176 cuts doesn't get within 1 RMSE of STAR (i.e., doesn't reach 13.2),
 the data quantity hypothesis is wrong and we need architectural changes.
 
 **Prior evidence for this hypothesis**:
-- Exp 1: Fine-tuning schedule not the bottleneck
-- Exp 2: Probe architecture (pending results)
+- Exp 1: Fine-tuning schedule not the bottleneck (standard LR=1e-4 already optimal)
+- Exp 2: Probe architecture not the bottleneck (linear = MLP within noise)
 - Training data quantity is the next largest unexplored variable
 
 ---
