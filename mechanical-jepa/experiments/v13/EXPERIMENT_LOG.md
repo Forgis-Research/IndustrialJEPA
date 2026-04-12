@@ -42,6 +42,12 @@ Reference: train_utils._eval_test_rmse() at line 380 shows the canonical pattern
 **Sanity check**: RMSE=85.52 flagged as SUSPICIOUS (⚠️) - magnitude check failed (expected ~14, got ~86).
 Do NOT treat first run results as valid.
 
-Results to be added when exp1_output.log becomes readable (unbuffered).
+**Intermediate results (e2e_baseline complete)**:
+- e2e_baseline: mean=14.48, std=0.55 (per-seed: 14.54, 15.38, 14.43, 13.66, 14.39)
+- Sanity check PASS: RMSE in expected range (V12 ref=14.23), magnitude correct
+- Slight increase from V12's 14.23 is within noise (GPU contention, reimplementation)
+- Variants 2-4 still running (PID 277608)
+
+Results to be updated as remaining variants complete.
 
 ---

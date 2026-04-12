@@ -420,7 +420,7 @@ The coefficient of variation in episode lifetimes (CV = 0.635) explains why elap
   \item \textbf{Small dataset.} With only 23 bearing episodes, our results have non-trivial variance (e.g., JEPA+LSTM std = 0.015). Each run-to-failure episode requires physically destroying a bearing, fundamentally limiting dataset scale.
   \item \textbf{Single channel.} Current experiments use only one vibration channel. Extending to multivariate inputs (e.g., multi-axis accelerometers, motor current) is a natural next step.
   \item \textbf{Temporal contrastive requires episode structure.} The contrastive objective assumes access to run-to-failure episodes with temporal ordering.
-  \item \textbf{JEPA pretraining instability.} Training loss oscillates after epoch 2 on heterogeneous multi-source data; the best checkpoint is always early.
+  \item \textbf{JEPA pretraining instability.} Training loss oscillates after epoch 2 on heterogeneous multi-source data; the best checkpoint is always early (\cref{fig:pretrain_history}, Appendix).
   \item \textbf{Two transfer pairs.} Cross-dataset evaluation is limited to FEMTO$\leftrightarrow$XJTU-SY. A trajectory variant of JEPA applied to C-MAPSS turbofan data (Appendix~\ref{app:turbofan}) confirms the framework generalizes to 14-channel multivariate sensor streams, but cross-domain bearing$\leftrightarrow$turbofan transfer is not evaluated.
   \item \textbf{Gap to supervised SOTA.} On C-MAPSS FD001, JEPA E2E achieves RMSE $14.23 \pm 0.39$ versus STAR (supervised, RMSE $12.19$ replication). Closing this $\sim$2 RMSE gap is ongoing work. Health index recovery ($R^2 = 0.926$) and within-engine tracking ($\rho = 0.830$) confirm the representations are genuinely learning degradation structure.
 \end{enumerate}
@@ -509,6 +509,13 @@ Component & Hyperparameter & Value \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/v8_pretrain_history.pdf}
+\caption{JEPA V8 pretraining loss curve. The model achieves its best validation loss at epoch 2 (0.0166), after which training and validation losses diverge. This instability on heterogeneous multi-source data is a known limitation: the best checkpoint must be selected early, preventing full benefit from extended pretraining. We address this with early stopping based on probe RMSE at epoch 50.}
+\label{fig:pretrain_history}
+\end{figure}
+
 \section{Additional Results}
 \label{app:additional}
 
@@ -568,7 +575,7 @@ A linear RUL probe is trained on frozen encoder representations (frozen mode) or
 \paragraph{Results.}
 \begin{table}[h]
 \centering
-\caption{C-MAPSS FD001 RUL prediction. RMSE in cycles (RUL cap = 125). Mean $\pm$ std over 5 seeds. Lower is better. STAR~\citep{fan2024star} and AE-LSTM~\citep{lecam2025aelstm} results are from the papers.}
+\caption{C-MAPSS FD001 RUL prediction. RMSE in cycles (RUL cap = 125). Mean $\pm$ std over 5 seeds. Lower is better. STAR paper result from~\citet{fan2024star}; STAR (replic.) is our 5-seed replication (FD001 config, same hyperparameters). AE-LSTM from~\citet{lecam2025aelstm}.}
 \label{tab:turbofan}
 \small
 \begin{tabular}{@{}llccccc@{}}
@@ -576,6 +583,7 @@ A linear RUL probe is trained on frozen encoder representations (frozen mode) or
 Type & Method & 100\% & 50\% & 20\% & 10\% & 5\% \\
 \midrule
 Supervised & STAR (paper) & 10.61 & --- & --- & --- & --- \\
+Supervised & STAR (replic.) & 12.19$_{\pm0.6}$ & --- & --- & --- & --- \\
 SSL (paper) & AE-LSTM & 13.99 & --- & --- & --- & --- \\
 \midrule
 Supervised & LSTM (ours) & 17.36$_{\pm1.2}$ & 18.30$_{\pm0.8}$ & 18.55$_{\pm0.8}$ & 31.22$_{\pm10.9}$ & 33.08$_{\pm9.6}$ \\
@@ -589,12 +597,12 @@ SSL (ours) & \textbf{Traj JEPA E2E} & \textbf{14.23}$_{\pm0.4}$ & \textbf{14.93}
 \begin{enumerate}[nosep]
   \item \textbf{Competitive with prior SSL on C-MAPSS}: Traj JEPA E2E ($14.23 \pm 0.39$ across 5 seeds) matches AE-LSTM SSL (13.99) within 1.7\% - the only published SSL result on C-MAPSS FD001 - without using failure-time labels during pretraining. Unlike AE-LSTM, we evaluate at five label budgets, demonstrating consistent advantage over a supervised LSTM from 10\% to 100\% labels.
   \item \textbf{Outperforms supervised LSTM at all label budgets}: At 10\% labels (8 training engines), JEPA E2E achieves RMSE 18.66 vs LSTM 31.22 --- a 40\% reduction. Frozen JEPA (19.93) also substantially outperforms LSTM (31.22).
-  \item \textbf{Genuine within-engine tracking}: We rigorously verify that the RMSE improvement reflects real degradation tracking, not population-mean regression. Median within-engine Spearman $\rho = 0.841$ across 100 test engines (65/100 engines have $\rho > 0.7$). Shuffling $h_\text{past}$ context vectors across engines at inference time degrades RMSE from 13.98 to $55.45 \pm 1.62$ ($+41.5$ cycles, 5 seeds), confirming that each embedding is engine-specific and not a fixed bias.
+  \item \textbf{Genuine within-engine tracking} (\cref{fig:cmapss_tracking}): We rigorously verify that the RMSE improvement reflects real degradation tracking, not population-mean regression. Median within-engine Spearman $\rho = 0.841$ across 100 test engines (65/100 engines have $\rho > 0.7$). Shuffling $h_\text{past}$ context vectors across engines at inference time degrades RMSE from 13.98 to $55.45 \pm 1.62$ ($+41.5$ cycles, 5 seeds), confirming that each embedding is engine-specific and not a fixed bias.
   \item \textbf{Health index recovery without labels}: A linear Ridge probe trained on frozen $h_\text{past}$ embeddings recovers the simulator's health index with validation $R^2 = 0.926$ (target: 0.7), robust across three health index parameterizations ($R^2 \in [0.917, 0.926]$). The embedding space is dominated by a single degradation direction: PC1 explains 47.6\% of variance and correlates with the health index at $|\rho| = 0.797$, while PC2 and PC3 have $|\rho| \leq 0.15$.
   \item \textbf{Stability at low labels}: JEPA frozen std = 0.34--2.0 across all budgets vs LSTM std = 9--11, a 5--30$\times$ variance reduction critical for industrial deployment.
 \end{enumerate}
 
-These results confirm that the JEPA framework generalizes beyond vibration signals: the trajectory prediction objective learns degradation-aware representations from unlabeled multivariate sensor streams, with strong label efficiency and stability advantages over supervised baselines. Crucially, the RMSE improvements reflect genuine within-engine degradation tracking rather than population-mean effects, as verified by five independent diagnostic checks.
+These results confirm that the JEPA framework generalizes beyond vibration signals: the trajectory prediction objective learns degradation-aware representations from unlabeled multivariate sensor streams, with strong label efficiency and stability advantages over supervised baselines. Crucially, the RMSE improvements reflect genuine within-engine degradation tracking rather than population-mean effects, as verified by five independent diagnostic checks (\cref{fig:cmapss_main,fig:cmapss_tracking}).
 
 \begin{figure}[h]
 \centering
