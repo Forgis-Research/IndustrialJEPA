@@ -1,0 +1,24 @@
+{
+  "dataset": "SMAP",
+  "seed": 42,
+  "n_params": 1474100,
+  "pretrain": {
+    "best_epoch": 2,
+    "val_loss": 0.03241897858679295,
+    "wall_time_seconds": 216.52803802490234,
+    "codebook_utilization": 1.0,
+    "codebook_perplexity": 60.10933262593037
+  },
+  "downstream": {
+    "f1": 26.06741573033708,
+    "auc": 56.945867049062784,
+    "precision": 17.008797653958943,
+    "recall": 55.769230769230774,
+    "threshold": 0.5800000000000001,
+    "n_test": 855,
+    "n_anomalous": 104,
+    "anomaly_rate": 0.1216374269005848,
+    "val_f1": 19.27710843373494
+  },
+  "wall_time": 226.76340866088867
+}

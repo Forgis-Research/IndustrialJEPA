@@ -1,0 +1,146 @@
+{
+  "dataset": "MSL",
+  "n_seeds": 5,
+  "aggregate": {
+    "f1_mean": 20.574959177368818,
+    "f1_std": 5.80822239885712,
+    "auc_mean": 52.58547008547008,
+    "auc_std": 4.362073642613556,
+    "precision_mean": 20.88818199344515,
+    "precision_std": 7.972473098952165,
+    "recall_mean": 26.666666666666668,
+    "recall_std": 12.86204100310025,
+    "f1_gap_pct": 38.72853133600709,
+    "f1_status": "FAILED",
+    "auc_gap_pct": 20.421504107944795,
+    "auc_status": "MARGINAL"
+  },
+  "paper_targets": {
+    "f1": 33.58,
+    "auc": 66.08,
+    "precision": 35.87,
+    "recall": 40.8
+  },
+  "per_seed": [
+    {
+      "dataset": "MSL",
+      "seed": 42,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 7,
+        "val_loss": 0.06895855814218521,
+        "wall_time_seconds": 191.963481426239,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 57.88680720329285
+      },
+      "downstream": {
+        "f1": 15.384615384615385,
+        "auc": 57.26495726495726,
+        "precision": 14.285714285714285,
+        "recall": 16.666666666666664,
+        "threshold": 0.53,
+        "n_test": 148,
+        "n_anomalous": 18,
+        "anomaly_rate": 0.12162162162162163,
+        "val_f1": 22.22222222222222
+      },
+      "wall_time": 196.45678281784058
+    },
+    {
+      "dataset": "MSL",
+      "seed": 123,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 6,
+        "val_loss": 0.06845877319574356,
+        "wall_time_seconds": 190.77443146705627,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 59.736770153045654
+      },
+      "downstream": {
+        "f1": 28.57142857142857,
+        "auc": 57.58547008547008,
+        "precision": 21.052631578947366,
+        "recall": 44.44444444444444,
+        "threshold": 0.5,
+        "n_test": 148,
+        "n_anomalous": 18,
+        "anomaly_rate": 0.12162162162162163,
+        "val_f1": 33.33333333333333
+      },
+      "wall_time": 196.1863055229187
+    },
+    {
+      "dataset": "MSL",
+      "seed": 456,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 7,
+        "val_loss": 0.06708665564656258,
+        "wall_time_seconds": 190.14204859733582,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 58.82776975631714
+      },
+      "downstream": {
+        "f1": 16.867469879518072,
+        "auc": 47.09401709401709,
+        "precision": 10.76923076923077,
+        "recall": 38.88888888888889,
+        "threshold": 0.53,
+        "n_test": 148,
+        "n_anomalous": 18,
+        "anomaly_rate": 0.12162162162162163,
+        "val_f1": 26.08695652173913
+      },
+      "wall_time": 194.74906039237976
+    },
+    {
+      "dataset": "MSL",
+      "seed": 789,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 7,
+        "val_loss": 0.06746546551585197,
+        "wall_time_seconds": 201.88252019882202,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 60.78226566314697
+      },
+      "downstream": {
+        "f1": 15.384615384615385,
+        "auc": 48.33333333333333,
+        "precision": 25.0,
+        "recall": 11.11111111111111,
+        "threshold": 0.54,
+        "n_test": 148,
+        "n_anomalous": 18,
+        "anomaly_rate": 0.12162162162162163,
+        "val_f1": 26.666666666666668
+      },
+      "wall_time": 204.2885673046112
+    },
+    {
+      "dataset": "MSL",
+      "seed": 1024,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 7,
+        "val_loss": 0.06939772889018059,
+        "wall_time_seconds": 120.68923616409302,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 59.72276830673218
+      },
+      "downstream": {
+        "f1": 26.666666666666668,
+        "auc": 52.649572649572654,
+        "precision": 33.33333333333333,
+        "recall": 22.22222222222222,
+        "threshold": 0.49,
+        "n_test": 148,
+        "n_anomalous": 18,
+        "anomaly_rate": 0.12162162162162163,
+        "val_f1": 30.0
+      },
+      "wall_time": 123.17207765579224
+    }
+  ]
+}

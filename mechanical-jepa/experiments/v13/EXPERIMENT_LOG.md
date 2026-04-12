@@ -119,8 +119,7 @@ JEPA uses only n_cuts_per_engine=5 = 425 windows. This is a 35x difference.
 5. 176 (STAR-equivalent, ~15K windows)
 
 **Script**: experiments/v13/exp3_more_cuts.py
-**Status**: RUNNING (PID 299352, launched ~03:38 UTC Apr 12)
-Expected runtime: ~75 min (5 cuts variants x 5 seeds x ~30-60s/run, longer for 176 cuts)
+**Status**: RUNNING (PID 299352, launched ~03:38 UTC Apr 12) - n_cuts=5,10 DONE
 
 **Kill criterion**: If 176 cuts doesn't get within 1 RMSE of STAR (i.e., doesn't reach 13.2),
 the data quantity hypothesis is wrong and we need architectural changes.
@@ -129,5 +128,24 @@ the data quantity hypothesis is wrong and we need architectural changes.
 - Exp 1: Fine-tuning schedule not the bottleneck (standard LR=1e-4 already optimal)
 - Exp 2: Probe architecture not the bottleneck (linear = MLP within noise)
 - Training data quantity is the next largest unexplored variable
+
+**Intermediate results (so far)**:
+- n_cuts=5: 14.496 +/- 0.771 (baseline replication; 14.23 in V12 is within noise)
+- n_cuts=10: 14.177 +/- 0.716 (delta: -0.32 vs n_cuts=5; marginal improvement, within noise)
+- n_cuts=20: 14.626 +/- 0.749 (delta: +0.45 vs n_cuts=10; WORSE than n_cuts=10, within noise)
+- n_cuts=50: RUNNING
+- n_cuts=176: PENDING
+
+**Updated trend analysis (n_cuts=20 result)**: The improvement from 5->10 was NOT sustained.
+n_cuts=20 is WORSE than n_cuts=10 (though within 1-std noise band). This strongly suggests
+the data quantity hypothesis is WRONG - more cuts do not systematically improve results.
+The null hypothesis (n_cuts doesn't matter) cannot be rejected from the 5/10/20 data.
+
+**⚠️ WARNING: Data quantity is likely NOT the bottleneck.**
+If confirmed by n_cuts=50 and n_cuts=176, the gap to STAR must be structural:
+- Architecture capacity (encoder depth/width)
+- Pretraining objective quality (trajectory JEPA vs STAR's supervised Transformer)
+- The fundamental difference: STAR trains END-TO-END supervised with ALL windows,
+  while JEPA is SSL pretrained then fine-tuned with probe
 
 ---

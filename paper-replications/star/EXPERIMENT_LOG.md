@@ -228,3 +228,15 @@ Replication started: 2026-04-11
 - **Wall time**: 972s
 - **Notes**: none
 
+
+### 2026-04-12T05:03:20 | FD004 seed=42
+
+- **Hyperparams**: lr=0.0002,bs=64,w=64,scales=4,dm=256,nh=4
+- **Parameters**: 19,545,189
+- **Epochs run**: 65 (best epoch 45)
+- **Best val RMSE**: 24.115
+- **Test RMSE**: 24.204 (paper target: 15.87)
+- **Test Score**: 10067.7 (paper target: 1449)
+- **Wall time**: 16554s
+- **Notes**: none
+

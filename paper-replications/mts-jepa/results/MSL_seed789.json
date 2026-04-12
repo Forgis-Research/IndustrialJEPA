@@ -1,0 +1,24 @@
+{
+  "dataset": "MSL",
+  "seed": 789,
+  "n_params": 1474100,
+  "pretrain": {
+    "best_epoch": 7,
+    "val_loss": 0.06746546551585197,
+    "wall_time_seconds": 201.88252019882202,
+    "codebook_utilization": 1.0,
+    "codebook_perplexity": 60.78226566314697
+  },
+  "downstream": {
+    "f1": 15.384615384615385,
+    "auc": 48.33333333333333,
+    "precision": 25.0,
+    "recall": 11.11111111111111,
+    "threshold": 0.54,
+    "n_test": 148,
+    "n_anomalous": 18,
+    "anomaly_rate": 0.12162162162162163,
+    "val_f1": 26.666666666666668
+  },
+  "wall_time": 204.2885673046112
+}

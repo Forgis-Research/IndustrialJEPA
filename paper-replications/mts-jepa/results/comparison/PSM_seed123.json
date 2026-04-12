@@ -1,0 +1,36 @@
+{
+  "MTS-JEPA": {
+    "pretrain": {
+      "best_epoch": 2,
+      "best_val_loss": 0.3063169240951538
+    },
+    "downstream": {
+      "f1": 52.10084033613446,
+      "auc": 48.033389926428974,
+      "precision": 35.22727272727273,
+      "recall": 100.0,
+      "threshold": 0.01,
+      "n_test": 176,
+      "n_anomalous": 62,
+      "anomaly_rate": 0.3522727272727273
+    },
+    "wall_time": 137.27752947807312
+  },
+  "CC-JEPA": {
+    "pretrain": {
+      "best_epoch": 2,
+      "best_val_loss": 0.45216967463493346
+    },
+    "downstream": {
+      "f1": 52.10084033613446,
+      "auc": 54.598189020939444,
+      "precision": 35.22727272727273,
+      "recall": 100.0,
+      "threshold": 0.01,
+      "n_test": 176,
+      "n_anomalous": 62,
+      "anomaly_rate": 0.3522727272727273
+    },
+    "wall_time": 79.65981554985046
+  }
+}

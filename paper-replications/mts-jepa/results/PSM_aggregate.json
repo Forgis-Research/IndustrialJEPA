@@ -1,0 +1,146 @@
+{
+  "dataset": "PSM",
+  "n_seeds": 5,
+  "aggregate": {
+    "f1_mean": 50.67678254860001,
+    "f1_std": 3.6360696998274307,
+    "auc_mean": 48.96010186757216,
+    "auc_std": 3.6901182903009833,
+    "precision_mean": 35.19257165517358,
+    "precision_std": 0.8277995092787392,
+    "recall_mean": 92.25806451612904,
+    "recall_std": 15.483870967741936,
+    "f1_gap_pct": 17.745848809284194,
+    "f1_status": "MARGINAL",
+    "auc_gap_pct": 37.10969573850717,
+    "auc_status": "FAILED"
+  },
+  "paper_targets": {
+    "f1": 61.61,
+    "auc": 77.85,
+    "precision": 55.01,
+    "recall": 72.0
+  },
+  "per_seed": [
+    {
+      "dataset": "PSM",
+      "seed": 42,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 1,
+        "val_loss": 0.30207584500312806,
+        "wall_time_seconds": 376.17646956443787,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 61.67948294974662
+      },
+      "downstream": {
+        "f1": 52.10084033613446,
+        "auc": 52.10809281267685,
+        "precision": 35.22727272727273,
+        "recall": 100.0,
+        "threshold": 0.01,
+        "n_test": 176,
+        "n_anomalous": 62,
+        "anomaly_rate": 0.3522727272727273,
+        "val_f1": 61.111111111111114
+      },
+      "wall_time": 383.4210727214813
+    },
+    {
+      "dataset": "PSM",
+      "seed": 123,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.30632041692733764,
+        "wall_time_seconds": 376.43933176994324,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 61.513861681963945
+      },
+      "downstream": {
+        "f1": 52.54237288135594,
+        "auc": 53.71392190152802,
+        "precision": 35.63218390804598,
+        "recall": 100.0,
+        "threshold": 0.5,
+        "n_test": 176,
+        "n_anomalous": 62,
+        "anomaly_rate": 0.3522727272727273,
+        "val_f1": 61.354581673306775
+      },
+      "wall_time": 382.171719789505
+    },
+    {
+      "dataset": "PSM",
+      "seed": 456,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 1,
+        "val_loss": 0.302265065908432,
+        "wall_time_seconds": 374.2363257408142,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 61.854132884257545
+      },
+      "downstream": {
+        "f1": 52.991452991452995,
+        "auc": 43.9586870401811,
+        "precision": 36.04651162790697,
+        "recall": 100.0,
+        "threshold": 0.36000000000000004,
+        "n_test": 176,
+        "n_anomalous": 62,
+        "anomaly_rate": 0.3522727272727273,
+        "val_f1": 61.29032258064516
+      },
+      "wall_time": 379.76519417762756
+    },
+    {
+      "dataset": "PSM",
+      "seed": 789,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.29757547974586485,
+        "wall_time_seconds": 375.5676980018616,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 61.81950244388065
+      },
+      "downstream": {
+        "f1": 43.42857142857143,
+        "auc": 49.29258630447085,
+        "precision": 33.6283185840708,
+        "recall": 61.29032258064516,
+        "threshold": 0.49,
+        "n_test": 176,
+        "n_anomalous": 62,
+        "anomaly_rate": 0.3522727272727273,
+        "val_f1": 61.165048543689316
+      },
+      "wall_time": 380.87568640708923
+    },
+    {
+      "dataset": "PSM",
+      "seed": 1024,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.3073539912700653,
+        "wall_time_seconds": 363.43719244003296,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 61.950599464210306
+      },
+      "downstream": {
+        "f1": 52.320675105485236,
+        "auc": 45.72722127900396,
+        "precision": 35.42857142857142,
+        "recall": 100.0,
+        "threshold": 0.45,
+        "n_test": 176,
+        "n_anomalous": 62,
+        "anomaly_rate": 0.3522727272727273,
+        "val_f1": 61.354581673306775
+      },
+      "wall_time": 368.92640590667725
+    }
+  ]
+}

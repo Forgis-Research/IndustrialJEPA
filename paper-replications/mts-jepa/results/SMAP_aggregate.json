@@ -1,0 +1,146 @@
+{
+  "dataset": "SMAP",
+  "n_seeds": 5,
+  "aggregate": {
+    "f1_mean": 24.10370029449948,
+    "f1_std": 2.218220188075433,
+    "auc_mean": 56.259858650005114,
+    "auc_std": 1.1112007725300412,
+    "precision_mean": 14.809726346555161,
+    "precision_std": 1.9304321444336148,
+    "recall_mean": 67.69230769230771,
+    "recall_std": 7.561385865899036,
+    "f1_gap_pct": 28.348096627528303,
+    "f1_status": "FAILED",
+    "auc_gap_pct": 13.988902843594072,
+    "auc_status": "GOOD"
+  },
+  "paper_targets": {
+    "f1": 33.64,
+    "auc": 65.41,
+    "precision": 24.24,
+    "recall": 56.02
+  },
+  "per_seed": [
+    {
+      "dataset": "SMAP",
+      "seed": 42,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.03241897858679295,
+        "wall_time_seconds": 216.52803802490234,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 60.10933262593037
+      },
+      "downstream": {
+        "f1": 26.06741573033708,
+        "auc": 56.945867049062784,
+        "precision": 17.008797653958943,
+        "recall": 55.769230769230774,
+        "threshold": 0.5800000000000001,
+        "n_test": 855,
+        "n_anomalous": 104,
+        "anomaly_rate": 0.1216374269005848,
+        "val_f1": 19.27710843373494
+      },
+      "wall_time": 226.76340866088867
+    },
+    {
+      "dataset": "SMAP",
+      "seed": 123,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.0320323284715414,
+        "wall_time_seconds": 215.7992525100708,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 60.19283490567594
+      },
+      "downstream": {
+        "f1": 25.28301886792453,
+        "auc": 57.10206903615691,
+        "precision": 15.727699530516432,
+        "recall": 64.42307692307693,
+        "threshold": 0.46,
+        "n_test": 855,
+        "n_anomalous": 104,
+        "anomaly_rate": 0.1216374269005848,
+        "val_f1": 15.503875968992247
+      },
+      "wall_time": 226.16570401191711
+    },
+    {
+      "dataset": "SMAP",
+      "seed": 456,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.03154293335974216,
+        "wall_time_seconds": 213.3821563720703,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 59.97703139846389
+      },
+      "downstream": {
+        "f1": 20.62415196743555,
+        "auc": 54.10606370992522,
+        "precision": 12.006319115323855,
+        "recall": 73.07692307692307,
+        "threshold": 0.52,
+        "n_test": 855,
+        "n_anomalous": 104,
+        "anomaly_rate": 0.1216374269005848,
+        "val_f1": 16.352201257861633
+      },
+      "wall_time": 223.19631910324097
+    },
+    {
+      "dataset": "SMAP",
+      "seed": 789,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.03065001480281353,
+        "wall_time_seconds": 215.8557732105255,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 59.7586298762141
+      },
+      "downstream": {
+        "f1": 22.375690607734807,
+        "auc": 56.29033084093005,
+        "precision": 13.064516129032258,
+        "recall": 77.88461538461539,
+        "threshold": 0.51,
+        "n_test": 855,
+        "n_anomalous": 104,
+        "anomaly_rate": 0.1216374269005848,
+        "val_f1": 16.3265306122449
+      },
+      "wall_time": 226.55907917022705
+    },
+    {
+      "dataset": "SMAP",
+      "seed": 1024,
+      "n_params": 1474100,
+      "pretrain": {
+        "best_epoch": 2,
+        "val_loss": 0.03199061341583729,
+        "wall_time_seconds": 213.83360242843628,
+        "codebook_utilization": 1.0,
+        "codebook_perplexity": 58.356353862865554
+      },
+      "downstream": {
+        "f1": 26.168224299065418,
+        "auc": 56.85496261395063,
+        "precision": 16.241299303944317,
+        "recall": 67.3076923076923,
+        "threshold": 0.44,
+        "n_test": 855,
+        "n_anomalous": 104,
+        "anomaly_rate": 0.1216374269005848,
+        "val_f1": 16.25615763546798
+      },
+      "wall_time": 224.3977038860321
+    }
+  ]
+}
