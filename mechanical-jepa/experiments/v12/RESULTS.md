@@ -246,10 +246,29 @@ test time. This explains the FD002 val/test gap: the JEPA encoder learns well wh
 but the test engine last-windows are disproportionately from conditions where the normalizer
 has poor coverage.
 
-### 1.3: Op-Settings as Input Channels
+### 1.3: Op-Settings as Input Channels (COMPLETE - NEGATIVE RESULT)
 
-17-channel FD002 model (14 sensors + 3 op settings, global normalization) pretraining
-complete. Fine-tuning results pending. See `fd002_condition_input_results.json` when complete.
+17-channel FD002 model (14 sensors + 3 op settings, global normalization) results:
+
+| Metric | 17ch (global norm) | 14ch (per-condition norm) |
+|:-------|:------------------:|:-------------------------:|
+| Pretrain probe RMSE | 33.64 | ~15.35 (val) |
+| Frozen test RMSE | 40.81 +/- 0.72 | 26.33 |
+| E2E test RMSE | 41.13 +/- 0.80 | 24.45 |
+
+The 17-channel global-normalization approach is substantially WORSE (by ~14-17 RMSE) than
+the 14-channel per-condition baseline. The global normalization fails because sensor readings
+have entirely different scale distributions across operating conditions - mixing all conditions
+under a single statistics set destroys the local structure that JEPA pretraining relies on.
+
+**Key insight for V13**: The correct approach to FD002 is NOT naive op-setting concatenation
+under global normalization. Options for V13:
+1. Per-condition normalization + op-setting token (not channel) - inject condition as a
+   conditioning signal, not as an additional input dimension
+2. Condition-conditioned batch normalization (CBN)
+3. Multi-condition pretraining with explicit condition embedding
+
+Kill criterion TRIGGERED: "condition-as-input-channels doesn't help FD002".
 
 ---
 
@@ -278,7 +297,7 @@ Kill criterion: if STAR@20% <= 14 RMSE, the JEPA label-efficiency pitch is dead.
 | Phase 0: constant prediction | NOT TRIGGERED (V11 is real) |
 | Phase 3: H.I. R² < 0.4 | NOT TRIGGERED (R²=0.926) |
 | STAR@20% beats JEPA@20% by >0.5 | PENDING (Phase 2 running) |
-| FD002 condition-input no improvement | PENDING (Phase 1.3 running) |
+| FD002 condition-input no improvement | TRIGGERED (17ch frozen=40.81, WORSE than 14ch 26.33) |
 
 ---
 

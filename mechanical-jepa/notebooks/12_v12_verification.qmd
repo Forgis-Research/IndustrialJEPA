@@ -310,11 +310,25 @@ competitive with FD001's 19.22). The problem is the evaluation protocol's train/
 
 ![FD002 diagnosis](../analysis/plots/v12/suppl_figure_S2_fd002.png)
 
-### Phase 1.3: 17-Channel Ablation (Pending)
+### Phase 1.3: 17-Channel Ablation (COMPLETE - NEGATIVE)
 
 Adding the 3 operating-setting channels as inputs (17 channels total, global normalization)
-may allow the encoder to explicitly condition on operating conditions. Results pending from
-background process.
+was tested as a fix for FD002. **Result: catastrophic failure.**
+
+| Metric | 17ch global norm | 14ch per-condition |
+|:-------|:----------------:|:-----------------:|
+| Pretrain probe RMSE | 33.64 | ~15.35 |
+| Frozen test RMSE | 40.81 +/- 0.72 | 26.33 |
+| E2E test RMSE | 41.13 +/- 0.80 | 24.45 |
+
+The 17ch model is ~14-17 RMSE WORSE than the baseline. Global normalization fails because
+sensor readings have completely different distributions across operating conditions - mixing
+them under global statistics destroys the signal structure that JEPA pretraining needs.
+
+**V13 implication**: The correct fix for FD002 requires condition-conditioned normalization
+or explicit condition tokens, not naive channel concatenation under global statistics. The
+per-condition normalization is critical for learning good representations, even though it
+creates a test distribution shift problem.
 
 ---
 

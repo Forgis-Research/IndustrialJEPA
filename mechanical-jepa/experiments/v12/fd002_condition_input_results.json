@@ -1,0 +1,66 @@
+{
+  "n_sensors_baseline": 14,
+  "n_sensors_ablation": 17,
+  "pretrain_best_probe_rmse": 33.64043045043945,
+  "baseline_frozen_rmse": 26.33,
+  "baseline_e2e_rmse": 24.45,
+  "seeds": [
+    42,
+    123,
+    456,
+    789,
+    1024
+  ],
+  "frozen_mean_rmse": 40.809912109375,
+  "frozen_std_rmse": 0.7168579858395799,
+  "e2e_mean_rmse": 41.12866134643555,
+  "e2e_std_rmse": 0.8039301369841498,
+  "frozen_per_seed": [
+    41.68920135498047,
+    41.494163513183594,
+    39.84002685546875,
+    40.838035583496094,
+    40.188133239746094
+  ],
+  "e2e_per_seed": [
+    41.44568634033203,
+    39.91884994506836,
+    40.881072998046875,
+    41.007530212402344,
+    42.390167236328125
+  ],
+  "improvement_frozen": -14.479912109375,
+  "improvement_e2e": -16.67866134643555,
+  "verdict": "NOT CONFIRMED: 17ch FD002 frozen RMSE=40.81 not better than baseline 26.33. Bug is elsewhere.",
+  "condition_diagnosis": {
+    "train_condition_fractions": [
+      0.2503394780408862,
+      0.15108167934671404,
+      0.14884949496828437,
+      0.14963075950073476,
+      0.15059803939805427,
+      0.14950054874532637
+    ],
+    "test_last_window_fractions": [
+      0.6023166023166023,
+      0.0888030888030888,
+      0.06177606177606178,
+      0.10424710424710425,
+      0.0694980694980695,
+      0.07335907335907337
+    ],
+    "overrepresentation_ratios": [
+      2.4059992679709543,
+      0.5877819838864417,
+      0.41502366114309525,
+      0.696695685420862,
+      0.46148057646948915,
+      0.49069434516488586
+    ],
+    "max_overrepresentation": 2.4059992679709543,
+    "any_overrepresented": true,
+    "overrepresented_conditions": [
+      0
+    ]
+  }
+}

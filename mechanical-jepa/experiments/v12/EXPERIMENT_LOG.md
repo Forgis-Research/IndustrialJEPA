@@ -139,8 +139,26 @@ Detailed analysis pending from phase1_fd002_diagnosis.py stdout.
 
 ## Exp 8: Phase 1.3 17-Channel FD002 Ablation
 
-**Status**: Pretraining complete (best_pretrain_fd002_17ch.pt). Fine-tuning running.
-Results pending.
+**Time**: 2026-04-12 T+1:54 (completed)
+**Hypothesis**: Adding 3 op-settings as input channels with global normalization would help
+FD002 by making operating conditions explicit in the representation.
+**Change**: 17-channel model (14 sensors + 3 op settings), global normalization, FD002.
+**Sanity checks**: Pretrain probe RMSE = 33.64 (vs 14ch pretrain probe ~15) -- WARNING: much worse
+**Result**:
+  - Pretrain best probe RMSE: 33.64 (14ch baseline: ~15.35)
+  - 17ch frozen: 40.81 +/- 0.72 (14ch baseline: 26.33)
+  - 17ch E2E: 41.13 +/- 0.80 (14ch baseline: 24.45)
+  - Delta frozen: -14.48 (WORSE by 14.5 RMSE!)
+  - Delta E2E: -16.68 (WORSE by 16.7 RMSE!)
+**Seeds**: 5 (42, 123, 456, 789, 1024)
+**Verdict**: NEGATIVE - global normalization + op-settings channels is MUCH WORSE
+**Insight**: The global normalization approach fails badly. Per-condition normalization (14ch)
+is critical for learning good representations even though it creates a test distribution shift.
+The 17ch model with global normalization cannot learn useful features because the sensor
+values have entirely different scales/distributions across operating conditions.
+Kill criterion: "condition-as-input-channels doesn't help FD002" is TRIGGERED.
+**Next**: FD002 fix is a V13 problem. The correct approach is condition-conditioned normalization
+or explicit condition tokens in the architecture, not naive channel concatenation.
 
 ---
 
