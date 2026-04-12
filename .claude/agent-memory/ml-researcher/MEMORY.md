@@ -1,7 +1,7 @@
 - [A2P Replication Findings](project_a2p_replication.md) — 14 claims (Apr 12): LR=1.4x prec/50% recall (8.4 FA/TP); oracle prec=1.0 at 36.7% recall; easy AP+=first-half blocks (calm context); LR fails to exploit calm signal
 - [STAR Replication Progress](project_star_replication.md) — FD001 5-seed COMPLETE: RMSE=12.186+/-0.553 (paper=10.61, +14.9%, GOOD); FD002 running (ETA ~18:15 April 11)
 - [DCSSL Replication Findings](project_dcssl_replication.md) — FPT shift is key failure mode; paper SimCLR avg≈trivial baseline; paper table had swapped columns; RUL-fix applied to cond2/3
-- [IndustrialJEPA Project Context](project_industrialjepa.md) — V11 ALL DONE: E2E=13.80; MLP=15.88; FD003 E2E=15.37; FD004 E2E=25.62 (6cond hard); cross-fault 28.79@10%; ext fine-tuning no help
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — V12 VERIFIED: V11 real (5-seed RMSE=14.23+/-0.39, rho=0.830+/-0.023); H.I.R2=0.926; FD002 gap=distrib.shift; STAR pending
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
 - [Bearing RUL SOTA Literature Review (April 2026)](literature_review_rul_sota.md) — FEMTO best nRMSE=0.0443; single-window RUL formulation does NOT exist; DCSSL is only SSL+RUL paper on FEMTO

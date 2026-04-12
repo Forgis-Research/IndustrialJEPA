@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: V11 ALL COMPLETE: E2E=13.80; MLP=15.88; FD003 E2E=15.37; FD004 E2E=25.62 (hard-6cond); ext fine-tuning no help
+description: V12 VERIFICATION COMPLETE: V11 validated as real (not constant-predictor); H.I.R2=0.926; 5-seed RMSE=14.23+/-0.39; FD002 gap=+10.7 (distribution shift, not SSL failure); STAR label sweep pending
 type: project
 ---
 
@@ -505,3 +505,58 @@ All Exp 8 results saved to: experiments/v11/exp8_fd3_fd4_results.json
 - `notebooks/11_v11_cmapss_trajectory_jepa.qmd` - Quarto notebook
 - `analysis/plots/v11/finetuning_ablations.png` - Exp4/6 ablation plot
 - `analysis/plots/v11/` - all generated plots
+
+---
+
+## V12: Verification Session (2026-04-12)
+
+**Goal**: Verify V11 is real, not a constant-prediction mirage.
+
+### Primary Verdict: V11 IS REAL (26/26 sanity checks pass)
+
+Five independent lines of evidence:
+1. Engine-summary ridge (58 features, flat within-engine): 19.21 RMSE vs JEPA E2E 13.80 (+5.41 JEPA wins)
+2. 5-seed trajectory diagnostics: RMSE=14.23+/-0.39, rho_median=0.830+/-0.023 (all 5 seeds pass)
+3. h_past shuffle test: normal=13.98, shuffled=55.45 (+41.5 RMSE, 5 seeds)
+4. Frozen encoder H.I. recovery: val R2=0.926 (target 0.7), robust to 3 parameterizations (R2>0.91 all)
+5. PCA: PC1 explains 47.6% variance, |rho(H.I.)|=0.797 (no labels used)
+
+### Key New Findings (V12)
+
+**Frozen vs E2E tracking inversion**: Frozen rho_median=0.856 > E2E rho_median=0.804.
+E2E advantage (15.91 -> 13.98 RMSE) comes from calibration, NOT improved detection.
+
+**Sliding-cut evaluation**: sliding RMSE=11.77 vs last-window 13.98 (15% better).
+Standard protocol understates quality. Report both.
+
+**FD002 distribution shift**: val probe=15.35 (good), test RMSE=26.07 (+10.7 gap).
+Cause: conditions 1, 2, 5 are >1.5x overrepresented at test vs training.
+NOT SSL failure. FD002 encoder learns fine, test distribution is biased.
+
+**Multi-subset tracking confirmed**: FD003 rho=0.665, FD004 rho=0.654, both beat regressor.
+Tracking is real across all 4 C-MAPSS subsets.
+
+### Paper Narrative Strategy
+
+1. HEADLINE: H.I. recovery R2=0.926 - "without failure labels, JEPA recovers health index"
+2. SECONDARY: RMSE=14.23+/-0.39 with within-engine rho=0.830+/-0.023 (validated tracking)
+3. TRANSPARENCY: sliding RMSE=11.77 (better than last-window) - publish both metrics
+4. DIAGNOSIS: FD002 gap = distribution shift (val=15.35, test=26.07)
+5. PENDING: STAR label sweep (kill criterion: if STAR@20% <= 14, pivot to H.I. headline)
+
+### V12 Pending Results (background processes)
+
+- STAR label efficiency sweep: 5 budgets x 5 seeds (~4-5 hours, still running at T+1:30)
+- FD002 17-channel ablation: 17ch frozen/E2E on FD002 with op-settings as input (~T+2:30)
+- Kill criterion: if frozen 17ch FD002 RMSE < 20, condition-awareness confirmed for v13
+
+### Files
+- `experiments/v12/` - all V12 code and results
+- `experiments/v12/RESULTS.md` - complete results with one-paragraph verdict
+- `experiments/v12/EXPERIMENT_LOG.md` - chronological experiment log
+- `experiments/v12/phase0_diagnostics.json` - trajectory diagnostics
+- `experiments/v12/multiseed_phase0_diagnostics.json` - 5-seed statistical validation
+- `experiments/v12/health_index_recovery.json` - H.I. recovery R2=0.926
+- `experiments/v12/pca_analysis.json` - PC1 var=47.6%, rho=0.797
+- `experiments/v12/shuffle_test.json` - shuffle gain=41.5
+- `analysis/plots/v12/` - 17 diagnostic plots including 3 paper figures + 3 supplemental
