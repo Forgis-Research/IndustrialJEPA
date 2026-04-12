@@ -1,0 +1,21 @@
+{
+  "killed": false,
+  "max_horizon": 50,
+  "baseline_max_horizon": 30,
+  "best_probe_rmse": 8.97,
+  "frozen": {
+    "mean": 16.874,
+    "std": 0.715,
+    "all": [17.094, 16.226, 16.424, 18.179, 16.447],
+    "baseline_v2": 17.81
+  },
+  "e2e": {
+    "mean": 16.753,
+    "std": 0.714,
+    "all": [17.118, 17.093, 16.558, 17.530, 15.466],
+    "baseline_v2": 14.23
+  },
+  "improved": false,
+  "pretrain_time_s": 700.7,
+  "interpretation": "Longer horizon (50 vs 30) HURTS E2E performance dramatically (16.75 vs 14.23). Frozen probe slightly improves (16.87 vs 17.81). Probe RMSE during pretraining was excellent (8.97) but did not transfer to E2E fine-tuning. The longer horizon optimizes the predictor at the expense of encoder generality."
+}

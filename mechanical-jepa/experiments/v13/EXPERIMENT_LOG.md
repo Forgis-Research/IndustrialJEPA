@@ -271,19 +271,43 @@ The regularization hurts the pretrained encoder's calibrated representations.
 
 ---
 
-## Phase 1c: Longer Prediction Horizon (RUNNING)
+## Phase 1c: Longer Prediction Horizon (COMPLETE - NO IMPROVEMENT)
 
-**Time**: Started 2026-04-12 ~22:03 UTC
+**Time**: 2026-04-12 ~22:03 UTC
+**Duration**: ~16 min (pretraining 700s + finetuning ~5 seeds x 40s)
 **Script**: experiments/v13/phase1c_longer_horizon.py
-**Status**: Pretraining with max_horizon=50 (vs baseline 30). 200 epochs.
-Checkpoint saved at ~22:15. Now in fine-tuning phase.
+
+Pretrained from scratch with max_horizon=50 (vs baseline 30).
+200 epochs pretraining, then 5-seed frozen + E2E fine-tuning.
+
+**Pretraining diagnostics**:
+- Best probe RMSE during pretraining: 8.97 (vs ~19 for V2 baseline)
+- Loss converged normally; pretraining itself looked great
+
+**Fine-tuning results**:
+| Mode   | Horizon-50 | V2 Baseline | Delta |
+|--------|-----------|-------------|-------|
+| Frozen | 16.87 +/- 0.72 | 17.81 | -0.94 (slight improvement) |
+| E2E    | 16.75 +/- 0.71 | 14.23 | +2.53 (MUCH WORSE) |
+
+**KEY FINDING: Longer horizon KILLS E2E performance.**
+The horizon-50 pretraining produces a probe RMSE of 8.97 (excellent) but E2E
+fine-tuning produces 16.75 (much worse than baseline 14.23). The frozen probe
+is slightly better (16.87 vs 17.81), suggesting the longer horizon helps the
+ENCODER but the PREDICTOR overfits, and E2E fine-tuning cannot recover from this.
+
+The short horizon (30) is actually better for E2E because it produces encoder
+representations that are more adaptable. The longer horizon locks the encoder
+into trajectory-specific features that are hard to fine-tune.
+
+**Kill criterion**: E2E did not improve. Horizon is not the bottleneck.
 
 ---
 
-## Phase 1d: Deeper Architecture (QUEUED)
+## Phase 1d: Deeper Architecture (RUNNING)
 
-Script written: experiments/v13/phase1d_deeper_architecture.py
-V4: d=256, L=4 (vs V2: d=256, L=2). Requires new pretraining.
-Will run after Phase 1c completes.
+**Time**: Started 2026-04-12 ~22:20 UTC
+**Script**: experiments/v13/phase1d_deeper_architecture.py
+**Status**: V4 (d=256, L=4) pretraining + fine-tuning, running in background.
 
 ---
