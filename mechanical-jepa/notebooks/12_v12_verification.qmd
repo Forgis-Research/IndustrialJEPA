@@ -1,6 +1,6 @@
 ---
 title: "V12: Is V11 Real? Verification Session"
-subtitle: "Five independent lines of evidence confirm V11's 13.80 RMSE reflects genuine degradation tracking"
+subtitle: "Five independent lines of evidence confirm V11's 14.23±0.39 RMSE (5-seed mean) reflects genuine degradation tracking"
 author: "IndustrialJEPA"
 date: "2026-04-12"
 format:
@@ -15,7 +15,8 @@ engine: markdown
 
 ## Overview {.unnumbered}
 
-V11 achieved RMSE = 13.80 on C-MAPSS FD001 - the best SSL result we know of on this benchmark.
+V11 achieved RMSE = 13.80 on C-MAPSS FD001 (seed 456); the 5-seed mean is 14.23 ± 0.39.
+AE-LSTM (the only prior SSL result on FD001) achieves 13.99, so we are within 1.7% of the prior SSL SOTA.
 But before publishing, we must answer the uncomfortable question: **is this a real result?**
 
 The concern is specific: could V11 be a sophisticated constant predictor that memorizes the

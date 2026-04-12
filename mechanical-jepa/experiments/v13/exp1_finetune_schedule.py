@@ -48,14 +48,17 @@ data = load_cmapss_subset('FD001')
 
 
 def eval_test_rmse(model_ft, probe, te_loader):
+    """Compute test RMSE in raw cycles. Probe outputs normalized [0,1]; test RUL is in raw cycles."""
     model_ft.eval(); probe.eval()
     preds, trues = [], []
     with torch.no_grad():
         for past, mask, rul in te_loader:
             past, mask = past.to(DEVICE), mask.to(DEVICE)
             h_past = model_ft.context_encoder(past, mask)
-            pred = probe(h_past)
-            preds.extend(pred.cpu().numpy().flatten().tolist())
+            pred_norm = probe(h_past)
+            # Scale back to raw cycles (probe predicts normalized RUL in [0,1])
+            pred_raw = pred_norm.cpu().numpy().flatten() * RUL_CAP
+            preds.extend(pred_raw.tolist())
             trues.extend(rul.numpy().flatten().tolist())
     rmse = float(np.sqrt(np.mean((np.array(preds) - np.array(trues))**2)))
     return rmse

@@ -309,10 +309,10 @@ Three narrative options, ordered by strength:
    recovers the simulator's health index with R²=0.926. This is the first SSL method shown
    to linearly decode the latent H.I. from raw turbofan sensor data."
 
-2. **Tracking + benchmark** (combined): "V11 achieves 13.80 RMSE on FD001 (beating
-   supervised LSTM 17.36 and AE-LSTM SSL 13.99), AND tracks degradation within-engine
-   (median rho=0.841). The standard last-window protocol systematically understates model
-   quality; sliding-cut RMSE=11.77 is the honest metric."
+2. **Tracking + benchmark** (combined): "V11 achieves 14.23 RMSE on FD001 (5-seed mean;
+   beating supervised LSTM 17.36), within 1.7% of AE-LSTM SSL 13.99, AND tracks degradation
+   within-engine (median rho=0.841). The standard last-window protocol systematically
+   understates model quality; sliding-cut RMSE=11.77 is the honest metric."
 
 3. **Label efficiency** (conditional): Only valid if STAR label sweep shows JEPA frozen
    beats STAR at low labels. PENDING.

@@ -33,6 +33,15 @@ Better schedules may improve the 14.23 -> <13.5 RMSE gap.
 **Status**: Running (PID 273645, 5 seeds x 4 variants x ~30-50s/run = ~30 min expected)
 **Reference**: V12 5-seed E2E: 14.23 +/- 0.39
 
+**BUG FOUND + FIXED**: First run (PID 273645) produced e2e_baseline RMSE=85.52, which is ~6x too high.
+Root cause: `eval_test_rmse()` computed RMSE directly between normalized probe output [0,1] and raw test RUL [0,125 cycles].
+Missing: `pred_raw = pred_norm * RUL_CAP` before RMSE computation.
+Fix applied to exp1_finetune_schedule.py. Restarted as PID 277608.
+Reference: train_utils._eval_test_rmse() at line 380 shows the canonical pattern.
+
+**Sanity check**: RMSE=85.52 flagged as SUSPICIOUS (⚠️) - magnitude check failed (expected ~14, got ~86).
+Do NOT treat first run results as valid.
+
 Results to be added when exp1_output.log becomes readable (unbuffered).
 
 ---
