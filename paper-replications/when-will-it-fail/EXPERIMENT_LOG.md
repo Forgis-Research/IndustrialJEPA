@@ -5788,6 +5788,36 @@ Gap to oracle:            -0.0019 (causal SLIGHTLY BETTER)
 
 ---
 
+## Exp 198: LR Regularization Sensitivity (COMPLETE)
+
+**Time:** 2026-04-12 ~01:15
+**Hypothesis:** The 0.820 result should be robust to regularization (C parameter). Testing C=0.01 to C=10.
+**Change:** 5-fold CV with LR 60-bin (600-step) at 7 different C values
+**Sanity checks:** ✓ Results are monotonically increasing in C (under-regularized at C=0.01) ✓ Plateau at C=1.0
+**Result:**
+```
+C= 0.01: 0.7976 ± 0.0176  (significantly under-regularized)
+C= 0.10: 0.8166 ± 0.0140
+C= 0.50: 0.8192 ± 0.0126
+C= 1.00: 0.8197 ± 0.0122  (our standard choice)
+C= 2.00: 0.8198 ± 0.0121
+C= 5.00: 0.8199 ± 0.0121
+C=10.00: 0.8199 ± 0.0120
+Best C=10: 0.8199 (+0.0002 over C=1.0)
+```
+**Verdict:** KEEP - The 0.820 result is highly robust to regularization choice.
+**Key findings:**
+1. C=1.0 (our standard) is near-optimal - only +0.0002 from best at C=10
+2. Results are stable from C=0.5 to C=10 (range = 0.0007, within ±0.012 std)
+3. C=0.01 shows clear under-regularization (-0.022 from standard)
+4. The 0.820 result is reproducible and not sensitive to hyperparameter choice
+
+**Publication claim:** "The 0.820 AUROC result is robust to regularization parameter choice, with near-identical performance for C in [0.5, 10] (range 0.0007), validating our choice of C=1.0 as a standard hyperparameter."
+
+**File:** results/improvements/lr_regularization_sweep.json
+
+---
+
 ## Exp 196: Lead Time Sensitivity (PENDING)
 
 **Time:** 2026-04-12 ~01:00
