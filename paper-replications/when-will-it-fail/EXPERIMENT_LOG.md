@@ -5912,9 +5912,19 @@ Horizon   AUROC         pos_rate  Interpretation
 
 ---
 
-**Time:** 2026-04-12 ~01:00
-**Hypothesis:** AUROC degrades as prediction horizon increases (50->300 steps). This quantifies practical forecast horizon.
-**Status:** RUNNING (PID 249978)
+## Exp 200: Cross-Channel Correlation Features (PENDING)
+
+**Time:** 2026-04-12 ~01:30
+**Hypothesis:** SVDB4 has 2 channels (ECG). Cross-channel correlation per bin may add signal beyond per-channel variance.
+**Status:** RUNNING (PID 253300)
+
+---
+
+## Exp 174: TF Extended Context - 600-step (PENDING)
+
+**Time:** 2026-04-12 ~00:10
+**Hypothesis:** Does the Transformer benefit from 600-step context like LR (+0.029)?
+**Status:** RUNNING (PID 244914)
 
 ---
 
