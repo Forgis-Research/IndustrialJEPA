@@ -1,0 +1,15 @@
+{
+  "normal_rmse": 13.983315467834473,
+  "shuffled_rmse_mean": 55.44907913208008,
+  "shuffled_rmse_std": 1.6199378116326573,
+  "shuffled_per_seed": [
+    56.53400421142578,
+    54.16825485229492,
+    55.659759521484375,
+    57.706520080566406,
+    53.176856994628906
+  ],
+  "rmse_gain_from_h_past": 41.46576366424561,
+  "verdict": "STRONG: h_past carries 41.5 RMSE of information (shuffle gap). Representation is input-dependent.",
+  "wall_time_s": 11.393200874328613
+}

@@ -1,0 +1,12 @@
+{
+  "r2_train": 0.9644314050674438,
+  "r2_val": 0.9260246753692627,
+  "mse_train": 0.0039701033383607864,
+  "mse_val": 0.008284238167107105,
+  "target_r2": 0.7,
+  "verdict": "PASS: Val R\u00b2=0.926 > 0.7. Frozen encoder linearly decodes health index. Strong SSL evidence.",
+  "n_train_samples": 16870,
+  "n_val_samples": 2861,
+  "embedding_dim": 256,
+  "wall_time_s": 118.93922829627991
+}
