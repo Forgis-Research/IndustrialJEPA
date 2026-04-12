@@ -1,0 +1,18 @@
+{
+  "frozen": {
+    "test_rmse": 15.912851333618164,
+    "pred_std_median": 10.729085505251618,
+    "pred_std_mean": 15.928337049912876,
+    "rho_median": 0.8564942970497642,
+    "rho_mean": 0.7014273491761821
+  },
+  "e2e": {
+    "test_rmse": 13.983315467834473,
+    "pred_std_median": 12.385258190466413,
+    "pred_std_mean": 16.10916672589048,
+    "rho_median": 0.804496261031751,
+    "rho_mean": 0.6518605573569716
+  },
+  "interpretation": "Both frozen and E2E track degradation. E2E advantage comes from calibration, not tracking.",
+  "wall_time_s": 569.6639845371246
+}
