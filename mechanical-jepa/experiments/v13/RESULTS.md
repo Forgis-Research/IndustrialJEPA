@@ -150,6 +150,24 @@ Key observations:
 
 ---
 
+## Phase 2a: FD002 Condition Token (TARGET NOT MET)
+
+Condition-aware encoder with 6-way learnable embedding + per-condition normalization.
+Pretrained on FD002, fine-tuned frozen + E2E.
+
+| Mode | Condition Token | Baseline (no token) | Delta |
+|:-----|:---------------|:-------------------|:------|
+| Frozen | ~31 | 26.33 | +5 (WORSE) |
+| E2E | ~24 | - | - |
+
+The condition token approach failed. Frozen RMSE worsened from 26.33 to ~31.
+The prepended token doesn't provide sufficient condition disambiguation.
+FD002 remains an open problem requiring a different approach (perhaps
+per-condition normalization alone without the token, or a conditional
+normalization layer inside the transformer).
+
+---
+
 ## Conclusions
 
 1. **Pretraining is strongly validated.** The from-scratch ablation shows massive

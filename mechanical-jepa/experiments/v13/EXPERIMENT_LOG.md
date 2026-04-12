@@ -17,6 +17,62 @@ From V12 verification:
   - Kill criterion: STAR@20% <= 14 RMSE kills label-efficiency pitch
   - Budget 100% expected around 03:00-03:30 Apr 12
 
+## Phase 2a: FD002 Condition Token (COMPLETE - TARGET NOT MET)
+
+**Time**: 2026-04-12 ~22:58 - ~23:25 UTC
+**Script**: experiments/v13/phase2a_fd002_condition_token.py
+
+Condition-aware encoder: learnable 6-way condition embedding prepended to each
+sequence, with per-condition KMeans normalization. Pretrained on FD002 200 epochs,
+then frozen + E2E fine-tuning with 5 seeds.
+
+**Results (preliminary from stdout)**:
+| Seed | Frozen | E2E |
+|------|--------|-----|
+| 42   | 31.41  | 23.33 |
+| 123  | 30.73  | 24.25 |
+| 456  | 30.55  | 24.14 |
+| 789  | 31.78  | pending |
+| 1024 | pending | pending |
+
+**TARGET NOT MET.** Frozen ~31 is WORSE than baseline 26.33 (without condition token).
+E2E ~24 is better but still far from target of <20.
+
+The condition token approach failed because:
+1. Prepending a single condition token doesn't provide enough context for the
+   transformer to disambiguate operating conditions across the full sequence
+2. The per-condition normalization may have removed too much signal
+3. The pretraining loss (0.012) was higher than FD001 (suggesting harder task)
+
+FD002 remains an open problem for future work.
+
+---
+
+## Phase 0b: STAR FD004 Sweep (RUNNING)
+
+**Time**: Started 2026-04-12 ~22:59 UTC
+**Script**: experiments/v13/phase0b_star_fd004.py
+**Status**: Running in background, will complete overnight.
+
+---
+
+## Session Summary
+
+**Duration**: ~2 hours (21:32 - 23:25 UTC)
+**Commits**: 7 commits pushed
+
+### What we learned:
+1. Pretraining contributes +8.8 RMSE under E2E (from-scratch ablation)
+2. Encoder reads temporal patterns, not just length (shuffle RMSE doubles)
+3. STAR advantage shrinks 2.0->0.3->+0.1 as labels decrease (100%->20%->5%)
+4. JEPA frozen beats STAR at 5% labels (24.47 vs 24.55)
+5. Deeper/longer pretraining improves frozen but hurts E2E (frozen-E2E trade-off)
+6. The JEPA-STAR gap is architectural, not closable by training protocol changes
+7. FD002 condition token approach needs more work
+
+### What's still running:
+- Phase 0b: STAR FD004 (5 seeds, ~5-7 hours)
+
 ---
 
 ## Exp V13-1: Fine-Tuning Schedule Variants (Running)
