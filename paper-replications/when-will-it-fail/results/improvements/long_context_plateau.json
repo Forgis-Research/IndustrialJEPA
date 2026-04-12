@@ -1,0 +1,24 @@
+{
+  "probe": "171_long_context_plateau",
+  "note": "5-fold temporal CV on SVDB4 strict AP, step=5",
+  "results": {
+    "seq_600": {
+      "mean": 0.8197,
+      "std": 0.0122
+    },
+    "seq_800": {
+      "mean": 0.8208,
+      "std": 0.0165
+    },
+    "seq_1000": {
+      "mean": 0.8163,
+      "std": 0.0295
+    },
+    "seq_1200": {
+      "mean": 0.8203,
+      "std": 0.0331
+    }
+  },
+  "conclusion": "Plateau at seq_len=600. Higher variance at 1000-1200 indicates overfitting in some folds.",
+  "optimal_seq_len": 600
+}

@@ -1,0 +1,81 @@
+{
+  "title": "Strict AP Evaluation (SVDB4, contamination-filtered)",
+  "note": "5-fold temporal CV unless noted; strict AP = no anomaly in [t+50,t+100]",
+  "methods": {
+    "Random": {
+      "auroc": 0.5,
+      "auroc_std": null,
+      "notes": "theoretical",
+      "seeds": "N/A"
+    },
+    "A2P (Park et al. 2025)": {
+      "auroc": 0.528,
+      "auroc_std": 0.042,
+      "notes": "10-seed, standard AP, SVDB4",
+      "seeds": 10
+    },
+    "Oracle [t+100,t+150]": {
+      "auroc": 0.623,
+      "auroc_std": 0.016,
+      "notes": "5-fold CV, standard oracle window",
+      "seeds": "5-fold"
+    },
+    "LR 4-feat": {
+      "auroc": 0.706,
+      "auroc_std": 0.023,
+      "notes": "5-fold CV, standard 200-step context",
+      "seeds": "5-fold"
+    },
+    "TF supervised (200-step)": {
+      "auroc": 0.723,
+      "auroc_std": 0.005,
+      "notes": "3 seeds, 50ep, 60/40 split",
+      "seeds": 3
+    },
+    "RF 20-bin (200-step)": {
+      "auroc": 0.744,
+      "auroc_std": 0.02,
+      "notes": "5-fold CV, n_estimators=100",
+      "seeds": "5-fold"
+    },
+    "GBM 20-bin (200-step)": {
+      "auroc": 0.767,
+      "auroc_std": 0.032,
+      "notes": "5-fold CV, n_estimators=100",
+      "seeds": "5-fold"
+    },
+    "LR 20-bin (200-step)": {
+      "auroc": 0.791,
+      "auroc_std": 0.02,
+      "notes": "5-fold CV, BEST 200-step",
+      "seeds": "5-fold"
+    },
+    "LR 60-bin (600-step, OURS)": {
+      "auroc": 0.82,
+      "auroc_std": 0.012,
+      "notes": "5-fold CV, NEW BEST - extended context",
+      "seeds": "5-fold"
+    },
+    "Oracle [t+150,t+200]": {
+      "auroc": 0.983,
+      "auroc_std": 0.004,
+      "notes": "5-fold CV, correct oracle window",
+      "seeds": "5-fold"
+    }
+  },
+  "cross_dataset": {
+    "SVDB4": {
+      "LR_20bin_standard": 0.644,
+      "LR_20bin_strict": 0.791,
+      "LR_60bin_strict": 0.82,
+      "oracle_strict": 0.623,
+      "contamination": 0.664
+    },
+    "SMD": {
+      "LR_20bin_standard": 0.397,
+      "LR_20bin_strict": 0.698,
+      "oracle_strict": 0.622,
+      "contamination": 0.496
+    }
+  }
+}

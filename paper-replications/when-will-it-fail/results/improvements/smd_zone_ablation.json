@@ -1,0 +1,18 @@
+{
+  "probe": "179_smd_zone_ablation",
+  "note": "50K timestep sample of SMD test set",
+  "zones": {
+    "NEAR (200)": {
+      "mean": 0.48775418946772897,
+      "std": 0.029023053870343915
+    },
+    "GAP+NEAR (400)": {
+      "mean": 0.5835622513902659,
+      "std": 0.11635739945408356
+    },
+    "ALL/FAR+GAP+NEAR (600)": {
+      "mean": 0.6396516291807679,
+      "std": 0.04984470681887665
+    }
+  }
+}
