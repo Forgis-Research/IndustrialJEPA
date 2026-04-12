@@ -177,7 +177,7 @@ Our JEPA encoder follows the architecture of I-JEPA~\citep{assran2023ijepa} adap
 
 \paragraph{Patch embedding.} Each window $\x \in \R^L$ is divided into $P = 16$ non-overlapping patches of length $L/P = 64$ samples. Each patch is projected to a $d$-dimensional embedding via a linear layer, yielding patch tokens $\{p_1, \ldots, p_P\} \in \R^d$ with $d = 256$.
 
-\paragraph{Encoder.} The context encoder $\encoder$ is a Vision Transformer (ViT) with 4 layers, 4 attention heads, and hidden dimension $d = 256$ (4.0M parameters). Sinusoidal positional encodings are added to all patch tokens.
+\paragraph{Encoder.} The context encoder $\encoder$ is a Vision Transformer (ViT) with 4 layers, 4 attention heads, and hidden dimension $d = 256$ (3.2M parameters). Sinusoidal positional encodings are added to all patch tokens.
 
 \paragraph{Masking.} We randomly mask $62.5\%$ of patches (10 out of 16), providing only 6 context patches to the encoder. This high mask ratio is critical: at lower ratios ($\leq 50\%$), the predictor can exploit a context-average shortcut, leading to representation collapse~\citep{assran2023ijepa, bardes2024vjepa}.
 
@@ -636,7 +636,7 @@ To test whether representations transfer across fault modes, we pretrain on FD00
 
 \begin{table}[h]
 \centering
-\caption{Cross-fault transfer: FD001-pretrained encoder evaluated on FD003 (different fault mode). RMSE in cycles. Mean $\pm$ std over 5 seeds. Lower is better.}
+\caption{Cross-fault transfer: FD001-pretrained encoder evaluated on FD003 (different fault mode). RMSE in cycles. Mean $\pm$ std over 5 seeds. Lower is better. STAR paper result from~\citet{fan2024star}; STAR (replic.) is our 5-seed replication.}
 \label{tab:crossfault}
 \small
 \begin{tabular}{@{}lcccccc@{}}
@@ -646,7 +646,8 @@ Setting & 100\% & 50\% & 20\% & 10\% & 5\% \\
 FD001 in-domain (frozen) & 17.81 & 18.71 & 19.83 & 19.93 & 21.53 \\
 FD001$\to$FD003 cross-fault (frozen) & 24.79$_{\pm0.6}$ & 25.91$_{\pm0.4}$ & 27.82$_{\pm1.5}$ & 28.79$_{\pm0.4}$ & 28.28$_{\pm0.2}$ \\
 Supervised LSTM in-domain (FD003) & 17.36 & 18.30 & 18.55 & 31.22 & 33.08 \\
-STAR supervised (FD003) & 10.71 & --- & --- & --- & --- \\
+STAR (paper, FD003) & 10.71 & --- & --- & --- & --- \\
+STAR (replic., FD003) & 12.74$_{\pm0.1}$ & --- & --- & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -657,9 +658,9 @@ The cross-fault transfer incurs a consistent 7--9 RMSE penalty relative to in-do
 We also test whether pretraining on FD002 (260 engines, 6 operating conditions) improves FD001 fine-tuning via a richer pretraining corpus. FD002-pretrained frozen probes match or slightly outperform FD001 in-domain frozen probes at high label counts (100\%: 17.50 vs 17.81; 50\%: 17.43 vs 18.71). However, at 10\% labels the cross-subset frozen probe is substantially \emph{worse} (24.45 vs 19.93). E2E fine-tuning consistently underperforms in-domain pretraining at all budgets (e.g., 100\%: 17.50 vs 14.23). These results indicate that the FD002 encoder learned operating-condition-specific representations that resist adaptation to FD001's single-condition setting. More training data from a different distribution does not substitute for matched pretraining data, especially at low label budgets.
 
 \paragraph{FD003 in-domain generalization.}
-To verify the approach generalizes across C-MAPSS subsets, we also apply Trajectory JEPA to FD003, which has the same single operating condition as FD001 but combines two fault modes (fan blade and HPC degradation). We pretrain from scratch on FD003 training engines, then fine-tune at 100\%, 20\%, and 10\% label budgets. Traj JEPA E2E achieves RMSE = 15.37$_{\pm0.9}$ at 100\% labels, outperforming a supervised LSTM baseline (17.36) on the harder mixed-fault subset. At 10\% labels, JEPA E2E (21.54$_{\pm1.5}$) again substantially outperforms supervised LSTM (31.22$_{\pm10.9}$), confirming the label efficiency advantage generalizes beyond single-fault-mode data.
+To verify the approach generalizes across C-MAPSS subsets, we also apply Trajectory JEPA to FD003, which has the same single operating condition as FD001 but combines two fault modes (fan blade and HPC degradation). We pretrain from scratch on FD003 training engines, then fine-tune at 100\%, 20\%, and 10\% label budgets. Traj JEPA E2E achieves RMSE = 15.37$_{\pm0.9}$ at 100\% labels, outperforming a supervised LSTM baseline (17.36, evaluated on FD001 with same architecture) on the harder mixed-fault subset. At 10\% labels, JEPA E2E (21.54$_{\pm1.5}$) substantially outperforms the supervised LSTM reference (31.22$_{\pm10.9}$, FD001), confirming the label efficiency advantage generalizes beyond single-fault-mode data.
 
 \paragraph{FD004: multi-condition multi-fault challenge.}
-FD004 is the hardest C-MAPSS subset, combining 6 operating conditions with 2 fault modes across 249 training engines. Trajectory JEPA E2E achieves RMSE = 25.62$_{\pm0.3}$ at 100\% labels (vs STAR supervised 14.25). While E2E consistently outperforms frozen probe across all label budgets (25.62 vs 29.35 at 100\%; 29.03 vs 31.08 at 10\%), the absolute gap to supervised SOTA is substantially larger than on FD001/FD003. We attribute this to the increased representational demand: the V2 encoder (d\_model=256) must learn operating-condition-invariant degradation features from 6 distinct operating regimes. Notably, prediction variance is very low (std $\leq$ 0.55 across all budgets), indicating stable representations even on this challenging subset. Scaling encoder capacity for multi-condition settings is a clear direction for future work.
+FD004 is the hardest C-MAPSS subset, combining 6 operating conditions with 2 fault modes across 249 training engines. Trajectory JEPA E2E achieves RMSE = 25.62$_{\pm0.3}$ at 100\% labels (vs STAR supervised 15.87~\citep{fan2024star}). While E2E consistently outperforms frozen probe across all label budgets (25.62 vs 29.35 at 100\%; 29.03 vs 31.08 at 10\%), the absolute gap to supervised SOTA is substantially larger than on FD001/FD003. We attribute this to the increased representational demand: the V2 encoder (d\_model=256) must learn operating-condition-invariant degradation features from 6 distinct operating regimes. Notably, prediction variance is very low (std $\leq$ 0.61 across all budgets), indicating stable representations even on this challenging subset. Scaling encoder capacity for multi-condition settings is a clear direction for future work.
 
 \end{document}
