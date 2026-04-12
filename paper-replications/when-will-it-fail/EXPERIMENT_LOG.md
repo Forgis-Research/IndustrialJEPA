@@ -6163,3 +6163,49 @@ Baseline (ref):      0.820 ± 0.012
 **File:** results/improvements/frequency_features.json
 
 ---
+
+## Exp 210: Ensemble Weight Optimization (COMPLETE)
+
+**Time:** 2026-04-12 ~03:30
+**Hypothesis:** The optimal LR:RF weight ratio may not be 50/50.
+**Change:** Sweep w_LR from 0.0 to 1.0 in 0.1 steps on Base+MaxVar features (120-feat)
+**Sanity checks:** ✓ RF-only (0.809) < LR-only (0.819) ✓ Max at w_LR=0.6 (slight LR preference) ✓ Standard 50/50 very close to optimal
+**Result:**
+```
+w_LR=0.0 (RF only):  0.809
+w_LR=0.4:            0.824
+w_LR=0.5 (50/50):    0.825
+w_LR=0.6 (BEST):     0.825  (+0.0004 over 50/50)
+w_LR=0.7:            0.825
+w_LR=1.0 (LR only):  0.819
+```
+**Verdict:** KEEP - 50/50 is essentially optimal. w_LR=0.6 gives +0.0004 improvement (negligible).
+**Key finding:** The ensemble is robust to weight choice. Standard 50/50 is the recommended approach.
+
+**File:** results/improvements/ensemble_weight.json (not saved - negligible)
+
+---
+
+## Exp 210b: MaxVar Coefficient Profile (COMPLETE)
+
+**Time:** 2026-04-12 ~03:30
+**Hypothesis:** What does the max-per-channel variance feature capture in the 3-zone model?
+**Change:** Train LR on Base+MaxVar, extract coefficients for both feature types
+**Result:**
+```
+Feature type     FAR[0:20]  GAP[20:40]  NEAR[40:60]
+Global var       +0.064     -0.302      -0.435
+Max-chan var      +0.015     +0.221      -0.127
+```
+**Key findings:**
+1. Global var: the standard 3-zone pattern (FAR+, GAP-, NEAR-)
+2. Max-chan var: DIFFERENT pattern - GAP zone is POSITIVE with max-var!
+3. Interpretation: when one ECG channel is much MORE variable than the other in the GAP zone, predicts AP+
+4. Max-var captures INTER-CHANNEL ASYMMETRY, not just total energy
+5. The two features are complementary: global_var captures total energy, max_var captures channel imbalance
+
+**The mechanism:** Before anomaly onset in the GAP zone, one channel (presumably the one with the anomaly) shows elevated variance while the other remains calm. Max-var detects this asymmetry.
+
+**File:** results/improvements/coef_profile_120feat.json
+
+---
