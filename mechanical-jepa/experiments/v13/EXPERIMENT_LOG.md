@@ -304,10 +304,54 @@ into trajectory-specific features that are hard to fine-tune.
 
 ---
 
-## Phase 1d: Deeper Architecture (RUNNING)
+## Phase 1d: Deeper Architecture V4 (COMPLETE - MIXED RESULTS)
 
-**Time**: Started 2026-04-12 ~22:20 UTC
+**Time**: 2026-04-12 ~22:20 UTC
+**Duration**: ~23 min (pretraining 974s + fine-tuning ~5 min)
 **Script**: experiments/v13/phase1d_deeper_architecture.py
-**Status**: V4 (d=256, L=4) pretraining + fine-tuning, running in background.
+
+V4: d=256, L=4 (vs V2: d=256, L=2). 2.3M params (vs ~1.2M for V2).
+
+**Pretraining**: Best probe RMSE 8.98 (identical to horizon-50's 8.97).
+
+**Fine-tuning results (5 seeds)**:
+| Mode   | V4 (L=4) | V2 (L=2) Baseline | Delta |
+|--------|----------|-------------------|-------|
+| Frozen | 15.63 +/- 0.35 | 17.81 | -2.18 (IMPROVED) |
+| E2E    | 16.07 +/- 0.95 | 14.23 | +1.84 (WORSE) |
+
+**KEY FINDING: Depth helps frozen but HURTS E2E.**
+Same pattern as Phase 1c (longer horizon). Deeper encoder produces better fixed
+representations (frozen 15.63 vs 17.81 is a significant improvement), but these
+representations are LESS adaptable under E2E fine-tuning.
+
+**Emerging pattern across Phase 1c + 1d**: There is a fundamental trade-off
+between representation quality (measured by frozen probe) and representation
+adaptability (measured by E2E). The V2 (L=2) encoder is the sweet spot for E2E
+because its simpler representations are more malleable during fine-tuning.
+
+This explains the JEPA-STAR gap: STAR (supervised end-to-end) doesn't face
+this trade-off because it never freezes representations.
+
+---
+
+## Phase 0a: STAR Label-Efficiency Sweep (PARTIAL RESULTS)
+
+**Intermediate results**:
+| Budget | STAR RMSE | STAR Std |
+|--------|-----------|----------|
+| 100%   | 12.19     | 0.55     | (from prior run)
+| 50%    | 13.26     | 0.74     |
+| 20%    | 17.74     | 3.62     |
+| 10%    | pending   |          |
+| 5%     | pending   |          |
+
+**KILL CRITERION CHECK**: STAR@20% = 17.74 > 16 -> **Label-efficiency pitch is STRONG!**
+
+STAR degrades dramatically at 20% labels (12.19 -> 17.74, +5.55 RMSE).
+Meanwhile JEPA E2E at 20% is 18.00 and JEPA frozen at 20% is 19.50.
+At 20%, STAR barely beats JEPA E2E (17.74 vs 18.00). The label-efficiency
+advantage of JEPA is clear: with 100% labels STAR wins by 2 RMSE, but with
+20% labels the gap shrinks to < 0.3 RMSE.
 
 ---

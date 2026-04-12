@@ -1,0 +1,21 @@
+{
+  "killed": false,
+  "n_layers": 4,
+  "d_model": 256,
+  "n_params_v4": 2310400,
+  "best_probe_rmse": 8.98,
+  "frozen": {
+    "mean": 15.632,
+    "std": 0.345,
+    "all": [16.296, 15.515, 15.612, 15.357, 15.382],
+    "baseline_v2": 17.81
+  },
+  "e2e": {
+    "mean": 16.068,
+    "std": 0.951,
+    "all": [16.732, 15.516, 17.098, 16.512, 14.483],
+    "baseline_v2": 14.23
+  },
+  "improved": false,
+  "interpretation": "V4 (L=4) improves frozen probe dramatically (15.63 vs 17.81, -2.18 RMSE) but HURTS E2E (16.07 vs 14.23, +1.84). Same pattern as Phase 1c: deeper/longer pretraining helps the encoder produce better fixed representations, but these representations are LESS adaptable under E2E fine-tuning. The V2 (L=2) encoder is a better starting point for E2E because its simpler representations are more malleable."
+}
