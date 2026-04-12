@@ -1,0 +1,8 @@
+{
+  "probe": "191_practical_deployment",
+  "lr60_streaming_auroc": 0.8116141803249727,
+  "lr20_streaming_auroc": 0.768631358436159,
+  "delta": 0.04298282188881364,
+  "seq_len_60": 600,
+  "seq_len_20": 200
+}
