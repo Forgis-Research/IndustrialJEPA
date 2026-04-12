@@ -1,0 +1,17 @@
+{
+  "probe": "201_freq_features",
+  "results": {
+    "hf_ratio_only": {
+      "mean": 0.7515107362465371,
+      "std": 0.03344507156982285
+    },
+    "base_plus_hf_ratio": {
+      "mean": 0.8123511308645393,
+      "std": 0.013605714507403999
+    },
+    "baseline_ref": {
+      "mean": 0.8197,
+      "std": 0.0123
+    }
+  }
+}

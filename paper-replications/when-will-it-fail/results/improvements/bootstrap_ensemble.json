@@ -1,0 +1,11 @@
+{
+  "probe": "208_bootstrap_ensemble_vs_baseline",
+  "auroc_baseline_60feat": 0.8154343472167851,
+  "auroc_ensemble_120feat": 0.8337126176575718,
+  "delta": 0.01827827044078667,
+  "ci_low": 0.008984653527531639,
+  "ci_high": 0.028213493352193718,
+  "p_val_delta_le_0": 0.0,
+  "n_bootstrap": 5000,
+  "significant": true
+}
