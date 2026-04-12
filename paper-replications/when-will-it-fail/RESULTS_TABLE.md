@@ -505,3 +505,63 @@ SVDB1 temporal confound confirmed by independent probe:
 
 **SVDB1 is completely unusable for any form of temporal cross-validation.**
 
+
+---
+
+## Overnight Session 4 Additional Results (April 12, 2026)
+
+### Practical Deployment Metrics (Probe 191)
+
+| Model | Streaming AUROC | Context | Delta |
+|-------|----------------|---------|-------|
+| LR 20-bin | 0.769 | 200-step | (baseline) |
+| LR 60-bin | **0.812** | 600-step | **+0.043** |
+
+Deployment thresholds for LR 60-bin (base rate = 3.2% strict AP+):
+
+| Alert at Pct | FAR | Detection Rate | Precision | Lift |
+|-------------|-----|----------------|-----------|------|
+| 80th pct | 18.6% | 61.4% | 9.8% | 3.1x |
+| 85th pct | 13.8% | 51.9% | 11.1% | 3.5x |
+| 90th pct | 9.0% | 40.1% | 12.8% | 4.0x |
+| 95th pct | 4.3% | 26.2% | 16.8% | 5.3x |
+
+At 10% FAR: 40% of future anomalies detected, 4.0x precision lift.
+
+### GBM Extended Context (Probe 181)
+
+| Model | 200-step | 600-step | Delta |
+|-------|---------|---------|-------|
+| GBM (n=100, d=4) | 0.775 ± 0.031 | 0.781 ± 0.026 | +0.005 |
+| RF (n=100, d=5) | 0.744 ± 0.020 | 0.790 ± 0.024 | +0.046 |
+| LR | 0.791 ± 0.020 | **0.820 ± 0.012** | **+0.029** |
+
+GBM barely benefits from extended context (+0.005, within ±0.031 std). LR benefits most because the temporal variance profile is smooth and monotonic - ideal for linear models.
+
+### Lead Time Analysis (Probe 196)
+
+Using context-clean strict AP filter (no anomaly in context [t-50:t]):
+
+| Prediction Horizon | AUROC | Pos Rate | Interpretation |
+|-------------------|-------|----------|----------------|
+| 50 steps | 0.669 ± 0.030 | 7.0% | Easiest: nearest anomaly |
+| 100 steps | 0.655 ± 0.035 | 10.5% | Standard task |
+| 150 steps | 0.639 ± 0.040 | 10.5% | Harder |
+| 200 steps | 0.633 ± 0.042 | 10.3% | Hardest (causal limit) |
+| 300 steps | 0.643 ± 0.042 | 9.7% | Slight recovery (regime change) |
+
+Note: These use a different strict AP filter than the main 0.820 result.
+
+### Regularization Sensitivity (Probe 198)
+
+| C | AUROC (5-fold) | Std |
+|---|---------------|-----|
+| 0.01 | 0.7976 | 0.018 |
+| 0.10 | 0.8166 | 0.014 |
+| 0.50 | 0.8192 | 0.013 |
+| **1.00** | **0.8197** | **0.012** |
+| 2.00 | 0.8198 | 0.012 |
+| 5.00 | 0.8199 | 0.012 |
+| 10.00 | 0.8199 | 0.012 |
+
+C=1.0 is near-optimal. Results stable from C=0.5 to C=10 (range = 0.0007).
