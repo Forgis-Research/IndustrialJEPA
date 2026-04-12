@@ -226,3 +226,64 @@ Expected duration: 3-4 hours.
 Queued behind Phase 0a (GPU contention). Will launch after 0a completes.
 
 ---
+
+## Phase 1a: Warmup-Freeze Fine-Tuning (COMPLETE)
+
+**Time**: 2026-04-12 ~21:50 UTC
+**Duration**: 308 seconds (~5 min)
+**Script**: experiments/v13/phase1a_warmup_freeze.py
+
+Freeze encoder for 20 epochs (probe-only warmup), then unfreeze for E2E with
+standard LR=1e-4. NOTE: Prior v13 session tested similar with lr=1e-5 post-unfreeze.
+This uses lr=1e-4 (standard) which is the version specified in the prompt.
+
+**Results (5 seeds, FD001, 100% labels)**:
+- Warmup-freeze: 14.200 +/- 0.817
+- Standard E2E:  14.165 +/- 0.453
+- Delta: +0.034 (no improvement, within noise)
+- Seed 1024 was the only one where warmup-freeze improved (13.02 vs 13.89)
+
+**KEY FINDING: Warmup-freeze does NOT close the STAR gap.**
+At full LR, the warmup phase doesn't protect pretrained weights meaningfully.
+The standard E2E protocol (direct fine-tuning) is already near-optimal.
+
+---
+
+## Phase 1b: Weight Decay E2E (COMPLETE)
+
+**Time**: 2026-04-12 ~21:55 UTC
+**Duration**: 336 seconds (~5.5 min)
+**Script**: experiments/v13/phase1b_weight_decay.py
+
+AdamW with weight_decay=1e-4 vs Adam with wd=0.
+Tested at 100% and 5% labels (where from-scratch ablation showed high variance).
+
+**Results**:
+| Budget | WD=1e-4 | WD=0 (baseline) | Delta |
+|--------|---------|-----------------|-------|
+| 100%   | 14.289 +/- 0.812 | 14.209 +/- 0.406 | +0.081 |
+| 5%     | 30.072 +/- 5.379 | 27.708 +/- 6.059 | +2.364 |
+
+**KEY FINDING: Weight decay does NOT help and may hurt.**
+At 100%, it doubles the variance without improving mean RMSE.
+At 5%, it actually increases RMSE by ~2.4 while barely reducing variance.
+The regularization hurts the pretrained encoder's calibrated representations.
+
+---
+
+## Phase 1c: Longer Prediction Horizon (RUNNING)
+
+**Time**: Started 2026-04-12 ~22:03 UTC
+**Script**: experiments/v13/phase1c_longer_horizon.py
+**Status**: Pretraining with max_horizon=50 (vs baseline 30). 200 epochs.
+Checkpoint saved at ~22:15. Now in fine-tuning phase.
+
+---
+
+## Phase 1d: Deeper Architecture (QUEUED)
+
+Script written: experiments/v13/phase1d_deeper_architecture.py
+V4: d=256, L=4 (vs V2: d=256, L=2). Requires new pretraining.
+Will run after Phase 1c completes.
+
+---
