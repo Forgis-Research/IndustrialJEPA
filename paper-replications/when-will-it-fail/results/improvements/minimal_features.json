@@ -1,0 +1,8 @@
+{
+  "probe": "230_minimal_features",
+  "1feat_mean_var": 0.46873379091427064,
+  "3feat_zones": 0.6010007109447575,
+  "10feat_coarse": 0.6855892379066555,
+  "20feat_medium": 0.7957097124501616,
+  "60feat_full": 0.8196992434407264
+}

@@ -6593,3 +6593,32 @@ Ensemble Base+MaxVar+Diff (180):   0.835 ± 0.015  ← CONFIRMED NEW BEST (full 
 **File:** results/improvements/verify_full_dataset_ensemble.json
 
 ---
+
+## Exp 227c: 10-Seed Final Validation of LR+RF Ensemble (COMPLETE)
+
+**Time:** 2026-04-12 ~06:00
+**Hypothesis:** LR+RF ensemble on Base+MaxVar (120-feat, step-5 subsampled) is stable across 10 seeds.
+**Change:** Run 10-seed CV (even seeds: 0,2,4,6,8, then 0,1,2...9 for 10 total in validation).
+**Sanity checks:** ✓ LR is deterministic (std=0.000) ✓ RF variance is small (std=0.0008) ✓ All seeds above 0.80
+**Result:**
+```
+LR Base+MaxVar (120-feat):
+  Mean: 0.8225 ± 0.0000 (perfectly deterministic - LR is deterministic given fixed CV folds)
+
+LR+RF Ensemble (Base+MaxVar):
+  Mean: 0.8252 ± 0.0008
+  Min: 0.8237, Max: 0.8265
+  Seeds all above 0.80: 10/10
+
+Delta ensemble vs LR: +0.0027
+```
+**Verdict:** CONFIRMED - LR+RF ensemble is **0.8252 ± 0.0008** (10 seeds, very stable).
+**Key findings:**
+1. LR is perfectly deterministic (exactly 0.8225 across all 10 seeds)
+2. RF adds +0.003 of variance but +0.003 of mean performance
+3. The 10-seed std is 0.0008 - tight enough for publication claims
+4. Result validates our 5-seed result (0.8248 ± 0.0007) - consistent
+
+**File:** results/improvements/10seed_final_validation.json
+
+---
