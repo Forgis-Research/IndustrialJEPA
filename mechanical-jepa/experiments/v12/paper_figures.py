@@ -33,6 +33,7 @@ with open(V12_DIR / 'health_index_recovery.json') as f: hi = json.load(f)
 with open(V12_DIR / 'sliding_eval.json') as f: sliding = json.load(f)
 with open(V12_DIR / 'val_test_gap.json') as f: vtg = json.load(f)
 with open(V12_DIR / 'pca_analysis.json') as f: pca = json.load(f)
+with open(V12_DIR / 'multiseed_phase0_diagnostics.json') as f: ms = json.load(f)
 
 # ============================================================
 # Figure 1: Main results overview (3-panel)
@@ -44,10 +45,10 @@ gs = gridspec.GridSpec(1, 3, figure=fig, wspace=0.35)
 
 # Panel A: RMSE comparison + baseline hierarchy
 ax_a = fig.add_subplot(gs[0])
-methods = ['Constant\nPredictor', 'Ridge\nRegressor\n(60 feats)', 'JEPA\nFrozen V2', 'JEPA\nE2E V2']
+methods = ['Constant\nPredictor', 'Ridge\nRegressor\n(60 feats)', 'JEPA\nFrozen V2', 'JEPA\nE2E V2\n(5 seeds)']
 rmses = [p0['constant_predictor_rmse'], reg['mean_rmse'],
-         17.81, p0['v11_reported_rmse']]
-stds = [0, reg['std_rmse'], 1.67, 0.75]
+         17.81, ms['test_rmse_mean']]
+stds = [0, reg['std_rmse'], 1.67, ms['test_rmse_std']]
 colors = ['#d73027', '#fc8d59', '#fee090', '#4575b4']
 
 bars = ax_a.bar(methods, rmses, color=colors, edgecolor='black', linewidth=0.8, alpha=0.9)
