@@ -127,3 +127,6 @@ mechanical-jepa/checkpoints/
 mechanical-datasets/raw/
 mechanical-datasets/processed/
 hf_cache/
+
+# Claude Code scheduled tasks lock
+.claude/scheduled_tasks.lock
