@@ -62,6 +62,28 @@ Output files:
 - `full_sequence_prediction.json` (all seed-level numbers)
 - `phase2_output.log`, `phase2_stdout.log`
 
+### Phase 2d: Full-sequence on FD003 (multi-subset generalization, POSITIVE)
+
+In-domain pretrain on FD003 (2 fault modes: fan + HPC, 100 engines),
+3 seeds frozen + E2E at 100% labels.
+
+| Method           | FD003 Frozen      | FD003 E2E        |
+|:-----------------|:------------------|:-----------------|
+| V2               | 19.25 ± 3.2       | 15.37 ± 0.9      |
+| Cross-sensor     | 24.49 ± 0.12      | (not run)        |
+| **Full-sequence**| **18.39 ± 0.44**  | **13.67 ± 0.28** |
+
+Full-sequence generalizes POSITIVELY to FD003:
+- Frozen: -0.86 RMSE vs V2, 7x lower seed std
+- E2E: **-1.70 RMSE vs V2** (new best JEPA E2E on FD003)
+
+Direct contrast with cross-sensor (Phase 3d): cross-sensor REGRESSES
++5.2 RMSE on FD003. Full-sequence is the more universally useful V14
+architectural change.
+
+Output: `phase2d_full_sequence_fd003.py`, `phase2d_fd003_results.json`,
+`best_pretrain_full_sequence_fd003.pt`.
+
 Output files:
 - `phase2_full_sequence.py` (script)
 - `best_pretrain_full_sequence.pt` (checkpoint)

@@ -97,6 +97,20 @@ Interpretation: letting the target see the full trajectory closes **37%** of the
 
 Mixed. The full-sequence variant wins at ≥10% labels (beats STAR at 20%, matches at 10%), but REGRESSES at 5% (+5.04 vs V2; loses the STAR crossover). The simpler V2 target is more robust when fine-tuning data is extremely scarce - four engines appear to overfit to the richer but noisier full-sequence representation. Honest finding: we report the full-sequence variant as an ablation but keep V2 as the default for the 5% STAR crossover. A configuration that wins across all budgets is open.
 
+### Phase 2d: Full-sequence on FD003 (POSITIVE multi-subset generalization)
+
+In-domain pretrain on FD003 (fan + HPC, 100 engines), 3 seeds frozen + E2E @ 100%:
+
+| Method           | FD003 Frozen      | FD003 E2E        |
+|:-----------------|:------------------|:-----------------|
+| V2               | 19.25 ± 3.2       | 15.37 ± 0.9      |
+| Cross-sensor     | 24.49 ± 0.12      | (not run)        |
+| **Full-sequence**| **18.39 ± 0.44**  | **13.67 ± 0.28** |
+
+Full-sequence on FD003: frozen -0.86 RMSE vs V2 (7× lower std), E2E **-1.70 RMSE** - new best JEPA E2E on FD003. Direct contrast with cross-sensor (Phase 3d): cross-sensor REGRESSES +5.2 RMSE on FD003.
+
+Full-sequence is the more universally useful V14 architectural change - it generalizes across fault modes while cross-sensor is FD001-specific.
+
 ## Cross-Sensor Attention (Phase 3) {#sec-crosssensor}
 
 Sensor-as-token encoder inspired by iTransformer + STAR. 14 tokens per cycle, alternating temporal causal + cross-sensor attention, 961K params. Pretrain + fine-tune sweep:
