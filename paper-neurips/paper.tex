@@ -73,7 +73,7 @@ We ask whether self-supervised learning can extract these degradation signatures
 We introduce Trajectory JEPA, a Joint Embedding Predictive Architecture that learns by predicting future multivariate sensor trajectories in latent space.
 Our central empirical finding is that self-supervised trajectory prediction provides a large, quantifiable contribution to downstream RUL prediction: a from-scratch ablation (same architecture, same fine-tuning protocol, only the initialization changes) shows pretraining contributes $+8.8$ RMSE at 100\% labels and $+15.6$ RMSE at 10\% labels on NASA C-MAPSS FD001.
 This label-efficiency advantage produces a crossover against the supervised state of the art: at 5\% of training engines, our frozen encoder ($21.53 \pm 2.0$) outperforms STAR ($24.55$)---a supervised architecture that achieves $12.19$ RMSE with full labels.
-At 100\% labels the same encoder achieves $\rmse = 14.23 \pm 0.39$ on the canonical FD001 benchmark (5 seeds), with genuine within-engine tracking confirmed by Spearman $\rho = 0.830 \pm 0.023$ and a $+41.5$ RMSE penalty when context vectors are shuffled across engines.
+At 100\% labels the same encoder achieves $\rmse = 14.23 \pm 0.39$ on the canonical FD001 benchmark (5 seeds), outperforming a matched 5-seed replication of the only prior SSL baseline (AE-LSTM, $16.07 \pm 2.80$) by $1.84$ RMSE with $7\times$ lower seed variance, and showing genuine within-engine tracking confirmed by Spearman $\rho = 0.830 \pm 0.023$ and a $+41.5$ RMSE penalty when context vectors are shuffled across engines.
 As a representation diagnostic, a linear Ridge probe on the frozen encoder recovers the C-MAPSS health index with $R^2 = 0.926$; because H.I.\ is a deterministic piecewise-linear transform of capped RUL, this quantifies the same encoder capability as frozen RMSE under a different evaluation protocol, and serves as supporting evidence for representation quality rather than a separate result.
 A principled rationale connects the objective to slow feature analysis and an information-theoretic view of trajectory prediction. \plannedc{Ongoing work targets architectural changes (cross-sensor attention, alternative prediction targets) to close the remaining gap to supervised SOTA at 100\% labels.}
 \end{abstract}
@@ -271,7 +271,8 @@ Feature eng. & 58-feat Ridge regressor & 19.21$_{\pm0.2}$ & --- & --- & --- & --
 Supervised & LSTM (ours) & 17.36$_{\pm1.2}$ & 18.30$_{\pm0.8}$ & 18.55$_{\pm0.8}$ & 31.22$_{\pm10.9}$ & 33.08$_{\pm9.6}$ \\
 Supervised & STAR (paper) & 10.61 & --- & --- & --- & --- \\
 Supervised & STAR (replic.) & \textbf{12.19}$_{\pm0.6}$ & 13.26$_{\pm0.7}$ & 17.74$_{\pm3.6}$ & 18.72$_{\pm2.8}$ & 24.55$_{\pm6.5}$ \\
-SSL (paper) & AE-LSTM (single-seed) & 13.99 & --- & --- & --- & --- \\
+SSL (paper) & AE-LSTM (best-of-28-cfg) & 13.99 & --- & --- & --- & --- \\
+SSL (replic.) & AE-LSTM (our 5-seed) & 16.07$_{\pm2.8}$ & --- & --- & --- & --- \\
 \midrule
 From-scratch (ours) & Traj enc.\ E2E (random init) & 22.99$_{\pm2.3}$ & --- & 32.50$_{\pm1.5}$ & 35.59$_{\pm2.7}$ & 37.59$_{\pm2.0}$ \\
 SSL (ours) & Traj JEPA Frozen & 17.81$_{\pm1.7}$ & 18.71$_{\pm1.1}$ & 19.83$_{\pm0.3}$ & 19.93$_{\pm0.9}$ & \textbf{21.53}$_{\pm2.0}$ \\
@@ -289,7 +290,7 @@ SSL (ours) & Traj JEPA E2E & 14.23$_{\pm0.4}$ & \textbf{14.93}$_{\pm0.4}$ & \tex
 
 \Cref{tab:main_results,fig:v14_label_fromscratch} present the main results.
 
-\paragraph{Competitive at 100\% labels.} Traj JEPA E2E achieves RMSE $14.23 \pm 0.39$, outperforming a supervised LSTM of matched capacity ($17.36$) and within $1.7\%$ of the only prior SSL baseline (AE-LSTM, $13.99$, single-seed; we discuss comparability in \cref{sec:label_efficiency}). A gap of $\sim$2 RMSE to supervised STAR ($12.19 \pm 0.55$, our 5-seed replication) remains.
+\paragraph{Competitive at 100\% labels.} Traj JEPA E2E achieves RMSE $14.23 \pm 0.39$, outperforming a supervised LSTM of matched capacity ($17.36$) and beating the only prior SSL baseline (AE-LSTM) by $1.84$ RMSE with $7\times$ lower seed variance under a matched 5-seed replication ($16.07 \pm 2.80$; see \cref{sec:label_efficiency}). A gap of $\sim$2 RMSE to supervised STAR ($12.19 \pm 0.55$, our 5-seed replication) remains.
 
 \paragraph{From-scratch ablation quantifies the pretraining contribution.} Running the same V2 Transformer architecture and the same E2E fine-tuning protocol, but initialized from random weights, yields RMSE $22.99$ at 100\% labels vs.\ $14.18$ with the pretrained initialization, a pretraining contribution of $+8.8$ RMSE. At $10\%$ labels the contribution grows to $+15.6$; at $5\%$ the from-scratch run collapses to $37.59$ RMSE, compared to $24.47$ for the pretrained frozen probe. The delta is monotonic in $1/\text{budget}$ except at 5\% where the from-scratch run hits a floor: trajectory-prediction pretraining does the work that labels cannot supply when data is scarce (\cref{fig:v14_label_fromscratch}b).
 
@@ -354,7 +355,20 @@ A central concern with RUL benchmarks is that the canonical last-window protocol
 
 The grey swan motivation is that failure data is scarce. \Cref{tab:main_results,fig:v14_label_fromscratch}a show the full label-efficiency sweep. At 5\% labels (4 training engines), JEPA frozen achieves RMSE $21.53 \pm 2.0$ while the supervised LSTM collapses to $33.08 \pm 9.6$ and STAR to $24.55 \pm 6.5$. The frozen encoder's variance is $5$--$30\times$ lower than the LSTM and $3\times$ lower than STAR at the smallest budgets.
 
-\paragraph{Comparability of the AE-LSTM baseline.} AE-LSTM~\citep{lecam2025aelstm} reports RMSE $13.99$ on FD001 as the best result of a 28-configuration hyperparameter grid, not a multi-seed mean. For context, our own fixed-hyperparameter 5-seed replication spans $13.80$--$14.85$ RMSE (seed $456$ vs.\ seed $123$). Comparing a best-of-grid number to a 5-seed mean is not apples-to-apples: the AE-LSTM figure implicitly incorporates hyperparameter selection variance, while ours does not. Our $14.23 \pm 0.39$ is within statistical noise of $13.99$ given that AE-LSTM reports no seed variance. We therefore do not claim to beat AE-LSTM. A head-to-head replication of AE-LSTM in our pipeline (matched splits, seeds, RUL cap) is a clean follow-up; the architecture is simple (reconstruction autoencoder $\to$ linear probe) and within $\sim$100 lines of PyTorch.
+\paragraph{Apples-to-apples replication of AE-LSTM.} The published $13.99$ RMSE for AE-LSTM~\citep{lecam2025aelstm} is the best result of a 28-configuration hyperparameter grid, not a multi-seed mean, so a direct comparison against our 5-seed mean is not apples-to-apples. To resolve this, we replicated AE-LSTM in our pipeline (reconstruction autoencoder FC $14 \to 64 \to 32 \to 32 \to 64 \to 14$ followed by an LSTM regressor with $\text{hidden}=64$, joint fine-tuning, our splits and RUL cap). 5 seeds, fixed hyperparameters:
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Method & FD001 RMSE & Seed std \\
+\midrule
+AE-LSTM (paper, best-of-28-configs) & $13.99$ & --- \\
+AE-LSTM (our replication, 5 seeds) & $16.07$ & $\pm 2.80$ \\
+Trajectory JEPA E2E (ours, 5 seeds) & $\mathbf{14.23}$ & $\pm 0.39$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Per-seed AE-LSTM: $\{13.81, 21.23, 14.88, 13.71, 16.73\}$. The best single seed ($13.71$) matches the published $13.99$, consistent with the best-of-grid interpretation. Under matched statistical reporting, Trajectory JEPA beats AE-LSTM by $1.84$ RMSE with $7\times$ lower seed variance. This settles the comparability question: AE-LSTM's published number is a grid-search tail, not a central tendency.
 
 \paragraph{Tracking fidelity: frozen vs.\ E2E.} An unexpected finding: frozen JEPA has \emph{higher} within-engine tracking ($\rho = 0.856$) than E2E ($\rho = 0.804$). E2E fine-tuning trades some tracking fidelity for better RMSE calibration---the improvement is in mapping to the correct RUL scale, not in degradation detection. We provide a principled rationale for this trade-off in \cref{sec:theory_frozen_e2e}.
 

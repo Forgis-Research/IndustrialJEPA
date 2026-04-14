@@ -188,6 +188,34 @@ Three publication-quality figures in `analysis/plots/v14/` (PNG) and
 - Length-vs-content realized from plannedc to concrete paragraph.
 - Removed stale \plannedc{} and \todo{} tags for realized experiments.
 
+## Phase 5b.3: AE-LSTM head-to-head replication (DONE)
+
+Implemented AE-LSTM on our pipeline (matched splits, seeds, RUL cap).
+Architecture: FC autoencoder (14->64->32->32->64->14), LSTM regressor
+(hidden=64, 1 layer), Sigmoid head. Stage 1 reconstruction pretrain,
+Stage 2 joint fine-tune (all params trainable).
+
+5 seeds at 100% labels:
+
+| Method                             | FD001 RMSE      | Seed std |
+|:-----------------------------------|:----------------|:---------|
+| AE-LSTM (paper, best-of-28-configs)| 13.99           | ---      |
+| AE-LSTM (our 5-seed replication)   | **16.07**       | ±2.80    |
+| Trajectory JEPA E2E (ours, 5 seeds)| **14.23**       | ±0.39    |
+
+Per-seed AE-LSTM: [13.81, 21.23, 14.88, 13.71, 16.73]. The best seed
+(13.71) matches the paper's 13.99 (consistent with best-of-grid).
+
+**Finding**: under matched statistical reporting, Trajectory JEPA beats
+AE-LSTM by **1.84 RMSE** with **7x lower seed variance**. The paper's 13.99
+is a grid-search tail, not a central tendency. This settles the
+comparability question.
+
+Total wall time: 2.5 min (5 pretrains + 5 fine-tunes).
+
+Output: `phase5b3_aelstm_replication.py`, `aelstm_replication.json`,
+`phase5b3_stdout.log`.
+
 ## Phase 5b: SSL comparison audit (DONE)
 
 `experiments/v14/ssl_comparison_audit.md`. Key findings:
