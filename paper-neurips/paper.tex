@@ -75,7 +75,7 @@ Our central empirical finding is that self-supervised trajectory prediction prov
 This label-efficiency advantage produces a crossover against the supervised state of the art: at 5\% of training engines, our frozen encoder ($21.53 \pm 2.0$) outperforms STAR ($24.55$)---a supervised architecture that achieves $12.19$ RMSE with full labels.
 At 100\% labels the same encoder achieves $\rmse = 14.23 \pm 0.39$ on the canonical FD001 benchmark (5 seeds), with genuine within-engine tracking confirmed by Spearman $\rho = 0.830 \pm 0.023$ and a $+41.5$ RMSE penalty when context vectors are shuffled across engines.
 As a representation diagnostic, a linear Ridge probe on the frozen encoder recovers the C-MAPSS health index with $R^2 = 0.926$; because H.I.\ is a deterministic piecewise-linear transform of capped RUL, this quantifies the same encoder capability as frozen RMSE under a different evaluation protocol, and serves as supporting evidence for representation quality rather than a separate result.
-\plannedc{Ongoing work targets architectural changes to close the gap to supervised SOTA and a theoretical connection between trajectory prediction and slow feature analysis.}
+A principled rationale connects the objective to slow feature analysis and an information-theoretic view of trajectory prediction. \plannedc{Ongoing work targets architectural changes (cross-sensor attention, alternative prediction targets) to close the remaining gap to supervised SOTA at 100\% labels.}
 \end{abstract}
 
 % ============================================================
@@ -92,7 +92,7 @@ We take a different approach: rather than forecasting individual sensor values, 
 
 Concretely, we introduce Trajectory JEPA: a causal Transformer encoder that, given sensor observations $\x_{1:t}$, predicts the latent representation of future observations $\x_{t+1:t+k}$ produced by an exponential moving average (EMA) target encoder~\citep{grill2020byol, assran2023ijepa}. The prediction is in latent space, not sensor space, avoiding the reconstruction bias of masked autoencoders~\citep{he2022mae} that favors low-level statistics over slow-varying degradation structure.
 
-\todo{Honesty note: all C-MAPSS training engines are run-to-failure, so the temporal structure of the data implicitly reveals degradation progression. The encoder sees complete degradation trajectories during pretraining, even though no explicit RUL labels are used. This is weaker supervision than labeled RUL, but it IS structural supervision by dataset design. The length-vs-content ablation (planned) will quantify how much of the learned signal comes from sensor content vs. sequence-length encoding. See \cref{sec:limitations}.}
+\paragraph{Structural supervision honesty.} All C-MAPSS training engines are run-to-failure, so the temporal structure of the data implicitly reveals degradation progression even though no explicit RUL labels are used during pretraining. This is weaker than labeled RUL supervision but stronger than truly unlabeled data with censored trajectories. We flag this throughout and quantify what the encoder actually learns via length-vs-content ablations (\cref{sec:representation}) and a from-scratch comparison (\cref{sec:from_scratch}); see also \cref{sec:limitations}.
 
 \paragraph{Contributions.}
 
@@ -107,7 +107,7 @@ Concretely, we introduce Trajectory JEPA: a causal Transformer encoder that, giv
 
   \item \textbf{Multi-subset generalization.} The approach generalizes across C-MAPSS subsets: FD003 (mixed fault modes, RMSE $15.37$), FD004 (6 operating conditions + 2 fault modes, RMSE $25.62$), and cross-fault transfer FD001$\to$FD003 at low labels outperforms a supervised LSTM (\cref{sec:multisubset}).
 
-  \plannedc{\item \textbf{Planned: theoretical analysis.} Formal connection between trajectory prediction and slow feature analysis, and an information-theoretic argument for why the encoder concentrates representational capacity on the slow (degradation) component.}
+  \item \textbf{Theoretical rationale.} A principled sketch connecting trajectory prediction to Slow Feature Analysis~\citep{wiskott2002sfa}, an information-theoretic argument for why the encoder concentrates representational capacity on the slow (degradation) component, and an explanation for the frozen-vs-E2E tracking asymmetry (\cref{sec:theory_frozen_e2e}).
 
   \plannedc{\item \textbf{Planned: architectural study.} Cross-sensor attention (iTransformer-style) and full-sequence prediction targets, aimed at closing the $\sim$2 RMSE gap to STAR at 100\% labels.}
 \end{enumerate}
@@ -163,7 +163,6 @@ Consider a set of run-to-failure episodes $\{(\x_i^{(1)}, \ldots, \x_i^{(T_i)})\
 \end{equation}
 where $R_{\max} = 125$ cycles reflects the ``healthy plateau'' convention: early-life cycles where the engine is far from failure are assigned a constant RUL, preventing the model from wasting capacity on a regime where degradation has not yet begun~\citep{zheng2017lstm}.
 
-\todo{Key assumption: all training engines are run-to-failure. This means the temporal structure of the data implicitly reveals degradation progression---the encoder sees complete trajectories ending at failure, even though no RUL labels are used during pretraining. This is weaker than fully labeled supervision, but stronger than truly unlabeled data where engines might be censored (removed from service before failure). We discuss this limitation in \cref{sec:limitations} and plan ablations to quantify its effect.}
 
 \subsection{Trajectory JEPA Pretraining}
 \label{sec:jepa}
@@ -288,14 +287,7 @@ SSL (ours) & Traj JEPA E2E & 14.23$_{\pm0.4}$ & \textbf{14.93}$_{\pm0.4}$ & \tex
 \label{fig:v14_label_fromscratch}
 \end{figure}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/v12_label_efficiency.png}
-\caption{FD001 label efficiency. JEPA E2E (solid) outperforms the supervised LSTM at all budgets. JEPA Frozen (dashed) outperforms LSTM at $\leq$10\% labels with $5$--$30\times$ lower variance, demonstrating critical advantages for the grey swan regime. \plannedc{STAR label-efficiency sweep pending.}}
-\label{fig:label_efficiency}
-\end{figure}
-
-\Cref{tab:main_results,fig:label_efficiency} present the main results.
+\Cref{tab:main_results,fig:v14_label_fromscratch} present the main results.
 
 \paragraph{Competitive at 100\% labels.} Traj JEPA E2E achieves RMSE $14.23 \pm 0.39$, outperforming a supervised LSTM of matched capacity ($17.36$) and within $1.7\%$ of the only prior SSL baseline (AE-LSTM, $13.99$, single-seed; we discuss comparability in \cref{sec:label_efficiency}). A gap of $\sim$2 RMSE to supervised STAR ($12.19 \pm 0.55$, our 5-seed replication) remains.
 
@@ -441,7 +433,7 @@ We offer a principled sketch (not a formal theorem) of why trajectory-prediction
 \label{sec:limitations}
 
 \begin{enumerate}[nosep]
-  \item \textbf{Run-to-failure assumption.} \todo{Critical honesty item.} All C-MAPSS training engines run to failure. The temporal structure of the pretraining data implicitly reveals degradation progression: the encoder sees trajectories that always end at failure, and sequence length correlates with degradation state. This is weaker than labeled RUL supervision, but stronger than truly unlabeled data (e.g., censored industrial data where engines are replaced before failure). The length-vs-content ablation (\cref{sec:representation}) is required to quantify how much of the learned signal exploits this structural supervision vs.\ genuine sensor-content encoding.
+  \item \textbf{Run-to-failure assumption.} All C-MAPSS training engines run to failure. The temporal structure of the pretraining data implicitly reveals degradation progression: the encoder sees trajectories that always end at failure, and sequence length correlates with degradation state. This is weaker than labeled RUL supervision, but stronger than truly unlabeled data (e.g., censored industrial data where engines are replaced before failure). The length-vs-content ablation (\cref{sec:representation}) and the from-scratch comparison (\cref{sec:from_scratch}) together confirm that the encoder reads sensor content, not merely sequence length; but we note the structural supervision as a genuine qualifier on the "no labels" claim.
 
   \item \textbf{Single benchmark.} Results are on C-MAPSS, a simulation with known physics. Generalization to real industrial sensors with noise, missing data, and sensor drift is untested.
 
