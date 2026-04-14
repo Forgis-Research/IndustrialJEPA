@@ -114,6 +114,38 @@ Three publication-quality figures in `analysis/plots/v14/` (PNG) and
 - Our competitive advantage: only method reporting multi-seed mean ± std.
 - AE-LSTM head-to-head replication recommended for V15.
 
+## Phase 5c.4: Prediction-error anomaly diagnostic (DONE - NEGATIVE)
+
+Inspired by the MTS-JEPA comparison: test whether per-cycle predictor
+prediction error tracks degradation on V2 pretrained checkpoint
+(zero-label anomaly indicator).
+
+5 representative engines (lengths 154-287), horizon k=15, every cycle t ≥ 10.
+
+| Engine | Length | Spearman ρ(pred_err, degradation) | p     |
+|:-------|:-------|:----------------------------------|:------|
+| 90     | 154    | -0.250                            | 4e-03 |
+| 3      | 179    | -0.005                            | 0.96  |
+| 50     | 198    | +0.371                            | 5e-07 |
+| 48     | 231    | -0.324                            | 2e-06 |
+| 2      | 287    | +0.328                            | 5e-08 |
+
+**Mean ρ = +0.02** — prediction error does NOT reliably track degradation on
+the V2 checkpoint. Two engines positive, two negative, one near zero.
+
+**Verdict: NEGATIVE.** The MTS-JEPA-inspired zero-label anomaly idea does not
+transfer to our setup. Possible reasons: (i) V2 target encoder variance
+regularization produces representations near each other, so prediction
+error magnitudes don't track the degradation axis; (ii) predictor averaging
+may flatten the "surprise" signal; (iii) the signal may be in representation
+norm or specific dimensions, not L1 distance. Deferred to V15 for further
+investigation.
+
+Output:
+- `phase5c_prediction_error_anomaly.py` (script)
+- `prediction_error_analysis.json`
+- `analysis/plots/v14/prediction_error_vs_degradation.png` + `.pdf`
+
 ## Phase 5c: MTS-JEPA comparison (DONE)
 
 `experiments/v14/mtsjepa_comparison.md`. 16-dimension architectural diff.

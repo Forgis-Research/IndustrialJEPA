@@ -118,6 +118,16 @@ What MTS-JEPA is missing that we have:
 - Honest feature-regressor baseline to establish a tight "non-learning" lower bound.
 - Run-to-failure structural-supervision honesty flag.
 
+## Prediction-Error Anomaly Diagnostic (Phase 5c.4) {#sec-prederror}
+
+Implemented the MTS-JEPA-inspired zero-label anomaly idea: for each cycle t on the V2 pretrained checkpoint, compute L1 prediction error between `predictor(h_past, k=15)` and `target_encoder(x_{t+1:t+15})`. Plot error vs cycle for 5 representative engines and measure `Spearman ρ(error, degradation)`.
+
+**Result: negative.** Per-engine ρ splits 2 positive, 2 negative, 1 near zero. Mean ρ = **+0.02** across 5 engines. Prediction error does not reliably track degradation on our V2 checkpoint.
+
+This is an honest negative result. The MTS-JEPA technique (anomaly score from prediction residual) does not transfer directly. Possible reasons: (i) variance regularization of our target encoder produces embeddings concentrated near each other so error magnitudes don't track the degradation axis; (ii) predictor averaging flattens the "surprise" signal; (iii) the signal may live in representation norm or specific latent dimensions, not L1 distance. V15 follow-up: try predictor head output norm, or per-dimension variance of prediction error, as alternative anomaly indicators.
+
+![Prediction error vs degradation (V2 checkpoint, 5 engines)](../analysis/plots/v14/prediction_error_vs_degradation.png)
+
 ## SSL Literature Audit (Phase 5b) {#sec-ssl-audit}
 
 Full audit in `experiments/v14/ssl_comparison_audit.md`. The key comparability flag we now carry in the paper:
