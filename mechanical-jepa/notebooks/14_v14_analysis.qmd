@@ -84,6 +84,19 @@ Frozen improves by -2.11 RMSE with **8x lower seed std** (0.21 vs 1.7). E2E is e
 
 Interpretation: letting the target see the full trajectory closes **37%** of the frozen-probe gap to supervised STAR at 100% labels (from 17.81 - 12.19 = 5.6 RMSE to 15.70 - 12.19 = 3.5 RMSE). The 8x reduction in seed variance suggests the richer target representation gives the predictor a cleaner teaching signal. Pretraining wall time: ~10 min on one A10G GPU, total experiment (pretrain + 6 fine-tunes) ~11.2 min.
 
+### Phase 2b extension: does the gain hold at low labels?
+
+5-seed frozen-probe sweep on the same V14 checkpoint at 20%, 10%, 5% labels:
+
+| Budget | V2 frozen      | V14 full-seq frozen | STAR           |
+|:-------|:---------------|:--------------------|:---------------|
+| 100%   | 17.81 ± 1.7    | **15.70 ± 0.21**    | 12.19 ± 0.55   |
+| 20%    | 19.83 ± 0.30   | **17.20 ± 1.91**    | 17.74 ± 3.60   |
+| 10%    | 19.93 ± 0.90   | **18.79 ± 1.96**    | 18.72 ± 2.80   |
+| 5%     | **21.53 ± 2.0**| 26.57 ± 4.70        | 24.55 ± 6.50   |
+
+Mixed. The full-sequence variant wins at ≥10% labels (beats STAR at 20%, matches at 10%), but REGRESSES at 5% (+5.04 vs V2; loses the STAR crossover). The simpler V2 target is more robust when fine-tuning data is extremely scarce - four engines appear to overfit to the richer but noisier full-sequence representation. Honest finding: we report the full-sequence variant as an ablation but keep V2 as the default for the 5% STAR crossover. A configuration that wins across all budgets is open.
+
 ## MTS-JEPA Comparison (Phase 5c) {#sec-mtsjepa}
 
 Full comparison in `experiments/v14/mtsjepa_comparison.md`. Headlines:

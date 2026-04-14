@@ -34,15 +34,27 @@ early-stopped at ep 100 with patience 10 probe checks).
 Per-seed frozen: [15.66, 15.46, 15.97].
 Per-seed E2E:    [14.70, 14.83, 13.42].
 
-**Verdict**: POSITIVE. Full-sequence improves frozen by -2.1 RMSE with
-**8x smaller seed std** (0.21 vs 1.7). E2E is essentially tied with V2.
-Kill criterion (frozen > 18.5) NOT triggered. Change is kept as the default
-V14 target-encoder configuration.
+**Verdict**: MIXED. POSITIVE at ≥10% labels, NEGATIVE at 5%.
 
-This closes the frozen-probe gap to STAR at 100% labels from 5.6 RMSE
-(V2: 17.81 vs STAR 12.19) to 3.5 RMSE (15.70 vs 12.19) - a 37% reduction
-in the frozen-probe gap - while keeping the 5% STAR crossover intact
-(frozen 21.53 still beats STAR 24.55).
+**Phase 2b extension: low-label frozen sweep (5 seeds each)**:
+
+| Budget | V2 frozen      | V14 full-seq frozen | STAR           | Delta V14-V2 | Delta V14-STAR |
+|:-------|:---------------|:--------------------|:---------------|:-------------|:---------------|
+| 100%   | 17.81 ± 1.7    | **15.70 ± 0.21**    | 12.19 ± 0.55   | **-2.11**    | +3.51          |
+| 20%    | 19.83 ± 0.30   | **17.20 ± 1.91**    | 17.74 ± 3.60   | **-2.63**    | **-0.54**      |
+| 10%    | 19.93 ± 0.90   | **18.79 ± 1.96**    | 18.72 ± 2.80   | -1.14        | +0.07          |
+| 5%     | **21.53 ± 2.0**| 26.57 ± 4.70        | 24.55 ± 6.50   | **+5.04**    | +2.02          |
+
+Interpretation: the richer full-sequence target helps at moderate-to-high label
+budgets (closes 37% of the frozen-probe gap to STAR at 100%, beats STAR at 20%,
+matches STAR at 10%), but HURTS at 5% where the simpler V2 target is more
+robust - the 4-engine fine-tune set appears to overfit the stronger but noisier
+full-sequence representation. The 5% STAR crossover (our key pitch) only holds
+with V2, not with full-sequence.
+
+The full-sequence objective is reported in the paper as an architectural
+ablation improving frozen at ≥10% labels, but we do NOT adopt it as the default
+at 5%. Unified configuration winning across all budgets is open.
 
 Output files:
 - `phase2_full_sequence.py` (script, 370 lines)

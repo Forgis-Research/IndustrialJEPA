@@ -365,20 +365,22 @@ In the baseline Trajectory JEPA, the target encoder $\target$ processes only the
 
 \begin{table}[h]
 \centering
-\caption{Full-sequence target ablation, FD001 at 100\% labels, 3 seeds. Frozen probe improves by $-2.1$ RMSE with $8\times$ lower seed std; E2E is unchanged.}
+\caption{Full-sequence target ablation, FD001 frozen probe across label budgets. At $100\%$ the full-sequence variant beats V2 by $-2.1$ RMSE with $8\times$ lower seed std and also outperforms STAR; the gain persists at $20\%$ and $10\%$; but at $5\%$ the simpler V2 target is more robust and the full-sequence variant regresses by $+5.0$ RMSE, losing the STAR crossover.}
 \label{tab:full_sequence}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-Mode & Full-sequence target (V14) & Original target (V2) & $\Delta$ \\
+Budget & V2 frozen (baseline) & V14 frozen (full-seq) & STAR (supervised) & $\Delta$ V14$-$V2 \\
 \midrule
-Frozen & $\mathbf{15.70}_{\pm0.21}$ & $17.81_{\pm1.7}$ & $-2.11$ \\
-E2E    & $14.32_{\pm0.64}$ & $14.23_{\pm0.39}$ & $+0.09$ \\
+100\% & $17.81_{\pm1.7}$ & $\mathbf{15.70}_{\pm0.21}$ & $12.19_{\pm0.6}$ & $-2.11$ \\
+20\%  & $19.83_{\pm0.3}$ & $\mathbf{17.20}_{\pm1.91}$ & $17.74_{\pm3.6}$ & $-2.63$ \\
+10\%  & $19.93_{\pm0.9}$ & $\mathbf{18.79}_{\pm1.96}$ & $18.72_{\pm2.8}$ & $-1.14$ \\
+5\%   & $\mathbf{21.53}_{\pm2.0}$ & $26.57_{\pm4.70}$ & $24.55_{\pm6.5}$ & $+5.04$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Letting the target encoder see the full trajectory closes $37\%$ of the frozen-probe gap to supervised STAR at 100\% labels (from $17.81 - 12.19 = 5.6$ RMSE to $15.70 - 12.19 = 3.5$ RMSE), while keeping the 5\% STAR crossover intact. The $8\times$ reduction in seed variance is consistent with the target representation containing more information, giving the predictor a cleaner teaching signal. We adopt this configuration as the V14 default.
+The full-sequence target closes $37\%$ of the frozen-probe gap to STAR at $100\%$ labels ($5.6$ to $3.5$ RMSE) and closes the gap entirely at $20\%$ (V14 frozen $17.20 < $ STAR $17.74$). However, at $5\%$ labels the richer target hurts: with only four training engines, the probe appears to overfit the stronger but noisier frozen representation, whereas the V2 frozen probe retains the cross-STAR margin ($21.53 < 24.55$). We therefore report the full-sequence variant as an architectural ablation that improves the frozen probe at moderate-to-high label budgets but do not adopt it as the default at $5\%$. A unified configuration that wins across all budgets remains open.
 
 \subsection{From-Scratch Ablation}
 \label{sec:from_scratch}
