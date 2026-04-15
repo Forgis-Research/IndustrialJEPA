@@ -131,6 +131,43 @@ If SIGReg-only works: try λ sweep {0.02, 0.05, 0.10} on best config.
 Be critical. Iterate. If something looks wrong (loss diverges, collapse),
 diagnose before moving on.
 
+**CRITICAL: Batch size for SIGReg.**
+Current pretraining uses BATCH_SIZE=4 (variable-length sequences).
+SIGReg needs a batch of h_past vectors to compute the EP test —
+batch=4 is far too small (O(1/N) bias, need N ≥ 64-128).
+**Solution:** Use gradient accumulation to effective batch ≥ 128.
+Accumulate h_past vectors across accumulation steps, compute SIGReg
+once on the full accumulated batch before optimizer.step().
+
+```python
+# Pseudocode for SIGReg with gradient accumulation:
+accum_steps = 32  # 32 * 4 = 128 effective batch
+h_past_buffer = []
+for i, batch in enumerate(loader):
+    h_past = model.context_encoder(past, past_mask)
+    h_hat = model.predictor(h_past, k)
+    L_pred = F.l1_loss(h_hat, h_future.detach())
+    (L_pred / accum_steps).backward()  # accumulate pred loss gradients
+    h_past_buffer.append(h_past.detach())
+
+    if (i + 1) % accum_steps == 0:
+        # Compute SIGReg on accumulated batch
+        h_all = torch.cat(h_past_buffer)  # (128, 256)
+        L_sig = sigreg_loss(h_all)
+        # Add SIGReg gradient (on encoder params only)
+        (λ * L_sig).backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        h_past_buffer = []
+```
+
+**Architecture note:** The current model produces ONE vector per sample:
+- h_past = context_encoder(x_{1:t}) → (B, 256) — last hidden state of causal transformer
+- h_future = target_encoder(x_{t+1:t+k}) → (B, 256) — attention-pooled bidirectional
+- predictor(h_past, k) → (B, 256) — single-vector prediction
+This is vector-to-vector, NOT multi-token prediction. SIGReg operates
+on the (B, 256) h_past batch directly.
+
 ### 1c. Validate loss-performance correlation
 Run Experiment C from REPLICATION_SPEC.md: save checkpoints every 5 epochs,
 compute both (training loss) and (frozen probe RMSE), measure Spearman ρ.
