@@ -185,35 +185,31 @@ Be critical. Iterate. If something looks wrong, diagnose before moving on.
 
 C-MAPSS FD001: 100 engines, mean ~206 cycles. With 30 cuts/engine = 3000
 training pairs per epoch. Current BATCH_SIZE=4 is too small for SIGReg
-(EP test needs N ≥ 64).
+(EP test needs the actual embedding vectors, not accumulated gradients).
 
-**Solution:** Increase batch size to 32 or 64. The model is only 1.26M
-params and sequences are max ~200 tokens × 256d — memory is NOT the
-bottleneck (batch=4 was for variable-length padding convenience).
-Use `torch.nn.utils.rnn.pad_sequence` and larger batches.
+**Solution: just increase batch size to 64.**
 
-If batch=64 is still insufficient for SIGReg quality, use gradient
-accumulation (2 steps of 64 = 128 effective):
+Memory math: model 5MB + batch activations ~13MB + attention ~40MB = ~60MB.
+Trivial on any GPU. Batch=4 was a padding convenience, not a memory limit.
+Pad variable-length sequences to max-in-batch, use key_padding_mask.
+
+SIGReg then gets 64 h_t vectors (each R^256) per optimizer step —
+sufficient for the EP test on 512 random 1D projections.
 
 ```python
-optimizer.zero_grad()
-h_buffer = []
-for accum_step in range(accum_steps):
-    batch = next(loader_iter)
-    h_t = encoder(x_past, mask)          # (B, 256)
-    h_tk = encoder(x_full, mask).detach()  # (B, 256), no_grad
-    h_hat = predictor(h_t, k)
-    L_pred = F.l1_loss(h_hat, h_tk)
-    (L_pred / accum_steps).backward()
-    h_buffer.append(h_t)  # keep in graph for SIGReg
+BATCH_SIZE = 64  # that's it. no gradient accumulation needed.
 
-# SIGReg on full accumulated batch
-h_all = torch.cat(h_buffer)  # (accum_steps * B, 256)
-L_sig = sigreg_loss(h_all)
-(λ * L_sig / accum_steps).backward()
+# Training step:
+h_t   = encoder(x_past, past_mask)           # (64, 256)
+h_tk  = encoder(x_full, full_mask).detach()  # (64, 256)
+h_hat = predictor(h_t, k)                    # (64, 256)
 
+L_pred = F.l1_loss(h_hat, h_tk)
+L_sig  = sigreg_loss(h_t)                    # EP test on 64 vectors
+L = (1 - λ) * L_pred + λ * L_sig
+
+L.backward()
 optimizer.step()
-optimizer.zero_grad()
 ```
 
 ### 1c. Validate loss-performance correlation
