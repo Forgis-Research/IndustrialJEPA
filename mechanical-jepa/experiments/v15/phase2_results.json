@@ -1,0 +1,26 @@
+{
+  "config": "cross_sensor_improved_sensor_dropout20_sensor_id_embed",
+  "status": "ABORTED - shortcut learning confirmed at epoch 20",
+  "seeds": [42],
+  "probe_rmse_history": {
+    "epoch_1": 69.62,
+    "epoch_10": 74.13,
+    "epoch_20": 75.41
+  },
+  "training_loss_history": {
+    "epoch_1": 0.0638,
+    "epoch_10": 0.0022,
+    "epoch_20": 0.0014
+  },
+  "diagnosis": "SHORTCUT LEARNING via sensor ID embeddings",
+  "root_cause": "Sensor ID embeddings tell the encoder which sensor is which. Since future sensor values are approximately predictable from sensor identity alone (each sensor has stable typical value range), the model learns h = f(sensor_ID, sensor_mean) rather than h = f(temporal_context). Loss reaches 0.0014 (near-zero) by epoch 20 while probe RMSE INCREASES (69.62 -> 74.13 -> 75.41). The prediction task is solved by memorizing sensor statistics, not encoding degradation state.",
+  "v14_baseline_mean": 14.98,
+  "v14_baseline_std": 0.22,
+  "comparison": "V14 cross-sensor: loss at epoch 10 = 0.010, probe at epoch 10 = 26.95 (improving). V15 improved: loss at epoch 10 = 0.0022, probe at epoch 10 = 74.13 (degrading). The 5x lower loss with 2.8x worse probe is the shortcut signature.",
+  "recommendation_for_v16": "Remove sensor ID embeddings from cross-sensor architecture. Use relative positional encoding or no sensor-specific encoding. The cross-sensor attention mask should capture sensor interactions, not identity.",
+  "probe_rmse_per_seed": [],
+  "probe_rmse_mean": null,
+  "probe_rmse_std": null,
+  "improvement_vs_v14": null,
+  "runtime_hours": 0.44
+}

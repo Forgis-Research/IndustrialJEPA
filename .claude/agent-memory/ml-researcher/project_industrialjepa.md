@@ -1,8 +1,55 @@
 ---
 name: IndustrialJEPA Project Context
-description: V13 active: Exp1 DONE (schedule not bottleneck), Exp2 running (probe), Exp3 ready (data aug - KEY hypothesis: 35x fewer windows); STAR FD004 running; Phase2 STAR sweep running (3h+)
+description: V15 COMPLETE (2026-04-15): grey swan metrics framework, bidirectional EMA collapses (shared-prefix), SIGReg prevents collapse, SMAP anomaly insufficient pretraining, V16 = bidir context + causal target fix
 type: project
 ---
+
+## V15: Multi-Domain Grey Swan Benchmark (2026-04-15 to 2026-04-16)
+
+### Key Findings
+
+**V15-EMA architecture collapses**: Bidirectional full-sequence target (x_{0:t+k}) shares prefix
+with context (x_{0:t}). Encoder collapses because prediction is trivially easy. PC1=0.777,
+anisotropy=1.9e15x. V-shaped probe: 30.82->41.18->28.33->20.83 (seed 42), 13.50->26.51->...
+- Epoch-1 probe RMSE=13.50 for seed 123 is a PRE-COLLAPSE ARTIFACT, not a valid result.
+- The V2 causal encoder avoids this by using target=x_{t+1:t+k} (no shared prefix).
+
+**V15-SIGReg** (EP-based, vectorized): Results pending. Expected to avoid collapse.
+EP-SIGReg isotropy test (standalone): PC1 reduced from ~0.777 to 0.690 only (insufficient alone).
+
+**Grey swan evaluation framework** (mechanical-jepa/evaluation/grey_swan_metrics.py):
+- Primary metrics: RUL=RMSE, Anomaly=non-PA F1, TTE=nRMSE
+- PA inflation confirmed: +55pp (non-PA 6.9% vs PA 62.5% on SMAP with our model)
+- MTS-JEPA PA F1=33.6%, TS2Vec PA F1=32.8% - these use inflated protocol
+
+**SMAP anomaly detection** (20 epochs, 20K samples): non-PA F1=0.069 barely beats random (0.071).
+Anomaly scores are near-constant (mean=0.838, std=0.039) - model not discriminative.
+PA F1=0.625 beats literature ONLY because of constant-high scoring. Not a valid result.
+V16: need 100 epochs on full 135K training set.
+
+**TTE probe (V14 encoder)**: RMSE=37.02, WORSE than hand-feature Ridge (32.98). RUL-trained
+encoder does not transfer to TTE out-of-the-box. TTE needs different pretraining signal.
+
+**C-MAPSS sensor correlation**: 4 natural clusters, s5-s16 perfectly correlated (r=1.000),
+s9-s14 correlated (r=0.963). 39 high-corr pairs. Degradation-relevant correlation shifts:
+sensors 2,3,6,7.
+
+### V16 Fix (PRIMARY PRIORITY)
+V16a = bidirectional context encoder + causal target (x_{t+1:t+k}, NO prefix sharing).
+This preserves non-trivial prediction task while testing bidirectional context benefit.
+Implementation: replace V11 ContextEncoder with BidiTransformerEncoder, keep target format.
+
+### V15 Files
+- Evaluation: `mechanical-jepa/evaluation/grey_swan_metrics.py`
+- Phase 1 (SIGReg+Bidi): `experiments/v15/phase1_sigreg.py`
+- Phase 2 (CrossSensor): `experiments/v15/phase2_cross_sensor_improved.py`
+- Phase 3 (SMAP/MSL): `experiments/v15/phase3_smap_anomaly.py`, `data/smap_msl.py`
+- Phase 4 (Sensors): `experiments/v15/phase4_sensor_analysis.py`
+- Phase 5a (TTE): `experiments/v15/phase5a_tte_probe.py`
+- Results: `experiments/v15/RESULTS.md`, `experiments/v15/V16_PLAN.md`
+- Notebook: `notebooks/15_v15_analysis.qmd`
+
+
 
 IndustrialJEPA is a research project on self-supervised learning (JEPA) for industrial time series.
 

@@ -60,20 +60,23 @@ SIGReg is insufficient alone.
 
 ---
 
-## P1: Phase 2 - Cross-Sensor Encoder
+## P1: Phase 2 - Cross-Sensor Encoder (FIX REQUIRED)
 
-The improved cross-sensor encoder was implemented (phase2_cross_sensor_improved.py)
-but not evaluated. V14 cross-sensor result: frozen=14.98+/-0.22, E2E=12.91+/-0.4.
+**NEGATIVE RESULT FROM V15**: Sensor ID embeddings cause shortcut learning.
+V15 Phase 2 showed: loss=0.0014 at epoch 20 (shortcut) + probe=75.41 (worse than random).
+Root cause: sensor ID embeddings let model predict future sensor values from identity
+alone, without encoding temporal degradation context.
 
-**V16 target**: Run phase2_cross_sensor_improved.py to get 3-seed results.
-Key additions:
-- Sensor ID embeddings (learnable)
-- Sensor token dropout 20% during pretraining (regularization)
-- Attention map extraction (interpretability)
+**V16 fix**: Remove sensor ID embeddings. Use:
+- Relative positional encoding across sensors (based on correlation structure from Phase 4)
+- Or no sensor-specific encoding (let cross-attention learn it implicitly)
+- Keep sensor dropout 20% (good regularization, but remove ID shortcut)
 
-**Hypothesis**: Sensor dropout prevents encoder from memorizing sensor order,
-forces learning of sensor-content representations. Expect 0.5-1.0 RMSE improvement
-over V14 cross-sensor (14.98 -> ~14.0 frozen).
+**Alternative**: Re-run V14 cross-sensor architecture (no ID embeds) with sensor dropout only.
+This isolates the benefit of dropout without the ID shortcut. Expected: small improvement
+over V14 baseline (14.98 -> ~14.5 with dropout) without shortcut issues.
+
+V14 cross-sensor reference: frozen=14.98+/-0.22
 
 ---
 
