@@ -1,73 +1,56 @@
-\documentclass[border=8pt]{standalone}
+\documentclass[border=10pt]{standalone}
 \usepackage{tikz}
 \usepackage{amsmath,amssymb}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,backgrounds}
 
-\definecolor{cprimary}{HTML}{2D5F8A}
-\definecolor{cprimarylight}{HTML}{5B8DB8}
-\definecolor{csecondary}{HTML}{C25B28}
-\definecolor{csecondarylight}{HTML}{E8925F}
-\definecolor{caccent}{HTML}{3A8C6E}
-\definecolor{caccentlight}{HTML}{6BB89A}
-\definecolor{cwarning}{HTML}{D4A843}
-\definecolor{cneutraldark}{HTML}{333333}
-\definecolor{cneutralmid}{HTML}{888888}
-\definecolor{cneutrallight}{HTML}{CCCCCC}
-\definecolor{carrow}{HTML}{555555}
-\definecolor{cfinance}{HTML}{8B4513}
-\definecolor{cmedical}{HTML}{7B4F9D}
+\input{colors.tex}
 
 \begin{document}
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily\small,
-    domain/.style={
+    dombox/.style={
         rounded corners=3pt,
-        draw=#1!50!black, line width=0.6pt, fill=#1!12,
-        minimum height=1.7cm, minimum width=3.0cm,
-        align=center, text=cneutraldark
+        draw=#1!70!black, line width=0.6pt, fill=#1,
+        minimum height=1.6cm, minimum width=2.8cm,
+        align=center, text=ctextdark
     },
-    event/.style={
+    evbox/.style={
         rounded corners=2pt,
-        draw=#1!60, fill=#1!8,
-        minimum height=0.4cm, minimum width=2.0cm,
-        align=center, font=\sffamily\scriptsize,
-        text=cneutraldark
+        draw=#1!60!black, fill=#1,
+        minimum height=0.45cm, minimum width=2.2cm,
+        align=center, font=\sffamily\scriptsize, text=ctextdark
     },
-    metric/.style={
-        font=\sffamily\scriptsize, text=cneutralmid
-    },
-    dataarrow/.style={->,line width=0.5pt,carrow},
-    section/.style={font=\sffamily\scriptsize\bfseries,text=cneutralmid},
+    dataarrow/.style={->,line width=0.5pt,ctextdark},
 ]
 
 % ============================================================
 % CENTER: Trajectory JEPA
 % ============================================================
-\node[rounded corners=4pt, draw=cprimary!60!black, fill=cprimary!15,
+\node[rounded corners=3pt, draw=cprimary!70!black, fill=cprimarybg,
     line width=0.8pt,
-    minimum height=1.6cm, minimum width=3.2cm,
-    align=center, text=cneutraldark] (jepa) at (0,0) {
+    minimum height=1.6cm, minimum width=3.0cm,
+    align=center, text=ctextdark] (jepa) {
     \textbf{Trajectory JEPA}\\[2pt]
     {\scriptsize One encoder}\\[-1pt]
     {\scriptsize One pretraining objective}\\[-1pt]
-    {\scriptsize Trivial task-specific probes}
+    {\scriptsize Trivial task probes}
 };
 
 % ============================================================
-% DOMAINS (arranged around center)
+% DOMAINS (2x2 around center)
 % ============================================================
 
-% Top-left: Industrial / Predictive Maintenance
-\node[domain=cprimary, anchor=south east] (industrial) at ([xshift=-0.6cm,yshift=0.8cm]jepa.north west) {
-    \textbf{\textcolor{cprimary}{Industrial}}\\[2pt]
+% Top-left: Industrial
+\node[dombox=csecondarybg, above left=0.8cm and 0.5cm of jepa] (industrial) {
+    \textbf{\textcolor{csecondary}{Industrial}}\\[2pt]
     {\scriptsize C-MAPSS (turbofan)}\\[-1pt]
     {\scriptsize FEMTO (bearing)}\\[-1pt]
     {\scriptsize SWaT (water plant)}
 };
 
-% Top-right: Spacecraft / Infrastructure
-\node[domain=caccent, anchor=south west] (space) at ([xshift=0.6cm,yshift=0.8cm]jepa.north east) {
+% Top-right: Spacecraft
+\node[dombox=caccentbg, above right=0.8cm and 0.5cm of jepa] (space) {
     \textbf{\textcolor{caccent}{Spacecraft}}\\[2pt]
     {\scriptsize SMAP (satellite)}\\[-1pt]
     {\scriptsize MSL (Mars rover)}\\[-1pt]
@@ -75,69 +58,94 @@
 };
 
 % Bottom-left: Financial
-\node[domain=cfinance, anchor=north east] (finance) at ([xshift=-0.6cm,yshift=-0.8cm]jepa.south west) {
-    \textbf{\textcolor{cfinance}{Financial}}\\[2pt]
+\node[dombox=cprimarybg, below left=0.8cm and 0.5cm of jepa] (finance) {
+    \textbf{\textcolor{cprimary}{Financial}}\\[2pt]
     {\scriptsize VIX (volatility)}\\[-1pt]
     {\scriptsize S\&P 500 (equities)}\\[-1pt]
     {\scriptsize Crypto (BTC/ETH)}
 };
 
 % Bottom-right: Medical
-\node[domain=cmedical, anchor=north west] (medical) at ([xshift=0.6cm,yshift=-0.8cm]jepa.south east) {
-    \textbf{\textcolor{cmedical}{Medical}}\\[2pt]
+\node[dombox=chighlightbg, below right=0.8cm and 0.5cm of jepa] (medical) {
+    \textbf{\textcolor{chighlight}{Medical}}\\[2pt]
     {\scriptsize PhysioNet (sepsis)}\\[-1pt]
     {\scriptsize CHB-MIT (seizure)}\\[-1pt]
     {\scriptsize Battery (SOH)}
 };
 
 % Arrows from JEPA to domains
-\draw[dataarrow,cprimary] (jepa.north west) -- (industrial.south east);
+\draw[dataarrow,csecondary] (jepa.north west) -- (industrial.south east);
 \draw[dataarrow,caccent] (jepa.north east) -- (space.south west);
-\draw[dataarrow,cfinance] (jepa.south west) -- (finance.north east);
-\draw[dataarrow,cmedical] (jepa.south east) -- (medical.north west);
+\draw[dataarrow,cprimary] (jepa.south west) -- (finance.north east);
+\draw[dataarrow,chighlight] (jepa.south east) -- (medical.north west);
 
 % ============================================================
-% EVENT TYPES (right side, vertical list)
+% EVENT TYPES (right column)
 % ============================================================
 
-\coordinate (eventcol) at (6.5,0);
-\node[section] at ([yshift=2.0cm]eventcol) {GREY SWAN EVENTS};
+\coordinate (evcol) at ([xshift=5.0cm]jepa.east);
 
-\node[event=cprimary] (e_rul) at ([yshift=1.4cm]eventcol) {
+\node[font=\sffamily\scriptsize\bfseries, text=ctextmid,
+    anchor=south] at ([yshift=1.8cm]evcol) {GREY SWAN EVENTS};
+
+\node[evbox=csecondarybg, anchor=center] (e_rul) at ([yshift=1.2cm]evcol) {
     \textbf{Time-to-Failure} (RUL)
 };
-\node[metric,right=0.2cm of e_rul] {nRMSE $\downarrow$};
+\node[font=\sffamily\scriptsize, text=ctextmid,
+    right=0.15cm of e_rul] {nRMSE $\downarrow$};
 
-\node[event=caccent] (e_anom) at ([yshift=0.5cm]eventcol) {
+\node[evbox=caccentbg, below=0.3cm of e_rul] (e_anom) {
     \textbf{Anomaly Onset}
 };
-\node[metric,right=0.2cm of e_anom] {F1 $\uparrow$ (non-PA)};
+\node[font=\sffamily\scriptsize, text=ctextmid,
+    right=0.15cm of e_anom] {F1 $\uparrow$};
 
-\node[event=csecondary] (e_tte) at ([yshift=-0.4cm]eventcol) {
+\node[evbox=cprimarybg, below=0.3cm of e_anom] (e_tte) {
     \textbf{Threshold Exceedance}
 };
-\node[metric,right=0.2cm of e_tte] {nRMSE $\downarrow$};
+\node[font=\sffamily\scriptsize, text=ctextmid,
+    right=0.15cm of e_tte] {nRMSE $\downarrow$};
 
-\node[event=cfinance] (e_var) at ([yshift=-1.3cm]eventcol) {
+\node[evbox=chighlightbg, below=0.3cm of e_tte] (e_var) {
     \textbf{VaR Breach} (financial)
 };
-\node[metric,right=0.2cm of e_var] {nRMSE $\downarrow$};
-
-% Connecting lines from domains to relevant events
-\draw[dotted,cprimary!50,line width=0.4pt] (industrial.east) -- (e_rul.west);
-\draw[dotted,cprimary!50,line width=0.4pt] (industrial.east) -- (e_tte.west);
-\draw[dotted,caccent!50,line width=0.4pt] (space.east) -- (e_anom.west);
-\draw[dotted,cfinance!50,line width=0.4pt] (finance.east) -- (e_var.west);
-\draw[dotted,cfinance!50,line width=0.4pt] (finance.east) -- (e_tte.west);
-\draw[dotted,cmedical!50,line width=0.4pt] (medical.east) -- (e_rul.west);
-\draw[dotted,cmedical!50,line width=0.4pt] (medical.east) -- (e_tte.west);
+\node[font=\sffamily\scriptsize, text=ctextmid,
+    right=0.15cm of e_var] {nRMSE $\downarrow$};
 
 % ============================================================
-% BOTTOM: The argument
+% DOTTED CONNECTIONS (domains → event types)
+% Route around boxes via waypoints
 % ============================================================
-\node[font=\sffamily\scriptsize,text=cneutralmid,align=center]
-    at ([yshift=-2.5cm]jepa.south) {
-    \textbf{Key claim:} Every other method fills one column.
+
+% Industrial → RUL, TTE
+\coordinate (ind_exit) at (industrial.east |- e_rul.west);
+\draw[dotted, csecondary!50, line width=0.4pt]
+    (industrial.east) -- ++(0.3,0) |- (e_rul.west);
+\draw[dotted, csecondary!50, line width=0.4pt]
+    (industrial.east) -- ++(0.3,0) |- (e_tte.west);
+
+% Spacecraft → Anomaly
+\draw[dotted, caccent!50, line width=0.4pt]
+    (space.east) -- ++(0.2,0) |- (e_anom.west);
+
+% Financial → TTE, VaR
+\draw[dotted, cprimary!50, line width=0.4pt]
+    (finance.east) -- ++(0.3,0) |- (e_tte.west);
+\draw[dotted, cprimary!50, line width=0.4pt]
+    (finance.east) -- ++(0.3,0) |- (e_var.west);
+
+% Medical → RUL, TTE
+\draw[dotted, chighlight!50, line width=0.4pt]
+    (medical.east) -- ++(0.2,0) |- (e_rul.west);
+\draw[dotted, chighlight!50, line width=0.4pt]
+    (medical.east) -- ++(0.2,0) |- (e_tte.west);
+
+% ============================================================
+% BOTTOM TAGLINE
+% ============================================================
+\node[font=\sffamily\scriptsize, text=ctextmid, align=center,
+    below=0.4cm of $(finance.south)!0.5!(medical.south)$] {
+    \textbf{Key:} Every baseline fills $\leq$2 columns.
     Trajectory JEPA fills all four.
 };
 

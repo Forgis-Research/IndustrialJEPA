@@ -1,96 +1,77 @@
-\documentclass[border=8pt]{standalone}
+\documentclass[border=10pt]{standalone}
 \usepackage{tikz}
 \usepackage{amsmath,amssymb}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,decorations.pathreplacing,backgrounds}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,backgrounds}
 
-\definecolor{cprimary}{HTML}{2D5F8A}
-\definecolor{cprimarylight}{HTML}{5B8DB8}
-\definecolor{csecondary}{HTML}{C25B28}
-\definecolor{csecondarylight}{HTML}{E8925F}
-\definecolor{caccent}{HTML}{3A8C6E}
-\definecolor{caccentlight}{HTML}{6BB89A}
-\definecolor{cwarning}{HTML}{D4A843}
-\definecolor{cneutraldark}{HTML}{333333}
-\definecolor{cneutralmid}{HTML}{888888}
-\definecolor{cneutrallight}{HTML}{CCCCCC}
-\definecolor{bgencoder}{HTML}{E8F0F8}
-\definecolor{carrow}{HTML}{555555}
+\input{colors.tex}
 
 \begin{document}
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily\small,
-    dataarrow/.style={->,line width=0.7pt,carrow},
+    dataarrow/.style={->,line width=0.7pt,ctextdark},
     stage/.style={
         rounded corners=3pt,
-        draw=#1!50!black, line width=0.5pt, fill=#1!12,
-        minimum height=1.0cm, minimum width=2.2cm,
-        align=center, text=cneutraldark
+        line width=0.6pt,
+        minimum height=1.0cm, minimum width=2.0cm,
+        align=center, text=ctextdark, inner sep=4pt,
     },
-    section/.style={font=\sffamily\scriptsize\bfseries,text=cneutralmid},
-    note/.style={font=\sffamily\scriptsize,text=cneutralmid},
+    annot/.style={font=\sffamily\scriptsize,text=ctextmid},
+    sechead/.style={font=\sffamily\scriptsize\bfseries,text=ctextmid},
 ]
 
 % ============================================================
-% STAGE 1: Raw Multivariate Time Series
+% STAGE 1: Raw Data
 % ============================================================
 
-\node[section] at (0,2.0) {RAW DATA};
-
-% Draw a small matrix representation
-\node[rounded corners=2pt, draw=cneutralmid!50, fill=white,
-    minimum height=1.5cm, minimum width=1.8cm] (raw) at (0,0.5) {};
+\node[rounded corners=2pt, draw=cborder, fill=white,
+    minimum height=1.3cm, minimum width=1.6cm, inner sep=0pt] (raw) {};
 
 % Grid lines inside
-\foreach \y in {0.1,0.3,0.5,0.7,0.9} {
-    \draw[cneutrallight,line width=0.3pt]
-        ([xshift=-0.7cm,yshift={\y cm - 0.25cm}]raw.south west)
-        -- ([xshift=0.7cm,yshift={\y cm - 0.25cm}]raw.south west);
+\foreach \y in {0.15,0.35,0.55,0.75,0.95} {
+    \draw[cborder!60,line width=0.3pt]
+        ([xshift=3pt,yshift={\y cm - 0.15cm}]raw.south west)
+        -- ([xshift=-3pt,yshift={\y cm - 0.15cm}]raw.south east);
 }
-\foreach \x in {0.25,0.5,0.75,1.0,1.25} {
-    \draw[cneutrallight,line width=0.3pt]
-        ([xshift={\x cm - 0.15cm}]raw.south west)
-        -- ([xshift={\x cm - 0.15cm},yshift=1.1cm]raw.south west);
+\foreach \x in {0.3,0.55,0.8,1.05,1.3} {
+    \draw[cborder!60,line width=0.3pt]
+        ([xshift={\x cm - 0.1cm}]raw.south west)
+        -- ([xshift={\x cm - 0.1cm},yshift=-3pt]raw.north west);
 }
 
-\node[note,below=0.15cm of raw] {$\mathbf{X}\in\mathbb{R}^{T\times S}$};
-\node[note] at ([yshift=-0.55cm]raw.south) {$T$ timesteps, $S$ sensors};
-
-% Row/col labels
-\node[font=\sffamily\scriptsize,cprimary,rotate=90,anchor=south]
-    at ([xshift=-1.05cm]raw.center) {sensors};
-\node[font=\sffamily\scriptsize,cprimary,anchor=north]
-    at ([yshift=-0.05cm]raw.south) {time $\to$};
+\node[annot,below=0.15cm of raw] {$\mathbf{X}\in\mathbb{R}^{T\times S}$};
+\node[font=\sffamily\scriptsize,csecondary,rotate=90,anchor=south]
+    at ([xshift=-1.0cm]raw.center) {sensors};
+\node[font=\sffamily\scriptsize,csecondary,anchor=north]
+    at ([yshift=0.15cm]raw.south) {time $\to$};
 
 % ============================================================
-% STAGE 2: Normalization
+% STAGE 2: Normalize
 % ============================================================
 
-\node[stage=caccent,right=1.0cm of raw] (norm) {
+\node[stage, draw=caccent!70!black, fill=caccentbg,
+      right=0.8cm of raw] (norm) {
     \textbf{Normalize}\\[1pt]
     {\scriptsize Per-sensor}\\[-1pt]
     {\scriptsize min-max / z-score}
 };
 \draw[dataarrow] (raw.east) -- (norm.west);
-
-\node[note,below=0.15cm of norm,align=center] {
-    Per operating\\[-2pt]
-    condition if needed
+\node[annot,below=0.15cm of norm,align=center] {
+    Per operating\\[-2pt]condition if needed
 };
 
 % ============================================================
-% STAGE 3: Tokenization
+% STAGE 3: Tokenize
 % ============================================================
 
-\node[stage=cprimary,right=1.0cm of norm] (token) {
+\node[stage, draw=cprimary!70!black, fill=cprimarybg,
+      right=0.8cm of norm] (token) {
     \textbf{Tokenize}\\[1pt]
     {\scriptsize Linear projection}\\[-1pt]
     {\scriptsize $\mathbf{x}^{(t)} \!\to\! \mathbf{e}_t$}
 };
 \draw[dataarrow] (norm.east) -- (token.west);
-
-% Two options shown
-\node[note,below=0.15cm of token,align=center] {
+\node[annot,below=0.15cm of token,align=center] {
     $\mathbf{e}_t = \mathbf{W}\mathbf{x}^{(t)} + \mathbf{b}$\\[-2pt]
     $\mathbf{e}_t \in \mathbb{R}^d$, $d\!=\!256$
 };
@@ -99,62 +80,61 @@
 % STAGE 4: Positional Encoding
 % ============================================================
 
-\node[stage=csecondary,right=1.0cm of token] (pe) {
+\node[stage, draw=cborder, fill=cbgcool,
+      right=0.8cm of token] (pe) {
     \textbf{Position}\\[1pt]
     {\scriptsize Sinusoidal PE}\\[-1pt]
     {\scriptsize + sensor ID emb}
 };
 \draw[dataarrow] (token.east) -- (pe.west);
-
-\node[note,below=0.15cm of pe,align=center] {
-    Cycle number $t$\\[-2pt]
-    indexed, not learned
+\node[annot,below=0.15cm of pe,align=center] {
+    Cycle number $t$\\[-2pt]indexed, not learned
 };
 
 % ============================================================
-% STAGE 5: Encoder Input
+% STAGE 5: To Encoder
 % ============================================================
 
-\node[rounded corners=3pt, draw=cprimary!50, fill=bgencoder,
-    minimum height=1.0cm, minimum width=2.0cm,
-    right=1.0cm of pe, align=center] (out) {
-    \textbf{\textcolor{cprimary}{To Encoder}}\\[1pt]
+\node[stage, draw=csecondary!70!black, fill=csecondarybg,
+      right=0.8cm of pe] (out) {
+    \textbf{To Encoder}\\[1pt]
     {\scriptsize $[\mathbf{e}_1, \ldots, \mathbf{e}_T]$}
 };
 \draw[dataarrow] (pe.east) -- (out.west);
 
 % ============================================================
-% BOTTOM: Covariate handling detail
+% SEPARATOR + COVARIATE HANDLING
 % ============================================================
 
-\coordinate (covstart) at ([yshift=-1.8cm]norm.south);
-
-\draw[cneutrallight,line width=0.3pt]
-    ([xshift=-0.5cm]covstart -| raw.west) -- ([xshift=0.5cm]covstart -| out.east);
-
-\node[section,anchor=west] at ([xshift=-0.5cm,yshift=-0.3cm]covstart -| raw.west)
+\coordinate (sep_y) at ([yshift=-1.0cm]raw.south);
+\draw[cborder,line width=0.4pt]
+    ([xshift=-0.3cm]raw.west |- sep_y)
+    -- ([xshift=0.3cm]out.east |- sep_y);
+\node[sechead,anchor=west]
+    at ([xshift=-0.3cm,yshift=-0.25cm]raw.west |- sep_y)
     {COVARIATE HANDLING};
 
-% Option A: Concatenation
-\node[rounded corners=2pt, draw=cprimary!40, fill=cprimary!8,
-    minimum height=0.7cm, minimum width=4.5cm,
-    align=center, font=\sffamily\scriptsize]
-    (optA) at ([yshift=-1.0cm]covstart -| norm.east) {
+% Option A
+\node[rounded corners=2pt, draw=csecondary!40, fill=csecondarybg,
+    minimum height=0.6cm, minimum width=9.0cm,
+    align=center, font=\sffamily\scriptsize, text=ctextdark,
+    inner sep=4pt, anchor=north west]
+    (optA) at ([xshift=-0.3cm,yshift=-0.7cm]raw.west |- sep_y) {
     \textbf{Operating conditions} $\to$ KMeans cluster $\to$
     per-cluster normalization
 };
+\node[annot,right=0.15cm of optA] {(default)};
 
-% Option B: Sensor-as-token
-\node[rounded corners=2pt, draw=csecondary!40, fill=csecondary!8,
-    minimum height=0.7cm, minimum width=4.5cm,
-    align=center, font=\sffamily\scriptsize]
-    (optB) at ([yshift=-1.8cm]covstart -| norm.east) {
-    \textbf{Sensor-as-token variant:} each sensor $s$ $\to$ own token
+% Option B
+\node[rounded corners=2pt, draw=cprimary!40, fill=cprimarybg,
+    minimum height=0.6cm, minimum width=9.0cm,
+    align=center, font=\sffamily\scriptsize, text=ctextdark,
+    inner sep=4pt, below=0.25cm of optA.south west, anchor=north west]
+    (optB) {
+    \textbf{Sensor-as-token:} each sensor $s$ $\to$ own token
     with learnable sensor-ID embedding
 };
-
-\node[note,right=0.3cm of optA] {(default)};
-\node[note,right=0.3cm of optB] {(cross-sensor)};
+\node[annot,right=0.15cm of optB] {(cross-sensor)};
 
 \end{tikzpicture}
 \end{document}
