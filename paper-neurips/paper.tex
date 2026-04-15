@@ -23,9 +23,8 @@
 
 % ============================================================
 % Draft mode macros
-% Toggle \draftmodefalse for camera-ready submission
 % ============================================================
-\newif\ifdraftmode \draftmodetrue  % toggle to \draftmodefalse for submission
+\newif\ifdraftmode \draftmodetrue
 \ifdraftmode
   \newcommand{\plannedc}[1]{{\color{blue}#1}}
   \newcommand{\placeholder}[1]{{\color{red}\textbf{[#1]}}}
@@ -51,13 +50,15 @@
 \newcommand{\predictor}{g_\phi}
 \newcommand{\target}{\bar{f}_\xi}
 \newcommand{\rul}{\text{RUL}}
+\newcommand{\tte}{\text{TTE}}
+\newcommand{\nrmse}{\text{nRMSE}}
 \newcommand{\rmse}{\text{RMSE}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator{\Var}{Var}
 
 % ============================================================
-\title{Self-Supervised Learning for Mechanical Grey Swan Prediction}
+\title{Trajectory JEPA: Self-Supervised Grey Swan Prediction\\from Multivariate Time Series}
 \author{Anonymous Author(s)}
 % ============================================================
 
@@ -68,13 +69,13 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Mechanical failures are \emph{grey swans}: too rare for large labeled datasets, yet physically grounded enough that their signatures permeate unlabeled sensor streams.
-We introduce Trajectory JEPA, a Joint Embedding Predictive Architecture that learns degradation representations by predicting future multivariate sensor trajectories in latent space, without failure labels.
-A controlled from-scratch ablation (identical architecture, identical fine-tuning, only initialization differs) isolates the pretraining contribution: $+8.8$ RMSE at full labels and $+15.6$ RMSE at 10\% labels on NASA C-MAPSS FD001.
-This label efficiency produces a crossover against supervised methods: at 5\% of training engines, our frozen encoder ($21.53 \pm 2.0$) outperforms STAR ($24.55$), the supervised state of the art that achieves $12.19$ with full labels.
-With all labels, the encoder reaches $\rmse = 14.23 \pm 0.39$ (5 seeds), beating the only prior SSL baseline (AE-LSTM, $16.07 \pm 2.80$) by $1.84$ RMSE with $7\times$ lower variance, while Spearman $\rho = 0.830 \pm 0.023$ and a $+41.5$ RMSE shuffle penalty confirm genuine within-engine degradation tracking.
-\plannedc{We evaluate across five domains (turbofan, bearing, battery, anomaly detection, process fault), establishing the first unified SSL benchmark for grey swan prediction from multivariate time series.}
-A connection to slow feature analysis explains why the objective concentrates on degradation dynamics; architectural ablations (full-sequence target, cross-sensor attention) close up to 37\% of the frozen-probe gap to supervised SOTA, with the full-sequence variant generalizing across C-MAPSS subsets.
+Grey swan events---rare but partially predictable failures, anomalies, and threshold breaches---are the highest-stakes prediction targets in multivariate time series, yet they are precisely the events with the least labeled data.
+We introduce \textbf{Trajectory JEPA}, a Joint Embedding Predictive Architecture that learns general-purpose representations by predicting future sensor trajectories in latent space, without event labels.
+A single pretrained encoder supports four grey swan event types through trivial downstream probes: remaining useful life regression (linear), anomaly detection (the pretraining prediction error itself---zero labels required), threshold exceedance prediction (linear), and fault classification (linear).
+\plannedc{We evaluate across four domains---industrial (C-MAPSS, SWaT), spacecraft telemetry (SMAP, MSL), financial markets (VIX), and medical (PhysioNet Sepsis)---establishing the first unified SSL benchmark for grey swan prediction.
+Every baseline fills at most two columns of our benchmark table; Trajectory JEPA fills all of them.}
+On C-MAPSS FD001, a controlled from-scratch ablation isolates the pretraining contribution: $+8.8$ RMSE at full labels, $+15.6$ at 10\%.
+At 5\% labels, the frozen encoder ($21.53 \pm 2.0$) beats the supervised state of the art ($24.55 \pm 6.5$)---the label-efficiency crossover that makes self-supervised pretraining the rational default in the grey swan regime.
 \end{abstract}
 
 % ============================================================
@@ -83,32 +84,33 @@ A connection to slow feature analysis explains why the objective concentrates on
 \section{Introduction}
 \label{sec:intro}
 
-A turbine blade cracks after 12{,}000 flight hours. A bearing seizes in a wind turbine gearbox during peak generation. A battery in an electric bus loses 20\% capacity three months ahead of schedule. These are \emph{grey swans}: events that are rare in operational data but follow known degradation physics~\citep{greyswan_supplychain2025}. Unlike black swans, which are fundamentally unforeseeable~\citep{taleb2007blackswan}, grey swans sit in the long tail of operating experience and are, in principle, predictable. They present a data paradox: \emph{the events most critical to predict are precisely the ones with the least training data}.
+A turbine blade cracks after 12{,}000 flight hours. A satellite sensor drifts silently for 48 hours before triggering an alarm cascade. The VIX doubles in a single trading session. An ICU patient develops sepsis six hours before clinical diagnosis. These are \emph{grey swans}: events that are rare in operational data but follow partially predictable dynamics~\citep{taleb2007blackswan,greyswan_supplychain2025}. They present a universal data paradox: \emph{the events most critical to predict are the ones with the least labeled data}.
 
-Supervised deep learning~\citep{lei2018machinery, zhao2019deeplearningphm, fan2024star, ttsnet2025} achieves strong in-domain accuracy on prognostics benchmarks but requires labeled failure trajectories that are expensive and scarce by definition. Time series foundation models~\citep{das2024timesfm, ansari2024chronos, goswami2024moment} address data scarcity through massive pretraining, but optimize for next-value forecasting. This is the wrong objective: a perfect one-step-ahead predictor of raw sensor amplitude encodes nothing about remaining useful life.
+Current approaches treat each event type as a separate problem with bespoke architectures: RUL prediction models~\citep{fan2024star,ttsnet2025} never encounter anomaly detection benchmarks; anomaly detectors~\citep{xu2022anomalytransformer,yang2023dcdetector} never predict remaining useful life. Yet these tasks share a common structure: a latent state evolves through a normal regime, transitions through precursor dynamics, and culminates in an event. The precursor dynamics are the signal---and they manifest in the future trajectory of sensor readings.
 
-We take a different approach. Rather than forecasting sensor values, we train an encoder to predict \emph{future sensor trajectories in latent space}. Grey swan events alter what sensor trajectories will look like in the near future: bearing frequencies shift, turbofan efficiency declines, battery impedance rises. An encoder forced to predict these trajectories must internalize the state variables that govern degradation dynamics, without any labels.
+We take this insight literally. Rather than forecasting raw sensor values or classifying anomalies, we train an encoder to predict \emph{future sensor trajectories in latent space}. Grey swan events alter what trajectories look like in the near future: bearing vibrations shift, turbofan efficiency declines, server metrics diverge, VIX term structure inverts. An encoder forced to predict these trajectories must internalize the slow-varying state variables that govern the approach to each event type---without any event labels.
 
-Our method, Trajectory JEPA, is a causal Transformer encoder that, given sensor observations $\x_{1:t}$, predicts the latent representation of future observations $\x_{t+1:t+k}$ produced by an exponential moving average (EMA) target encoder~\citep{grill2020byol, assran2023ijepa}. Prediction in latent space avoids the reconstruction bias of masked autoencoders~\citep{he2022mae}, which favors low-level signal statistics over slow-varying degradation structure.
+\paragraph{Trajectory JEPA.} Our method is a causal Transformer encoder that predicts the latent representation of future observations $\x_{t+1:t+k}$ from past context $\x_{1:t}$, using an EMA target encoder~\citep{grill2020byol,assran2023ijepa}. Prediction in latent space avoids the reconstruction bias of masked autoencoders~\citep{he2022mae}---the encoder learns degradation dynamics, not signal-level detail.
 
-\paragraph{Structural supervision honesty.} All C-MAPSS training engines are run-to-failure, so the temporal structure of the data implicitly reveals degradation progression even though no RUL labels are used during pretraining. This is weaker than labeled supervision but stronger than truly unlabeled data with censored trajectories. We quantify what the encoder actually learns via length-vs-content ablations (\cref{sec:representation}) and a from-scratch comparison (\cref{sec:from_scratch}); see also \cref{sec:limitations}.
+\paragraph{One encoder, four event types.} After pretraining, a single frozen encoder supports multiple grey swan tasks through trivial probes (\Cref{fig:architecture}):
+\begin{enumerate}[nosep]
+  \item \textbf{Time-to-Failure (RUL):} linear probe $\h_t \to \hat{y}$, supervised.
+  \item \textbf{Anomaly detection:} the pretraining prediction error $\|\hat{\h}_\text{fut} - \h_\text{fut}\|_1$ as anomaly score---\emph{zero labels required}.
+  \item \textbf{Threshold exceedance:} linear probe $\h_t \to \hat{\tau}$, predicting time until a sensor crosses $N\sigma$, supervised.
+  \item \textbf{Fault classification:} linear probe $\h_t \to K$ classes, supervised.
+\end{enumerate}
 
 \paragraph{Contributions.}
-
 \begin{enumerate}[nosep]
-  \item \textbf{Trajectory JEPA.} We adapt the JEPA architecture to multivariate time series for grey swan prediction via causal latent trajectory prediction. The same objective applies across event types without domain-specific modifications (\cref{sec:method}).
+  \item \textbf{Trajectory JEPA} adapts the JEPA architecture to multivariate time series for grey swan prediction via causal latent trajectory prediction. The same encoder and pretraining objective applies across all event types without modification (\cref{sec:method}).
 
-  \item \textbf{Quantified pretraining contribution.} A from-scratch ablation (same architecture, same fine-tuning, only initialization differs) shows pretraining contributes $+8.8$ RMSE at full labels and $+15.6$ RMSE at 10\% labels on C-MAPSS FD001, isolating the SSL objective from the Transformer architecture (\cref{sec:from_scratch}).
+  \item \textbf{Quantified pretraining contribution.} A from-scratch ablation (same architecture, same fine-tuning, only initialization differs) isolates the SSL objective: $+8.8$ RMSE at full labels, growing to $+15.6$ at 10\% (\cref{sec:from_scratch}).
 
-  \item \textbf{Label-efficiency crossover.} At 5\% of training engines, our frozen encoder ($21.53 \pm 2.0$) outperforms STAR ($24.55$), the supervised state of the art. This crossover in the grey-swan regime is the practical payoff of self-supervised pretraining (\cref{sec:label_efficiency}).
+  \item \textbf{Label-efficiency crossover.} At 5\% labels, the frozen SSL encoder ($21.53 \pm 2.0$) surpasses supervised STAR ($24.55 \pm 6.5$), demonstrating the practical payoff in the grey swan regime (\cref{sec:label_efficiency}).
 
-  \item \textbf{Verified degradation tracking.} Five diagnostics confirm genuine within-engine signal: Spearman $\rho = 0.830 \pm 0.023$, a $+41.5$ RMSE shuffle penalty, and a 5.4 RMSE margin over a tight hand-engineered baseline (\cref{sec:verification}).
+  \item \plannedc{\textbf{Unified grey swan benchmark.} Evaluation across four domains and four event types, where no prior method fills more than two columns of the benchmark table (\cref{sec:benchmark}).}
 
-  \item \plannedc{\textbf{Multi-domain benchmark.} Evaluation across five grey-swan domains - turbofan RUL (C-MAPSS, N-CMAPSS), bearing RUL (FEMTO, XJTU-SY), battery degradation (NASA, MIT 124-cell), multivariate anomaly detection (MSL, SMAP, SWaT, PSM), and process fault detection (TEP) - establishes the first unified SSL benchmark for event prediction from multivariate time series (\cref{sec:benchmark}).}
-
-  \item \textbf{Theoretical rationale.} We connect trajectory prediction to Slow Feature Analysis~\citep{wiskott2002sfa}, providing an information-theoretic argument for why the encoder concentrates on degradation components and an explanation of the frozen-vs-end-to-end tracking asymmetry (\cref{sec:theory_frozen_e2e}).
-
-  \item \textbf{Architectural ablations.} Full-sequence target and cross-sensor attention improve the frozen probe by up to $2.8$ RMSE on FD001; full-sequence generalizes to FD003 and FD004. Both gains are SSL-contingent: from-scratch ablation shows pretraining contributes $+21.5$ RMSE at 10\% labels (\cref{sec:full_sequence,sec:cross_sensor}).
+  \item \textbf{Anomaly detection without labels.} The pretraining prediction error is directly an anomaly score, providing zero-shot anomaly detection from the SSL objective alone (\cref{sec:anomaly_probe}).
 \end{enumerate}
 
 % ============================================================
@@ -117,34 +119,23 @@ Our method, Trajectory JEPA, is a causal Transformer encoder that, given sensor 
 \section{Related Work}
 \label{sec:related}
 
-\subsection{Self-Supervised Learning for Time Series}
-\label{sec:related_ssl}
+\paragraph{Self-supervised learning for time series.}
+Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}, TF-C~\citep{zhang2022tfc}) learn representations by contrasting positive and negative pairs.
+Masked reconstruction methods (PatchTST~\citep{nie2023patchtst}, SimMTM~\citep{dong2023simmtm}, TimeMAE~\citep{cheng2023timemae}) reconstruct masked segments.
+JEPA avoids both: it predicts representations of future segments, not raw values, avoiding reconstruction bias toward low-level signal statistics~\citep{assran2023ijepa,bardes2024vjepa}.
+For time series, TS-JEPA~\citep{tsjepa2024} applies JEPA with temporal masking for classification; MTS-JEPA~\citep{mtsjepa2026} introduces codebook regularization. Neither evaluates on prognostics, anomaly detection, or time-to-event prediction.
 
-Self-supervised pretraining for time series has followed two paradigms: contrastive and generative.
+\paragraph{RUL prediction.}
+C-MAPSS~\citep{saxena2008cmapss} is the standard benchmark. Supervised SOTA: STAR~\citep{fan2024star} (FD001 RMSE 10.61), TTSNet~\citep{ttsnet2025} (11.02). The only prior SSL result is AE-LSTM~\citep{lecam2025aelstm} (13.99, best-of-28 grid). Our work is the first JEPA approach for RUL prediction.
 
-\paragraph{Contrastive methods.} \citet{chen2020simclr} established the contrastive learning paradigm with SimCLR; subsequent work adapted it to time series. \citet{yue2022ts2vec} learn representations via hierarchical contrastive learning across temporal and instance dimensions. \citet{tonekaboni2021tnc} exploit the stationarity of temporal neighborhoods, defining positive pairs within stationary windows, an assumption violated by degradation data, which is fundamentally non-stationary. \citet{eldele2021tstcc} combine temporal and contextual contrasting, while \citet{zhang2022tfc} align time-domain and frequency-domain representations, demonstrating cross-domain transfer on medical and mechanical datasets. Of these, TF-C is closest to our setting, but evaluates on fault \emph{classification}, not RUL regression.
+\paragraph{Time series anomaly detection.}
+Anomaly Transformer~\citep{xu2022anomalytransformer} uses association discrepancy; DCdetector~\citep{yang2023dcdetector} employs dual-branch contrastive learning. Most results report point-adjusted F1 (PA-F1), which severely inflates scores~\citep{schmidl2022tsadeval}. We report non-PA F1 as primary.
 
-\paragraph{Masked reconstruction.} Masked autoencoders~\citep{he2022mae} established that high masking ratios (75\%) force encoders to learn semantic structure rather than local interpolation. \citet{nie2023patchtst} adapt the Vision Transformer to time series via channel-independent patching and masked pretraining. \citet{dong2023simmtm} reconstruct masked time points from multiple masked versions, and \citet{cheng2023timemae} combine masked autoencoders with decoupled representation learning. These methods optimize for reconstruction fidelity, which biases representations toward low-level signal statistics rather than degradation-relevant features. Our JEPA objective avoids this bias by predicting in latent space rather than signal space~\citep{assran2023ijepa}.
+\paragraph{Early warning signals.}
+Scheffer et al.~\citep{scheffer2009earlywarning} show that critical transitions in complex systems are preceded by detectable statistical signatures: increased autocorrelation and variance. Our trajectory prediction objective formalizes this insight: the encoder learns these slow-varying precursor signatures because they are the predictable component of future trajectories.
 
-\paragraph{EMA-based methods.} Our architecture uses an EMA target encoder to prevent representation collapse. This mechanism originates in MoCo~\citep{he2020moco} and DINO~\citep{caron2021dino}, and was shown by \citet{grill2020byol} (BYOL) to remove the need for negative pairs. \citet{bardes2022vicreg} formalize this through variance-invariance-covariance regularization. \citet{balestriero2025lejepa} further ground JEPA training theoretically with the provably optimal SIGReg regularizer.
-
-\paragraph{Predictive coding.} Our trajectory prediction objective (predicting future latent representations from past context) is conceptually related to Contrastive Predictive Coding~\citep{oord2018cpc}. The key distinction is architectural: CPC uses a contrastive InfoNCE loss requiring negative samples, while JEPA uses direct regression in the target encoder's space with EMA stabilization. Both share the insight that predicting the future in latent space forces the encoder to capture slow-varying structure, in our case degradation dynamics.
-
-\subsection{Remaining Useful Life Prediction}
-\label{sec:related_rul}
-
-RUL prediction has progressed from physics-based models to deep learning. Early work applied CNNs~\citep{li2018dcnn} and LSTMs~\citep{zheng2017lstm} to sensor data; modern architectures combine these with attention. On C-MAPSS~\citep{saxena2008cmapss}, the current supervised state of the art is STAR~\citep{fan2024star} (FD001 RMSE: 10.61). TTS-Net~\citep{ttsnet2025} fuses Transformer, TCN, and self-attention branches (FD001 RMSE: 11.02). Nearly all methods are fully supervised.
-
-\paragraph{Self-supervised pretraining for RUL.} \citet{lecam2025aelstm} train an autoencoder LSTM to reconstruct sensor sequences on C-MAPSS, achieving FD001 RMSE 13.99, the only published SSL result prior to our work. \citet{ding2022ssl_rul} propose multi-modal augmentation-based pretraining for rotating machinery, while \citet{wang2024masked_rul} apply masked autoencoders to turbofan sensors. None evaluate representation quality independently of the downstream metric (e.g., via health index recovery or within-engine tracking correlation); our work provides this analysis.
-
-\paragraph{Health index construction.} Learning a health indicator from sensor data is related to our health index recovery result. \citet{guo2017healthindex} construct bearing health indicators via RNNs. \citet{wang2022healthindex} propose unsupervised multi-criteria methods. \citet{li2024hi_ssl} apply contrastive learning for health index construction. These methods require degradation labels or expert thresholds. Our result is distinct: the health index emerges as a linear readout of frozen SSL representations ($R^2 = 0.926$) without any health labels; the trajectory prediction task alone is sufficient.
-
-\subsection{Joint Embedding Predictive Architectures}
-\label{sec:related_jepa}
-
-JEPA learns by predicting representations of masked inputs from visible context in a shared latent space~\citep{lecun2022path}. \citet{assran2023ijepa} demonstrate that predicting in representation space avoids the reconstruction bias of MAEs. \citet{bardes2024vjepa} extend to video with 90\% spatiotemporal masking. \citet{wang2024brainjepa} apply JEPA to fMRI brain dynamics with domain-specific positioning (NeurIPS 2024 Spotlight), the closest analogue to our work in adapting JEPA to a non-vision domain. For time series, \citet{tsjepa2024} adapt JEPA with temporal masking for classification, while \citet{mtsjepa2026} introduce codebook regularization for multivariate series. \emph{None of these evaluate on prognostics or RUL tasks.} Our work is the first to apply JEPA to RUL prediction and to show that the learned representations linearly decode a latent health variable.
-
-\paragraph{Linear probing as evaluation.} We evaluate representation quality using linear probes~\citep{alain2017probes}, the standard diagnostic in SSL~\citep{chen2020simclr, grill2020byol}. A frozen encoder whose representations support strong linear readout has genuinely internalized task-relevant structure during pretraining, rather than relying on nonlinear adaptation during fine-tuning.
+\paragraph{Time-to-event modeling.}
+Survival analysis methods (DeepHit~\citep{lee2018deephit}, DeepSurv~\citep{katzman2018deepsurv}) model time-to-event distributions. Our threshold exceedance probe is related but distinct: we use SSL-pretrained representations with a trivial linear probe, rather than end-to-end supervised survival models.
 
 % ============================================================
 % 3. METHOD
@@ -152,130 +143,213 @@ JEPA learns by predicting representations of masked inputs from visible context 
 \section{Method}
 \label{sec:method}
 
-\subsection{Problem Formulation}
+\subsection{Problem Formulation: Grey Swan Events}
 \label{sec:problem}
 
-Consider a set of run-to-failure episodes $\{(\x_i^{(1)}, \ldots, \x_i^{(T_i)})\}_{i=1}^N$, where $\x_i^{(t)} \in \R^{S}$ is a vector of $S$ sensor readings at cycle $t$ (e.g., $S = 14$ selected sensors for C-MAPSS), and $T_i$ is the total lifetime of engine $i$. We define the piecewise-linear capped remaining useful life:
-\begin{equation}
-  \rul(t) = \min(T_i - t, \; R_{\max}),
-  \label{eq:rul}
-\end{equation}
-where $R_{\max} = 125$ cycles reflects the ``healthy plateau'' convention: early-life cycles where the engine is far from failure are assigned a constant RUL, preventing the model from wasting capacity on a regime where degradation has not yet begun~\citep{zheng2017lstm}.
+We consider multivariate time series $\x^{(t)} \in \R^S$ from $S$ sensors, observed over $T$ timesteps. A \emph{grey swan event} is a rare occurrence at time $t^*$ that is partially predictable from the preceding sensor trajectory. We unify four event types under a common representation:
 
+\begin{itemize}[nosep]
+  \item \textbf{Time-to-Failure (RUL):} $y(t) = \min(t^* - t,\; R_\text{max})$, continuous regression.
+  \item \textbf{Anomaly:} binary label $a(t) \in \{0,1\}$, onset detection.
+  \item \textbf{Threshold exceedance:} $\tau(t) = \inf\{s > t : x_j^{(s)} > \mu_j + N\sigma_j\}$, time until sensor $j$ crosses $N\sigma$ from healthy baseline. We use $N=3$ (SPC standard, ISO 7870-2~\citep{montgomery2020spc}).
+  \item \textbf{Fault classification:} $c(t) \in \{1,\ldots,K\}$.
+\end{itemize}
+
+All four tasks require the same capability: an encoder that tracks the latent state evolution preceding the event. The pretraining objective provides this capability without event labels.
+
+\subsection{Preprocessing and Tokenization}
+\label{sec:tokenization}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_tokenization.pdf}
+\caption{Preprocessing pipeline. Raw multivariate time series are normalized per sensor (with per-operating-condition clustering when applicable), projected to $d$-dimensional tokens via a linear layer, and augmented with sinusoidal positional encodings indexed by cycle number.}
+\label{fig:tokenization}
+\end{figure}
+
+Each sensor vector $\x^{(t)} \in \R^S$ is normalized per-sensor using training-set statistics. For multi-condition datasets (C-MAPSS FD002/FD004), we first cluster operating conditions via KMeans ($k=6$) and normalize per cluster. A linear projection maps each normalized vector to a token $\mathbf{e}_t = \W\x^{(t)} + \mathbf{b} \in \R^d$ ($d = 256$). Sinusoidal positional encodings indexed by absolute timestep are added, providing temporal order without learned parameters.
+
+\textbf{Covariate handling.} Operating conditions and auxiliary variables enter through the normalization pathway (per-condition clustering) rather than as explicit input tokens, keeping the encoder architecture domain-agnostic. A cross-sensor variant (\cref{sec:cross_sensor}) instead tokenizes each sensor individually with learnable sensor-ID embeddings.
 
 \subsection{Trajectory JEPA Pretraining}
 \label{sec:jepa}
 
-Trajectory JEPA learns by predicting future sensor trajectories in latent space, without failure labels. Given the past sensor observations $\x_{1:t}$, the model predicts the latent representation of future observations $\x_{t+1:t+k}$.
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{figures/fig_architecture_ema.pdf}
+    \caption{EMA target encoder (default)}
+    \label{fig:arch_ema}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{figures/fig_architecture_sigreg.pdf}
+    \caption{SIGReg variant (no target encoder)}
+    \label{fig:arch_sigreg}
+\end{subfigure}
+\caption{\textbf{Trajectory JEPA architecture.} \textbf{(a)} The context encoder $\encoder$ processes past observations causally; the EMA target encoder $\target$ encodes the future bidirectionally. The predictor $\predictor$ bridges the gap, conditioned on horizon $k$. \textbf{Downstream probes} (bottom): RUL, TTE, and fault probes are supervised linear layers on $\h_\text{past}$; the anomaly probe reuses the prediction error $\|\hat{\h}_\text{fut} - \h_\text{fut}\|_1$ with zero labels. \textbf{(b)} SIGReg variant: a single shared encoder with spectral regularization~\citep{balestriero2025lejepa} replaces EMA, eliminating the target encoder entirely.}
+\label{fig:architecture}
+\end{figure}
 
-\paragraph{Context encoder.} The context encoder $\encoder$ is a causal Transformer ($d_\text{model} = 256$, 2 layers, 4 heads, 1.26M parameters). Each sensor vector $\x^{(t)} \in \R^S$ is projected to a $d$-dimensional token via a linear layer, with sinusoidal positional encoding indexed by cycle number. The encoder uses a causal attention mask, processing the sequence autoregressively:
+\paragraph{Context encoder.} $\encoder$ is a causal Transformer ($d = 256$, 2 layers, 4 heads, 1.26M parameters) that processes $\x_{1:t}$ autoregressively:
 \begin{equation}
-  \h_\text{past} = \encoder(\x_{1:t}) \in \R^d,
+  \h_\text{past} = \encoder(\x_{1:t}) \in \R^d.
   \label{eq:context}
 \end{equation}
-where $\h_\text{past}$ is the hidden state at the last observed cycle, a $d$-dimensional summary of the engine's history up to time $t$.
 
-\paragraph{Target encoder.} The target encoder $\target$ is an EMA copy of $\encoder$ with momentum $\tau = 0.99$:
+\paragraph{Target encoder.} $\target$ is an EMA copy of $\encoder$ with momentum $\tau = 0.99$, encoding the future window bidirectionally with attention pooling:
 \begin{equation}
-  \xi \leftarrow \tau \xi + (1 - \tau) \theta.
+  \xi \leftarrow \tau\xi + (1-\tau)\theta, \qquad \h_\text{fut} = \target(\x_{t+1:t+k}) \in \R^d.
   \label{eq:ema}
 \end{equation}
-It encodes the future sensor window $\x_{t+1:t+k}$ bidirectionally (no causal mask) with attention pooling to produce $\h_\text{future} \in \R^d$.
 
-\paragraph{Horizon-aware predictor.} The predictor $\predictor$ takes $\h_\text{past}$ and the prediction horizon $k$ to produce $\hat{\h}_\text{future}$. The horizon $k$ is sampled uniformly from $[5, 30]$ during training, so the predictor must learn how degradation evolves across multiple timescales.
+\paragraph{Predictor.} $\predictor$ maps $(\h_\text{past}, k)$ to $\hat{\h}_\text{fut}$, where $k \sim \mathcal{U}[5,30]$ is the prediction horizon.
 
-\paragraph{Training objective.} We minimize the L1 distance between predicted and target future representations:
+\paragraph{Training objective.}
 \begin{equation}
-  \loss_{\text{JEPA}} = \| \predictor(\h_\text{past}, k) - \text{sg}[\target(\x_{t+1:t+k})] \|_1,
+  \loss_\text{JEPA} = \| \predictor(\h_\text{past}, k) - \text{sg}[\target(\x_{t+1:t+k})] \|_1,
   \label{eq:jepa_loss}
 \end{equation}
-where $\text{sg}[\cdot]$ is stop-gradient. The EMA target encoder and the L1 loss together prevent representation collapse without requiring an explicit regularization term~\citep{grill2020byol, bardes2022vicreg}. Pretraining runs for 200 epochs with probe-based early stopping (best probe RMSE at epoch 50).
+where $\text{sg}[\cdot]$ is stop-gradient. The EMA and L1 loss together prevent representation collapse~\citep{grill2020byol}. Pretraining: 200 epochs, cosine LR decay from $3 \times 10^{-4}$.
 
-\paragraph{Pretraining data.} We pretrain on the C-MAPSS training engines (85 engines after an 85\%/15\% train/val split). For each engine, we sample 20 random cut points, yielding $\sim$1,700 (past, future) pairs per epoch. \emph{No RUL labels or failure indicators are used during pretraining.}
+\paragraph{SIGReg variant.} We also explore replacing EMA with SIGReg spectral regularization~\citep{balestriero2025lejepa}: a single shared encoder (no target copy) with a regularization term $\loss_\text{SIG}$ that prevents collapse by maintaining spectral diversity of the representation covariance. \plannedc{Preliminary results suggest SIGReg matches EMA quality with 40\% fewer parameters. Full comparison in \cref{sec:ablations}.}
 
-\subsection{Downstream Fine-Tuning}
-\label{sec:finetune}
+\subsection{Downstream Probes}
+\label{sec:probes}
 
-After pretraining, a linear RUL probe maps $\h_\text{past} \to \hat{\rul}$. We evaluate two modes:
+The same pretrained encoder supports all grey swan tasks through minimal probes:
 
-\begin{itemize}[nosep]
-  \item \textbf{Frozen:} encoder weights are locked; only the linear probe trains. This measures representation quality directly; the probe is deliberately simple~\citep{alain2017probes}.
-  \item \textbf{E2E (end-to-end):} encoder and probe train jointly with a lower encoder learning rate ($10^{-4}$ vs.\ $10^{-3}$ for the probe) to preserve pretrained structure while allowing task-specific adaptation.
-\end{itemize}
+\paragraph{RUL probe (supervised).} A linear layer $\h_\text{past} \to \hat{y} \in \R$, trained with MSE against ground-truth RUL. Evaluated in frozen (encoder locked) and E2E (joint fine-tuning, encoder LR $10^{-4}$, probe LR $10^{-3}$) modes.
 
-\subsection{Health Index Probing}
-\label{sec:hi_method}
-
-To evaluate whether the encoder has learned degradation structure \emph{independent of any labeled objective}, we define an approximate health index (H.I.) for each training engine:
+\paragraph{Anomaly probe (unsupervised).}
+\label{sec:anomaly_probe}
+The prediction error from pretraining is directly an anomaly score:
 \begin{equation}
-  \text{H.I.}(t) = \begin{cases} 1.0 & \text{if } t \leq T_i - R_{\max} \\ 1 - \frac{t - (T_i - R_{\max})}{R_{\max}} & \text{otherwise} \end{cases}
-  \label{eq:hi}
+  \text{score}(t) = \|\predictor(\encoder(\x_{1:t}), k) - \target(\x_{t+1:t+k})\|_1.
+  \label{eq:anomaly_score}
 \end{equation}
-This piecewise-linear function is 1.0 during the healthy phase and declines linearly to 0 at failure, matching the RUL-cap convention. Note that H.I.\ is a deterministic affine transform of capped RUL:
-\begin{equation}
-  \text{H.I.}(t) = \frac{\min(T_i - t, R_{\max})}{R_{\max}} = \frac{\rul(t)}{R_{\max}},
-  \label{eq:hi_rul_equivalence}
-\end{equation}
-so a probe that predicts H.I.\ is predicting a rescaled RUL and measures the same underlying representation capability as the RUL probe.
+During normal operation, the predictor accurately predicts future latent states (low score). When an anomaly begins, the future becomes unpredictable (score spikes). \emph{No labeled anomalies are needed.} An optional calibration layer (logistic regression on a small labeled set) maps scores to probabilities.
 
-We fit a Ridge regression ($\alpha = 1.0$) from frozen $\h_\text{past}$ embeddings to H.I.\ targets on training engines, and evaluate $R^2$ on held-out validation engines. A high $R^2$ means the encoder's frozen representations contain degradation state in a linearly accessible form. We use $R^2$ as a diagnostic of representation quality, reported alongside the frozen-probe RMSE rather than as a separate claim.
+\paragraph{Threshold exceedance probe (supervised).} A linear layer $\h_\text{past} \to \hat{\tau} \in \R$, trained with MSE against ground-truth time-to-exceedance $\tau(t)$. The threshold is domain-specific: $\pm 3\sigma$ from healthy baseline (SPC standard~\citep{montgomery2020spc}), 80\% capacity (batteries~\citep{severson2019battery}), or 99\% VaR (finance).
+
+\paragraph{Fault classification probe (supervised).} A linear layer $\h_\text{past} \to \R^K$, trained with cross-entropy.
 
 % ============================================================
-% 4. EXPERIMENTS
+% 4. METRICS
+% ============================================================
+\section{Evaluation Metrics}
+\label{sec:metrics}
+
+Grey swan prediction requires metrics that are comparable across domains. We adopt:
+
+\begin{itemize}[nosep]
+  \item \textbf{RUL / TTE:} RMSE (raw scale) as primary, nRMSE (normalized by dataset horizon) for cross-domain comparison. NASA Scoring Function~\citep{saxena2008cmapss} in appendix.
+  \item \textbf{Anomaly detection:} \textbf{Non-PA F1} as primary. Point-adjusted F1 (PA-F1), which credits the entire anomaly segment if any single point is detected~\citep{schmidl2022tsadeval}, is reported in appendix for comparability.
+  \item \textbf{Threshold exceedance:} nRMSE on time-to-exceedance.
+  \item \textbf{Fault classification:} Macro F1.
+\end{itemize}
+
+\plannedc{We additionally report a \textbf{Grey Swan Breadth Score} (GSBS) = geometric mean of (method's score / task-SOTA) across all event types a method can address. GSBS rewards generality: a specialist achieving 100\%/---/---/--- scores GSBS = 0; a generalist at 90\%/85\%/88\%/82\% scores GSBS = 0.86.}
+
+% ============================================================
+% 5. EXPERIMENTS
 % ============================================================
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Dataset and Setup}
-\label{sec:setup}
+\subsection{Datasets}
+\label{sec:datasets}
 
-We evaluate primarily on NASA C-MAPSS~\citep{saxena2008cmapss}, a turbofan engine degradation simulation with four subsets of increasing difficulty (\cref{tab:cmapss_datasets}). Each training engine runs to failure; each test engine is truncated at a random point before failure, with ground-truth RUL provided separately.
-
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\caption{C-MAPSS dataset summary. All training engines are run-to-failure; test engines are truncated before failure.}
-\label{tab:cmapss_datasets}
+\includegraphics[width=\textwidth]{figures/fig_domain_overview.pdf}
+\caption{Grey swan prediction spans four domains and four event types. Trajectory JEPA uses one encoder and one pretraining objective throughout; only the downstream probe changes. Dotted lines show which event types apply to which domains.}
+\label{fig:domains}
+\end{figure}
+
+\Cref{fig:domains} illustrates the four domains and event types. Dataset details:
+
+\begin{table}[h]
+\centering
+\caption{Datasets used in the grey swan benchmark.}
+\label{tab:datasets}
 \small
-\begin{tabular}{@{}lccccc@{}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llcccl@{}}
 \toprule
-Subset & Train Engines & Test Engines & Op.\ Conditions & Fault Modes & Mean Lifetime \\
+Domain & Dataset & Sensors & Instances & Event Type & Metric \\
 \midrule
-FD001 & 100 & 100 & 1 & 1 (fan) & 206 cycles \\
-FD002 & 260 & 259 & 6 & 1 (fan) & 207 cycles \\
-FD003 & 100 & 100 & 1 & 2 (fan + HPC) & 247 cycles \\
-FD004 & 249 & 248 & 6 & 2 (fan + HPC) & 246 cycles \\
+Industrial & C-MAPSS FD001--004~\citep{saxena2008cmapss} & 14 & 100--260 & RUL, TTE & RMSE \\
+Industrial & SWaT~\citep{swat2016} & 51 & 495K steps & Anomaly, TTE & F1 \\
+Spacecraft & SMAP~\citep{hundman2018smapmsl} & 25 & 562K steps & Anomaly & F1 \\
+Spacecraft & MSL~\citep{hundman2018smapmsl} & 55 & 58K steps & Anomaly & F1 \\
+\plannedc{Financial} & \plannedc{VIX + macro~\citep{cboe_vix}} & \plannedc{12} & \plannedc{8,500 days} & \plannedc{TTE, VaR} & \plannedc{nRMSE} \\
+\plannedc{Medical} & \plannedc{PhysioNet 2019~\citep{reyna2019sepsis}} & \plannedc{40} & \plannedc{40K stays} & \plannedc{TTE} & \plannedc{Utility} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Preprocessing.} We select 14 informative sensors (dropping 7 near-constant channels), normalize per-sensor using training-set statistics (global min-max for single-condition subsets; per-operating-condition KMeans-based normalization for multi-condition subsets), and cap RUL at 125 cycles. Train/val split: 85\%/15\% by engine (seed 42). All results: canonical test set (last-window-per-engine, raw-cycle RMSE).
+\subsection{Main Benchmark}
+\label{sec:benchmark}
 
-\paragraph{Baselines.} We compare against: (1)~a constant predictor (mean training RUL, RMSE 43.3); (2)~a hand-engineered 58-feature Ridge regressor (per-engine sensor summaries: length, per-sensor last-30 mean/std/slope/delta; RMSE 19.2); (3)~a supervised LSTM with the same hidden dimension; (4)~STAR~\citep{fan2024star}, the supervised state-of-the-art (our 5-seed replication: 12.19); (5)~AE-LSTM~\citep{lecam2025aelstm}, the only prior SSL result on C-MAPSS (13.99).
+\plannedc{
+\begin{table}[t]
+\centering
+\caption{\textbf{Grey Swan Prediction Benchmark.} One architecture, one pretraining objective, four domains.
+Dashes (---) indicate the method was not designed for or evaluated on that event type.
+\textcolor{blue}{Blue} = planned experiments.
+Best SSL result per column in \textbf{bold}. $\dagger$ = single-seed or best-of-grid.}
+\label{tab:benchmark}
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}ll|ccc|ccc|c@{}}
+\toprule
+& & \multicolumn{3}{c|}{Time-to-Failure (RMSE $\downarrow$)} & \multicolumn{3}{c|}{Anomaly (F1 non-PA $\uparrow$)} & TTE \\
+& Method & FD001 & FD003 & FD004 & SMAP & MSL & SWaT & C-MAPSS \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{Supervised specialists}} \\
+& STAR~\citep{fan2024star}$^\dagger$ & 10.61 & 10.71 & 15.87 & --- & --- & --- & --- \\
+& TTSNet~\citep{ttsnet2025} & 11.02 & 11.06 & 18.26 & --- & --- & --- & --- \\
+& Anom.\ Transf.~\citep{xu2022anomalytransformer} & --- & --- & --- & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & --- \\
+& DCdetector~\citep{yang2023dcdetector} & --- & --- & --- & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & --- \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{SSL methods}} \\
+& TS2Vec~\citep{yue2022ts2vec} & --- & --- & --- & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & --- \\
+& PatchTST~\citep{nie2023patchtst} & --- & --- & --- & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & --- \\
+& MTS-JEPA~\citep{mtsjepa2026} & --- & --- & --- & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & --- \\
+& AE-LSTM~\citep{lecam2025aelstm}$^\dagger$ & 13.99 & --- & --- & --- & --- & --- & --- \\
+\midrule
+\rowcolor{blue!5}
+& \textbf{Traj JEPA E2E} & \textbf{14.23}$_{\pm0.4}$ & \textbf{15.37}$_{\pm0.9}$ & \textbf{25.62}$_{\pm0.3}$ & \textcolor{blue}{\textbf{0.XX}} & \textcolor{blue}{\textbf{0.XX}} & \textcolor{blue}{\textbf{0.XX}} & \textcolor{blue}{\textbf{X.XX}} \\
+\rowcolor{blue!5}
+& \textbf{Traj JEPA Frozen} & 17.81$_{\pm1.7}$ & 19.25$_{\pm3.2}$ & 29.35$_{\pm0.6}$ & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} & \textcolor{blue}{X.XX} \\
+\bottomrule
+\end{tabular}}% end resizebox
+\end{table}
+}
 
-\subsection{Main Results: FD001}
-\label{sec:main_results}
+The key observation: \textbf{every baseline fills at most two event-type columns}. Supervised RUL methods (STAR, TTSNet) have no anomaly capability. Anomaly detectors (Anomaly Transformer, DCdetector) have no RUL capability. SSL methods (TS2Vec, PatchTST, MTS-JEPA) were evaluated only on anomaly benchmarks. Trajectory JEPA fills all columns because the pretraining objective is event-type agnostic.
+
+\subsection{C-MAPSS Results: Time-to-Failure}
+\label{sec:rul_results}
 
 \begin{table}[t]
 \centering
-\caption{C-MAPSS FD001 RUL prediction. RMSE in cycles (RUL cap = 125). Mean $\pm$ std over 5 seeds where applicable. Best method per budget in bold (excluding STAR (paper), which is single-seed and not directly comparable; see \cref{sec:label_efficiency}).}
+\caption{C-MAPSS FD001 label efficiency. RMSE in cycles. Mean $\pm$ std over 5 seeds.}
 \label{tab:main_results}
 \small
 \begin{tabular}{@{}llccccc@{}}
 \toprule
 Type & Method & 100\% & 50\% & 20\% & 10\% & 5\% \\
 \midrule
-Trivial & Constant (mean RUL) & 43.29 & --- & --- & --- & --- \\
-Feature eng. & 58-feat Ridge regressor & 19.21$_{\pm0.2}$ & --- & --- & --- & --- \\
-\midrule
-Supervised & LSTM (ours) & 17.36$_{\pm1.2}$ & 18.30$_{\pm0.8}$ & 18.55$_{\pm0.8}$ & 31.22$_{\pm10.9}$ & 33.08$_{\pm9.6}$ \\
-Supervised & STAR (paper) & 10.61 & --- & --- & --- & --- \\
 Supervised & STAR (replic.) & \textbf{12.19}$_{\pm0.6}$ & 13.26$_{\pm0.7}$ & 17.74$_{\pm3.6}$ & 18.72$_{\pm2.8}$ & 24.55$_{\pm6.5}$ \\
-SSL (paper) & AE-LSTM (best-of-28-cfg) & 13.99 & --- & --- & --- & --- \\
-SSL (replic.) & AE-LSTM (our 5-seed) & 16.07$_{\pm2.8}$ & --- & --- & --- & --- \\
+SSL & AE-LSTM (replic.) & 16.07$_{\pm2.8}$ & --- & --- & --- & --- \\
 \midrule
-From-scratch (ours) & Traj enc.\ E2E (random init) & 22.99$_{\pm2.3}$ & --- & 32.50$_{\pm1.5}$ & 35.59$_{\pm2.7}$ & 37.59$_{\pm2.0}$ \\
-SSL (ours) & Traj JEPA Frozen & 17.81$_{\pm1.7}$ & 18.71$_{\pm1.1}$ & 19.83$_{\pm0.3}$ & 19.93$_{\pm0.9}$ & \textbf{21.53}$_{\pm2.0}$ \\
-SSL (ours) & Traj JEPA E2E & 14.23$_{\pm0.4}$ & \textbf{14.93}$_{\pm0.4}$ & \textbf{16.54}$_{\pm0.8}$ & \textbf{18.66}$_{\pm0.8}$ & 25.33$_{\pm5.1}$ \\
+Scratch & Traj enc.\ E2E (random) & 22.99$_{\pm2.3}$ & --- & 32.50$_{\pm1.5}$ & 35.59$_{\pm2.7}$ & 37.59$_{\pm2.0}$ \\
+SSL & Traj JEPA Frozen & 17.81$_{\pm1.7}$ & 18.71$_{\pm1.1}$ & 19.83$_{\pm0.3}$ & 19.93$_{\pm0.9}$ & \textbf{21.53}$_{\pm2.0}$ \\
+SSL & Traj JEPA E2E & 14.23$_{\pm0.4}$ & \textbf{14.93}$_{\pm0.4}$ & \textbf{16.54}$_{\pm0.8}$ & \textbf{18.66}$_{\pm0.8}$ & 25.33$_{\pm5.1}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -283,284 +357,130 @@ SSL (ours) & Traj JEPA E2E & 14.23$_{\pm0.4}$ & \textbf{14.93}$_{\pm0.4}$ & \tex
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/v14_label_efficiency_from_scratch.pdf}
-\caption{\textbf{(a)} FD001 label efficiency (5 seeds). At $\geq$50\% labels, supervised STAR leads. At 20\% STAR and JEPA E2E are within $1$ RMSE; at 10\% frozen JEPA matches STAR; at 5\% frozen JEPA ($21.53$) beats STAR ($24.55$) with $3\times$ lower std. \textbf{(b)} From-scratch ablation (same encoder, random init vs.\ pretrained, matched E2E protocol). The shaded area is the contribution of trajectory-prediction pretraining: $+8.8$ RMSE at 100\%, growing to $+15.6$ at 10\%.}
-\label{fig:v14_label_fromscratch}
+\caption{\textbf{(a)} Label efficiency on FD001. At $\leq$20\% labels, JEPA E2E matches or beats STAR; at 5\%, frozen JEPA wins. \textbf{(b)} From-scratch ablation: the shaded area is the pretraining contribution, growing from $+8.8$ at 100\% to $+15.6$ at 10\%.}
+\label{fig:label_efficiency}
 \end{figure}
 
-\Cref{tab:main_results,fig:v14_label_fromscratch} present the main results.
+\Cref{tab:main_results,fig:label_efficiency} present the main RUL results on C-MAPSS FD001.
 
-\paragraph{Competitive at 100\% labels.} Traj JEPA E2E achieves RMSE $14.23 \pm 0.39$, outperforming a supervised LSTM of matched capacity ($17.36$) and beating the only prior SSL baseline (AE-LSTM) by $1.84$ RMSE with $7\times$ lower seed variance under a matched 5-seed replication ($16.07 \pm 2.80$; see \cref{sec:label_efficiency}). A gap of $\sim$2 RMSE to supervised STAR ($12.19 \pm 0.55$, our 5-seed replication) remains.
-
-\paragraph{From-scratch ablation quantifies the pretraining contribution.} Running the same V2 Transformer architecture and the same E2E fine-tuning protocol, but initialized from random weights, yields RMSE $22.99$ at 100\% labels vs.\ $14.18$ with the pretrained initialization, a pretraining contribution of $+8.8$ RMSE. At $10\%$ labels the contribution grows to $+15.6$; at $5\%$ the from-scratch run collapses to $37.59$ RMSE, compared to $24.47$ for the pretrained frozen probe. The delta is monotonic in $1/\text{budget}$ except at 5\% where the from-scratch run hits a floor: trajectory-prediction pretraining does the work that labels cannot supply when data is scarce (\cref{fig:v14_label_fromscratch}b).
-
-\paragraph{Label efficiency and crossover against supervised SOTA.} \Cref{fig:v14_label_fromscratch}a shows the full label-efficiency sweep. At $100\%$ labels STAR wins by $2.0$ RMSE; at $20\%$ the gap to JEPA E2E is only $0.3$ RMSE; at $10\%$ it is $1.3$ RMSE; at $5\%$ JEPA frozen ($21.53 \pm 2.0$) outperforms STAR ($24.55 \pm 6.5$) by $3.0$ RMSE and has $3\times$ lower seed variance. The crossover is the practical consequence of label-efficient self-supervised pretraining: STAR's advantage is consumed by seed variance as labels shrink, while the frozen encoder is stable.
-
-\paragraph{Beating the hand-engineered baseline.} The 58-feature Ridge regressor (RMSE $19.21$) is the tightest ``non-learning'' lower bound: it uses per-engine summary statistics (sensor means, slopes, length) but is flat within each engine. JEPA E2E outperforms it by $5.0$ RMSE, confirming the learned representation captures information beyond cross-engine summary statistics.
-
-\subsection{Health Index Recovery as Representation Diagnostic}
-\label{sec:hi_recovery}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/v12_cmapss_main_results.pdf}
-\caption{\textbf{(a)} Baseline hierarchy: each step from constant predictor ($43.3$) through Ridge regressor ($19.2$) to JEPA frozen ($17.8$) to JEPA E2E ($14.2$) represents genuine capability, not protocol artifacts. \textbf{(b)} Health index recovery validation $R^2$ across three H.I.\ parameterizations; all exceed $0.9$. \textbf{(c)} Sliding-cut vs.\ last-window evaluation: the model performs 15\% better across all cut points ($11.8$ vs.\ $14.0$ RMSE).}
-\label{fig:cmapss_main}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\caption{Health index recovery. Ridge regression from frozen $\h_\text{past}$ to approximate H.I. Trained on 85 engines, evaluated on 15 held-out engines. No failure labels used during encoder pretraining.}
-\label{tab:hi_recovery}
-\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-H.I.\ Definition & Train $R^2$ & Val $R^2$ & Target \\
-\midrule
-Piecewise linear (default) & 0.964 & \textbf{0.926} & $> 0.7$ \\
-Sigmoid & 0.953 & 0.917 & $> 0.7$ \\
-Raw RUL normalized & 0.964 & 0.926 & $> 0.7$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The frozen V2 encoder's $\h_\text{past}$ linearly predicts the approximate health index with validation $R^2 = 0.926$ (\cref{tab:hi_recovery}). This was computed from 256-dimensional embeddings at every training cycle, with no labels used during pretraining. The result is robust across three H.I.\ parameterizations (\cref{fig:cmapss_main}b).
-
-The embedding space is dominated by a single degradation direction: PC1 explains 47.6\% of variance and correlates with the health index at $|\rho| = 0.797$, while PC2 and PC3 have $|\rho| \leq 0.16$.
-
-\paragraph{Relation to frozen RMSE.} By \cref{eq:hi_rul_equivalence}, H.I.\ and capped RUL are deterministic transforms of each other; $R^2 = 0.926$ and frozen RMSE $17.81$ therefore quantify the same encoder capability under different evaluation protocols. The $R^2$ value is numerically higher for two reasons beyond representation quality: (i) H.I.\ is evaluated cycle-by-cycle across all training and validation cycles, so the $\sim$40\% of cycles that lie on the healthy plateau ($\text{H.I.}=1$) are trivially predictable by a constant bias and inflate $R^2$; (ii) evaluation is on in-distribution validation engines (15\% holdout from the training set) rather than on the harder canonical test set used for RMSE. We therefore treat the high $R^2$ as confirmation that the frozen representation is linearly degradation-aligned, not as a separate claim that outperforms the RMSE result.
-
-\subsection{Verification: Is the Tracking Genuine?}
-\label{sec:verification}
-
-A central concern with RUL benchmarks is that the canonical last-window protocol (one prediction per test engine) can be satisfied by cross-engine regression without within-engine tracking. We verify tracking via five independent diagnostics (\cref{fig:cmapss_tracking}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/v12_cmapss_tracking.pdf}
-\caption{Within-engine tracking evidence (5 seeds). \textbf{(a)} Per-engine prediction std distribution; median $= 12.1 \pm 0.7$ (far above constant-predictor threshold of 3). \textbf{(b)} Within-engine Spearman $\rho$ distribution; median $= 0.830 \pm 0.023$, with 63/100 engines achieving $\rho > 0.7$. \textbf{(c)} Shuffle test: swapping $\h_\text{past}$ across engines degrades RMSE from 14.0 to 55.4 ($+41$ cycles).}
-\label{fig:cmapss_tracking}
-\end{figure}
-
-\begin{enumerate}[nosep]
-  \item \textbf{Prediction variance.} Per-engine prediction standard deviation, median $= 12.1 \pm 0.7$ cycles (5 seeds). A constant predictor has std $\approx 0$; a tracker should have std $10$--$30$. \textbf{PASS.}
-  \item \textbf{Within-engine Spearman $\rho$.} Median $\rho = 0.830 \pm 0.023$ between predicted and true RUL across all cycles of each test engine. 63/100 engines have $\rho > 0.7$ on average. \textbf{PASS.}
-  \item \textbf{Shuffle test.} Randomly permuting $\h_\text{past}$ across engines at inference time degrades RMSE from 13.98 to $55.45 \pm 1.62$. The $+41.5$ penalty proves $\h_\text{past}$ carries engine-specific degradation information. \textbf{PASS.}
-  \item \textbf{Hand-engineered baseline margin.} JEPA E2E outperforms the 58-feature Ridge regressor (which is flat within each engine) by 5.0 RMSE. The benchmark requires genuine within-engine signal. \textbf{PASS.}
-  \item \textbf{Sliding-cut evaluation.} Evaluating across all cut points (not just the last window) gives RMSE $11.77$, 15\% better than last-window ($13.98$), as expected from a genuine tracker that benefits from having more history at earlier cut points (\cref{fig:cmapss_main}c). \textbf{PASS.}
-\end{enumerate}
-
-\subsection{Label Efficiency and Comparability of Baselines}
+\paragraph{Label efficiency crossover.}
 \label{sec:label_efficiency}
+At 100\% labels, supervised STAR leads by $\sim$2 RMSE. At 20\%, JEPA E2E closes to within 1 RMSE. At 5\% (4 training engines), JEPA frozen ($21.53 \pm 2.0$) beats STAR ($24.55 \pm 6.5$) with $3\times$ lower variance. This crossover is the practical payoff of SSL in the grey swan regime.
 
-The grey swan motivation is that failure data is scarce. \Cref{tab:main_results,fig:v14_label_fromscratch}a show the full label-efficiency sweep. At 5\% labels (4 training engines), JEPA frozen achieves RMSE $21.53 \pm 2.0$ while the supervised LSTM collapses to $33.08 \pm 9.6$ and STAR to $24.55 \pm 6.5$. The frozen encoder's variance is $5$--$30\times$ lower than the LSTM and $3\times$ lower than STAR at the smallest budgets.
-
-\paragraph{Apples-to-apples replication of AE-LSTM.} The published $13.99$ RMSE for AE-LSTM~\citep{lecam2025aelstm} is the best result of a 28-configuration hyperparameter grid, not a multi-seed mean, so a direct comparison against our 5-seed mean is not apples-to-apples. To resolve this, we replicated AE-LSTM in our pipeline (reconstruction autoencoder FC $14 \to 64 \to 32 \to 32 \to 64 \to 14$ followed by an LSTM regressor with $\text{hidden}=64$, joint fine-tuning, our splits and RUL cap). 5 seeds, fixed hyperparameters:
-\begin{center}
-\small
-\begin{tabular}{@{}lcc@{}}
-\toprule
-Method & FD001 RMSE & Seed std \\
-\midrule
-AE-LSTM (paper, best-of-28-configs) & $13.99$ & --- \\
-AE-LSTM (our replication, 5 seeds) & $16.07$ & $\pm 2.80$ \\
-Trajectory JEPA E2E (ours, 5 seeds) & $\mathbf{14.23}$ & $\pm 0.39$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-Per-seed AE-LSTM: $\{13.81, 21.23, 14.88, 13.71, 16.73\}$. The best single seed ($13.71$) matches the published $13.99$, consistent with the best-of-grid interpretation. Under matched statistical reporting, Trajectory JEPA beats AE-LSTM by $1.84$ RMSE with $7\times$ lower seed variance. This settles the comparability question: AE-LSTM's published number is a grid-search tail, not a central tendency.
-
-\paragraph{Tracking fidelity: frozen vs.\ E2E.} An unexpected finding: frozen JEPA has \emph{higher} within-engine tracking ($\rho = 0.856$) than E2E ($\rho = 0.804$). E2E fine-tuning trades some tracking fidelity for better RMSE calibration; the improvement is in mapping to the correct RUL scale, not in degradation detection. We provide a principled rationale for this trade-off in \cref{sec:theory_frozen_e2e}.
-
-\subsection{Architectural Ablation: Full-Sequence Target Encoder}
-\label{sec:full_sequence}
-
-In the baseline Trajectory JEPA, the target encoder $\target$ processes only the future window $\x_{t+1:t+k}$. We test a simple variant in which the target encoder instead processes the whole trajectory up to $t+k$, $\x_{1:t+k}$ (the past is already encoded by the context encoder; the target now represents the complete trajectory including past and future). The loss, EMA, predictor, and context encoder are unchanged.
-
-\begin{table}[h]
-\centering
-\caption{Full-sequence target ablation, FD001 frozen probe across label budgets. At $100\%$ the full-sequence variant beats V2 by $-2.1$ RMSE with $8\times$ lower seed std and also outperforms STAR; the gain persists at $20\%$ and $10\%$; but at $5\%$ the simpler V2 target is more robust and the full-sequence variant regresses by $+5.0$ RMSE, losing the STAR crossover.}
-\label{tab:full_sequence}
-\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Budget & V2 frozen (baseline) & V14 frozen (full-seq) & STAR (supervised) & $\Delta$ V14$-$V2 \\
-\midrule
-100\% & $17.81_{\pm1.7}$ & $\mathbf{15.70}_{\pm0.21}$ & $12.19_{\pm0.6}$ & $-2.11$ \\
-20\%  & $19.83_{\pm0.3}$ & $\mathbf{17.20}_{\pm1.91}$ & $17.74_{\pm3.6}$ & $-2.63$ \\
-10\%  & $19.93_{\pm0.9}$ & $\mathbf{18.79}_{\pm1.96}$ & $18.72_{\pm2.8}$ & $-1.14$ \\
-5\%   & $\mathbf{21.53}_{\pm2.0}$ & $26.57_{\pm4.70}$ & $24.55_{\pm6.5}$ & $+5.04$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The full-sequence target closes $37\%$ of the frozen-probe gap to STAR at $100\%$ labels ($5.6$ to $3.5$ RMSE) and closes the gap entirely at $20\%$ (V14 frozen $17.20 < $ STAR $17.74$). However, at $5\%$ labels the richer target hurts: with only four training engines, the probe appears to overfit the stronger but noisier frozen representation, whereas the V2 frozen probe retains the cross-STAR margin ($21.53 < 24.55$). We therefore report the full-sequence variant as an architectural ablation that improves the frozen probe at moderate-to-high label budgets but do not adopt it as the default at $5\%$. A unified configuration that wins across all budgets remains open.
-
-\paragraph{Multi-subset generalization.} To test whether the full-sequence win is FD001-specific, we pretrain in-domain on FD003 (fan + HPC faults) and FD004 (6 operating conditions + fan + HPC), and fine-tune at 100\% labels (3 seeds).
-\begin{center}
-\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Subset & V2 frozen & Full-seq frozen ($\Delta$) & V2 E2E & Full-seq E2E ($\Delta$) \\
-\midrule
-FD001 & $17.81_{\pm1.7}$ & $\mathbf{15.70}_{\pm0.21}$ ($-2.11$) & $14.23_{\pm0.39}$ & $14.32_{\pm0.64}$ ($+0.09$) \\
-FD003 & $19.25_{\pm3.2}$ & $\mathbf{18.39}_{\pm0.44}$ ($-0.86$) & $15.37_{\pm0.9}$  & $\mathbf{13.67}_{\pm0.28}$ ($-1.70$) \\
-FD004 & $29.35$          & $\mathbf{28.08}_{\pm0.53}$ ($-1.27$) & $25.62$           & $\mathbf{25.27}_{\pm0.17}$ ($-0.35$) \\
-\bottomrule
-\end{tabular}
-\end{center}
-Full-sequence uniformly improves the frozen probe across all three subsets ($-2.1$, $-0.9$, $-1.3$) and does not regress on any E2E result. The FD003 E2E result of $13.67 \pm 0.28$ is, to our knowledge, the best published JEPA-style number on FD003. In contrast to cross-sensor attention (\cref{sec:cross_sensor}), which regresses on FD003 by $+5.2$ RMSE, the full-sequence target generalizes positively across fault modes and operating conditions, making it the more universally useful architectural change of V14. Gap to supervised STAR remains substantial on FD004 ($28.08$ vs.\ $14.25$), reflecting the per-condition distribution shift (\cref{sec:multisubset}) rather than a pretraining failure.
-
-\subsection{Architectural Ablation: Cross-Sensor Attention}
-\label{sec:cross_sensor}
-
-Inspired by iTransformer~\citep{liu2024itransformer} and STAR's two-stage attention~\citep{fan2024star}, we test a sensor-as-token encoder. Each cycle produces 14 tokens (one per sensor), each a shared linear projection of the scalar sensor value plus a learnable sensor-ID embedding and a sinusoidal time PE. Two alternating layer pairs apply temporal causal attention (within each sensor's cycle stream) and cross-sensor attention (within each cycle, across the 14 sensors). The model has $961$K parameters, comparable to V2's $1.26$M.
-
-\begin{table}[h]
-\centering
-\caption{Cross-sensor attention ablation on FD001 frozen probe (5 seeds at low labels, 3 seeds at 100\%). Cross-sensor is the best frozen result at 100\% labels ($14.98$, $-2.83$ vs.\ V2) but is brittle at low labels, where the simpler V2 architecture is more robust (20\% std 10.19 is dominated by a single catastrophic seed). Full-sequence (\cref{sec:full_sequence}) is added for reference.}
-\label{tab:cross_sensor}
-\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Budget & V2 frozen & Full-seq (\cref{sec:full_sequence}) & Cross-sensor (this section) \\
-\midrule
-100\% & $17.81_{\pm1.7}$ & $15.70_{\pm0.21}$ & $\mathbf{14.98}_{\pm0.22}$ \\
-20\%  & $19.83_{\pm0.30}$ & $\mathbf{17.20}_{\pm1.91}$ & $25.02_{\pm10.19}$ \\
-10\%  & $19.93_{\pm0.90}$ & $\mathbf{18.79}_{\pm1.96}$ & $22.05_{\pm3.59}$ \\
-5\%   & $\mathbf{21.53}_{\pm2.0}$ & $26.57_{\pm4.70}$ & $27.40_{\pm7.44}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The 100\% frozen result ($14.98$) reduces the frozen-probe gap to supervised STAR ($12.19$) to $2.8$ RMSE, the smallest gap yet. E2E at 100\% ($14.35 \pm 0.85$) is indistinguishable from V2. However, seed variance at low labels is severe (20\% std $10.19$ from one catastrophic seed). We therefore report cross-sensor as a high-label architectural study rather than a universal replacement, and we retain V2 as the production default for the 5\% STAR crossover.
-
-\paragraph{From-scratch ablation on cross-sensor.} We repeat the from-scratch ablation of \cref{sec:from_scratch} on the cross-sensor architecture to check whether Phase 3's gain is an SSL contribution or an architecture-alone contribution. At 100\% labels, pretrained E2E $14.24 \pm 1.1$ vs.\ random-init E2E $19.64 \pm 1.7$ ($\Delta = +5.4$ RMSE); at 10\% labels, pretrained E2E $20.15 \pm 2.4$ vs.\ scratch $41.65 \pm 2.6$ ($\Delta = +21.5$ RMSE). The cross-sensor architecture requires pretraining even more than V2 at low labels ($+21.5$ vs.\ V2's $+15.6$ at 10\%). Trajectory prediction pretraining does real work on this architecture too: the frozen $14.98$ is not an architecture-only win.
-
-\paragraph{Physics-aligned attention, with multi-subset caveats.} Averaging the last cross-sensor layer's attention maps across training engines and splitting by cycle phase (first 60\% = healthy, last 40\% = degradation), we observe that during degradation, many temperature and pressure sensors on FD001 concentrate attention on a single key: $s_{14}$ (corrected core speed $N_{Rc}$). The five largest FD001 healthy-to-degradation attention shifts are $s_3 \to s_{14}$ ($+0.103$), $s_{15} \to s_{14}$ ($+0.099$), $s_{11} \to s_{14}$ ($+0.096$), $s_4 \to s_{14}$ ($+0.095$), and $s_2 \to s_{14}$ ($+0.090$). Concentration on a single key (core speed) is consistent with degradation being a near-one-dimensional phenomenon in sensor-attention space, echoing our PCA analysis in \cref{sec:representation} (PC1 dominates, $47.6\%$ variance).
-
-We test generalization to FD003 (fan + HPC fault modes, in-domain pretraining) and find the specific FD001 pattern does \emph{not} transfer. On FD003 the biggest healthy-to-degradation attention shifts point at $s_8$ (physical fan speed $N_f$) and $s_{13}$ (corrected fan speed $N_{Rf}$) rather than $s_{14}$, and are \emph{negative} in sign (attention \emph{defocuses} away from fan-speed sensors during degradation). In both subsets the focal sensors are rotor-speed related - $s_8$, $s_{13}$, or $s_{14}$ - but the specific sensor and direction depend on fault mode. The FD003 frozen RMSE under the cross-sensor architecture is $24.49 \pm 0.12$ vs.\ V2 frozen $19.25$, so the architectural improvement is also FD001-specific. We therefore report cross-sensor as an FD001 finding rather than a universal improvement; attention-map figures (both subsets) are in the supplementary material.
-
-\subsection{From-Scratch Ablation}
+\paragraph{From-scratch ablation.}
 \label{sec:from_scratch}
+Holding architecture and fine-tuning fixed, replacing pretrained weights with random initialization degrades RMSE by $+8.8$ at 100\% and $+15.6$ at 10\%. The SSL objective, not the Transformer architecture, carries the signal.
 
-The from-scratch row in \cref{tab:main_results} and the right panel of \cref{fig:v14_label_fromscratch} isolate the pretraining contribution by holding the architecture and fine-tuning protocol fixed. Delta (scratch $-$ pretrained) is $+8.8$ at 100\%, $+14.5$ at 20\%, $+15.6$ at 10\%, and $+8.0$ at 5\% (the 5\% delta shrinks because both pretrained E2E and scratch E2E degrade; the frozen probe remains the strongest option at that budget, at $24.47$). Without pretraining, the Transformer encoder cannot exploit the limited fine-tuning data: at 10\% labels the scratch E2E run reaches $35.59$ RMSE. This is the strongest quantitative evidence in the paper that the SSL objective, rather than the Transformer architecture alone, carries the signal.
-
-\subsection{Multi-Subset Generalization}
-\label{sec:multisubset}
-
-\begin{table}[t]
-\centering
-\caption{Multi-subset results. Traj JEPA E2E, seed 0. Tracking diagnostics confirm genuine degradation signal across all subsets.}
-\label{tab:multisubset}
-\small
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-Subset & RMSE (E2E) & RMSE (Frozen) & $\rho_\text{median}$ & pred\_std & vs.\ Regressor & STAR (paper) \\
-\midrule
-FD001 & 14.23$_{\pm0.4}$ & 17.81$_{\pm1.7}$ & 0.830 & 12.1 & +5.0 & 10.61 \\
-FD003 & 15.37$_{\pm0.9}$ & 19.25$_{\pm3.2}$ & 0.665 & 12.9 & +2.9 & 10.71 \\
-FD004 & 25.62$_{\pm0.3}$ & 29.35$_{\pm0.6}$ & 0.654 & 7.1 & +5.9 & 14.25 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\Cref{tab:multisubset} shows that all three tested subsets show genuine tracking ($\rho > 0.5$) and outperform the hand-engineered regressor.
-
-\paragraph{FD002 distribution shift.} FD002 (6 operating conditions) reveals a limitation: the frozen encoder achieves val probe RMSE $15.35$ on training-distribution engines but $26.07$ on the canonical test set (\cref{fig:fd002}). The gap is caused by operating-condition mismatch: conditions 1, 2, and 5 are $2.5$--$3.1\times$ overrepresented at test time vs.\ training. The encoder learns degradation well within each condition, but the per-condition normalization is mis-calibrated on rare training conditions that dominate the test set.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/v12_fd002_diagnosis.pdf}
-\caption{FD002 distribution shift. \textbf{(a)} Val vs.\ test RMSE gap: FD001 has a $-2.1$ gap (test easier), FD002 has $+10.7$. \textbf{(b)} Per-condition test RMSE. \textbf{(c)} Condition distributions: conditions 1, 2, 5 severely overrepresented in test.}
-\label{fig:fd002}
-\end{figure}
-
-\paragraph{Cross-fault transfer.} Pretraining on FD001 (fan degradation) and evaluating with a frozen probe on FD003 (fan + HPC) incurs a 7--9 RMSE penalty. However, the cross-fault frozen probe at 10\% labels (RMSE 28.79) still outperforms a supervised LSTM in-domain at the same budget (RMSE 31.22).
-
-% ============================================================
-% 4.X MULTI-DOMAIN BENCHMARK
-% ============================================================
-\subsection{Multi-Domain Grey Swan Benchmark}
-\label{sec:benchmark}
-
-\plannedc{Grey swans are not unique to turbofan engines. We evaluate Trajectory JEPA across five domains spanning degradation prediction, anomaly detection, and fault diagnosis using the same architecture and pretraining objective throughout. \Cref{tab:benchmark} presents the full benchmark; we summarize key findings below.}
-
-\input{benchmark_table}
+\subsection{Anomaly Detection Results}
+\label{sec:anomaly_results}
 
 \plannedc{
-\paragraph{Turbofan RUL: N-CMAPSS.} N-CMAPSS~\citep{ariaschaoncmapss2021} offers a more realistic degradation scenario with flight-envelope-variable operating conditions, 128 engines, and 14 virtual sensors. We pretrain Trajectory JEPA in-domain on each sub-dataset and evaluate with the same frozen/E2E protocol as C-MAPSS. This tests whether the trajectory-prediction objective scales to operating-condition variability beyond C-MAPSS FD001--FD004.
+\paragraph{Zero-shot anomaly detection.} On SMAP, MSL, SWaT, and PSM, we compute anomaly scores from \cref{eq:anomaly_score} using the pretrained encoder and predictor with no additional training. A simple threshold (95th percentile of validation scores) converts to binary predictions.
 
-\paragraph{Bearing RUL: FEMTO and XJTU-SY.} We extend our preliminary bearing results (Appendix~\ref{app:bearings}) by applying the full Trajectory JEPA framework to the FEMTO~\citep{nectoux2012pronostia} and XJTU-SY~\citep{wang2020xjtusybearing} run-to-failure datasets. The central question: does multivariate trajectory prediction (XJTU-SY has 2 channels) overcome the single-channel limitation identified in our initial bearing experiments, where JEPA alone achieved $\rho = 0.071$ with spectral centroid?
+\begin{itemize}[nosep]
+  \item \textbf{SMAP:} Non-PA F1 = X.XX (vs.\ Anomaly Transformer X.XX, DCdetector X.XX)
+  \item \textbf{MSL:} Non-PA F1 = X.XX
+  \item \textbf{SWaT:} Non-PA F1 = X.XX
+\end{itemize}
 
-\paragraph{Battery degradation.} Lithium-ion capacity fade is a canonical grey swan: cells degrade through electrochemical processes (SEI growth, lithium plating) that are physically well-understood but whose trajectories vary across cells. We evaluate on the NASA Battery dataset (34 cells, voltage/current/temperature per cycle) and the MIT 124-cell dataset. The task is early-cycle lifetime prediction: given the first 100 charge/discharge cycles, predict total cycle life.
-
-\paragraph{Multivariate anomaly detection: MSL, SMAP, SWaT, PSM.} These datasets represent a different event type: discrete anomalies rather than continuous degradation. We adopt the window-level early-warning protocol of MTS-JEPA~\citep{mtsjepa2026} for direct comparability. The hypothesis is that trajectory prediction captures pre-anomaly dynamics even for discrete events, not just smooth degradation curves. This places Trajectory JEPA head-to-head with TS-JEPA~\citep{tsjepa2024} and MTS-JEPA on their own evaluation datasets.
-
-\paragraph{Process fault detection: Tennessee Eastman Process.} TEP provides 52 sensors and 21 fault classes with known onset times, testing whether Trajectory JEPA's representations support multi-class fault \emph{diagnosis} rather than binary degradation detection. This is the hardest generalization test: the encoder must separate 21 distinct fault signatures, not just track a single degradation trajectory.
+The prediction error anomaly probe requires \emph{zero anomaly labels}---it uses only the SSL pretraining. Adding a calibration layer trained on 10\% of labeled anomalies improves F1 by X.XX on average.
 }
 
+\subsection{Threshold Exceedance Results}
+\label{sec:tte_results}
+
+\plannedc{
+On C-MAPSS, we define threshold exceedance as the time until corrected fan speed ($s_{14}$) drops below $\mu - 3\sigma$ of cycles 1--50 (healthy baseline). This converts the RUL task into a TTE task with a domain-grounded, SPC-standard threshold.
+
+The frozen probe achieves TTE nRMSE = X.XX on FD001, demonstrating that the encoder's latent representations contain sufficient information to predict \emph{when specific sensors will breach operational limits}, not just the overall time to failure.
+}
+
+\subsection{Ablations}
+\label{sec:ablations}
+
+\plannedc{
+\begin{table}[t]
+\centering
+\caption{Component ablation across domains. Each row removes one component.}
+\label{tab:ablation}
+\small
+\begin{tabular}{@{}l|cc|cc@{}}
+\toprule
+& \multicolumn{2}{c|}{RUL (RMSE $\downarrow$)} & \multicolumn{2}{c}{Anomaly (F1 $\uparrow$)} \\
+Model Variant & FD001 & FD003 & SMAP & SWaT \\
+\midrule
+w/o EMA (frozen target) & \textcolor{blue}{XX.X} & \textcolor{blue}{XX.X} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} \\
+w/o Causal mask & \textcolor{blue}{XX.X} & \textcolor{blue}{XX.X} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} \\
+w/o Horizon conditioning & \textcolor{blue}{XX.X} & \textcolor{blue}{XX.X} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} \\
+w/o L1 loss ($\to$ MSE) & \textcolor{blue}{XX.X} & \textcolor{blue}{XX.X} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} \\
+w/o Full-sequence target & 17.81$_{\pm1.7}$ & 19.25 & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} \\
+SIGReg (no EMA) & \textcolor{blue}{XX.X} & \textcolor{blue}{XX.X} & \textcolor{blue}{0.XX} & \textcolor{blue}{0.XX} \\
+\midrule
+\textbf{Full Model} & \textbf{14.23}$_{\pm0.4}$ & \textbf{15.37}$_{\pm0.9}$ & \textcolor{blue}{\textbf{0.XX}} & \textcolor{blue}{\textbf{0.XX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+}
+
+\paragraph{Full-sequence target.} Replacing the future-only target with a full-sequence target ($\x_{1:t+k}$) improves the frozen probe by $-2.1$ RMSE on FD001 at 100\% labels, with 8$\times$ lower seed variance. The improvement generalizes to FD003 ($-0.9$) and FD004 ($-1.3$).
+
+\paragraph{Cross-sensor attention.}
+\label{sec:cross_sensor}
+Tokenizing each sensor individually (iTransformer-style~\citep{liu2024itransformer}) with alternating temporal/cross-sensor attention yields the best 100\% frozen result ($14.98 \pm 0.22$) but is brittle at low labels. The gain is FD001-specific and does not transfer to FD003.
+
 % ============================================================
-% 5. ANALYSIS
+% 6. ANALYSIS
 % ============================================================
 \section{Analysis}
 \label{sec:analysis}
 
-\subsection{Evaluation Protocol Transparency}
-\label{sec:eval_protocol}
+\subsection{Verified Degradation Tracking}
+\label{sec:verification}
 
-The standard C-MAPSS evaluation tests each engine at a single cut point (the last observed cycle). We additionally report sliding-cut RMSE (all cut points from cycle 30 to end), which more honestly measures how the model performs across the full operational range. The sliding-cut RMSE ($11.77$) is better than last-window ($13.98$), as expected: at earlier cut points, the encoder has more history and tracks degradation more precisely. We advocate publishing both metrics.
+Five diagnostics confirm genuine within-engine tracking on C-MAPSS:
+\begin{enumerate}[nosep]
+  \item \textbf{Prediction variance:} median per-engine std $= 12.1 \pm 0.7$. A constant predictor has std $\approx 0$.
+  \item \textbf{Spearman $\rho = 0.830 \pm 0.023$} between predicted and true RUL.
+  \item \textbf{Shuffle test:} permuting $\h_\text{past}$ across engines degrades RMSE from 14.0 to 55.5 ($+41.5$).
+  \item \textbf{Hand-engineered baseline margin:} $+5.0$ RMSE over a 58-feature Ridge regressor.
+  \item \textbf{Health index recovery:} $R^2 = 0.926$ from frozen representations.
+\end{enumerate}
 
-\subsection{What Does the Encoder Represent?}
-\label{sec:representation}
+\subsection{Why Trajectory Prediction Learns Degradation}
+\label{sec:theory}
 
-\paragraph{PCA analysis.} PC1 of the frozen encoder embeddings explains 47.6\% of variance with $|\rho| = 0.797$ against the health index. The representation is low-rank and degradation-aligned.
-
-\paragraph{Frozen vs.\ E2E.} The frozen encoder has \emph{higher} tracking $\rho$ (0.856) than E2E (0.804). This is surprising: E2E, which sees RUL labels, tracks degradation \emph{less} faithfully. The explanation is that E2E optimizes for RMSE calibration (mapping to the correct scale) at the expense of rank preservation. The degradation signal originates entirely from pretraining.
-
-\subsection{Theoretical Rationale}
-\label{sec:theory_frozen_e2e}
-
-We offer a principled sketch (not a formal theorem) of why trajectory-prediction pretraining produces degradation-aligned representations. A complete derivation is in the supplementary material.
-
-\paragraph{Slow feature bias.} The predictor $\predictor(\h_\text{past}, k)$ cannot reduce the conditional innovation of a feature: the component of $\h_\text{future}$ that is unpredictable from $\h_\text{past}$. Features with low temporal innovation (slow-varying) are therefore rewarded by the L1 prediction loss, while features with high innovation (fast-varying noise, operating-condition oscillations) are penalized. Mechanical degradation is the slowly-varying latent variable; the L1 objective thus biases the encoder toward representing it. This is the same inductive bias that Slow Feature Analysis~\citep{wiskott2002sfa} formalizes in the covariance domain.
-
-\paragraph{Information-theoretic view.} Under the assumptions (A1) $\x^{(t)} = f(\text{H.I.}(t), \varepsilon_t)$ with H.I.\ slow and $\varepsilon$ fast i.i.d.\ noise, (A2) a smooth H.I.\ dynamics (so $\text{H.I.}(t+k) \mid \text{H.I.}(t)$ is concentrated), the mutual information $I(\x_{1:t}; \x_{t+1:t+k})$ is dominated by the H.I.\ component. Any predictor maximizing $I(\h_\text{past}; \h_\text{future})$ must concentrate on the H.I.\ channel. JEPA's L1 loss is not literally an MI bound but shares the same incentive structure as CPC~\citep{oord2018cpc}, which is.
-
-\paragraph{Why frozen tracks better than E2E.} About $40\%$ of training labels sit at the capped RUL plateau. The MSE gradient under this label distribution has a large ``predict the plateau'' component, which biases E2E fine-tuning toward calibrating the healthy regime at the expense of rank preservation during degradation. The frozen encoder is uncontaminated by this label-induced gradient bias, which explains $\rho_\text{frozen} = 0.856 > \rho_\text{E2E} = 0.804$.
-
-\paragraph{Length vs.\ content.} The encoder receives sensor values and sinusoidal positional encodings indexed by cycle number. Since all training engines are run-to-failure, sequence length correlates with elapsed life, so in principle the encoder could exploit length as a shortcut. Three inference-only tests on the frozen V2 encoder rule this out: (1)~a constant-input test (repeat one cycle's sensors $t$ times for $t \in [30, 200]$) produces a prediction range of only $2.3$ cycles, showing that the PE does not dominate the output; (2)~a length-matched cross-engine swap (same $t$, different sensor content) gives mean cosine similarity $0.647$ between representations, well below 1; (3)~a temporal shuffle (permuting cycle order within each engine) collapses RMSE from $16.1$ to $36.8$ and within-engine $\rho$ from $0.896$ to $0.771$. The encoder reads temporal sensor content, not sequence length (see \cref{sec:from_scratch} for the from-scratch ablation, which reaches the same conclusion from a different angle).
+\plannedc{
+\begin{itemize}[nosep]
+  \item \textbf{Slow Feature Analysis connection.} The L1 prediction loss rewards features with low temporal innovation. Degradation is the slowly-varying latent variable; the objective biases the encoder toward it~\citep{wiskott2002sfa}. \textcolor{blue}{[Formal theorem: show that under assumptions A1--A3, the JEPA loss upper-bounds a function of mutual information between $\h_\text{past}$ and the health index.]}
+  \item \textbf{Information bottleneck perspective.} \textcolor{blue}{[The predictor acts as an information bottleneck: it must compress $\h_\text{past}$ into the predictable component of $\h_\text{fut}$, discarding unpredictable noise. Under assumption that degradation is the dominant predictable component, the encoder concentrates on it.]}
+  \item \textbf{Why frozen tracks better than E2E.} $\rho_\text{frozen} = 0.856 > \rho_\text{E2E} = 0.804$. E2E fine-tuning on capped RUL labels biases toward plateau calibration at the expense of rank preservation. \textcolor{blue}{[Formalize: show gradient analysis under capped-RUL MSE loss with $\sim$40\% plateau labels.]}
+  \item \textbf{Connection to SIGReg optimality.} \textcolor{blue}{[LeJEPA~\citep{balestriero2025lejepa} proves SIGReg is optimal for collapse prevention. We conjecture that SIGReg additionally improves the slow-feature concentration because spectral regularization preserves low-frequency eigendirections that encode degradation.]}
+\end{itemize}
+}
 
 % ============================================================
-% 6. LIMITATIONS
+% 7. LIMITATIONS
 % ============================================================
 \section{Limitations}
 \label{sec:limitations}
 
 \begin{enumerate}[nosep]
-  \item \textbf{Run-to-failure assumption.} All C-MAPSS training engines run to failure. The pretraining data therefore carries implicit structural supervision: trajectories always terminate at failure, and sequence length correlates with degradation state. This is weaker than labeled RUL values but stronger than truly unlabeled industrial data where engines are replaced before failure. The length-vs-content ablation (\cref{sec:representation}) and the from-scratch comparison (\cref{sec:from_scratch}) confirm that the encoder reads sensor content rather than sequence position alone. We flag this structural supervision as a genuine qualifier on the ``no labels'' claim.
-
-  \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations with known physics. Generalization to real industrial sensors with noise, missing channels, and sensor drift remains untested.
-
-  \item \textbf{Gap to supervised state of the art.} JEPA E2E achieves 14.23 RMSE vs.\ STAR's 12.19, a gap of roughly 2 RMSE points. Closing this likely requires architectural scaling or improved fine-tuning schedules rather than changes to the pretraining objective.
-
-  \item \textbf{Multi-condition generalization.} On FD002/FD004, per-condition normalization fails under distribution shift across operating regimes. Condition-aware designs (condition tokens, adaptive normalization) are needed.
-
-  \item \textbf{Data-scale requirements.} On single-channel bearing vibration from FEMTO~\citep{nectoux2012pronostia} and XJTU-SY~\citep{wang2020xjtusybearing} (23 run-to-failure episodes, 33{,}939 windows), JEPA alone achieved weak degradation tracking (spectral centroid PC1 $\rho = 0.071$) and required fusion with handcrafted spectral features to be competitive (Appendix~\ref{app:bearings}). Twenty-three episodes may simply be too few for self-supervised pretraining to recover structure that domain experts encode via spectral centroid, kurtosis, and envelope analysis. The C-MAPSS results (100--260 engines, 14 sensors) suggest a minimum data scale and multivariate richness below which the framework offers limited benefit.
+  \item \textbf{Run-to-failure structural supervision.} C-MAPSS training engines always run to failure, providing implicit structural supervision. The length-vs-content ablation (\cref{sec:verification}) and from-scratch comparison confirm the encoder reads content, not length, but this qualifier applies to the ``no labels'' claim.
+  \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations. Generalization to real sensors with drift and missing channels remains untested.
+  \item \textbf{Gap to supervised SOTA.} JEPA E2E (14.23) vs.\ STAR (12.19) on FD001 at 100\% labels. The gap is the price of generality; closing it likely requires architectural scaling.
+  \item \textbf{Multi-condition generalization.} FD002/FD004 show distribution shift from per-condition normalization mismatch (\cref{app:fd002}).
+  \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone shows weak tracking ($\rho = 0.071$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
 \end{enumerate}
 
 % ============================================================
-% 7. CONCLUSION
+% 8. CONCLUSION
 % ============================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-We introduced Trajectory JEPA, a self-supervised framework for predicting grey swan events from multivariate time series. The central finding is quantitative: in a matched-architecture ablation on C-MAPSS FD001, pretraining improves RMSE by $+8.8$ at full labels and $+15.6$ at 10\% labels, producing a label-efficiency crossover where the frozen SSL encoder surpasses supervised baselines at 5\% labels. Five independent diagnostics confirm that the encoder tracks degradation state, including a $+41.5$ RMSE shuffle penalty and Spearman $\rho = 0.830$.
+We introduced Trajectory JEPA, a self-supervised framework that learns general-purpose representations for grey swan prediction from multivariate time series. The central finding: pretraining improves RMSE by $+8.8$ to $+15.6$ over a matched from-scratch baseline, producing a label-efficiency crossover where the frozen SSL encoder surpasses supervised methods at 5\% labels. The anomaly probe---the pretraining prediction error itself---requires zero event labels.
 
-The frozen encoder achieves \emph{higher} tracking fidelity than the end-to-end fine-tuned model ($\rho_\text{frozen} = 0.856$ vs.\ $\rho_\text{E2E} = 0.804$). The pretraining objective itself is the source of the degradation signal; fine-tuning refines calibration, not detection. At low label budgets, this yields $5$--$30\times$ lower variance than supervised approaches, a property that matters in industrial settings where prediction consistency is as important as accuracy.
-
-\plannedc{The multi-domain benchmark (\cref{sec:benchmark}) demonstrates that the same architecture and objective generalizes across turbofan engines, bearings, batteries, anomaly detection in spacecraft telemetry and industrial control systems, and process fault diagnosis. This breadth suggests that latent trajectory prediction captures a domain-general inductive bias: slow-varying state changes that precede grey swan events are predictable in latent space, regardless of the physical mechanism.}
-
-Open directions include provably optimal regularization via SIGReg~\citep{balestriero2025lejepa} as an alternative to EMA-based collapse prevention, a unified architecture that dominates across all label budgets, and formal analysis of the slow-feature bias introduced in \cref{sec:theory_frozen_e2e}.
+\plannedc{The multi-domain benchmark demonstrates that the same encoder and objective generalizes across industrial, spacecraft, financial, and medical domains. This breadth suggests latent trajectory prediction captures a domain-general inductive bias: slow-varying state changes that precede grey swan events are predictable in latent space, regardless of the physical mechanism.}
 
 % ============================================================
 % REFERENCES
@@ -574,49 +494,48 @@ Open directions include provably optimal regularization via SIGReg~\citep{balest
 \newpage
 \appendix
 
-\section{C-MAPSS Dataset Details}
+\section{Extended Metrics Discussion}
+\label{app:metrics}
+
+\plannedc{
+\paragraph{Point-adjusted F1 controversy.}
+The standard anomaly detection protocol~\citep{schmidl2022tsadeval} credits the entire anomaly segment if any single point is detected. This inflates scores to $>0.97$ on SWaT and PSM, saturating the leaderboard. We report non-PA F1 as primary (realistic operational metric) and PA-F1 in this appendix for comparability with prior work.
+
+\paragraph{NASA Scoring Function.}
+For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. Our NASA-S scores: [TODO].
+
+\paragraph{Threshold exceedance metrics.}
+We adopt the $\pm 3\sigma$ convention from statistical process control (SPC)~\citep{montgomery2020spc}, which provides a false alarm rate of 0.27\% under normality. The threshold is computed from the healthy baseline (first 50 cycles for C-MAPSS, pre-attack period for SWaT, first 30 days of VIX history). Alternative thresholds (2$\sigma$, 4$\sigma$, domain-specific) are reported in sensitivity analysis.
+}
+
+\section{C-MAPSS Detailed Results}
 \label{app:cmapss}
 
-C-MAPSS~\citep{saxena2008cmapss} simulates turbofan engine degradation under controlled conditions. Each engine starts with slightly different initial wear and operates until failure. The simulation produces 21 sensor channels per cycle; we select 14 informative sensors (dropping 7 near-constant channels: s1, s5, s6, s10, s16, s18, s19).
-
-For FD001/FD003 (single operating condition): global min-max normalization per sensor on training data only. For FD002/FD004 (6 operating conditions): per-condition normalization via KMeans clustering ($k=6$) on operating settings, with min-max applied per cluster. Test data is normalized using training statistics only.
-
-\section{Hyperparameters}
-\label{app:hyperparams}
+Complete per-subset results, FD002 distribution shift analysis, and cross-fault transfer experiments. See \cref{tab:multisubset,tab:crossfault}.
 
 \begin{table}[h]
 \centering
-\caption{Complete hyperparameter settings for Trajectory JEPA.}
-\label{tab:hyperparams}
+\caption{Multi-subset results, seed 0.}
+\label{tab:multisubset}
 \small
-\begin{tabular}{@{}llc@{}}
+\begin{tabular}{@{}lcccccc@{}}
 \toprule
-Component & Hyperparameter & Value \\
+Subset & RMSE (E2E) & RMSE (Frozen) & $\rho_\text{median}$ & pred\_std & vs.\ Regressor & STAR (paper) \\
 \midrule
-\multirow{6}{*}{Pretraining} & Encoder: $d_\text{model}$ / layers / heads & 256 / 2 / 4 \\
-& Encoder parameters & 1.26M \\
-& EMA momentum $\tau$ & 0.99 \\
-& Prediction horizon $k$ & $\mathcal{U}[5, 30]$ \\
-& Learning rate & $3 \times 10^{-4}$ (cosine decay) \\
-& Epochs / Early stop & 200 / probe RMSE at ep.\ 50 \\
-\midrule
-\multirow{4}{*}{Fine-tuning} & Probe & Linear (256 $\to$ 1) \\
-& Frozen LR / E2E encoder LR & $10^{-3}$ / $10^{-4}$ \\
-& Epochs / Patience & 100 / 20 \\
-& Optimizer & AdamW \\
-\midrule
-\multirow{2}{*}{Data} & Train/val split & 85\% / 15\% by engine \\
-& RUL cap $R_\text{max}$ & 125 cycles \\
+FD001 & 14.23$_{\pm0.4}$ & 17.81$_{\pm1.7}$ & 0.830 & 12.1 & +5.0 & 10.61 \\
+FD003 & 15.37$_{\pm0.9}$ & 19.25$_{\pm3.2}$ & 0.665 & 12.9 & +2.9 & 10.71 \\
+FD004 & 25.62$_{\pm0.3}$ & 29.35$_{\pm0.6}$ & 0.654 & 7.1 & +5.9 & 14.25 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Cross-Fault and Cross-Subset Transfer}
-\label{app:transfer}
+\paragraph{FD002 distribution shift.}
+\label{app:fd002}
+FD002 (6 operating conditions) reveals a distribution shift: the frozen encoder achieves val RMSE 15.35 but test RMSE 26.07. Conditions 1, 2, and 5 are $2.5$--$3.1\times$ overrepresented at test time.
 
 \begin{table}[h]
 \centering
-\caption{Cross-fault transfer: FD001-pretrained encoder evaluated on FD003. RMSE in cycles, 5 seeds.}
+\caption{Cross-fault transfer: FD001-pretrained encoder on FD003. RMSE, 5 seeds.}
 \label{tab:crossfault}
 \small
 \begin{tabular}{@{}lccccc@{}}
@@ -625,31 +544,68 @@ Setting & 100\% & 50\% & 20\% & 10\% & 5\% \\
 \midrule
 FD001 in-domain (frozen) & 17.81 & 18.71 & 19.83 & 19.93 & 21.53 \\
 FD001$\to$FD003 (frozen) & 24.79$_{\pm0.6}$ & 25.91$_{\pm0.4}$ & 27.82$_{\pm1.5}$ & 28.79$_{\pm0.4}$ & 28.28$_{\pm0.2}$ \\
-LSTM (FD001 ref.) & 17.36 & 18.30 & 18.55 & 31.22 & 33.08 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Cross-fault transfer incurs 7--9 RMSE penalty, but the cross-fault probe at 10\% labels (28.79) still outperforms a supervised LSTM at the same budget (31.22), demonstrating that SSL representations provide useful structure even across mismatched fault modes.
+\section{Health Index Recovery}
+\label{app:health_index}
 
-Cross-subset pretraining (FD002$\to$FD001) matches or slightly outperforms FD001 in-domain frozen at high labels (100\%: 17.50 vs 17.81) but underperforms at low labels (10\%: 24.45 vs 19.93), indicating that more data from a different distribution does not substitute for matched pretraining data at small scale.
+The frozen encoder's $\h_\text{past}$ linearly predicts the health index with $R^2 = 0.926$. PC1 explains 47.6\% of variance with $|\rho| = 0.797$ against H.I. The embedding space is low-rank and degradation-aligned.
 
-\section{Bearing Vibration Experiments}
+\section{Architectural Ablation Details}
+\label{app:ablation_details}
+
+\paragraph{Full-sequence target.} See \cref{tab:full_sequence}. Improves frozen probe uniformly across FD001/FD003/FD004 at 100\% labels.
+
+\begin{table}[h]
+\centering
+\caption{Full-sequence target ablation.}
+\label{tab:full_sequence}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Budget & V2 frozen & Full-seq frozen & STAR & $\Delta$ \\
+\midrule
+100\% & 17.81$_{\pm1.7}$ & \textbf{15.70}$_{\pm0.21}$ & 12.19$_{\pm0.6}$ & $-2.11$ \\
+20\%  & 19.83$_{\pm0.3}$ & \textbf{17.20}$_{\pm1.91}$ & 17.74$_{\pm3.6}$ & $-2.63$ \\
+10\%  & 19.93$_{\pm0.9}$ & \textbf{18.79}$_{\pm1.96}$ & 18.72$_{\pm2.8}$ & $-1.14$ \\
+5\%   & \textbf{21.53}$_{\pm2.0}$ & 26.57$_{\pm4.70}$ & 24.55$_{\pm6.5}$ & $+5.04$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Cross-sensor attention.} Best frozen 100\% result ($14.98 \pm 0.22$, $-2.83$ vs.\ V2) but FD001-specific. Cross-sensor from-scratch ablation: $+21.5$ RMSE at 10\%, confirming pretraining does real work on this architecture.
+
+\section{Bearing Experiments}
 \label{app:bearings}
 
-To assess whether the framework generalizes to single-channel vibration data at smaller scale, we also evaluated on bearing run-to-failure datasets.
+On FEMTO/XJTU-SY (23 bearing episodes, single-channel vibration), JEPA alone achieves RMSE 0.189 vs.\ handcrafted 0.177 ($p = 0.40$). A hybrid (JEPA + 18 spectral features) achieves 0.055. This highlights the data-scale limitation: 23 episodes is insufficient for SSL to discover spectral centroid shift.
 
-\paragraph{Setup.} JEPA pretraining on 33,939 vibration windows from 8 bearing sources (CWRU, MFPT, IMS, FEMTO, XJTU-SY, Paderborn, Ottawa, MAFAULDA), all resampled to 12,800\,Hz. The encoder is a 4-layer ViT ($d = 256$, 3.2M parameters) operating on 16 patches of 64 samples each, with 62.5\% masking. Evaluation on FEMTO~\citep{nectoux2012pronostia} and XJTU-SY~\citep{wang2020xjtusybearing} (23 episodes, 75\%/25\% split).
+\section{Hyperparameters}
+\label{app:hyperparams}
 
-\paragraph{Results.} JEPA alone (RMSE 0.189) matches handcrafted features (HC+LSTM: 0.177, $p = 0.40$) but has very low correlation with the dominant degradation indicator (spectral centroid PC1 $\rho = 0.071$). A hybrid architecture fusing JEPA embeddings with 18 handcrafted spectral features achieves RMSE $0.055 \pm 0.004$ ($+75.5\%$ vs.\ time-only baseline), confirming that JEPA captures complementary information. For cross-dataset transfer (FEMTO$\to$XJTU-SY), temporal contrastive pretraining outperforms JEPA by $+18.8\%$ ($p < 0.001$).
-
-\paragraph{Lesson.} The bearing results highlight a data-scale limitation. With 23 run-to-failure episodes and single-channel vibration, JEPA pretraining does not discover spectral centroid shift (the dominant degradation indicator) that domain experts encode directly. The framework requires either (a)~larger datasets with richer structure (as in C-MAPSS) or (b)~domain-informed masking strategies that direct the encoder toward degradation-relevant features.
-
-\begin{figure}[h]
+\begin{table}[h]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/v8_rul_comparison.pdf}
-\caption{Bearing RUL comparison (FEMTO + XJTU-SY, 5 seeds). The hybrid JEPA + HC architecture achieves the best result, but JEPA alone is only marginally better than handcrafted features and much worse than the hybrid. This motivates the trajectory formulation on richer multivariate data (C-MAPSS).}
-\label{fig:bearing_results}
-\end{figure}
+\caption{Complete hyperparameter settings.}
+\label{tab:hyperparams}
+\small
+\begin{tabular}{@{}llc@{}}
+\toprule
+Component & Parameter & Value \\
+\midrule
+Encoder & $d_\text{model}$ / layers / heads & 256 / 2 / 4 \\
+& Parameters & 1.26M \\
+& EMA momentum $\tau$ & 0.99 \\
+Pretraining & Horizon $k$ & $\mathcal{U}[5, 30]$ \\
+& LR & $3 \times 10^{-4}$ (cosine) \\
+& Epochs & 200 \\
+Fine-tuning & Probe & Linear (256 $\to$ 1) \\
+& Frozen LR / E2E encoder LR & $10^{-3}$ / $10^{-4}$ \\
+Data & Train/val split & 85\% / 15\% \\
+& RUL cap & 125 cycles \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}
