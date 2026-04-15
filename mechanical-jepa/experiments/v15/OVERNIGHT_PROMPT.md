@@ -78,9 +78,12 @@ Read the replication spec: `paper-replications/LeJEPA/REPLICATION_SPEC.md`.
 2. Project all embeddings onto each direction: s_m = a_m^T · z
 3. For each 1D projection, compute Epps-Pulley test against N(0,1)
 4. Loss = average EP statistic across M directions
-5. Total: L = (1-λ) · L_pred + λ · SIGReg(h), default λ=0.05
+5. Total: L = (1-λ) · L_pred + λ · SIGReg(h)
 
-One hyperparameter (λ). No epsilon. That's the beauty.
+One hyperparameter (λ). No epsilon. No temperature. That's the beauty.
+Paper Figure 1 shows λ ∈ {0.04, 0.08, 0.12, 0.16, 0.20} all work
+(Spearman ρ = 94.5% across all). Stable range: **1% to 20%**.
+Start with λ = 0.05 (5%), sweep {0.02, 0.05, 0.10} if time allows.
 
 **First**: Verify our implementation against official `pip install lejepa`.
 Run Experiment B from REPLICATION_SPEC.md. If our `sigreg.py` uses
@@ -88,10 +91,16 @@ moments-based approximation instead of EP, switch to official EP test.
 
 ### 1b. SIGReg pretraining run
 Follow Experiment D from REPLICATION_SPEC.md:
-- Three configs: V2-EMA baseline, SIGReg-only (no EMA), EMA+SIGReg
-- SIGReg λ=0.05 (paper default), M=512 slices, EP test
-- Single encoder for SIGReg-only (target branch uses same encoder + no_grad)
-- 200 epochs, same data as V2. 3 seeds each. Log to wandb.
+Follow Experiment D from REPLICATION_SPEC.md. Three configs:
+
+| Config | EMA | Collapse prevention | λ |
+|--------|-----|--------------------|----|
+| V2 baseline | τ=0.99 | variance regularizer | — |
+| SIGReg-only | none (same encoder, target uses no_grad) | SIGReg EP | 0.05 |
+| EMA + SIGReg | τ=0.99 | SIGReg EP | 0.05 |
+
+M=512 slices. 200 epochs. 3 seeds each. Log all to wandb.
+If SIGReg-only works: try λ sweep {0.02, 0.05, 0.10} on best config.
 
 ### 1c. Validate loss-performance correlation
 Run Experiment C from REPLICATION_SPEC.md: save checkpoints every 5 epochs,
