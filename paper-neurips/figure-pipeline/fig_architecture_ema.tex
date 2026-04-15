@@ -2,7 +2,7 @@
 \usepackage{tikz}
 \usepackage{amsmath,amssymb}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,
-    decorations.pathmorphing,backgrounds,patterns}
+    decorations.pathmorphing,decorations.pathreplacing,backgrounds}
 
 \input{colors.tex}
 
@@ -10,228 +10,222 @@
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily\small,
-    % ── Arrow styles ──
     dataarrow/.style={->,line width=0.8pt,ctextdark},
     softarrow/.style={->,line width=0.6pt,ctextmid},
-    emaarrow/.style={->,line width=1.0pt,caccent!80!black,
-        decorate,decoration={snake,amplitude=0.8pt,segment length=6pt,post length=3pt}},
-    % ── Section header ──
     sechead/.style={font=\sffamily\scriptsize\bfseries,text=ctextmid},
-    % ── Annotation ──
     annot/.style={font=\sffamily\scriptsize,text=ctextmid},
-    % ── Tall pipeline block (vertical text) ──
-    pipeblock/.style={
-        rounded corners=3pt, line width=0.5pt,
-        minimum height=2.0cm, minimum width=0.9cm,
-        align=center, text=ctextdark, inner sep=3pt,
-    },
-    % ── Wide component block ──
     compblock/.style={
         rounded corners=3pt, line width=0.5pt,
-        minimum height=1.3cm, minimum width=2.6cm,
+        minimum height=1.4cm, minimum width=2.5cm,
         align=center, text=ctextdark, inner sep=5pt,
     },
-    % ── Representation capsule ──
     capsule/.style={
         rounded corners=8pt, draw=cborder, fill=white,
-        line width=0.5pt, minimum height=1.6cm, minimum width=0.5cm,
+        line width=0.5pt, minimum height=1.5cm, minimum width=0.55cm,
         inner sep=2pt,
     },
-    % ── Probe pill ──
     probe/.style={
         rounded corners=10pt, draw=cborder, fill=cbgwarm,
-        line width=0.5pt, minimum height=0.5cm, minimum width=1.8cm,
+        line width=0.5pt, minimum height=0.55cm, minimum width=2.0cm,
         align=center, text=ctextdark, inner sep=3pt,
     },
 ]
 
 % ============================================================
-% SECTION HEADERS (top, in small caps style)
+% PHASE LABELS (top)
 % ============================================================
 
-\coordinate (origin) at (0,0);
-\node[sechead] at (0,3.8) {INPUT};
-\node[sechead] at (3.2,3.8) {ENCODERS};
-\node[sechead] at (6.5,3.8) {REPRESENTATIONS};
-\node[sechead] at (9.5,3.8) {PREDICTION};
-\node[sechead] at (12.5,3.8) {LOSS};
+% Left phase: Self-Supervised Pretraining
+\node[sechead] at (4.5,4.2) {SELF-SUPERVISED PRETRAINING (no event labels)};
+
+% Right phase: Supervised Fine-tuning
+\node[sechead] at (13.8,4.2) {SUPERVISED PROBES};
+
+% Vertical separator
+\draw[cborder,line width=0.5pt,dashed]
+    (11.0,4.5) -- (11.0,-3.8);
 
 % ============================================================
-% COLUMN 1: Input signals
+% LEFT HALF: SSL Pretraining
 % ============================================================
 
-% Past window — actual signal lines
+% --- Section headers ---
+\node[annot] at (0,3.4) {input};
+\node[annot] at (3.3,3.4) {encoders};
+\node[annot] at (6.6,3.4) {latent};
+\node[annot] at (9.2,3.4) {prediction};
+
+% --- Past input ---
 \node[rounded corners=2pt, draw=cborder, fill=white,
-    minimum height=2.0cm, minimum width=1.5cm,
-    inner sep=0pt] (past) at (0,2.0) {};
-
+    minimum height=1.8cm, minimum width=1.4cm,
+    inner sep=0pt] (past) at (0,1.8) {};
 \begin{scope}
     \clip ([xshift=1pt,yshift=1pt]past.south west)
         rectangle ([xshift=-1pt,yshift=-1pt]past.north east);
-    \foreach \yoff/\col in {0.6/csecondary, 0.3/csecondary!80, 0.0/csecondary!60,
-        -0.3/csecondary!80, -0.6/csecondary!40} {
-        \draw[\col,line width=0.4pt,opacity=0.8,
+    \foreach \yoff/\col in {0.5/csecondary,0.25/csecondary!75,
+        0.0/csecondary!55,-0.25/csecondary!75,-0.5/csecondary!40} {
+        \draw[\col,line width=0.4pt,
               decorate,decoration={snake,amplitude=1pt,segment length=5pt}]
             ([xshift=4pt,yshift=\yoff cm]past.center)
             -- ([xshift=-4pt,yshift=\yoff cm]past.center);
     }
 \end{scope}
-\node[annot,above=0.15cm of past] {past};
-\node[font=\sffamily\scriptsize,csecondary,below=0.15cm of past] {$\mathbf{x}_{1:t}$};
+\node[font=\sffamily\scriptsize,csecondary,below=0.2cm of past] {$\mathbf{x}_{1:t}$};
 
-% Future window
+% --- Future input ---
 \node[rounded corners=2pt, draw=cborder, fill=white,
-    minimum height=2.0cm, minimum width=1.5cm,
-    inner sep=0pt, below=0.8cm of past] (future) {};
-
+    minimum height=1.8cm, minimum width=1.4cm,
+    inner sep=0pt, below=1.2cm of past] (future) {};
 \begin{scope}
     \clip ([xshift=1pt,yshift=1pt]future.south west)
         rectangle ([xshift=-1pt,yshift=-1pt]future.north east);
-    \foreach \yoff/\col in {0.6/caccent, 0.3/caccent!80, 0.0/caccent!60,
-        -0.3/caccent!80, -0.6/caccent!40} {
-        \draw[\col,line width=0.4pt,opacity=0.8,
+    \foreach \yoff/\col in {0.5/caccent,0.25/caccent!75,
+        0.0/caccent!55,-0.25/caccent!75,-0.5/caccent!40} {
+        \draw[\col,line width=0.4pt,
               decorate,decoration={snake,amplitude=1pt,segment length=5pt}]
             ([xshift=4pt,yshift=\yoff cm]future.center)
             -- ([xshift=-4pt,yshift=\yoff cm]future.center);
     }
 \end{scope}
-\node[annot,above=0.15cm of future] {future};
-\node[font=\sffamily\scriptsize,caccent,below=0.15cm of future] {$\mathbf{x}_{t+1:t+k}$};
+\node[font=\sffamily\scriptsize,caccent,below=0.2cm of future] {$\mathbf{x}_{t+1:t+k}$};
 
-% ============================================================
-% COLUMN 2: Encoders (tall blocks, inspired by Chronos style)
-% ============================================================
-
-% Context Encoder — tall rounded block
+% --- Context Encoder ---
 \node[compblock, draw=csecondary!40, fill=csecondarybg,
-    right=1.0cm of past] (enc_ctx) {
+    right=1.2cm of past] (enc_ctx) {
     {\scriptsize\textbf{Context Encoder}}\\[2pt]
-    $f_\theta$\\[2pt]
+    $f_\theta$\\[1pt]
     {\scriptsize Causal Transformer}
 };
 \draw[dataarrow] (past.east) -- (enc_ctx.west);
 
-% Target Encoder — tall rounded block
+% --- Target Encoder ---
 \node[compblock, draw=caccent!40, fill=caccentbg,
-    right=1.0cm of future] (enc_tgt) {
+    right=1.2cm of future] (enc_tgt) {
     {\scriptsize\textbf{Target Encoder}}\\[2pt]
-    $\bar{f}_\xi$\\[2pt]
+    $\bar{f}_\xi$ {\scriptsize(EMA)}\\[1pt]
     {\scriptsize Bidirectional + Pool}
 };
 \draw[dataarrow] (future.east) -- (enc_tgt.west);
 
-% EMA connection (wavy arrow, prominent)
-\draw[emaarrow]
-    ([xshift=0.4cm]enc_ctx.south) -- ([xshift=0.4cm]enc_tgt.north)
+% --- EMA connection ---
+\draw[->,line width=0.8pt,caccent!70,dashed]
+    ([xshift=0.5cm]enc_ctx.south) -- ([xshift=0.5cm]enc_tgt.north)
     node[midway,right=0.2cm,annot,align=left] {
         EMA\\[-1pt]
-        $\xi \!\leftarrow\! \tau\xi\!+\!(1\!-\!\tau)\theta$
+        {\scriptsize$\xi\!\leftarrow\!\tau\xi\!+\!(1\!-\!\tau)\theta$}
     };
 
-% ============================================================
-% COLUMN 3: Representations (vertical capsules)
-% ============================================================
-
-% h_past capsule
+% --- h_past capsule ---
 \node[capsule,right=0.8cm of enc_ctx] (h_past) {};
-\foreach \y in {0.45,0.25,0.05,-0.15,-0.35,-0.55} {
-    \fill[csecondary!60] ([yshift=\y cm]h_past.center) circle (1.2pt);
+\foreach \y in {0.4,0.2,0.0,-0.2,-0.4} {
+    \fill[csecondary!55] ([yshift=\y cm]h_past.center) circle (1.3pt);
 }
-\node[annot,above=0.15cm of h_past] {$\mathbf{h}_\text{past}$};
+\node[annot,above=0.2cm of h_past] {$\mathbf{h}_\text{past}$};
 \draw[dataarrow] (enc_ctx.east) -- (h_past.west);
 
-% h_fut capsule
+% --- h_fut capsule ---
 \node[capsule,right=0.8cm of enc_tgt] (h_fut) {};
-\foreach \y in {0.45,0.25,0.05,-0.15,-0.35,-0.55} {
-    \fill[caccent!60] ([yshift=\y cm]h_fut.center) circle (1.2pt);
+\foreach \y in {0.4,0.2,0.0,-0.2,-0.4} {
+    \fill[caccent!55] ([yshift=\y cm]h_fut.center) circle (1.3pt);
 }
-\node[annot,above=0.15cm of h_fut] {$\mathbf{h}_\text{fut}$};
+\node[annot,above=0.2cm of h_fut] {$\mathbf{h}_\text{fut}$};
+\node[annot,below=0.2cm of h_fut] {sg[$\cdot$]};
 \draw[dataarrow] (enc_tgt.east) -- (h_fut.west);
 
-% Stop-gradient marker
-\node[annot,draw=ctextmid,rounded corners=1pt,line width=0.3pt,
-    inner sep=2pt, below=0.15cm of h_fut] {sg};
-
-% ============================================================
-% COLUMN 4: Predictor
-% ============================================================
-
-% Horizon diamond
-\node[diamond, draw=cprimary!50, fill=cprimarybg,
-    line width=0.5pt, inner sep=2pt,
-    above right=0.3cm and 1.5cm of h_past] (horizon) {{\scriptsize $k$}};
-\node[annot,above=0.12cm of horizon] {$k\!\sim\!\mathcal{U}[5,30]$};
-
-% Predictor block
-\node[compblock, draw=cprimary!50, fill=cprimarybg,
-    right=1.5cm of h_past, minimum width=2.2cm] (predictor) {
+% --- Predictor ---
+\node[compblock, draw=cprimary!40, fill=cprimarybg,
+    right=1.0cm of h_past, minimum width=2.2cm] (predictor) {
     {\scriptsize\textbf{Predictor}}\\[2pt]
-    $g_\phi$\\[2pt]
-    {\scriptsize Horizon-aware MLP}
+    $g_\phi$\\[1pt]
+    {\scriptsize Horizon MLP}
 };
 \draw[dataarrow] (h_past.east) -- (predictor.west);
+
+% --- Horizon k ---
+\node[diamond, draw=cprimary!40, fill=cprimarybg,
+    line width=0.5pt, inner sep=2pt,
+    above=0.5cm of predictor] (horizon) {{\scriptsize $k$}};
+\node[annot,left=0.2cm of horizon] {$k\!\sim\!\mathcal{U}[5,30]$};
 \draw[softarrow] (horizon.south) -- (predictor.north);
 
-% Predicted representation
-\node[capsule,right=0.8cm of predictor] (h_hat) {};
-\foreach \y in {0.45,0.25,0.05,-0.15,-0.35,-0.55} {
-    \fill[cprimary!50] ([yshift=\y cm]h_hat.center) circle (1.2pt);
+% --- Predicted h ---
+\node[capsule,right=0.5cm of predictor] (h_hat) {};
+\foreach \y in {0.4,0.2,0.0,-0.2,-0.4} {
+    \fill[cprimary!45] ([yshift=\y cm]h_hat.center) circle (1.3pt);
 }
-\node[annot,above=0.15cm of h_hat] {$\hat{\mathbf{h}}_\text{fut}$};
+\node[annot,above=0.2cm of h_hat] {$\hat{\mathbf{h}}_\text{fut}$};
 \draw[dataarrow] (predictor.east) -- (h_hat.west);
 
-% ============================================================
-% COLUMN 5: Loss
-% ============================================================
-
+% --- L1 Loss ---
 \node[compblock, draw=chighlight!40, fill=chighlightbg,
-    minimum width=1.6cm, minimum height=1.0cm]
-    (loss) at ($(h_hat.south)!0.5!(h_fut.north) + (1.5,0)$) {
-    {\scriptsize\textbf{$\mathcal{L}_1$ Loss}}\\[2pt]
+    minimum width=1.5cm, minimum height=1.0cm]
+    (loss) at ($(h_hat.south)!0.5!(h_fut.north)$) {
+    {\scriptsize\textbf{$\mathcal{L}_1$ Loss}}\\[1pt]
     {\scriptsize $\|\hat{\mathbf{h}}\!-\!\text{sg}[\mathbf{h}]\|_1$}
 };
-\draw[dataarrow] (h_hat.east) -- ++(0.3,0) |- (loss.west);
-\draw[dataarrow] (h_fut.east) -- ++(0.3,0) |- (loss.west);
+\draw[dataarrow] (h_hat.south) -- (loss.north);
+\draw[dataarrow] (h_fut.north) -- (loss.south);
 
 % ============================================================
-% SEPARATOR + DOWNSTREAM PROBES
+% RIGHT HALF: Supervised Probes (downstream fine-tuning)
 % ============================================================
 
-\coordinate (sep_y) at ([yshift=-0.6cm]future.south);
-\draw[cborder,line width=0.3pt]
-    ([xshift=-0.5cm]past.west |- sep_y) -- ([xshift=0.5cm]loss.east |- sep_y);
-\node[sechead,anchor=west] at ([xshift=-0.5cm,yshift=-0.3cm]past.west |- sep_y)
-    {DOWNSTREAM PROBES};
+% Arrow from h_past across the separator to probes
+\coordinate (probe_entry) at (12.0,1.8);
+\draw[dataarrow,line width=1.0pt,csecondary]
+    (h_past.east) -- ++(0.15,0)
+    .. controls ++(0.5,0) and ++(-1.5,0) .. (probe_entry)
+    node[pos=0.5,above=0.15cm,annot] {frozen or fine-tuned};
 
-\coordinate (py) at ([yshift=-1.4cm]sep_y);
+% Anomaly arrow from loss
+\coordinate (anom_entry) at (12.0,-1.0);
+\draw[dataarrow,line width=0.8pt,chighlight,dashed]
+    (loss.east) -- ++(0.3,0) |- (anom_entry);
 
-% Four probe pills in a row
-\node[probe] (p_rul) at ([xshift=0.5cm]past.east |- py) {
+% --- Probe boxes (stacked vertically on the right) ---
+\node[probe,anchor=west] (p_rul) at (12.3,2.5) {
     {\scriptsize \textbf{RUL}~~$\mathbf{h}\!\to\!\hat{y}$}
 };
-\node[probe,right=0.4cm of p_rul] (p_tte) {
+\node[annot,right=0.2cm of p_rul] {linear, supervised};
+
+\node[probe,anchor=west] (p_tte) at (12.3,1.6) {
     {\scriptsize \textbf{TTE}~~$\mathbf{h}\!\to\!\hat{\tau}$}
 };
-\node[probe,right=0.4cm of p_tte] (p_fault) {
+\node[annot,right=0.2cm of p_tte] {linear, supervised};
+
+\node[probe,anchor=west] (p_fault) at (12.3,0.7) {
     {\scriptsize \textbf{Fault}~~$\mathbf{h}\!\to\!K$}
 };
-\node[probe,right=0.4cm of p_fault,fill=chighlightbg,draw=chighlight!30] (p_anom) {
+\node[annot,right=0.2cm of p_fault] {linear, supervised};
+
+\node[probe,anchor=west,fill=chighlightbg,draw=chighlight!30]
+    (p_anom) at (12.3,-0.5) {
     {\scriptsize \textbf{Anomaly}~~$\|\hat{\mathbf{h}}\!-\!\mathbf{h}\|_1$}
 };
+\node[annot,text=cprimary,right=0.2cm of p_anom] {unsupervised};
 
-% Labels below probes
-\node[annot,below=0.12cm of p_rul] {supervised};
-\node[annot,below=0.12cm of p_tte] {supervised};
-\node[annot,below=0.12cm of p_fault] {supervised};
-\node[annot,text=cprimary,below=0.12cm of p_anom] {unsupervised};
+% Dots to suggest extensibility
+\node[annot] at (13.3,-1.3) {$\vdots$};
+\node[annot,align=left] at (13.3,-1.9) {
+    {\scriptsize any event type}\\[-1pt]
+    {\scriptsize via linear probe}
+};
 
-% Connection from h_past down to supervised probes
-\draw[softarrow] (h_past.south) -- ++(0,-0.5) -| (p_rul.north);
-\draw[softarrow] (h_past.south) -- ++(0,-0.5) -| (p_tte.north);
-\draw[softarrow] (h_past.south) -- ++(0,-0.5) -| (p_fault.north);
+% Connect entry point to probes
+\draw[softarrow] (probe_entry) -- ++(0.1,0) |- (p_rul.west);
+\draw[softarrow] (probe_entry) -- (p_tte.west);
+\draw[softarrow] (probe_entry) -- ++(0.1,0) |- (p_fault.west);
+\draw[softarrow,dashed,chighlight] (anom_entry) -- ++(0.1,0) |- (p_anom.west);
 
-% Anomaly connection from loss
-\draw[softarrow,dashed,chighlight] (loss.south) -- ++(0,-0.3) -| (p_anom.north);
+% ============================================================
+% BOTTOM: Brief annotation
+% ============================================================
+
+\node[annot,anchor=west] at (-0.8,-3.5) {
+    \textbf{Left:} pretraining uses \emph{no event labels}.
+    \textbf{Right:} trivial probes adapt to any grey swan task.
+    Anomaly detection is free (prediction error $=$ anomaly score).
+};
 
 \end{tikzpicture}
 \end{document}
