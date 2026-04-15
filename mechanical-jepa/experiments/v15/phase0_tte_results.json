@@ -1,0 +1,44 @@
+{
+  "phase": "0b",
+  "task": "tte_cmapss_fd001_s14",
+  "sensor": "s14",
+  "baseline_window": 50,
+  "n_sigma": 3.0,
+  "probe_type": "ridge_hand_features",
+  "results": {
+    "rmse": 32.98299657595892,
+    "nrmse": 0.11821862572028287,
+    "mae": 25.72560082892464,
+    "bias": 15.710805205746276,
+    "n_valid": 1068,
+    "n_total": 1068,
+    "n_train": 8410,
+    "n_test": 1068,
+    "n_engines_with_exceedance": 80,
+    "tte_max_train": 279.0,
+    "s14_exceedance_rate": 0.9411764705882353,
+    "feasible": true
+  },
+  "exceedance_summary": {
+    "n_engines_with_exceedance": 93,
+    "n_engines_total": 100
+  },
+  "metric_rationale": {
+    "rul": {
+      "primary": "rmse",
+      "secondary": "nrmse",
+      "rationale": "RMSE is the universal currency for C-MAPSS comparisons (STAR, AE-LSTM, DC-SSL, CTTS, all use it). nRMSE allows cross-domain comparison where RUL scales differ (e.g., C-MAPSS ~125 cycles vs FEMTO ~thousands). NASA score is useful for safety-critical reporting (penalizes late predictions 2.5x more than early ones) but is unbounded and hard to compare across papers. RA is operationally interpretable but threshold-sensitive and rarely reported in ML papers."
+    },
+    "anomaly": {
+      "primary": "f1_non_pa",
+      "secondary": "auc_pr",
+      "rationale": "Non-PA F1 is the honest metric - no credit for detecting any point in an anomaly segment. PA-F1 (standard in THOC, TranAD, AnomalyTransformer) inflates results by up to 30pp and masks model failures. We report both for compatibility. AUC-PR is threshold-free and better for imbalanced data (anomalies are rare). TaPR provides segment-level temporal credit with buffer delta=0.1 (Kim et al. AAAI 2022)."
+    },
+    "tte": {
+      "primary": "nrmse",
+      "secondary": "rmse",
+      "rationale": "TTE-RMSE in cycles is useful for reporting to operators (e.g., 'off by N cycles'). nRMSE is better for cross-domain comparison where event horizons differ. We define TTE using SPC 3-sigma rule on baseline cycles 1-50 (healthy baseline); this is operationally standard."
+    }
+  },
+  "runtime_sec": 4.327159643173218
+}

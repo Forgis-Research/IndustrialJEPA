@@ -1,0 +1,7 @@
+{
+  "config": "v15_sigreg",
+  "spearman_rho": 0.10909090909090911,
+  "spearman_pval": 0.7495085962341482,
+  "passes_08_threshold": false,
+  "note": "rho measures loss-probe correlation: negative rho expected (loss down = probe improves)"
+}

@@ -1,0 +1,95 @@
+{
+  "cmapss": {
+    "n_sensors": 21,
+    "n_high_corr_pairs": 39,
+    "n_clusters": 4,
+    "cluster_assignment": {
+      "s1": 4,
+      "s2": 1,
+      "s3": 1,
+      "s4": 1,
+      "s5": 2,
+      "s6": 4,
+      "s7": 1,
+      "s8": 1,
+      "s9": 3,
+      "s10": 4,
+      "s11": 1,
+      "s12": 1,
+      "s13": 1,
+      "s14": 3,
+      "s15": 1,
+      "s16": 2,
+      "s17": 1,
+      "s18": 4,
+      "s19": 4,
+      "s20": 1,
+      "s21": 1
+    },
+    "top_corr_pairs": [
+      [
+        "s5",
+        "s16",
+        1.0
+      ],
+      [
+        "s9",
+        "s14",
+        0.9631566003059584
+      ],
+      [
+        "s11",
+        "s12",
+        -0.8468835930051096
+      ],
+      [
+        "s4",
+        "s11",
+        0.8301356963159873
+      ],
+      [
+        "s8",
+        "s13",
+        0.8260843322358089
+      ]
+    ],
+    "top_shift_pairs": [
+      [
+        "sel_s3",
+        "sel_s6",
+        -0.6373364264410323
+      ],
+      [
+        "sel_s2",
+        "sel_s6",
+        0.6298355237191829
+      ],
+      [
+        "sel_s6",
+        "sel_s7",
+        -0.6184566267071329
+      ],
+      [
+        "sel_s2",
+        "sel_s7",
+        -0.6048139925184601
+      ],
+      [
+        "sel_s3",
+        "sel_s7",
+        0.6046279968592081
+      ]
+    ]
+  },
+  "smap": {
+    "n_channels": 25,
+    "n_high_corr_pairs": 10,
+    "n_clusters": 5
+  },
+  "permutation_test": {
+    "is_permutation_equivariant": false,
+    "reason": "Linear input projection is position-dependent",
+    "recommendation": "Add sensor ID embeddings to make architecture permutation-equivariant"
+  },
+  "runtime_sec": 4.519665002822876
+}
