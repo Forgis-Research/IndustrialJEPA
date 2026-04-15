@@ -66,26 +66,38 @@ in the benchmark table with minimal effort.
 Read `paper-replications/LeJEPA/` for the LeJEPA/SIGReg reference.
 Also read Balestriero & LeCun 2025 (arXiv:2511.08544).
 
-### 1a. Implement SIGReg loss
-In `mechanical-jepa/models/losses.py` (or new file):
-- SIGReg regularization: spectral regularization on the representation
-  covariance matrix. Core: keep the eigenvalues of cov(h) above a threshold
-  using a sigmoid barrier function.
-- The key equations from LeJEPA:
-  - C = (1/B) Σ h_i h_i^T (batch covariance)
-  - L_SIG = Σ_j log(1 + exp(-λ_j / ε)) where λ_j are eigenvalues of C
-  - ε is a temperature parameter (try 0.01, 0.1)
+### 1a. SIGReg loss (ALREADY IMPLEMENTED)
+SIGReg is already in `mechanical-jepa/src/models/sigreg.py` (226 lines).
+V3 model in `mechanical-jepa/src/models/jepa_v3.py`. Archived training
+script in `mechanical-jepa/archive/train_v3_sigreg.py`.
+
+Read the replication spec: `paper-replications/LeJEPA/REPLICATION_SPEC.md`.
+
+**The actual SIGReg** (NOT eigenvalue thresholding):
+1. Sample M random unit vectors from S^{D-1} (default M=512)
+2. Project all embeddings onto each direction: s_m = a_m^T · z
+3. For each 1D projection, compute Epps-Pulley test against N(0,1)
+4. Loss = average EP statistic across M directions
+5. Total: L = (1-λ) · L_pred + λ · SIGReg(h), default λ=0.05
+
+One hyperparameter (λ). No epsilon. That's the beauty.
+
+**First**: Verify our implementation against official `pip install lejepa`.
+Run Experiment B from REPLICATION_SPEC.md. If our `sigreg.py` uses
+moments-based approximation instead of EP, switch to official EP test.
 
 ### 1b. SIGReg pretraining run
-- Same V2 architecture but **single encoder** (no EMA target copy).
-- Loss = L_pred (L1 on predicted vs actual future representation) + λ * L_SIG
-- Try λ ∈ {0.1, 0.5, 1.0}
-- 200 epochs, same data as V2. Compare frozen/E2E probe RMSE.
-- Expected outcome: similar to V2 (EMA) at ~40% fewer parameters.
+Follow Experiment D from REPLICATION_SPEC.md:
+- Three configs: V2-EMA baseline, SIGReg-only (no EMA), EMA+SIGReg
+- SIGReg λ=0.05 (paper default), M=512 slices, EP test
+- Single encoder for SIGReg-only (target branch uses same encoder + no_grad)
+- 200 epochs, same data as V2. 3 seeds each. Log to wandb.
 
-### 1c. Quick comparison table
-V2-EMA vs SIGReg on FD001 frozen/E2E at 100% and 10% labels.
-3 seeds each. Log to wandb.
+### 1c. Validate loss-performance correlation
+Run Experiment C from REPLICATION_SPEC.md: save checkpoints every 5 epochs,
+compute both (training loss) and (frozen probe RMSE), measure Spearman ρ.
+If ρ ≥ 0.8 → we can do hyperparameter search without downstream probes
+(huge advantage for multi-domain benchmark).
 
 ---
 
