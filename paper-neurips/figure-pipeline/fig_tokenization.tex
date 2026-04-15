@@ -1,7 +1,8 @@
-\documentclass[border=10pt]{standalone}
+\documentclass[border=12pt]{standalone}
 \usepackage{tikz}
 \usepackage{amsmath,amssymb}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,backgrounds}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,
+    decorations.pathmorphing,decorations.pathreplacing,backgrounds}
 
 \input{colors.tex}
 
@@ -9,132 +10,155 @@
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily\small,
-    dataarrow/.style={->,line width=0.7pt,ctextdark},
-    stage/.style={
-        rounded corners=3pt,
-        line width=0.6pt,
-        minimum height=1.0cm, minimum width=2.0cm,
-        align=center, text=ctextdark, inner sep=4pt,
-    },
-    annot/.style={font=\sffamily\scriptsize,text=ctextmid},
+    dataarrow/.style={->,line width=0.8pt,ctextdark},
     sechead/.style={font=\sffamily\scriptsize\bfseries,text=ctextmid},
+    annot/.style={font=\sffamily\scriptsize,text=ctextmid},
+    % Tall narrow pipeline block (Chronos-inspired)
+    tallblock/.style={
+        rounded corners=3pt, line width=0.5pt,
+        minimum height=2.2cm, minimum width=1.1cm,
+        align=center, text=ctextdark, inner sep=3pt,
+    },
 ]
 
 % ============================================================
-% STAGE 1: Raw Data
+% SECTION HEADERS
+% ============================================================
+\node[sechead] at (0,3.0) {INPUT};
+\node[sechead] at (3.5,3.0) {PREPROCESSING};
+\node[sechead] at (8.0,3.0) {TOKENIZATION};
+\node[sechead] at (12.2,3.0) {TO ENCODER};
+
+% ============================================================
+% INPUT: Raw multivariate time series
 % ============================================================
 
+% Signal box with multiple channels
 \node[rounded corners=2pt, draw=cborder, fill=white,
-    minimum height=1.3cm, minimum width=1.6cm, inner sep=0pt] (raw) {};
+    minimum height=2.2cm, minimum width=2.2cm,
+    inner sep=0pt] (signals) at (0,1.0) {};
 
-% Grid lines inside
-\foreach \y in {0.15,0.35,0.55,0.75,0.95} {
-    \draw[cborder!60,line width=0.3pt]
-        ([xshift=3pt,yshift={\y cm - 0.15cm}]raw.south west)
-        -- ([xshift=-3pt,yshift={\y cm - 0.15cm}]raw.south east);
+% Draw 5 sensor channel lines with different styles
+\begin{scope}
+    \clip ([xshift=2pt,yshift=2pt]signals.south west)
+        rectangle ([xshift=-2pt,yshift=-2pt]signals.north east);
+    % Channel labels on left
+    \foreach \yoff/\col/\lbl in {
+        0.7/cprimary/{\scriptsize$s_1$},
+        0.35/csecondary/{\scriptsize$s_2$},
+        0.0/caccent/{\scriptsize$s_3$},
+        -0.35/chighlight/{\scriptsize$\vdots$},
+        -0.7/ctextmid/{\scriptsize$s_S$}} {
+        \draw[\col,line width=0.5pt,opacity=0.85,
+              decorate,decoration={snake,amplitude=1.5pt,segment length=4pt}]
+            ([xshift=5pt,yshift=\yoff cm]signals.west)
+            -- ([xshift=-5pt,yshift=\yoff cm]signals.east);
+    }
+\end{scope}
+
+\node[annot,below=0.2cm of signals] {$\mathbf{X}\in\mathbb{R}^{T\times S}$};
+\node[font=\sffamily\scriptsize,ctextmid,above=0.15cm of signals] {
+    $T$ timesteps $\times$ $S$ sensors
+};
+
+% Time arrow below signal box
+\draw[->,line width=0.3pt,ctextmid]
+    ([xshift=5pt,yshift=-3pt]signals.south west)
+    -- ([xshift=-5pt,yshift=-3pt]signals.south east)
+    node[midway,below=1pt,annot] {time};
+
+% ============================================================
+% PREPROCESSING: Two tall blocks
+% ============================================================
+
+% Normalize block
+\node[tallblock, draw=caccent!40, fill=caccentbg,
+    right=0.8cm of signals] (norm) {
+    \rotatebox{90}{\scriptsize\textbf{NORMALIZE}}
+};
+\node[annot,below=0.2cm of norm,align=center] {
+    per-sensor\\[-2pt]z-score
+};
+\draw[dataarrow] (signals.east) -- (norm.west);
+
+% Condition-aware block
+\node[tallblock, draw=caccent!40, fill=caccentbg,
+    right=0.35cm of norm] (cond) {
+    \rotatebox{90}{\scriptsize\textbf{CONDITION}}
+};
+\node[annot,below=0.2cm of cond,align=center] {
+    per-cluster\\[-2pt]if multi-op
+};
+\draw[dataarrow] (norm.east) -- (cond.west);
+
+% ============================================================
+% TOKENIZATION: Three tall blocks
+% ============================================================
+
+% Linear projection
+\node[tallblock, draw=cprimary!40, fill=cprimarybg,
+    right=0.7cm of cond] (proj) {
+    \rotatebox{90}{\scriptsize\textbf{LINEAR PROJ.}}
+};
+\node[annot,below=0.2cm of proj,align=center] {
+    $\mathbf{W}\mathbf{x}^{(t)}\!+\!\mathbf{b}$\\[-2pt]
+    $\to \mathbf{e}_t\!\in\!\mathbb{R}^{256}$
+};
+\draw[dataarrow] (cond.east) -- (proj.west);
+
+% Positional encoding
+\node[tallblock, draw=cprimary!40, fill=cprimarybg,
+    right=0.35cm of proj] (pe) {
+    \rotatebox{90}{\scriptsize\textbf{POSITION ENC.}}
+};
+\node[annot,below=0.2cm of pe,align=center] {
+    sinusoidal\\[-2pt]cycle $t$ index
+};
+\draw[dataarrow] (proj.east) -- (pe.west);
+
+% Sensor ID (optional)
+\node[tallblock, draw=cprimary!25, fill=cprimarybg!50,
+    right=0.35cm of pe] (sid) {
+    \rotatebox{90}{\scriptsize\textbf{SENSOR ID}}
+};
+\node[annot,below=0.2cm of sid,align=center] {
+    learnable\\[-2pt](optional)
+};
+\draw[dataarrow] (pe.east) -- (sid.west);
+
+% ============================================================
+% OUTPUT: Token sequence to encoder
+% ============================================================
+
+% Output capsules (sequence of tokens)
+\node[rounded corners=3pt, draw=csecondary!40, fill=csecondarybg,
+    minimum height=2.2cm, minimum width=1.3cm,
+    right=0.7cm of sid, align=center, inner sep=3pt] (out) {};
+
+% Draw token dots inside
+\foreach \y in {0.7,0.4,0.1,-0.2,-0.5,-0.8} {
+    \fill[csecondary!60] ([yshift=\y cm]out.center) circle (2pt);
 }
-\foreach \x in {0.3,0.55,0.8,1.05,1.3} {
-    \draw[cborder!60,line width=0.3pt]
-        ([xshift={\x cm - 0.1cm}]raw.south west)
-        -- ([xshift={\x cm - 0.1cm},yshift=-3pt]raw.north west);
-}
 
-\node[annot,below=0.15cm of raw] {$\mathbf{X}\in\mathbb{R}^{T\times S}$};
-\node[font=\sffamily\scriptsize,csecondary,rotate=90,anchor=south]
-    at ([xshift=-1.0cm]raw.center) {sensors};
-\node[font=\sffamily\scriptsize,csecondary,anchor=north]
-    at ([yshift=0.15cm]raw.south) {time $\to$};
-
-% ============================================================
-% STAGE 2: Normalize
-% ============================================================
-
-\node[stage, draw=caccent!70!black, fill=caccentbg,
-      right=0.8cm of raw] (norm) {
-    \textbf{Normalize}\\[1pt]
-    {\scriptsize Per-sensor}\\[-1pt]
-    {\scriptsize min-max / z-score}
+\node[annot,below=0.2cm of out] {$[\mathbf{e}_1,\ldots,\mathbf{e}_T]$};
+\node[font=\sffamily\scriptsize,csecondary,above=0.15cm of out] {
+    token sequence
 };
-\draw[dataarrow] (raw.east) -- (norm.west);
-\node[annot,below=0.15cm of norm,align=center] {
-    Per operating\\[-2pt]condition if needed
-};
+\draw[dataarrow] (sid.east) -- (out.west);
+
+% Big arrow to encoder
+\draw[->,line width=1.2pt,csecondary]
+    (out.east) -- ++(0.6,0)
+    node[right,annot] {$f_\theta$};
 
 % ============================================================
-% STAGE 3: Tokenize
+% $\times N$ annotation (like Chronos)
 % ============================================================
 
-\node[stage, draw=cprimary!70!black, fill=cprimarybg,
-      right=0.8cm of norm] (token) {
-    \textbf{Tokenize}\\[1pt]
-    {\scriptsize Linear projection}\\[-1pt]
-    {\scriptsize $\mathbf{x}^{(t)} \!\to\! \mathbf{e}_t$}
-};
-\draw[dataarrow] (norm.east) -- (token.west);
-\node[annot,below=0.15cm of token,align=center] {
-    $\mathbf{e}_t = \mathbf{W}\mathbf{x}^{(t)} + \mathbf{b}$\\[-2pt]
-    $\mathbf{e}_t \in \mathbb{R}^d$, $d\!=\!256$
-};
-
-% ============================================================
-% STAGE 4: Positional Encoding
-% ============================================================
-
-\node[stage, draw=cborder, fill=cbgcool,
-      right=0.8cm of token] (pe) {
-    \textbf{Position}\\[1pt]
-    {\scriptsize Sinusoidal PE}\\[-1pt]
-    {\scriptsize + sensor ID emb}
-};
-\draw[dataarrow] (token.east) -- (pe.west);
-\node[annot,below=0.15cm of pe,align=center] {
-    Cycle number $t$\\[-2pt]indexed, not learned
-};
-
-% ============================================================
-% STAGE 5: To Encoder
-% ============================================================
-
-\node[stage, draw=csecondary!70!black, fill=csecondarybg,
-      right=0.8cm of pe] (out) {
-    \textbf{To Encoder}\\[1pt]
-    {\scriptsize $[\mathbf{e}_1, \ldots, \mathbf{e}_T]$}
-};
-\draw[dataarrow] (pe.east) -- (out.west);
-
-% ============================================================
-% SEPARATOR + COVARIATE HANDLING
-% ============================================================
-
-\coordinate (sep_y) at ([yshift=-1.0cm]raw.south);
-\draw[cborder,line width=0.4pt]
-    ([xshift=-0.3cm]raw.west |- sep_y)
-    -- ([xshift=0.3cm]out.east |- sep_y);
-\node[sechead,anchor=west]
-    at ([xshift=-0.3cm,yshift=-0.25cm]raw.west |- sep_y)
-    {COVARIATE HANDLING};
-
-% Option A
-\node[rounded corners=2pt, draw=csecondary!40, fill=csecondarybg,
-    minimum height=0.6cm, minimum width=9.0cm,
-    align=center, font=\sffamily\scriptsize, text=ctextdark,
-    inner sep=4pt, anchor=north west]
-    (optA) at ([xshift=-0.3cm,yshift=-0.7cm]raw.west |- sep_y) {
-    \textbf{Operating conditions} $\to$ KMeans cluster $\to$
-    per-cluster normalization
-};
-\node[annot,right=0.15cm of optA] {(default)};
-
-% Option B
-\node[rounded corners=2pt, draw=cprimary!40, fill=cprimarybg,
-    minimum height=0.6cm, minimum width=9.0cm,
-    align=center, font=\sffamily\scriptsize, text=ctextdark,
-    inner sep=4pt, below=0.25cm of optA.south west, anchor=north west]
-    (optB) {
-    \textbf{Sensor-as-token:} each sensor $s$ $\to$ own token
-    with learnable sensor-ID embedding
-};
-\node[annot,right=0.15cm of optB] {(cross-sensor)};
+% Bracket around tokenization blocks
+\draw[decorate,decoration={brace,amplitude=4pt,raise=3pt},ctextmid,line width=0.4pt]
+    ([yshift=0.15cm]proj.north west) -- ([yshift=0.15cm]sid.north east)
+    node[midway,above=6pt,annot] {tokenization};
 
 \end{tikzpicture}
 \end{document}
