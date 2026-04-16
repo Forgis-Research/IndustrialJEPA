@@ -31,7 +31,7 @@ BidiContextEncoder(x_{0:t}) + EMATargetEncoder(x_{t+1:t+k}) + VICReg + LR warmup
 | Feature regressor (57 hand features) | test=17.72 | COMPLETE (phase6) |
 | **V16b seed42** | **9.86** | COMPLETE (below SOTA!) |
 | **V16b seed123** | **8.43** | COMPLETE (below SOTA!) |
-| **V16b seed456** | TBD | RUNNING |
+| **V16b seed456** | **11.88** | COMPLETE (below 12!) |
 | Supervised SOTA (STAR 2024) | 10.61 | Reference |
 
 ### Key Technical Observations:
@@ -42,11 +42,13 @@ BidiContextEncoder(x_{0:t}) + EMATargetEncoder(x_{t+1:t+k}) + VICReg + LR warmup
 - EMA drift causes probe oscillation in later epochs; best checkpoint saves the peak
 
 ### Phases Status:
-- Phase 2 (cross-sensor fixed): RUNNING (PID 94008, seed42 ep60+, probe=14.82 at ep50; target=14.98)
-- Phase 3 (SMAP 100ep): KILLED (GPU contention); needs relaunch after V16b+Phase2 complete
-- Phase 4 (cross-machine): COMPLETE - V16a WORSE than V2 on all 3 domains (+14-27%)
-- Phase 5 (shuffle test): script ready at experiments/v16/phase5_shuffle_test.py
-- Phase 6 (feature regressor): COMPLETE - V16b beats ridge by 7.86 RMSE (44%)
+- Phase 2 (cross-sensor fixed): RUNNING seed123 (seed42=14.22 done, seeds 123/456 running, PID 94008)
+- Phase 3 (SMAP 100ep): KILLED (GPU contention); needs relaunch after Phase2 complete
+- Phase 4 (cross-machine): COMPLETE - V16b WORST: FD002=38.04, FD003=37.76, FD004=49.66
+- Phase 5 (shuffle test FIXED): COMPLETE - shuffled+20.83, random+28.45 vs original (mask bug fixed)
+- Phase 6 (feature regressor): COMPLETE - test RMSE=17.72; V2 E2E beats by 3.49 cycles
+- Phase 7 (valid frozen probe test): COMPLETE - test=25.72+-1.59 (WORSE than feat.reg 17.72)
+- Phase 8 (label efficiency): PENDING - launches after Phase2 all seeds done (auto-launcher PID 111442)
 
 ### E2E Eval Results (COMPLETE):
 | Seed | Test RMSE |
@@ -89,13 +91,13 @@ The encoder value is in E2E fine-tuning, NOT frozen probe usage.
 |--------|---------|----------|----------|
 | FD002  | 27.68   | 32.62    | 38.04    |
 | FD003  | 31.45   | 40.02    | 37.76    |
-| FD004  | 38.32   | 43.60    | (running)|
-V16b is WORSE than V16a on cross-machine transfer (FD002, FD003).
-Bidirectional encoder overfits FD001 - WORSE for transfer learning.
+| FD004  | 38.32   | 43.60    | 49.66    |
+V16b is WORST for cross-machine transfer (all 3 domains). Bidi+VICReg hurts transfer.
 
-### Phase 2 Cross-Sensor (seed42 at ep110):
-Best probe = 14.22 at ep110 (beats V14=14.98 baseline). Still improving.
-Seeds 123/456 start after seed42 ep200 (~1-2 hours remaining).
+### Phase 2 Cross-Sensor (seed42 DONE, seed123 RUNNING):
+Seed42: best probe = 14.22 at ep110. Done in 94.2 min.
+Seed123: running (started ep1 probe=35.25). Expected done ~04:00 UTC Apr 16.
+V14 baseline = 14.98 +/- 0.22. Seed42 beats V14 by 0.76 cycles.
 
 ## V16a: Bidirectional Context + Causal Target JEPA (2026-04-16)
 
