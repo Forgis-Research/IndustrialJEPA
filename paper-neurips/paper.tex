@@ -116,7 +116,7 @@ We take this insight literally. Rather than forecasting raw sensor values or cla
 Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}, TF-C~\citep{zhang2022tfc}) learn representations by contrasting positive and negative pairs.
 Masked reconstruction methods (PatchTST~\citep{nie2023patchtst}, SimMTM~\citep{dong2023simmtm}, TimeMAE~\citep{cheng2023timemae}) reconstruct masked segments.
 JEPA avoids both: it predicts representations of future segments, not raw values, avoiding reconstruction bias toward low-level signal statistics~\citep{assran2023ijepa,bardes2024vjepa}.
-For time series, TS-JEPA~\citep{tsjepa2024} applies JEPA with temporal masking for classification; MTS-JEPA~\citep{mtsjepa2026} introduces codebook regularization. Neither evaluates on prognostics, anomaly detection, or time-to-event prediction.
+For time series, TS-JEPA~\citep{tsjepa2024} applies JEPA with temporal masking for classification; MTS-JEPA~\citep{mtsjepa2026} introduces codebook regularization for anomaly detection. Neither evaluates on prognostics (RUL/TTF) or time-to-event prediction.
 
 \paragraph{RUL prediction.}
 C-MAPSS~\citep{saxena2008cmapss} is the standard benchmark. Supervised SOTA: STAR~\citep{fan2024star} (FD001 RMSE 10.61), TTSNet~\citep{ttsnet2025} (11.02). The only prior SSL result is AE-LSTM~\citep{lecam2025aelstm} (13.99, best-of-28 grid). Our work is the first JEPA approach for RUL prediction.

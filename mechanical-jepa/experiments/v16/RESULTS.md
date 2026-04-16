@@ -587,18 +587,22 @@ Without them, some seeds converge to good representations, others get stuck.
 
 **Seed 456: RUNNING** (started ~03:11 UTC; ep1=36.97; expected done ~04:45 UTC)
 
-Seed 456 early trajectory (as of 04:00 UTC):
+Seed 456 trajectory (updated):
 | Epoch | Loss   | Probe RMSE | Best  | vs Seed42 same ep | vs Seed123 same ep |
 |-------|--------|-----------|-------|-------------------|--------------------|
 | 1     | 0.0641 | 36.97     | 36.97 | seed42: 46.49     | seed123: 35.25     |
 | 10    | 0.0097 | 32.30     | 32.30 | seed42: 49.28     | seed123: 32.65     |
 | 20    | 0.0079 | 31.84     | 31.84 | seed42: 40.83     | seed123: 41.43     |
 | 30    | 0.0070 | 31.77     | 31.77 | seed42: 46.28     | seed123: 37.76     |
+| 40    | 0.0061 | 28.47     | 28.47 | seed42: 26.35     | seed123: 39.67     |
 
-KEY OBSERVATION: Seed456 has BEST probe at ep30 (31.77 vs seed42=46.28, seed123=37.76).
-Loss at ep30 (0.0070) is between seed42 (0.0093) and seed123 (0.0058).
-Probe trajectory: 36.97 → 32.30 → 31.84 → 31.77 (steady slow improvement).
-Expected: big probe improvement at ep40-50 (if follows seed42 pattern) or plateau (if follows seed123).
+KEY OBSERVATION (ep40): Seed456 follows seed42's convergence pattern.
+- Seed456 ep40=28.47 vs seed42 ep40=26.35 (within 2.1 cycles - closely tracking!)
+- Seed123 ep40=39.67 (much worse - diverged early)
+- Seed456 loss at ep40 (0.0061) BELOW seed42 at ep40 (0.0100). Healthy.
+- Probe improving: 36.97 → 32.30 → 31.84 → 31.77 → 28.47 (steady descent)
+If seed456 follows seed42 fully: expect ~14-16 probe at ep50-110 (seed42 hit 14.82 at ep50).
+Still running (ep44+ at last check).
 
 Target baseline: V14 cross-sensor = 14.98 +/- 0.22
 
@@ -733,4 +737,4 @@ is 19.07 (consistent with V12 engine_summary_regressor.json 5-seed mean = 19.21)
 
 ---
 
-*Last updated: 2026-04-16 (Phase 6b COMPLETE; seed123 at ep180 best=27.01; Phase 8 pending)*
+*Last updated: 2026-04-16 (Phase 6b COMPLETE; seed123 FINAL best=27.01; seed456 at ep44 best=28.47 converging like seed42)*
