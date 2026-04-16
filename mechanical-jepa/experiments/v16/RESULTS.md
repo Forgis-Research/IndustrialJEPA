@@ -555,25 +555,29 @@ Seed 123 partial trajectory (as of 03:32 UTC):
 | 50    | 0.0049 | **28.57** | **28.57** | seed42: 14.82 (BETTER for seed42!) |
 | 60    | 0.0047 | 31.51     | 28.57 | seed42: 17.18 |
 | 70    | 0.0052 | **52.45** | 28.57 | seed42: 15.47 |
+| 80    | 0.0054 | **27.78** | **27.78** | seed42: ~16.10 |
+| 90    | 0.0052 | 31.29     | 27.78 | |
 
-CRITICAL FINDING: Seed123 underwent catastrophic degradation at ep70 (probe: 31.51->52.45 = +20.94).
-This is EMA divergence, but occurring MUCH EARLIER than seed42 (ep70 vs ep110 for seed42).
+FINDING at ep70: Seed123 underwent catastrophic spike at ep70 (probe: 31.51->52.45 = +20.94).
+REVISED at ep80: Probe RECOVERED to 27.78 (new best, better than 28.57) - spike was transient.
+ep90=31.29 (oscillating up again, but best=27.78 protected).
 
 KEY OBSERVATIONS:
 1. Seed123 loss is consistently LOWER than seed42 (0.005 vs 0.008-0.010).
    Low JEPA loss does NOT guarantee good probe quality.
-2. Seed123's best probe (28.57 at ep50) is locked in - EMA divergence at ep70 prevents recovery.
-3. Pattern: seed123 found RUL-correlated representation at ep50, then encoder drifted.
-   The drift is earlier than seed42's (ep70 vs ep110) possibly due to different initialization.
-4. Compare: seed42 ep70=15.47 (normal oscillation); seed123 ep70=52.45 (catastrophic divergence).
+2. Seed123's spike at ep70 (52.45) was a transient EMA oscillation, not permanent divergence.
+   By ep80, probe recovered to 27.78 - a new best. Training instability but not catastrophic.
+3. Pattern: seed123 found RUL-correlated representation at ep50, then oscillated.
+   The probe oscillates ~28-52 range. Best so far: 27.78 at ep80.
+4. Compare: seed42 ep70=15.47 (normal oscillation); seed123 ep70=52.45 (large spike, but transient).
 
 IMPLICATION: Cross-sensor without shortcut shows HIGH VARIANCE between seeds.
 - Seed42 final: 14.22 (competitive with V14=14.98)
-- Seed123 final: ~28.57 (locked by early EMA divergence)
-- Expected 3-seed mean: (14.22 + 28.57 + seed456) / 3
+- Seed123 partial: best=27.78 at ep80 (still running - probe oscillating in 28-52 range)
+- Expected 3-seed mean: (14.22 + seed123_final + seed456) / 3
 
 Removing learnable sensor ID embeddings (V14 shortcut) massively INCREASES variance
-(V14: 14.98 ± 0.22 vs Phase2: ~14-29 range, ±7+ cycles).
+(V14: 14.98 ± 0.22 vs Phase2: seed42=14.22 but seed123~27-29 range).
 Conclusion: sensor ID embeddings stabilize training, not just provide a shortcut.
 
 **Seed 456: PENDING** (will start after seed 123, ~04:00 UTC)
@@ -679,4 +683,22 @@ The "val RMSE below SOTA" (9.86 at best) was ENTIRELY due to the protocol blinds
 
 ---
 
-*Last updated: 2026-04-16 (Phase7 COMPLETE: frozen probe test RMSE=25.72; Phase2 seed42 at ep110, best=14.22)*
+## Paper Appendix: Unverified Regressor Margins for FD003/FD004
+
+The paper appendix table (line 521-522 of paper.tex) shows "vs. Regressor" columns:
+- FD003: +2.9 (implies regressor test RMSE ~18.27)
+- FD004: +5.9 (implies regressor test RMSE ~31.52)
+
+**STATUS: UNVERIFIED** - Phase 6 only ran on FD001 (regressor test RMSE = 17.72).
+
+These numbers appear to be early estimates from V12 session (the old "+5.0" era computations).
+They may use the VAL regressor (not test) or a different number of features.
+
+**ACTION NEEDED**: Run feature regressor on FD003 and FD004 to verify "+2.9" and "+5.9".
+This should be done after Phase 8 completes (GPU will be free ~07:30 UTC).
+
+For now, treat "+2.9" and "+5.9" as PLACEHOLDER values in the paper appendix.
+
+---
+
+*Last updated: 2026-04-16 (seed123 at ep90/200 best=27.78; Phase 6 FD001 VERIFIED; FD003/FD004 regressor margins unverified)*
