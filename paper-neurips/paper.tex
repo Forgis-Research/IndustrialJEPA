@@ -211,7 +211,7 @@ An exemplary cross-sensor attention map for C-MAPSS FD001 (showing how sensor at
 \end{equation}
 where $\text{sg}[\cdot]$ is stop-gradient. The EMA and L1 loss together prevent representation collapse~\citep{grill2020byol}. Pretraining: 200 epochs, cosine LR decay from $3 \times 10^{-4}$.
 
-\paragraph{SIGReg variant.} We also explore replacing EMA with SIGReg spectral regularization~\citep{balestriero2025lejepa}: a single shared encoder (no target copy) with a regularization term $\loss_\text{SIG}$ that prevents collapse by maintaining spectral diversity of the representation covariance. Results show SIGReg achieves competitive frozen probe quality (V15-SIGReg, 3 seeds: RMSE $= 9.2 \pm 1.5$, range 7.0--10.2 vs.\ V2-EMA: $17.8 \pm 1.7$) with $\sim$20\% fewer parameters (no predictor head). However, the probe trajectory exhibits high-frequency oscillations: re-running seed 42 gives best RMSE $= 11.6$ at epoch 70 vs.\ $10.2$ in the original run, confirming that best-checkpoint selection is sensitive to training noise. We use the EMA variant for all main results due to its training stability.
+\paragraph{SIGReg variant.} We also explore replacing EMA with SIGReg spectral regularization~\citep{balestriero2025lejepa}: a single shared encoder (no target copy) with a regularization term $\loss_\text{SIG}$ that prevents collapse by maintaining spectral diversity of the representation covariance. Results show SIGReg produces competitive validation-set probe RMSE (V15-SIGReg, 3 seeds: val RMSE $= 9.2 \pm 1.5$, range 7.0--10.2) with $\sim$20\% fewer parameters (no predictor head). Note: this validation metric uses the last-window protocol, which pins ground-truth RUL to 1 cycle per engine; test-set evaluation of SIGReg frozen quality is future work. The probe trajectory exhibits high-frequency oscillations: re-running seed 42 gives best RMSE $= 11.6$ at epoch 70 vs.\ $10.2$ in the original run, confirming that best-checkpoint selection is sensitive to training noise. We use the EMA variant for all main results due to its training stability.
 
 \subsection{Downstream Probes}
 \label{sec:probes}
@@ -403,7 +403,7 @@ This experiment is implemented in the framework but numerical results require a 
 
 \begin{table}[t]
 \centering
-\caption{Architecture comparisons on C-MAPSS FD001. All use the same probe and fine-tuning protocol. V2 = main model (causal context, future-only target, EMA, L1 loss, 5 seeds). Full-seq target = variant where target sees full sequence $\x_{1:t+k}$ instead of future-only $\x_{t+1:t+k}$ (5 seeds, \cref{app:ablation_details}). V16b = bidirectional context encoder with VICReg (3 seeds). SIGReg = single shared encoder with spectral regularization, no EMA, no target copy (3 seeds).}
+\caption{Architecture comparisons on C-MAPSS FD001. All frozen probes evaluated on the standard test set (100 test engines, diverse RUL 7--145). V2 = main model (causal context, future-only target, EMA, L1 loss, 5 seeds). Full-seq target = variant where target sees full sequence $\x_{1:t+k}$ (5 seeds, \cref{app:ablation_details}). V16b = bidirectional context encoder with VICReg (3 seeds). $^*$SIGReg frozen quality measured via a biased validation protocol (last-window only, RUL$\equiv$1); test-set frozen probe is future work.}
 \label{tab:ablation}
 \small
 \begin{tabular}{@{}l|cc@{}}
@@ -413,15 +413,15 @@ Architecture Variant & Frozen & E2E \\
 \midrule
 \textbf{V2 (causal + EMA, 5 seeds)} & \textbf{17.81}$_{\pm1.7}$ & \textbf{14.23}$_{\pm0.4}$ \\
 Full-seq target variant & 15.70$_{\pm0.2}$ & 14.32$_{\pm0.6}$ \\
-Bidirectional context (V16b) & 10.06$_{\pm1.4}$ & 15.06$_{\pm1.2}$ \\
-SIGReg (no EMA) & 9.2$_{\pm1.5}$ & --- \\
+Bidirectional context (V16b) & 25.72$_{\pm1.6}$ & 15.06$_{\pm1.2}$ \\
+SIGReg (no EMA)$^*$ & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Full-sequence target.} Replacing the future-only target with a full-sequence target ($\x_{1:t+k}$) improves the frozen probe by $-2.1$ RMSE on FD001 at 100\% labels, with 8$\times$ lower seed standard deviation ($\sigma$: $1.7 \to 0.21$). The improvement generalizes to FD003 ($-0.9$) and FD004 ($-1.3$). Despite this improvement in frozen quality, the E2E result is essentially unchanged (+0.09 RMSE), and the label efficiency at 5\% labels degrades by $+5.04$ (see \cref{tab:full_sequence}). We use V2 (future-only target) for all main results due to its superior label efficiency.
 
-\paragraph{Bidirectional context.} V16b (bidirectional context encoder with VICReg) achieves the best frozen probe (10.06 $\pm$ 1.4 RMSE, below supervised STAR 10.61), yet its label-efficiency crossover is inverted: at 5\% labels V16b E2E ($40.6 \pm 10.2$) is substantially worse than V2 E2E ($25.3 \pm 5.1$). Cross-domain transfer also degrades: FD001-pretrained V16b on FD003 yields 37.8 vs.\ 31.5 for V2. The causal inductive bias appears to confer a transferability advantage that bidirectional encoders do not share---likely because causal temporal ordering is a domain-invariant property.
+\paragraph{Bidirectional context.} V16b (bidirectional context encoder with VICReg) achieves E2E fine-tuning RMSE of 15.06 $\pm$ 1.2 (slightly worse than V2 14.23) but its frozen test RMSE (25.72 $\pm$ 1.6) is substantially worse than V2 (17.81). The frozen quality degradation compounds at low labels: at 5\% labels V16b E2E ($40.6 \pm 10.2$) is substantially worse than V2 E2E ($25.3 \pm 5.1$). Cross-domain transfer also degrades: FD001-pretrained V16b on FD003 yields 37.8 vs.\ 31.5 for V2. The causal inductive bias appears to confer a transferability advantage---likely because causal temporal ordering is domain-invariant, while bidirectional encoders memorize domain-specific degradation patterns.
 
 \paragraph{Cross-sensor attention.}
 \label{sec:cross_sensor}
