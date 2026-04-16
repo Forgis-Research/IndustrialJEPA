@@ -291,7 +291,7 @@ Spacecraft & MSL~\citep{hundman2018smapmsl} & 55 & 58K steps & Anomaly & F1 \\
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Grey swan prediction benchmark.} Datasets as column groups; example grey swan events as sub-columns. Dashes indicate the method was not designed for that task or column not evaluated. $\dagger$ = single-seed or best-of-grid. Anomaly F1 = point-adjusted (PA-F1) in percentage, following literature convention; TTE columns are future work. The key pattern: every existing method fills $\leq$2 dataset groups. Our approach spans multiple domains using the same encoder and pretraining objective, with only the downstream probe changing. $\S$~=~SMAP; single seed; preliminary.}
+\caption{\textbf{Grey swan prediction benchmark.} Datasets as column groups; example grey swan events as sub-columns. Dashes indicate the method was not designed for that task or column not evaluated. $\dagger$ = single-seed or best-of-grid. $\ddagger$ = reported in MTS-JEPA comparison table (may differ from original paper). Anomaly F1 = point-adjusted (PA-F1) in percentage, following literature convention; TTE columns are future work. The key pattern: every existing method fills $\leq$2 dataset groups. Our approach spans multiple domains using the same architecture and pretraining objective, with only the downstream probe changing. $\S$~=~SMAP; 20-epoch pretraining (preliminary); 100-epoch V16 pending.}
 \label{tab:benchmark}
 \small
 \setlength{\tabcolsep}{2.5pt}
@@ -310,8 +310,8 @@ Spacecraft & MSL~\citep{hundman2018smapmsl} & 55 & 58K steps & Anomaly & F1 \\
 & DCNN~\citep{li2018dcnn}$^\dagger$ & 12.61 & --- & --- & --- & --- & --- \\
 \midrule
 \multicolumn{8}{@{}l}{\textit{SSL baselines}} \\
-& TS2Vec~\citep{yue2022ts2vec} & --- & --- & 28.1 & --- & 67.0 & --- \\
-& PatchTST~\citep{nie2023patchtst} & --- & --- & 28.6 & --- & 70.6 & --- \\
+& TS2Vec~\citep{yue2022ts2vec}$^\ddagger$ & --- & --- & 28.1 & --- & 67.0 & --- \\
+& PatchTST~\citep{nie2023patchtst}$^\ddagger$ & --- & --- & 28.6 & --- & 70.6 & --- \\
 & MTS-JEPA~\citep{mtsjepa2026} & --- & --- & 33.6 & --- & 72.9 & --- \\
 & AE-LSTM~\citep{lecam2025aelstm}$^\dagger$ & 13.99 & --- & --- & --- & --- & --- \\
 \midrule
