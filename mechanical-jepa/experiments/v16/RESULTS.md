@@ -689,22 +689,36 @@ The "val RMSE below SOTA" (9.86 at best) was ENTIRELY due to the protocol blinds
 
 ---
 
-## Paper Appendix: Unverified Regressor Margins for FD003/FD004
+## Phase 6b: Feature Regressor for FD001, FD003, FD004 - COMPLETE
 
-The paper appendix table (line 521-522 of paper.tex) shows "vs. Regressor" columns:
-- FD003: +2.9 (implies regressor test RMSE ~18.27)
-- FD004: +5.9 (implies regressor test RMSE ~31.52)
+Script: `phase6b_fd3_fd4_regressor.py`
+Results: `phase6b_fd3_fd4_regressor_results.json`
 
-**STATUS: UNVERIFIED** - Phase 6 only ran on FD001 (regressor test RMSE = 17.72).
+**Purpose**: Verify paper appendix "vs. Regressor" margins using correct test-to-test comparison.
+**Fix vs Phase 6**: Direct extraction from engine arrays avoids DataLoader windowing artifacts.
+  Phase 6 used n_cuts_per_engine=10 (32-cycle windows), making sequence_length feature
+  degenerate for FD003/FD004 (catastrophic distributional shift). Phase 6b is correct.
 
-These numbers appear to be early estimates from V12 session (the old "+5.0" era computations).
-They may use the VAL regressor (not test) or a different number of features.
+### Phase 6b Results (Correct):
 
-**ACTION NEEDED**: Run feature regressor on FD003 and FD004 to verify "+2.9" and "+5.9".
-This should be done after Phase 8 completes (GPU will be free ~07:30 UTC).
+| Subset | Regressor Test RMSE | Mean Predictor | JEPA E2E | JEPA Beats By |
+|--------|-------------------|--------------|---------|-----------| 
+| FD001  | 19.07             | 42.15        | 14.23   | +4.84     |
+| FD003  | 19.74             | 43.24        | 15.37   | +4.37     |
+| FD004  | 32.09             | 54.55        | 25.62   | +6.47     |
 
-For now, treat "+2.9" and "+5.9" as PLACEHOLDER values in the paper appendix.
+### Phase 6 FD001 (17.72) was incorrect:
+Phase 6 used n_cuts_per_engine=10, giving 32-cycle training windows. For FD001 (max 362 cycles),
+the distributional shift was small enough that it gave a plausible 17.72. But the correct value
+is 19.07 (consistent with V12 engine_summary_regressor.json 5-seed mean = 19.21).
+
+### Paper updates (applied 2026-04-16):
+- Bullet in §6.1: "+3.5 / 17.72" -> "+4.8 / 19.1"
+- Appendix table FD001: "+3.5" -> "+4.8"
+- Appendix table FD003: "\todo{verify}" -> "+4.4"
+- Appendix table FD004: "\todo{verify}" -> "+6.5"
+- Limitation §7 item 5: rho=0.071 (misleading bearing metric) -> RMSE 0.189 vs 0.177 (p=0.40)
 
 ---
 
-*Last updated: 2026-04-16 (seed123 at ep90/200 best=27.78; Phase 6 FD001 VERIFIED; FD003/FD004 regressor margins unverified)*
+*Last updated: 2026-04-16 (Phase 6b COMPLETE; seed123 at ep180 best=27.01; Phase 8 pending)*

@@ -464,7 +464,7 @@ Five diagnostics confirm genuine within-engine tracking on C-MAPSS:
   \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations. Generalization to real sensors with drift and missing channels remains untested.
   \item \textbf{Gap to supervised SOTA.} JEPA E2E (14.23) vs.\ STAR (replic.\ 12.19; paper 10.61) on FD001 at 100\% labels. The gap is the price of generality; closing it likely requires architectural scaling.
   \item \textbf{Multi-condition generalization.} FD002/FD004 show distribution shift from per-condition normalization mismatch (\cref{app:fd002}).
-  \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone shows weak tracking ($\rho = 0.071$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
+  \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone is not significantly better than handcrafted spectral features (RMSE 0.189 vs.\ 0.177, $p = 0.40$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
 \end{enumerate}
 
 % ============================================================
