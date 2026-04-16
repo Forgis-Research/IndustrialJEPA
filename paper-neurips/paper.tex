@@ -74,7 +74,7 @@ We present a self-supervised method that learns to predict future sensor traject
 Critically, the prediction error from pretraining is itself an anomaly detector, requiring zero event labels.
 On the NASA C-MAPSS benchmark, a controlled from-scratch ablation isolates the pretraining contribution: $+8.8$ RMSE at full labels, growing to $+15.6$ at 10\%.
 At 5\% labels, the frozen encoder ($21.53 \pm 2.0$) surpasses the supervised state of the art ($24.55 \pm 6.4$)---the label-efficiency crossover that makes self-supervised pretraining the rational default in the scarce-label regime.
-We demonstrate the approach across industrial (C-MAPSS turbofan degradation) and spacecraft (SMAP/MSL anomaly detection) domains. On SMAP, the pretraining prediction error achieves PA-F1 = 62.5\%, surpassing MTS-JEPA (33.6\%) without anomaly labels---demonstrating that the same encoder supports diverse grey swan tasks through linear probes alone.
+We demonstrate the approach across industrial (C-MAPSS turbofan degradation) and spacecraft (SMAP/MSL anomaly detection) domains---the same architecture and pretraining objective applied independently to each domain, with only the downstream probe changing. On SMAP, the prediction error achieves PA-F1 = 62.5\% without anomaly labels (vs.\ 33.6\% for MTS-JEPA on the same dataset).
 \end{abstract}
 
 % ============================================================
