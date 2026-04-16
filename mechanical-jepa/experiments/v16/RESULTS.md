@@ -543,7 +543,22 @@ Loss spiked after ep110 due to EMA target drift. Probe degraded to 20-25 range.
 Best probe protected by in-memory tracking. Script confirmed: "done in 94.2 min, best_probe=14.22".
 
 **Seed 123: RUNNING** (started ~02:09 UTC, expected completion ~04:00 UTC)
-**Seed 456: PENDING** (will start after seed 123)
+
+Seed 123 partial trajectory (as of 03:17 UTC):
+| Epoch | Loss   | Probe RMSE | Best  | vs Seed42 same ep |
+|-------|--------|-----------|-------|-------------------|
+| 1     | 0.0644 | 35.25     | 35.25 | seed42: 46.49     |
+| 10    | 0.0074 | 32.65     | **32.65** | seed42: 49.28 (WORSE!) |
+| 20    | 0.0060 | 41.43     | 32.65 | seed42: 40.83     |
+| 30    | 0.0058 | 37.76     | 32.65 | seed42: 46.28     |
+
+KEY OBSERVATION: Seed123 loss converges FASTER (0.006 at ep10 vs seed42's 0.009).
+Seed123 ep10 probe (32.65) BETTER than seed42 ep10 (49.28).
+Seed123 ep30 probe (37.76) BETTER than seed42 ep30 (46.28).
+Pattern: seed123 is improving faster. If seed42's pattern holds (ep40=26, ep50=15),
+seed123 might hit competitive region at ep40 or earlier.
+
+**Seed 456: PENDING** (will start after seed 123, ~04:00 UTC)
 
 Target baseline: V14 cross-sensor = 14.98 +/- 0.22
 
