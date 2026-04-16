@@ -1,6 +1,6 @@
 ---
 name: IndustrialJEPA Project Context
-description: Phase6b VERIFIED (FD001=19.07, FD003=19.74, FD004=32.09); paper corrected (params 0.80M/0.99M; margins +4.8/+4.4/+6.5); Phase2 seed123 best=27.01 final; Phase8 pending after Phase2 completes.
+description: V16 overnight done (Apr 16): Phase2=[14.22,27.01,21.81]=21.0+/-6.4; Phase8=V16b worse than V2 ALL budgets; Phase3 SMAP running (ep23/100, ~06:30 UTC); paper.tex all placeholders removed; SIGReg corrected to 9.2+/-1.5
 type: project
 ---
 
@@ -30,7 +30,8 @@ type: project
   * Confirmed seed123 pattern: EMA oscillations, spikes at ep90/ep110, best never improved from ep40
 - Phase 8 label efficiency: auto-launcher starts ~30s after Phase 2 finishes (~04:15 UTC Apr 16)
 - Phase 3 SMAP 100 epochs: pending GPU free after Phase 8
-- Phase 2 3-seed CONFIRMED: [14.22, 27.01, 28.47] = 23.2 ± 7.8 RMSE; V14=14.98±0.22
+- Phase 2 3-seed FINAL CONFIRMED: [14.22, 27.01, 21.81] = 21.0 ± 6.4 RMSE; V14=14.98±0.22
+  seed456 final best=21.81 (ep180), NOT 28.47 (that was intermediate best)
 
 ### Paper Commits This Session (2026-04-16 overnight):
 - a6e1b16: Fix MTS-JEPA related work (line 119)
