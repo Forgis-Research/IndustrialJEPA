@@ -1,0 +1,11 @@
+{
+  "checkpoint": "/home/sagemaker-user/IndustrialJEPA/mechanical-jepa/experiments/v12/v2_e2e_seed0_reconstructed.pt",
+  "checkpoint_test_rmse": 13.983315467834473,
+  "computed_rmse": 13.983320236206055,
+  "nasa_s": 337.2849426269531,
+  "n_predictions": 100,
+  "d_mean": -1.5673807859420776,
+  "d_std": 13.8951997756958,
+  "n_late": 36,
+  "n_early": 64
+}

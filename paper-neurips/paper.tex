@@ -497,7 +497,7 @@ We introduced Trajectory JEPA, a self-supervised framework that learns general-p
 The standard anomaly detection protocol~\citep{schmidl2022tsadeval} credits the entire anomaly segment if any single point is detected. This inflates scores to $>0.97$ on SWaT and PSM, saturating the leaderboard. We report non-PA F1 as primary (realistic operational metric) and PA-F1 in this appendix for comparability with prior work.
 
 \paragraph{NASA Scoring Function.}
-For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. Our NASA-S scores: [TODO].
+For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. Traj JEPA E2E (seed 0): NASA-S $= 337.3$ (FD001; RMSE $= 14.0$ this seed). Across 5 seeds with slightly different hyperparameters: $395.7 \pm 69.4$ (RMSE $14.8 \pm 0.6$). The NASA-S gap to supervised SOTA is larger than RMSE because occasional large late-prediction errors are penalized exponentially. 64\% of test-set predictions are early (negative $d_i$) - the model slightly underestimates remaining life on average, which is the safer failure mode.
 
 \paragraph{Threshold exceedance metrics.}
 We adopt the $\pm 3\sigma$ convention from statistical process control (SPC)~\citep{montgomery2020spc}, which provides a false alarm rate of 0.27\% under normality. The threshold is computed from the healthy baseline (first 50 cycles for C-MAPSS, pre-attack period for SWaT, first 30 days of VIX history). Alternative thresholds (2$\sigma$, 4$\sigma$, domain-specific) are reported in sensitivity analysis.
