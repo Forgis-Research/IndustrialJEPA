@@ -1,0 +1,29 @@
+{
+  "FD001": {
+    "subset": "FD001",
+    "n_features": 57,
+    "n_train_samples": 850,
+    "n_test_samples": 100,
+    "best_alpha": 100.0,
+    "test_rmse": 19.073049545288086,
+    "mean_predictor_test_rmse": 42.15147018432617
+  },
+  "FD003": {
+    "subset": "FD003",
+    "n_features": 57,
+    "n_train_samples": 850,
+    "n_test_samples": 100,
+    "best_alpha": 10.0,
+    "test_rmse": 19.743253707885742,
+    "mean_predictor_test_rmse": 43.236637115478516
+  },
+  "FD004": {
+    "subset": "FD004",
+    "n_features": 57,
+    "n_train_samples": 2120,
+    "n_test_samples": 248,
+    "best_alpha": 100.0,
+    "test_rmse": 32.08951950073242,
+    "mean_predictor_test_rmse": 54.54673767089844
+  }
+}
