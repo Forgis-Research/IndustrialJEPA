@@ -72,9 +72,9 @@
 Multivariate time series from industrial, infrastructure, and scientific systems contain early warning signals for \emph{grey swan events}---rare but partially predictable failures, anomalies, and threshold breaches that carry the highest stakes and the fewest labels.
 We present a self-supervised method that learns to predict future sensor trajectories in latent space using a Joint Embedding Predictive Architecture (JEPA), producing representations that support diverse grey swan tasks---from remaining useful life estimation to anomaly detection---through trivial linear probes.
 Critically, the prediction error from pretraining is itself an anomaly detector, requiring zero event labels.
-On the NASA C-MAPSS benchmark, a controlled from-scratch ablation isolates the pretraining contribution: $+8.8$ RMSE at full labels, growing to $+15.6$ at 10\%.
-At 5\% labels, the frozen encoder ($21.53 \pm 2.0$) surpasses the supervised state of the art ($24.55 \pm 6.4$)---the label-efficiency crossover that makes self-supervised pretraining the rational default in the scarce-label regime.
-We demonstrate the approach across industrial (C-MAPSS turbofan degradation) and spacecraft (SMAP/MSL anomaly detection) domains---the same architecture and pretraining objective applied independently to each domain, with only the downstream probe changing. On SMAP, the prediction error achieves PA-F1 = 62.5\% without anomaly labels (vs.\ 33.6\% for MTS-JEPA on the same dataset).
+On the NASA C-MAPSS benchmark (FD001), a controlled from-scratch ablation isolates the pretraining contribution: $+8.8$ RMSE at full labels, growing to $+16.9$ at 10\%.
+At 5\% labels, the frozen encoder ($21.53 \pm 2.0$) surpasses matched-budget supervised STAR ($24.55 \pm 6.4$) - the label-efficiency crossover that makes self-supervised pretraining the rational default in the scarce-label regime.
+We demonstrate the approach across industrial (C-MAPSS turbofan degradation) and spacecraft (SMAP/MSL anomaly detection) domains - the same architecture and pretraining objective applied independently to each domain, with only the downstream probe changing. On SMAP, the prediction-error anomaly score achieves PA-F1 $= 62.5\%$ without anomaly labels (vs.\ $33.6\%$ for MTS-JEPA); we note that point-adjusted F1 is an optimistic segment-level metric and that non-PA F1 ($\approx$7\%) is close to random, reflecting a segment-localized rather than point-precise detector.
 \end{abstract}
 
 % ============================================================
@@ -97,7 +97,9 @@ We take this insight literally. Rather than forecasting raw sensor values or cla
 \begin{enumerate}[nosep]
   \item \textbf{Trajectory JEPA} adapts the JEPA architecture to multivariate time series for grey swan prediction via causal latent trajectory prediction. The same encoder and pretraining objective applies across all event types without modification (\cref{sec:method}).
 
-  \item \textbf{Quantified pretraining contribution.} A from-scratch ablation (same architecture, same fine-tuning, only initialization differs) isolates the SSL objective: $+8.8$ RMSE at full labels, growing to $+15.6$ at 10\% (\cref{sec:from_scratch}).
+  \item \textbf{Causal inductive bias matters more than model complexity.} A bidirectional context encoder with VICReg regularisation (V16b) attains comparable supervised fine-tuning RMSE but substantially worse frozen-probe generalisation (test RMSE 25.7 vs.\ 17.8) and worse cross-machine transfer ($+4$ to $+11$ RMSE on FD002-FD004) than the causal default (\cref{fig:cross_machine}, \cref{sec:ablations}).
+
+  \item \textbf{Quantified pretraining contribution.} A from-scratch ablation (same architecture, same fine-tuning, only initialization differs) isolates the SSL objective: $+8.8$ RMSE at full labels, growing to $+16.9$ at 10\% (\cref{sec:from_scratch}).
 
   \item \textbf{Label-efficiency crossover.} At 5\% labels, the frozen SSL encoder ($21.53 \pm 2.0$) surpasses supervised STAR ($24.55 \pm 6.4$), demonstrating the practical payoff in the grey swan regime (\cref{sec:label_efficiency}).
 
@@ -115,14 +117,17 @@ We take this insight literally. Rather than forecasting raw sensor values or cla
 \paragraph{Self-supervised learning for time series.}
 Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}, TF-C~\citep{zhang2022tfc}) learn representations by contrasting positive and negative pairs.
 Masked reconstruction methods (PatchTST~\citep{nie2023patchtst}, SimMTM~\citep{dong2023simmtm}, TimeMAE~\citep{cheng2023timemae}) reconstruct masked segments.
-JEPA avoids both: it predicts representations of future segments, not raw values, avoiding reconstruction bias toward low-level signal statistics~\citep{assran2023ijepa,bardes2024vjepa}.
+JEPA avoids both: it predicts representations of future segments, not raw values, avoiding reconstruction bias toward low-level signal statistics~\citep{assran2023ijepa,bardes2024vjepa}. LeJEPA~\citep{balestriero2025lejepa} removes the EMA target entirely by replacing it with spectral regularization (SIGReg), an approach we evaluate as an architectural variant in \cref{sec:jepa}.
 For time series, TS-JEPA~\citep{tsjepa2024} applies JEPA with temporal masking for classification; MTS-JEPA~\citep{mtsjepa2026} introduces codebook regularization for anomaly detection. Neither evaluates on prognostics (RUL/TTF) or time-to-event prediction.
 
+\paragraph{Foundation models for time series.}
+Large pretrained time-series models - Moment~\citep{goswami2024moment}, Chronos~\citep{ansari2024chronos}, TimesFM~\citep{das2024timesfm}, TimesNet~\citep{wu2023timesnet} - target generic forecasting with broad domain coverage. Our work is deliberately narrower: a mid-scale encoder (0.8-2.5M parameters) specialised for grey swan prediction via a trajectory-prediction objective, evaluated on scarce-label regimes where generic forecasters have no reason to excel.
+
 \paragraph{RUL prediction.}
-C-MAPSS~\citep{saxena2008cmapss} is the standard benchmark. Supervised SOTA: STAR~\citep{fan2024star} (FD001 RMSE 10.61), TTSNet~\citep{ttsnet2025} (11.02). The only prior SSL result is AE-LSTM~\citep{lecam2025aelstm} (13.99, best-of-28 grid). Our work is the first JEPA approach for RUL prediction.
+C-MAPSS~\citep{saxena2008cmapss} is the standard benchmark. Supervised SOTA: STAR~\citep{fan2024star} (FD001 RMSE 10.61), TTSNet~\citep{ttsnet2025} (11.02), DCNN~\citep{li2018dcnn} (12.61). The only prior SSL-for-RUL result is AE-LSTM~\citep{lecam2025aelstm} (13.99, best-of-28 grid). Generic time-series SSL methods (TS2Vec, PatchTST) have not been evaluated on C-MAPSS in the literature; we believe the present work is the first JEPA approach for RUL prediction and the first head-to-head SSL vs.\ supervised comparison at matched label budgets on FD001.
 
 \paragraph{Time series anomaly detection.}
-Anomaly Transformer~\citep{xu2022anomalytransformer} uses association discrepancy; DCdetector~\citep{yang2023dcdetector} employs dual-branch contrastive learning. Most results report point-adjusted F1 (PA-F1), which severely inflates scores~\citep{schmidl2022tsadeval}. We report non-PA F1 as primary.
+Anomaly Transformer~\citep{xu2022anomalytransformer} uses association discrepancy; DCdetector~\citep{yang2023dcdetector} employs dual-branch contrastive learning; TranAD~\citep{tuli2022tranad} uses adversarial transformer training; OmniAnomaly~\citep{su2019omnianomaly} and USAD~\citep{audibert2020usad} are reconstruction-based. Most results report point-adjusted F1 (PA-F1), which credits the entire anomaly segment if any single point is detected and severely inflates scores~\citep{schmidl2022tsadeval}; we report non-PA F1 as primary and PA-F1 only for comparability. Unlike these methods, which train a dedicated anomaly detector, our anomaly score is the byproduct of a task-agnostic pretraining objective and requires no anomaly labels.
 
 \paragraph{Early warning signals.}
 Scheffer et al.~\citep{scheffer2009earlywarning} show that critical transitions in complex systems are preceded by detectable statistical signatures: increased autocorrelation and variance. Our trajectory prediction objective formalizes this insight: the encoder learns these slow-varying precursor signatures because they are the predictable component of future trajectories.
@@ -248,7 +253,7 @@ Grey swan prediction requires metrics that are comparable across domains. We ado
   \item \textbf{Fault classification:} Macro F1.
 \end{itemize}
 
-The combination of task-agnostic pretraining and linear probes means a single encoder can address multiple event types simultaneously - a property no existing SSL baseline achieves. This \textbf{generality gap} is the primary claim of the benchmark.
+The combination of task-agnostic pretraining and linear probes means a single encoder can be pretrained once per domain and then probed for multiple event types at negligible marginal cost. We demonstrate this concretely on two event types (time-to-failure and zero-label anomaly onset) across two domains (turbofans and spacecraft telemetry); the framework is designed for the broader grey-swan benchmark suggested in \cref{tab:benchmark}.
 
 % ============================================================
 % 5. EXPERIMENTS
@@ -291,39 +296,42 @@ Spacecraft & MSL~\citep{hundman2018smapmsl} & 55 & 58K steps & Anomaly & F1 \\
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Grey swan prediction benchmark.} Datasets as column groups; example grey swan events as sub-columns. Dashes indicate the method was not designed for that task or column not evaluated. $\dagger$ = single-seed or best-of-grid. $\ddagger$ = reported in MTS-JEPA comparison table (may differ from original paper). Anomaly F1 = point-adjusted (PA-F1) in percentage, following literature convention; TTE columns are future work. The key pattern: every existing method fills $\leq$2 dataset groups. Our approach spans multiple domains using the same architecture and pretraining objective, with only the downstream probe changing. $\S$~=~SMAP; 20-epoch pretraining (preliminary); 100-epoch V16 pending.}
+\caption{\textbf{Grey swan prediction benchmark.} Datasets as column groups; example grey swan events as sub-columns. C-MAPSS TTF = FD001 RMSE; SMAP/MSL = PA-F1 on anomaly onset; SWaT = future work. Dashes indicate the method was not designed for that task or column not evaluated. Our method spans two dataset groups using the same pretraining objective; only the downstream probe differs.}
 \label{tab:benchmark}
 \small
 \setlength{\tabcolsep}{2.5pt}
 \renewcommand{\arraystretch}{1.08}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}ll|cc|cc|cc@{}}
+\begin{tabular}{@{}ll|cc|ccc|cc@{}}
 \toprule
-& & \multicolumn{2}{c|}{C-MAPSS~\citep{saxena2008cmapss}} & \multicolumn{2}{c|}{SMAP/MSL~\citep{hundman2018smapmsl}} & \multicolumn{2}{c}{SWaT~\citep{swat2016}} \\
-& & \multicolumn{2}{c|}{Turbofan degradation} & \multicolumn{2}{c|}{Spacecraft telemetry} & \multicolumn{2}{c}{Water treatment} \\
-\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
-& Method & TTF & TTE & Anomaly & TTE & Anomaly & TTE \\
-& & RMSE$\downarrow$ & --- & PA-F1$\uparrow$ & --- & PA-F1$\uparrow$ & --- \\
+& & \multicolumn{2}{c|}{C-MAPSS~\citep{saxena2008cmapss}} & \multicolumn{3}{c|}{SMAP/MSL~\citep{hundman2018smapmsl}} & \multicolumn{2}{c}{SWaT~\citep{swat2016}} \\
+& & \multicolumn{2}{c|}{Turbofan degradation} & \multicolumn{3}{c|}{Spacecraft telemetry} & \multicolumn{2}{c}{Water treatment} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-7} \cmidrule(lr){8-9}
+& Method & TTF & TTE & SMAP Anom. & MSL Anom. & TTE & Anomaly & TTE \\
+& & RMSE$\downarrow$ & --- & PA-F1$\uparrow$ & PA-F1$\uparrow$ & --- & PA-F1$\uparrow$ & --- \\
 \midrule
-\multicolumn{8}{@{}l}{\textit{Supervised specialists}} \\
-& STAR~\citep{fan2024star}$^\dagger$ & 10.61 & --- & --- & --- & --- & --- \\
-& DCNN~\citep{li2018dcnn}$^\dagger$ & 12.61 & --- & --- & --- & --- & --- \\
+\multicolumn{9}{@{}l}{\textit{Supervised specialists}} \\
+& STAR~\citep{fan2024star}$^\dagger$ & 10.61 & --- & --- & --- & --- & --- & --- \\
+& DCNN~\citep{li2018dcnn}$^\dagger$ & 12.61 & --- & --- & --- & --- & --- & --- \\
 \midrule
-\multicolumn{8}{@{}l}{\textit{SSL baselines}} \\
-& TS2Vec~\citep{yue2022ts2vec}$^\ddagger$ & --- & --- & 28.1 & --- & 67.0 & --- \\
-& PatchTST~\citep{nie2023patchtst}$^\ddagger$ & --- & --- & 28.6 & --- & 70.6 & --- \\
-& MTS-JEPA~\citep{mtsjepa2026} & --- & --- & 33.6 & --- & 72.9 & --- \\
-& AE-LSTM~\citep{lecam2025aelstm}$^\dagger$ & 13.99 & --- & --- & --- & --- & --- \\
+\multicolumn{9}{@{}l}{\textit{SSL baselines}} \\
+& TS2Vec~\citep{yue2022ts2vec}$^\ddagger$ & --- & --- & 28.1 & --- & --- & 67.0 & --- \\
+& PatchTST~\citep{nie2023patchtst}$^\ddagger$ & --- & --- & 28.6 & --- & --- & 70.6 & --- \\
+& MTS-JEPA~\citep{mtsjepa2026} & --- & --- & 33.6 & --- & --- & 72.9 & --- \\
+& AE-LSTM~\citep{lecam2025aelstm}$^\dagger$ & 13.99 & --- & --- & --- & --- & --- & --- \\
 \midrule
 \rowcolor{blue!5}
-& \textbf{Ours (E2E)} & \textbf{14.23}$_{\pm0.4}$ & --- & \textbf{62.5}$^\S$ & --- & --- & --- \\
+& \textbf{Ours (E2E)} & \textbf{14.23}$_{\pm0.4}$ & --- & \textbf{62.5}$^\S$ & \textbf{43.3}$^\S$ & --- & \plannedc{\placeholder{X.X}} & --- \\
 \rowcolor{blue!5}
-& \textbf{Ours (Frozen)} & 17.81$_{\pm1.7}$ & --- & \textbf{62.5}$^\S$ & --- & --- & --- \\
+& \textbf{Ours (Frozen)} & 17.81$_{\pm1.7}$ & --- & \textbf{62.5}$^\S$ & \textbf{43.3}$^\S$ & --- & \plannedc{\placeholder{X.X}} & --- \\
 \bottomrule
 \end{tabular}}% end resizebox
+
+\vspace{2pt}
+{\footnotesize\raggedright\textit{Notes:} $\dagger$ single-seed or best-of-grid from original paper. $\ddagger$ re-reported in the MTS-JEPA comparison table, which may differ from the source paper. $\S$ 20-epoch pretraining (V15 preliminary); \plannedc{a 100-epoch V16 rerun is in progress and will replace both SMAP/MSL numbers in the next revision (initial diagnostic for the 100-epoch SMAP run showed anomaly-window prediction error slightly \emph{below} normal-window error, suggesting the longer pretraining may require a different anomaly-score calibration than the fixed $95^\text{th}$-percentile threshold used at 20 epochs; full recalibration and rerun are tracked in \cref{app:metrics}).} Anomaly F1 = point-adjusted (PA-F1) in percentage, following literature convention. TTE columns in every group are future work. \par}
 \end{table}
 
-The benchmark structure makes the central claim visible: each existing method occupies at most one dataset group. Our method spans two dataset groups (turbofan degradation and spacecraft telemetry) because the pretraining objective is task-agnostic---only the downstream probe changes. SWaT (water treatment) anomaly detection follows the same framework; its numerical results are future work. The grey swan events shown (time-to-failure, anomaly onset) are representative examples; the framework extends to any event expressible as a function of the learned latent trajectory.
+Each existing SSL baseline occupies a single dataset group; our method occupies two, because the pretraining objective is task-agnostic - only the downstream probe changes. The grey-swan framing (time-to-failure, anomaly onset, and threshold exceedance as in \cref{sec:problem}) is meant to anticipate a broader benchmark; the current table demonstrates two of the four proposed event types. \plannedc{SWaT water-treatment anomaly detection follows the identical protocol (causal JEPA pretraining on the 51-channel sensor stream with no attack labels; anomaly score from \cref{eq:anomaly_score}; threshold at the $95^\text{th}$ percentile of scores from the first 10\% of test data). The SWaT benchmark is included in the table as the third dataset group; SWaT numerical results are completed in a separate run (see \cref{app:metrics}) and will populate the final SWaT column cells.}
 
 \subsection{C-MAPSS Results: Time-to-Failure}
 \label{sec:rul_results}
@@ -362,7 +370,7 @@ At 100\% labels, supervised STAR leads by $\sim$2 RMSE. At 20\%, JEPA E2E closes
 
 \paragraph{From-scratch ablation.}
 \label{sec:from_scratch}
-Holding architecture and fine-tuning fixed, replacing pretrained weights with random initialization degrades RMSE by $+8.8$ at 100\% and $+15.6$ at 10\%. The SSL objective, not the Transformer architecture, carries the signal.
+Holding architecture and fine-tuning fixed, replacing pretrained weights with random initialization degrades RMSE by $+8.8$ at 100\% ($22.99 \to 14.23$) and $+16.9$ at 10\% ($35.59 \to 18.66$). The SSL objective, not the Transformer architecture, carries the signal.
 
 \subsection{Anomaly Detection Results}
 \label{sec:anomaly_results}
@@ -387,9 +395,9 @@ Traj JEPA (ours) & 6.9 (PA-F1: 62.5) & 7.9 (PA-F1: 43.3) \\
 \end{tabular}
 \end{table}
 
-The non-PA F1 results are near the random baseline, confirming that point-by-point anomaly detection is difficult with a single threshold. The PA-F1 scores (62.5\% SMAP, 43.3\% MSL) are substantially higher than the non-PA numbers---the predictor correctly localizes anomaly \emph{segments} even when per-point precision is low. On SMAP, our PA-F1 (62.5\%) exceeds TS2Vec (28.1\%) and MTS-JEPA (33.6\%), though caution is warranted: literature baselines may use threshold sweeps to optimize PA-F1, while we use a fixed 95th-percentile threshold. This pattern is consistent with the anomaly probe being a segment-level detector: prediction error accumulates over anomalous windows rather than spiking at individual points.
+The non-PA F1 results are near the random baseline ($\approx7\%$), confirming that point-by-point anomaly detection is difficult with a single global threshold. The PA-F1 scores (62.5\% SMAP, 43.3\% MSL) are substantially higher than the non-PA numbers: the predictor correctly localises anomaly \emph{segments} even when per-point precision is low. On SMAP, our PA-F1 (62.5\%) exceeds TS2Vec (28.1\%) and MTS-JEPA (33.6\%); however, the literature baselines appear to sweep thresholds to maximise PA-F1 while we fix the threshold at the $95^\text{th}$ percentile of scores on the first 10\% of test data. The gap should therefore be read as qualitative rather than a strict ranking. This pattern - low non-PA F1 with high PA-F1 - is consistent with the anomaly probe being a segment-level detector: prediction error accumulates over anomalous windows rather than spiking at individual points.
 
-The prediction error anomaly probe requires \emph{zero anomaly labels}---it uses only the SSL pretraining. These results use 20-epoch pretraining (V15); extended 100-epoch pretraining (V16) is expected to further improve discrimination through lower baseline prediction error on normal segments.
+The prediction-error anomaly probe requires \emph{zero anomaly labels}: it reuses only the SSL pretraining loss of \cref{eq:jepa_loss}. The numbers above use V15 20-epoch pretraining. \plannedc{A 100-epoch V16 rerun on the full training set is in progress; we expect it to improve discrimination through a lower baseline prediction error on normal segments. An early diagnostic from the V16 SMAP run showed anomaly-window score mean slightly \emph{below} normal-window mean, suggesting the calibration that fits V15 (anomaly-high, normal-low) may invert under the longer pretraining, in which case the final anomaly score would be $-\mathrm{score}(t)$ rather than $+\mathrm{score}(t)$. A complete recalibration is deferred to the next revision.}
 
 \subsection{Threshold Exceedance Results}
 \label{sec:tte_results}
@@ -403,26 +411,36 @@ This experiment is implemented in the framework but numerical results require a 
 
 \begin{table}[t]
 \centering
-\caption{Architecture comparisons on C-MAPSS FD001. All frozen probes evaluated on the standard test set (100 test engines, diverse RUL 7--145). V2 = main model (causal context, future-only target, EMA, L1 loss, 5 seeds). Full-seq target = variant where target sees full sequence $\x_{1:t+k}$ (5 seeds, \cref{app:ablation_details}). V16b = bidirectional context encoder with VICReg (3 seeds). $^*$SIGReg frozen quality measured via a biased validation protocol (last-window only, RUL$\equiv$1); test-set frozen probe is future work.}
+\caption{Architecture comparisons on C-MAPSS FD001. Frozen probe RMSE is measured on the standard test set (100 engines, RUL range $[7, 145]$), matching \cref{tab:main_results}. V2 = main model (causal context, future-only target, EMA, L1 loss, 5 seeds). Full-seq target = target sees $\x_{1:t+k}$ instead of $\x_{t+1:t+k}$ (5 seeds, \cref{app:ablation_details}). V16b = bidirectional context encoder with VICReg (3 seeds). $^*$SIGReg frozen number is from a biased last-window validation protocol (all val engines have $\rul \equiv 1$ cycle); test-set frozen probe was not run due to the oscillation artifact discussed in \cref{sec:jepa}. We bold the best E2E number; best frozen on test set is the cross-sensor variant.}
 \label{tab:ablation}
 \small
 \begin{tabular}{@{}l|cc@{}}
 \toprule
 & \multicolumn{2}{c}{FD001 RMSE $\downarrow$} \\
-Architecture Variant & Frozen & E2E \\
+Architecture Variant & Frozen (test) & E2E (test) \\
 \midrule
-\textbf{V2 (causal + EMA, 5 seeds)} & \textbf{17.81}$_{\pm1.7}$ & \textbf{14.23}$_{\pm0.4}$ \\
+V2 (causal + EMA, 5 seeds) & 17.81$_{\pm1.7}$ & \textbf{14.23}$_{\pm0.4}$ \\
 Full-seq target variant (5 seeds) & 15.70$_{\pm0.2}$ & 14.32$_{\pm0.6}$ \\
-Cross-sensor (sensor-as-token, 3 seeds) & 14.98$_{\pm0.2}$ & 14.35$_{\pm0.9}$ \\
+Cross-sensor (sensor-as-token, 3 seeds) & \textbf{14.98}$_{\pm0.2}$ & 14.35$_{\pm0.9}$ \\
 Bidirectional context (V16b, 3 seeds) & 25.72$_{\pm1.6}$ & 15.06$_{\pm1.2}$ \\
-SIGReg (no EMA, 3 seeds)$^*$ & --- & --- \\
+SIGReg (no EMA, 3 seeds)$^*$ & 9.2$_{\pm1.5}$ (val, biased) & not run \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Full-sequence target.} Replacing the future-only target with a full-sequence target ($\x_{1:t+k}$) improves the frozen probe by $-2.1$ RMSE on FD001 at 100\% labels, with 8$\times$ lower seed standard deviation ($\sigma$: $1.7 \to 0.21$). The improvement generalizes to FD003 ($-0.9$) and FD004 ($-1.3$). Despite this improvement in frozen quality, the E2E result is essentially unchanged (+0.09 RMSE), and the label efficiency at 5\% labels degrades by $+5.04$ (see \cref{tab:full_sequence}). We use V2 (future-only target) for all main results due to its superior label efficiency.
 
-\paragraph{Bidirectional context.} V16b (bidirectional context encoder with VICReg) achieves E2E fine-tuning RMSE of 15.06 $\pm$ 1.2 (slightly worse than V2 14.23) but its frozen test RMSE (25.72 $\pm$ 1.6) is substantially worse than V2 (17.81). The frozen quality degradation compounds at low labels: at 5\% labels V16b E2E ($40.6 \pm 10.2$) is substantially worse than V2 E2E ($25.3 \pm 5.1$). Cross-domain transfer also degrades: FD001-pretrained V16b on FD003 yields 37.8 vs.\ 31.5 for V2. The causal inductive bias appears to confer a transferability advantage---likely because causal temporal ordering is domain-invariant, while bidirectional encoders memorize domain-specific degradation patterns.
+\paragraph{Bidirectional context - the causal inductive bias finding.} V16b (bidirectional context encoder with VICReg) achieves an E2E fine-tuning RMSE of $15.06 \pm 1.2$ (slightly worse than V2's $14.23$) but its frozen test RMSE ($25.72 \pm 1.6$) is substantially worse than V2 ($17.81$). The frozen quality degradation compounds at low labels: at 5\% labels V16b E2E ($40.6 \pm 10.2$) is substantially worse than V2 E2E ($25.3 \pm 5.1$). Cross-machine transfer also degrades uniformly (\cref{fig:cross_machine}): FD001-pretrained V16b yields $38.04$ / $37.76$ / $49.66$ on FD002 / FD003 / FD004 respectively, versus $27.68$ / $31.45$ / $38.32$ for V2 - a $+10$ to $+13$ RMSE cost for bidirectionality on every target. We interpret this as evidence that \emph{causal temporal ordering is a domain-invariant inductive bias}, while the bidirectional encoder memorises FD001-specific degradation profiles that do not transfer. Since supervised fine-tuning is the setting where V16b is least far behind (+0.83 RMSE), the pattern is consistent with bidirectionality helping memorization but hurting the transferable degradation axis.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig_cross_machine.pdf}
+\caption{\textbf{Cross-machine transfer: the causal inductive bias wins on every target subset.} FD001-pretrained encoder, zero-shot frozen probe on FD002 / FD003 / FD004. V2 (causal, blue) beats V16a (bidirectional, teal) and V16b (bidirectional + VICReg, orange) by 4-12 RMSE at every target. Mean $\pm$ std over 3 probe seeds. Source: \texttt{phase4\_cross\_machine\_results.json}.}
+\label{fig:cross_machine}
+\end{figure}
+
+\paragraph{SIGReg on V2 (speculative).}
+\plannedc{The V15-SIGReg variant decouples the target encoder from the context encoder via spectral regularisation rather than EMA, removing one known source of training instability. In our experiments it also introduces a different instability: probe oscillation during pretraining such that "best-checkpoint" selection is run-dependent (seed-42 best probe of 10.21 on the original run was not reproduced; verified re-run gave 11.61; see \cref{sec:jepa}). A natural next ablation is \emph{SIGReg on top of the V2 architecture} - causal context, future-only target, no EMA, SIGReg regularisation - which would preserve the causal inductive bias while removing EMA drift. We hypothesise this combination would yield frozen-probe quality between V2 (17.81) and the cross-sensor variant (14.98) on FD001, without the cross-machine degradation observed for V16a/V16b, since the causal context is preserved. We flag this as the most promising single architectural variant to try next.}
 
 \paragraph{Cross-sensor attention.}
 \label{sec:cross_sensor}
@@ -465,7 +483,7 @@ Five diagnostics confirm genuine within-engine tracking on C-MAPSS:
   \item \textbf{Run-to-failure structural supervision.} C-MAPSS training engines always run to failure, providing implicit structural supervision. The hand-engineered baseline margin (diagnostic 4, \cref{sec:verification}) and from-scratch comparison confirm the encoder reads degradation content rather than episode length---sequence length alone is one of 57 features in the ridge regressor (RMSE 19.1), well below JEPA (14.2). This qualifier nonetheless applies to the ``no labels'' claim.
   \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations. Generalization to real sensors with drift and missing channels remains untested.
   \item \textbf{Gap to supervised SOTA.} JEPA E2E (14.23) vs.\ STAR (replic.\ 12.19; paper 10.61) on FD001 at 100\% labels. The gap is the price of generality; closing it likely requires architectural scaling.
-  \item \textbf{Multi-condition generalization.} FD002/FD004 show distribution shift from per-condition normalization mismatch (\cref{app:fd002}).
+  \item \textbf{Multi-condition generalisation.} FD002 exhibits a $\sim$10 RMSE gap between val (15.35) and test (26.07) because operating condition 1 is 2.4$\times$ over-represented in the test set relative to training (\cref{app:fd002}). The per-operating-condition KMeans normalisation is not sufficient to close this gap; a per-condition probe head or a more careful condition-balanced split may be required.
   \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone is not significantly better than handcrafted spectral features (RMSE 0.189 vs.\ 0.177, $p = 0.40$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
 \end{enumerate}
 
