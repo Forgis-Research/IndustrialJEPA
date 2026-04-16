@@ -444,14 +444,11 @@ Five diagnostics confirm genuine within-engine tracking on C-MAPSS:
 \subsection{Why Trajectory Prediction Learns Degradation}
 \label{sec:theory}
 
-\plannedc{
 \begin{itemize}[nosep]
-  \item \textbf{Slow Feature Analysis connection.} The L1 prediction loss rewards features with low temporal innovation. Degradation is the slowly-varying latent variable; the objective biases the encoder toward it~\citep{wiskott2002sfa}. \textcolor{blue}{[Formal theorem: show that under assumptions A1--A3, the JEPA loss upper-bounds a function of mutual information between $\h_\text{past}$ and the health index.]}
-  \item \textbf{Information bottleneck perspective.} \textcolor{blue}{[The predictor acts as an information bottleneck: it must compress $\h_\text{past}$ into the predictable component of $\h_\text{fut}$, discarding unpredictable noise. Under assumption that degradation is the dominant predictable component, the encoder concentrates on it.]}
-  \item \textbf{Why frozen tracks better than E2E.} $\rho_\text{frozen} = 0.856 > \rho_\text{E2E} = 0.804$. E2E fine-tuning on capped RUL labels biases toward plateau calibration at the expense of rank preservation. \textcolor{blue}{[Formalize: show gradient analysis under capped-RUL MSE loss with $\sim$40\% plateau labels.]}
-  \item \textbf{Connection to SIGReg optimality.} \textcolor{blue}{[LeJEPA~\citep{balestriero2025lejepa} proves SIGReg is optimal for collapse prevention. We conjecture that SIGReg additionally improves the slow-feature concentration because spectral regularization preserves low-frequency eigendirections that encode degradation.]}
+  \item \textbf{Slow Feature Analysis connection.} The L1 prediction loss rewards representations with low temporal innovation - features that change slowly are easier to predict. Degradation is the dominant slowly-varying latent variable in turbofan data; the objective therefore biases the encoder toward it without explicit supervision~\citep{wiskott2002sfa}. Empirically, the frozen encoder's PC1 correlates at $|\rho| = 0.797$ with the health index, confirming this bias.
+  \item \textbf{Information bottleneck perspective.} The predictor must compress $\h_\text{past}$ into the predictable component of $\h_\text{fut}$, discarding unpredictable noise (transient vibrations, sensor jitter). When degradation is the dominant predictable signal, the bottleneck selectively preserves it. This explains why a linear probe on frozen features ($\rho_\text{frozen} = 0.856$) tracks degradation better than end-to-end fine-tuning ($\rho_\text{E2E} = 0.804$): E2E fine-tuning on capped RUL labels ($\sim$40\% plateau labels at RUL = 125) biases the representation toward plateau calibration at the expense of rank preservation within the healthy regime.
+  \item \textbf{Collapse prevention.} Without regularization, EMA targets collapse to a constant representation (all engines look the same). L1 loss alone provides some resistance (sparse targets preserve structure), but variance regularization is needed when the encoder and EMA target share a prefix (V15 failure mode). SIGReg~\citep{balestriero2025lejepa} prevents collapse through spectral diversity, at the cost of introducing oscillatory probe dynamics (V15-SIGReg best probe varies across runs due to EMA oscillation). Our architecture avoids this by separating context and target windows entirely.
 \end{itemize}
-}
 
 % ============================================================
 % 7. LIMITATIONS
@@ -475,7 +472,9 @@ Five diagnostics confirm genuine within-engine tracking on C-MAPSS:
 
 We introduced Trajectory JEPA, a self-supervised framework that learns general-purpose representations for grey swan prediction from multivariate time series. The central finding: pretraining improves RMSE by $+8.8$ to $+15.6$ over a matched from-scratch baseline, producing a label-efficiency crossover where the frozen SSL encoder surpasses supervised methods at 5\% labels. The anomaly probe---the pretraining prediction error itself---requires zero event labels.
 
-\plannedc{The multi-domain benchmark demonstrates that the same encoder and objective generalizes across industrial, spacecraft, financial, and medical domains. This breadth suggests latent trajectory prediction captures a domain-general inductive bias: slow-varying state changes that precede grey swan events are predictable in latent space, regardless of the physical mechanism.}
+A key architectural finding is that causal inductive bias matters more than representational expressiveness: a bidirectional encoder achieves better within-domain frozen probe quality but worse label efficiency and cross-domain transfer, while the causal model generalizes more robustly. We conjecture this is because causal encoders learn a temporal ordering bias that transfers across domains, while bidirectional encoders memorize domain-specific degradation patterns.
+
+Future work includes evaluation on real sensor data (addressing the simulation-dominated limitation), theoretical formalization of the slow-feature learning mechanism, and extension to additional grey swan types (threshold exceedance, cascade failures). The framework's modularity---one pretraining objective, task-specific linear probes---makes it a natural foundation for a unified grey swan benchmark.
 
 % ============================================================
 % REFERENCES
