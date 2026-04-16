@@ -387,7 +387,7 @@ Traj JEPA (ours) & 6.9 (PA-F1: 62.5) & 7.9 (PA-F1: 43.3) \\
 \end{tabular}
 \end{table}
 
-The non-PA F1 results are near the random baseline, confirming that point-by-point anomaly detection is difficult with a single threshold. The PA-F1 scores (62.5\% SMAP, 43.3\% MSL) are substantially higher and exceed TS2Vec and MTS-JEPA on SMAP PA-F1---demonstrating that the predictor correctly localizes anomaly \emph{segments} even when per-point precision is low. This pattern is consistent with the anomaly probe being a segment-level detector: the prediction error accumulates over anomalous windows rather than spiking at individual points.
+The non-PA F1 results are near the random baseline, confirming that point-by-point anomaly detection is difficult with a single threshold. The PA-F1 scores (62.5\% SMAP, 43.3\% MSL) are substantially higher than the non-PA numbers---the predictor correctly localizes anomaly \emph{segments} even when per-point precision is low. On SMAP, our PA-F1 (62.5\%) exceeds TS2Vec (28.1\%) and MTS-JEPA (33.6\%), though caution is warranted: literature baselines may use threshold sweeps to optimize PA-F1, while we use a fixed 95th-percentile threshold. This pattern is consistent with the anomaly probe being a segment-level detector: prediction error accumulates over anomalous windows rather than spiking at individual points.
 
 The prediction error anomaly probe requires \emph{zero anomaly labels}---it uses only the SSL pretraining. These results use 20-epoch pretraining (V15); extended 100-epoch pretraining (V16) is expected to further improve discrimination through lower baseline prediction error on normal segments.
 
