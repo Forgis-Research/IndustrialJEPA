@@ -437,7 +437,7 @@ Five diagnostics confirm genuine within-engine tracking on C-MAPSS:
   \item \textbf{Prediction variance:} median per-engine std $= 12.1 \pm 0.7$. A constant predictor has std $\approx 0$.
   \item \textbf{Spearman $\rho = 0.830 \pm 0.023$} between predicted and true RUL.
   \item \textbf{Shuffle test:} permuting $\h_\text{past}$ across engines degrades RMSE from 14.0 to 55.5 ($+41.5$).
-  \item \textbf{Hand-engineered baseline margin:} $+5.0$ RMSE over a 58-feature Ridge regressor.
+  \item \textbf{Hand-engineered baseline margin:} $+3.5$ RMSE over a 57-feature Ridge regressor (last-cycle values, per-sensor slope/mean/std, and sequence length; test RMSE 17.72).
   \item \textbf{Health index recovery:} $R^2 = 0.926$ from frozen representations.
 \end{enumerate}
 
@@ -517,7 +517,7 @@ Complete per-subset results, FD002 distribution shift analysis, and cross-fault 
 \toprule
 Subset & RMSE (E2E) & RMSE (Frozen) & $\rho_\text{median}$ & pred\_std & vs.\ Regressor & STAR (paper) \\
 \midrule
-FD001 & 14.23$_{\pm0.4}$ & 17.81$_{\pm1.7}$ & 0.830 & 12.1 & +5.0 & 10.61 \\
+FD001 & 14.23$_{\pm0.4}$ & 17.81$_{\pm1.7}$ & 0.830 & 12.1 & +3.5 & 10.61 \\
 FD003 & 15.37$_{\pm0.9}$ & 19.25$_{\pm3.2}$ & 0.665 & 12.9 & +2.9 & 10.71 \\
 FD004 & 25.62$_{\pm0.3}$ & 29.35$_{\pm0.6}$ & 0.654 & 7.1 & +5.9 & 14.25 \\
 \bottomrule
