@@ -553,19 +553,17 @@ Seed 123 partial trajectory (as of 03:32 UTC):
 | 30    | 0.0058 | 37.76     | 32.65 | seed42: 46.28     |
 | 40    | 0.0055 | 39.67     | 32.65 | seed42: 26.35 (BETTER for seed42!) |
 | 50    | 0.0049 | **28.57** | **28.57** | seed42: 14.82 (BETTER for seed42!) |
+| 60    | 0.0047 | 31.51     | 28.57 | seed42: 17.18 |
 
 KEY OBSERVATIONS:
 1. Seed123 loss converges FASTER than seed42 (ep50: 0.0049 vs seed42's 0.0089).
 2. Seed123 ep50 probe (28.57) is significantly worse than seed42's ep50 (14.82).
-3. BUT seed123 just set a new best at ep50 (28.57 < 32.65 from ep10). IMPROVING!
-4. Seed123's dramatic improvement is DELAYED vs seed42's ep40-50 improvement.
-   Pattern: seed123 may reach competitive region at ep70-90 (not ep50 like seed42).
-5. Seed123 trajectory: initial better probe -> degradation -> now improving again.
-   This mirrors seed42's trajectory but shifted ~20-30 epochs later.
-
-If seed123 continues improving at the same rate as ep40->ep50 (39.67->28.57 = -11.1/10ep),
-by ep70: 28.57 - 2*11.1 = 6.4 (optimistic scenario).
-By ep90: might reach 15-20 range (realistic scenario if EMA divergence doesn't hit first).
+3. Seed123 ep50 was new best, then ep60 degraded to 31.51 (same oscillation as seed42).
+4. Pattern matches seed42: ep50 best -> ep60 slight degradation -> possible recovery at ep70+
+   Seed42: ep50=14.82, ep60=17.18 (degraded), ep70=15.47 (recovered), ep110=14.22 (best)
+   Seed123: ep50=28.57 (best), ep60=31.51 (degraded), ep70=? (may recover)
+5. Seed123 final best likely in range 20-28 (offset from seed42 by ~13 cycles).
+6. If EMA divergence hits seed123 like it did seed42 (after ep110), best might stay at 28.57.
 
 **Seed 456: PENDING** (will start after seed 123, ~04:00 UTC)
 
