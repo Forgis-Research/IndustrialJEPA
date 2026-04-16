@@ -421,7 +421,7 @@ SIGReg (no EMA) & \textcolor{blue}{XX.X} & \textcolor{blue}{XX.X} & \textcolor{b
 
 \paragraph{Cross-sensor attention.}
 \label{sec:cross_sensor}
-Tokenizing each sensor individually (iTransformer-style~\citep{liu2024itransformer}) with alternating temporal/cross-sensor attention and learnable sensor ID embeddings yields the best 100\% frozen result ($14.98 \pm 0.22$) but is brittle at low labels. The gain is FD001-specific and does not transfer to FD003. To test whether the learnable sensor ID embeddings act as a genuine representation mechanism or a training shortcut (encoding sensor identity rather than RUL), we ablate them with fixed sinusoidal positional encoding. Without learnable ID embeddings, probe RMSE degrades to $23.2 \pm 7.8$ (3 seeds: 14.2, 27.0, 28.5) - 1 in 3 seeds still achieves 14.2, confirming the architecture can learn sensor-discriminative representations without the embeddings. The large variance (vs.\ $\pm 0.22$ with embeddings) reveals that learnable sensor ID embeddings are training stabilizers: they accelerate convergence to good representations rather than encoding RUL directly.
+Tokenizing each sensor individually (iTransformer-style~\citep{liu2024itransformer}) with alternating temporal/cross-sensor attention and learnable sensor ID embeddings yields the best 100\% frozen result ($14.98 \pm 0.22$) but is brittle at low labels. The gain is FD001-specific and does not transfer to FD003. To test whether the learnable sensor ID embeddings act as a genuine representation mechanism or a training shortcut (encoding sensor identity rather than RUL), we ablate them with fixed sinusoidal positional encoding. Without learnable ID embeddings, probe RMSE degrades to $21.0 \pm 6.4$ (3 seeds: 14.2, 27.0, 21.8) - 1 in 3 seeds still achieves 14.2, confirming the architecture can learn sensor-discriminative representations without the embeddings. The large variance (vs.\ $\pm 0.22$ with embeddings) reveals that learnable sensor ID embeddings are training stabilizers: they accelerate convergence to good representations rather than encoding RUL directly.
 
 % ============================================================
 % 6. ANALYSIS
@@ -570,7 +570,7 @@ Budget & V2 frozen & Full-seq frozen & STAR & $\Delta$ \\
 \end{tabular}
 \end{table}
 
-\paragraph{Cross-sensor attention.} Best frozen 100\% result ($14.98 \pm 0.22$, $-2.83$ vs.\ V2) but FD001-specific. Cross-sensor from-scratch ablation: $+21.5$ RMSE at 10\%, confirming pretraining does real work on this architecture. Learnable sensor ID embedding ablation: removing embeddings (fixed sinusoidal PE) yields $23.2 \pm 7.8$ across 3 seeds vs.\ $14.98 \pm 0.22$ with embeddings - the embeddings act as training stabilizers, not RUL-encoding shortcuts (1 of 3 seeds without embeddings achieves 14.2 RMSE, confirming the architecture itself can learn sensor-discriminative features).
+\paragraph{Cross-sensor attention.} Best frozen 100\% result ($14.98 \pm 0.22$, $-2.83$ vs.\ V2) but FD001-specific. Cross-sensor from-scratch ablation: $+21.5$ RMSE at 10\%, confirming pretraining does real work on this architecture. Learnable sensor ID embedding ablation: removing embeddings (fixed sinusoidal PE) yields $21.0 \pm 6.4$ across 3 seeds vs.\ $14.98 \pm 0.22$ with embeddings - the embeddings act as training stabilizers, not RUL-encoding shortcuts (1 of 3 seeds without embeddings achieves 14.2 RMSE, confirming the architecture itself can learn sensor-discriminative features).
 
 \section{Bearing Experiments}
 \label{app:bearings}

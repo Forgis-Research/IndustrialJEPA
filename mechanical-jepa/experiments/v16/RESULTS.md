@@ -606,36 +606,46 @@ Seed 456 trajectory (updated):
 | 130   | 0.0074 | 34.78     | 28.47 | seed42: 17.83     | seed123: **27.01** |
 | 140   | 0.0076 | 30.33     | 28.47 | seed42: 23.27     | seed123: 15.97     |
 | 150   | 0.0068 | **26.71** | **26.71** | seed42: 30.59  | seed123: 16.68     |
+| 160   | 0.0074 | 31.86     | 26.71     | seed42: 16.86  | seed123: 16.04     |
+| 170   | 0.0072 | 29.85     | 26.71     | seed42: 12.76  | seed123: 16.12     |
+| 180   | 0.0142 | **21.81** | **21.81** | seed42: 14.00  | seed123: 15.77     |
+| 190   | 0.0249 | 28.16     | 21.81     | seed42: 14.47  | seed123: 15.74     |
+| 200   | 0.0241 | (ep200 probe not logged) | 21.81 | seed42: ~14.22 | seed123: ~27.01 |
 
-KEY OBSERVATION (ep150): Seed456 improved to 26.71 at ep150 (loss had decreased from 0.0078 to 0.0068).
-This is a genuine improvement from the 28.47 plateau. Loss still decreasing at ep153 (0.0066).
-50 epochs remaining - possible further improvement. Watching ep160, ep170 probes.
+**COMPLETE**: done in 61.3 min, best_probe=21.81 (ep180)
 
-NOTE: The ep130 spike recovered. The second "divergence" (ep118-130, loss 0.0078) ended with
-genuine recovery. Seed456 may achieve ~25-26 by ep200. Still will not approach seed42's 14.22.
+KEY OBSERVATION (ep180-190): Major EMA divergence (loss peaked 0.0250 at ep188-189).
+Probe at ep180=21.81 was the best during the rising phase of the spike (loss=0.0142, inflection point).
+Probe at ep190=28.16 shows degradation during the spike peak. Best 21.81 protected by in-memory tracking.
+Loss trajectory ep190-199: 0.0249 -> 0.0241 (slowly recovering but never reached pre-spike levels).
+Final best = 21.81 confirmed.
 
-### Phase 2 3-Seed FINAL SUMMARY (UPDATED - seed456 still running)
+Diagnostic note: The improvement at ep180 occurred because the EMA target was evolving rapidly
+(rising loss = diverging EMA). At the inflection point, the rising target may have briefly aligned
+with training data structure, yielding a useful representation before fully diverging.
+This is a pathological but genuine best: the probe saw a better representation momentarily.
+
+### Phase 2 3-Seed FINAL SUMMARY (ALL COMPLETE)
 
 | Seed | Best Probe | At Epoch | Duration | Pattern |
 |------|-----------|---------|---------|---------|
 | 42   | 14.22     | ep110   | 94.2 min | SEED42: converged well, beats V14 |
 | 123  | 27.01     | ep130   | 62.2 min | SEED123: EMA oscillation, never converged |
-| 456  | 26.71     | ep150   | RUNNING  | SEED456: improved at ep150, watching for more |
-| **MEAN** | **22.6 ± 7.3** | - | - | HIGH VARIANCE (will update when done) |
+| 456  | 21.81     | ep180   | 61.3 min | SEED456: unexpected improvement at ep180 EMA spike |
+| **MEAN** | **21.0 ± 6.4** | - | - | HIGH VARIANCE - only 1/3 seeds converged |
 
-If seed456 final best stays at ~26.7: mean = 22.6 ± 7.3 (essentially same finding as 23.2 ± 7.8)
+Final statistics: mean = (14.22+27.01+21.81)/3 = 21.01, std(ddof=1) = 6.43
 
 V14 baseline (with sensor_id_embed): 14.98 ± 0.22
 
 **KEY FINDING: Sensor ID embeddings are TRAINING STABILIZERS, not RUL shortcuts.**
 - With embeddings (V14): 14.98 ± 0.22 (tight, all seeds converge)
-- Without embeddings (Phase 2): ~22.6 ± 7.3 (high variance, 1/3 seeds converge)
+- Without embeddings (Phase 2): 21.0 ± 6.4 (high variance, 1/3 seeds converge)
 - 1/3 seeds achieves 14.22 WITHOUT embeddings: architecture CAN learn sensor-discriminative repr.
 - 2/3 seeds fail to converge: embeddings are essential for RELIABLE training.
 - Conclusion: V14's gain (14.98) is REAL, not a shortcut. Embeddings accelerate convergence.
 
-**Paper impact**: Cross-sensor paragraph updated to include this ablation finding.
-Still running (ep150 at last check, probe=26.71 NEW BEST).
+**Paper impact**: Cross-sensor paragraph updated to reflect final Phase 2 results (21.0 ± 6.4).
 
 Target baseline: V14 cross-sensor = 14.98 +/- 0.22
 
@@ -770,4 +780,4 @@ is 19.07 (consistent with V12 engine_summary_regressor.json 5-seed mean = 19.21)
 
 ---
 
-*Last updated: 2026-04-16 04:00 UTC (Phase 6b COMPLETE; seed123 FINAL best=27.01; seed456 at ep150 best=26.71 NEW BEST, still running; STAR std corrected 6.5->6.4)*
+*Last updated: 2026-04-16 04:15 UTC (Phase 2 ALL SEEDS COMPLETE: [14.22, 27.01, 21.81] = 21.0 +/- 6.4; Phase 8 label efficiency STARTED)*
