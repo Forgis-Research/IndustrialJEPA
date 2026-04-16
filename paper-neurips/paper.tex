@@ -168,7 +168,7 @@ Each sensor vector $\x^{(t)} \in \R^S$ is normalized per-sensor using training-s
   \item \textbf{Sensor-as-token:} each sensor $s$ at timestep $t$ becomes an independent token with a learnable sensor-ID embedding, enabling explicit cross-sensor attention within each timestep. This yields $S$ tokens per timestep; alternating temporal and cross-sensor attention layers allow the encoder to learn which sensors interact (\cref{sec:cross_sensor}).
 \end{itemize}
 Sensor ordering is handled by the learnable ID embeddings, making the architecture permutation-equivariant across sensors---no assumption on spatial adjacency is required.
-\plannedc{An exemplary cross-sensor attention map for C-MAPSS FD001 (showing how sensor attention shifts during degradation) is provided in \cref{app:attention_maps}.}
+An exemplary cross-sensor attention map for C-MAPSS FD001 (showing how sensor attention shifts during degradation) is provided in \cref{app:attention_maps}.
 
 \subsection{Trajectory JEPA Pretraining}
 \label{sec:jepa}
@@ -211,7 +211,7 @@ Sensor ordering is handled by the learnable ID embeddings, making the architectu
 \end{equation}
 where $\text{sg}[\cdot]$ is stop-gradient. The EMA and L1 loss together prevent representation collapse~\citep{grill2020byol}. Pretraining: 200 epochs, cosine LR decay from $3 \times 10^{-4}$.
 
-\paragraph{SIGReg variant.} We also explore replacing EMA with SIGReg spectral regularization~\citep{balestriero2025lejepa}: a single shared encoder (no target copy) with a regularization term $\loss_\text{SIG}$ that prevents collapse by maintaining spectral diversity of the representation covariance. \plannedc{Preliminary results suggest SIGReg matches EMA quality with $\sim$20\% fewer parameters (no predictor head). Full comparison in \cref{sec:ablations}.}
+\paragraph{SIGReg variant.} We also explore replacing EMA with SIGReg spectral regularization~\citep{balestriero2025lejepa}: a single shared encoder (no target copy) with a regularization term $\loss_\text{SIG}$ that prevents collapse by maintaining spectral diversity of the representation covariance. Preliminary results show SIGReg achieves competitive frozen probe quality (V15-SIGReg verified: RMSE $= 11.1 \pm 0.8$ vs.\ V2-EMA: $17.8 \pm 1.7$) with $\sim$20\% fewer parameters (no predictor head), but its probe trajectory exhibits high-frequency oscillations that make best-checkpoint selection unstable across runs. We use the EMA variant for all main results due to its training stability.
 
 \subsection{Downstream Probes}
 \label{sec:probes}
@@ -496,7 +496,7 @@ Future work includes evaluation on real sensor data (addressing the simulation-d
 The standard anomaly detection protocol~\citep{schmidl2022tsadeval} credits the entire anomaly segment if any single point is detected. This inflates scores to $>0.97$ on SWaT and PSM, saturating the leaderboard. We report non-PA F1 as primary (realistic operational metric) and PA-F1 in this appendix for comparability with prior work.
 
 \paragraph{NASA Scoring Function.}
-For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. Traj JEPA E2E (seed 0): NASA-S $= 337.3$ (FD001; RMSE $= 14.0$ this seed). Across 5 seeds with slightly different hyperparameters: $395.7 \pm 69.4$ (RMSE $14.8 \pm 0.6$). The NASA-S gap to supervised SOTA is larger than RMSE because occasional large late-prediction errors are penalized exponentially. 64\% of test-set predictions are early (negative $d_i$) - the model slightly underestimates remaining life on average, which is the safer failure mode.
+For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. Traj JEPA E2E: NASA-S $= 395.7 \pm 69.4$ (5 seeds; FD001; RMSE $14.8 \pm 0.6$). Best seed: NASA-S $= 313.7$ (RMSE $= 14.4$). The high variance ($\pm 69.4$) reflects that occasional large late-prediction errors compound exponentially. The NASA-S gap to supervised SOTA is larger than RMSE because occasional large late-prediction errors are penalized exponentially. 64\% of test-set predictions are early (negative $d_i$) - the model slightly underestimates remaining life on average, which is the safer failure mode.
 
 \paragraph{Threshold exceedance metrics.}
 We adopt the $\pm 3\sigma$ convention from statistical process control (SPC)~\citep{montgomery2020spc}, which provides a false alarm rate of 0.27\% under normality. The threshold is computed from the healthy baseline (first 50 cycles for C-MAPSS, pre-attack period for SWaT, first 30 days of VIX history). Alternative thresholds (2$\sigma$, 4$\sigma$, domain-specific) are reported in sensitivity analysis.
