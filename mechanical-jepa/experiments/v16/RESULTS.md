@@ -204,7 +204,7 @@ Script: `phase3_smap_100epochs.py`
 V15 result: non-PA F1=0.069 (barely beats random=0.071, only 20 epochs).
 V16 goal: > 0.10 non-PA F1 with 100 epochs on full 135K train set.
 
-Status: RUNNING (PID 94044, ep1 started, 5.4 min/epoch, ETA ~9 hours)
+Status: KILLED at ep2 (GPU contention - Phase2+V16b took priority, will relaunch after those complete)
 
 ---
 
@@ -304,9 +304,22 @@ Compare to V16a seeds 123/456 which DEGRADED from ep1 (8-12) to ep10-20 (17-30).
 V16b ep1 probe is WORSE than V16a (25.13 vs 8-13) because VICReg prevents lucky init.
 But V16b IMPROVES while V16a degraded - this confirms VICReg+warmup fixes the instability.
 
-Note: Process is slow due to GPU contention (Phase 2 using 15.6 GB). Probe evals take 15+ min.
+Note: GPU contention (Phase 2 using 15.6 GB) causes probe evals to take 30-60 min each.
+Phase 3 SMAP killed to free resources. V16b + Phase 2 running in parallel.
 
-Status: Seed 42 at ep20, running toward 200 epochs. ETA: ~8 hours for 3 seeds.
+**V16b probe trajectory (seed 42)**:
+| Epoch | Probe RMSE | Best  |
+|-------|-----------|-------|
+| 1     | 25.13     | 25.13 |
+| 10    | 14.58     | 14.58 |
+| 20    | 14.37     | 14.37 |
+| 30    | 12.63     | 12.63 |
+| 40    | 13.83     | 12.63 |
+| 50    | 14.24     | 12.63 |
+
+Loss trajectory (healthy, decreasing): 0.0956 -> 0.0813 -> 0.0746 -> 0.0712 -> 0.0714 
+
+Status: Seed 42 at ep51, running toward 200 epochs.
 
 ---
 
