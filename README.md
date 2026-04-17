@@ -12,7 +12,7 @@ IndustrialJEPA/
 │   ├── experiments/           v11 (main model) through v16 (ablations)
 │   ├── evaluation/            Grey swan evaluation metrics
 │   ├── data/                  Dataset adapters (C-MAPSS, SMAP/MSL, SWaT)
-│   ├── notebooks/             Quarto walkthroughs (v11-v15)
+│   ├── notebooks/             Quarto walkthroughs (v11, v12, v14, v15)
 │   ├── analysis/              Plots and analysis scripts
 │   └── archive/               Pre-v11 code, bearing-era modules, old experiments
 ├── paper-neurips/             NeurIPS 2026 paper

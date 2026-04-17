@@ -53,7 +53,7 @@ mechanical-jepa/
 ├── experiments/v11-v16/     Per-version experiment scripts + results JSONs
 ├── evaluation/              Grey swan metrics (non-PA F1, nRMSE, etc.)
 ├── data/                    Dataset adapters (C-MAPSS, SMAP/MSL, SWaT)
-├── notebooks/               Quarto analysis walkthroughs (v11-v15)
+├── notebooks/               Quarto walkthroughs (v11, v12, v14, v15)
 ├── analysis/                Plots (PCA clocks, sensor correlations)
 └── archive/                 Pre-v11 code, old experiments, bearing-era modules
 ```
@@ -63,13 +63,11 @@ mechanical-jepa/
 ```bash
 pip install -r requirements.txt
 
-# Pretrain V2 on C-MAPSS FD001 (200 epochs, ~15 min on A10G)
-python experiments/v11/models.py   # model definition
-# Training scripts are in experiments/v{N}/phase*.py
+# Training scripts are self-contained per experiment version
+python experiments/v15/phase1_sigreg.py    # V15 SIGReg pretraining example
+python experiments/v16/phase1_v16b.py      # V16b bidi ablation example
 
-# Evaluate
-python experiments/v12/phase0_diagnostics.py  # verification diagnostics
-python experiments/v16/phase1_v16b.py          # V16b ablation example
+# Model definition (V2 = main) lives in experiments/v11/models.py
 ```
 
 ## Datasets
