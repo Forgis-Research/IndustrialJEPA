@@ -9,32 +9,25 @@ Self-supervised representation learning for grey swan prediction in industrial t
 ```
 IndustrialJEPA/
 ├── mechanical-jepa/           Core research codebase
-│   ├── src/                   Shared modules (data loaders, models)
 │   ├── experiments/           v11 (main model) through v16 (ablations)
 │   ├── evaluation/            Grey swan evaluation metrics
-│   ├── pretraining/           JEPA pretraining loop
-│   ├── downstream/            RUL probe training
 │   ├── data/                  Dataset adapters (C-MAPSS, SMAP/MSL, SWaT)
 │   ├── notebooks/             Quarto walkthroughs (v11-v15)
 │   ├── analysis/              Plots and analysis scripts
-│   └── archive/               Pre-v11 code and old experiments
+│   └── archive/               Pre-v11 code, bearing-era modules, old experiments
 ├── paper-neurips/             NeurIPS 2026 paper
 │   ├── paper.tex              Main manuscript
 │   ├── references.bib         Bibliography
 │   ├── figures/               Publication figures (PDF)
-│   ├── figure-pipeline/       TikZ figure design bible + compile/validate tooling
-│   ├── review_history.md      Reviewer iteration scores
-│   └── open_questions.md      Unresolved items
+│   └── figure-pipeline/       TikZ figure design bible + compile/validate tooling
 ├── paper-replications/        Baseline replications
 │   ├── star/                  STAR (Fan et al. 2024) - supervised RUL SOTA
 │   ├── mts-jepa/              MTS-JEPA (2026) - SSL anomaly detection
 │   ├── dcssl/                 DCSSL (Shen et al. 2026) - SSL RUL
 │   ├── cnn-gru-mha/           Yu et al. 2024 - transfer learning
-│   ├── when-will-it-fail/     Park et al. 2025 (ICML) - A2P
-│   ├── Brain-JEPA/            Reference code
-│   └── LeJEPA/                Reference code
+│   └── when-will-it-fail/     Park et al. 2025 (ICML) - A2P
 ├── .claude/                   Agent definitions and memory
-└── archive/                   Pre-pivot work (robotics era, dataset curation, early drafts)
+└── archive/                   Frozen: robotics era, dataset curation, early drafts, reference PDFs
 ```
 
 ## Key results (V2 = main model, C-MAPSS FD001)
@@ -83,20 +76,11 @@ cp fig_<name>.pdf ../figures/
 ## Running experiments on the VM
 
 ```bash
-# On SageMaker or similar GPU instance
 cd mechanical-jepa
 pip install -r requirements.txt
 python experiments/v11/models.py  # verify model loads
-
-# Overnight session (autonomous Claude Code)
-# Paste contents of paper-neurips/SESSION_PROMPT_V16.md as opening prompt
 ```
 
 ## Archive
 
-`archive/` contains frozen material from earlier research phases:
-- `pre-paper/` -- autoresearch, dataset curation, mechanical-datasets, dcssl-replication
-- `paper-neurips-drafts/` -- early paper scaffolding (v8 bearing era), literature reviews
-- Root `archive/` -- robotics-era code (AURSAD, voraus, world-model)
-
-Nothing under `archive/` is imported by active code.
+`archive/` contains frozen material from earlier research phases. Nothing under `archive/` is imported by active code.

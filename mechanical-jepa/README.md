@@ -51,14 +51,11 @@ Each has `RESULTS.md` and `phase*.json` files with all numbers.
 ```
 mechanical-jepa/
 ├── experiments/v11-v16/     Per-version experiment scripts + results JSONs
-├── src/                     Shared data loaders and model components
-├── pretraining/             JEPA pretraining loop
-├── downstream/              RUL probe training
 ├── evaluation/              Grey swan metrics (non-PA F1, nRMSE, etc.)
 ├── data/                    Dataset adapters (C-MAPSS, SMAP/MSL, SWaT)
 ├── notebooks/               Quarto analysis walkthroughs (v11-v15)
 ├── analysis/                Plots (PCA clocks, sensor correlations)
-└── archive/                 Pre-v11 code, old experiments (v8-v10), bearing baselines
+└── archive/                 Pre-v11 code, old experiments, bearing-era modules
 ```
 
 ## Quick start (on VM with GPU)

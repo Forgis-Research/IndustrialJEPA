@@ -1,12 +1,8 @@
 # SPDX-FileCopyrightText: 2025-2026 Forgis AG
 # SPDX-License-Identifier: MIT
 #
-# Root pyproject.toml for the IndustrialJEPA monorepo.
-#
-# This file only holds shared tooling configuration (ruff, black, isort).
-# It does NOT define a buildable package — each subproject under
-# mechanical-jepa/, paper-replications/*/, and mechanical-datasets/ manages
-# its own Python environment via its own requirements.txt.
+# Root pyproject.toml — shared tooling config (ruff, black, isort).
+# Does NOT define a package. Each subproject has its own requirements.txt.
 
 [tool.ruff]
 line-length = 120
