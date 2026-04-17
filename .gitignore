@@ -97,6 +97,15 @@ results/**/
 *.pth
 *.ckpt
 
+# Large binary artifacts (keep out of git)
+*.npy
+*.npz
+*.h5
+*.hdf5
+
+# Stale images at repo root level
+mechanical-jepa/*.png
+
 # LaTeX build artifacts
 *.aux
 *.bbl

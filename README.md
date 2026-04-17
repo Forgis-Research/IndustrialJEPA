@@ -1,60 +1,102 @@
 # IndustrialJEPA
 
-Self-supervised representation learning for industrial remaining-useful-life (RUL) prediction. The project trains a Joint Embedding Predictive Architecture (JEPA) on sensor trajectories from run-to-failure experiments, then evaluates the learned representation on canonical RUL benchmarks — currently rolling bearings and NASA C-MAPSS turbofan engines. Target venue: NeurIPS 2026.
+Self-supervised representation learning for grey swan prediction in industrial time series. A single JEPA encoder, pretrained on sensor trajectories via latent future prediction, supports RUL estimation, anomaly detection, and threshold exceedance through trivial linear probes.
+
+**Target venue**: NeurIPS 2026. Paper: `paper-neurips/paper.tex`.
 
 ## Repository layout
 
 ```
 IndustrialJEPA/
-├── mechanical-jepa/        Primary research: Trajectory JEPA for industrial RUL
-│   ├── experiments/        v8, v9, v10, v11 (current), v12 (verification gate)
-│   ├── src/, pretraining/, downstream/, data/, analysis/, figures/
-│   ├── notebooks/          Quarto walkthroughs (08-11), published to gh-pages
-│   └── archive/            Pre-v8 scripts and old notebooks
-├── paper-replications/     Baselines and reference-paper replications
-│   ├── star/               STAR (Fan et al. 2024) - supervised RUL baseline
-│   ├── dcssl/              DCSSL (Shen et al. 2026) - SSL RUL baseline
-│   ├── cnn-gru-mha/        Yu et al. 2024 - transfer-learning baseline
-│   └── when-will-it-fail/  Park et al. 2025 (ICML) - A2P replication
-├── paper-neurips/          NeurIPS 2026 submission draft (paper.tex + figures)
-├── mechanical-datasets/    Unified dataset curation for bearing data
-├── .claude/                Agent definitions and project-scoped memory
-└── archive/                Pre-pivot research directions (kept for reference)
+├── mechanical-jepa/           Core research codebase
+│   ├── src/                   Shared modules (data loaders, models)
+│   ├── experiments/           v11 (main model) through v16 (ablations)
+│   ├── evaluation/            Grey swan evaluation metrics
+│   ├── pretraining/           JEPA pretraining loop
+│   ├── downstream/            RUL probe training
+│   ├── data/                  Dataset adapters (C-MAPSS, SMAP/MSL, SWaT)
+│   ├── notebooks/             Quarto walkthroughs (v11-v15)
+│   ├── analysis/              Plots and analysis scripts
+│   └── archive/               Pre-v11 code and old experiments
+├── paper-neurips/             NeurIPS 2026 paper
+│   ├── paper.tex              Main manuscript
+│   ├── references.bib         Bibliography
+│   ├── figures/               Publication figures (PDF)
+│   ├── figure-pipeline/       TikZ figure design bible + compile/validate tooling
+│   ├── review_history.md      Reviewer iteration scores
+│   └── open_questions.md      Unresolved items
+├── paper-replications/        Baseline replications
+│   ├── star/                  STAR (Fan et al. 2024) - supervised RUL SOTA
+│   ├── mts-jepa/              MTS-JEPA (2026) - SSL anomaly detection
+│   ├── dcssl/                 DCSSL (Shen et al. 2026) - SSL RUL
+│   ├── cnn-gru-mha/           Yu et al. 2024 - transfer learning
+│   ├── when-will-it-fail/     Park et al. 2025 (ICML) - A2P
+│   ├── Brain-JEPA/            Reference code
+│   └── LeJEPA/                Reference code
+├── .claude/                   Agent definitions and memory
+└── archive/                   Pre-pivot work (robotics era, dataset curation, early drafts)
 ```
 
-Each subdirectory under `mechanical-jepa/experiments/`, `paper-replications/`, and `.claude/agent-memory/ml-researcher/` is self-contained and has its own `EXPERIMENT_LOG.md` + `RESULTS.md`. The root README only orients; the real work lives in those directories.
+## Key results (V2 = main model, C-MAPSS FD001)
 
-## Current status
+| Method | Frozen RMSE | E2E RMSE | Seeds |
+|--------|------------|----------|-------|
+| Traj JEPA E2E | 17.81 +/- 1.7 | **14.23 +/- 0.4** | 5 |
+| STAR (supervised SOTA) | -- | 12.19 +/- 0.6 | 5 |
+| From-scratch (same arch) | -- | 22.99 +/- 2.3 | 5 |
 
-- **Primary result**: `mechanical-jepa/experiments/v11/` — Trajectory JEPA on C-MAPSS FD001, V2 E2E at 13.80 RMSE on the canonical last-window protocol (matches the public SSL reference AE-LSTM at 13.99; gap to supervised STAR at 10.61).
-- **Under verification**: `mechanical-jepa/experiments/v12/OVERNIGHT_PROMPT.md` — v12 is a verification gate on v11. The prediction-trajectory diagnostic and a hand-engineered feature-regressor lower bound must both confirm that v11 is tracking degradation before any further experiments run. See the OVERNIGHT_PROMPT for the full rationale.
-- **Baselines**: STAR (FD001 done, FD002 seeds complete, FD003/4 in progress), DCSSL (complete), CNN-GRU-MHA (complete), A2P/when-will-it-fail (probes 1–141, publication-ready figures in `paper-replications/when-will-it-fail/figures/`).
+**Label-efficiency crossover**: at 5% labels, frozen JEPA (21.53) beats supervised STAR (24.55).
 
-## Published walkthroughs
+**Anomaly detection**: prediction error as zero-label anomaly score: SMAP PA-F1 = 62.5% (vs MTS-JEPA 33.6%).
 
-The four most recent Quarto walkthroughs are rendered and deployed to GitHub Pages:
+All numbers backed by JSONs in `mechanical-jepa/experiments/v{11-16}/`.
 
-- **v8**: https://forgis-research.github.io/IndustrialJEPA/08_rul_jepa.html
-- **v9**: https://forgis-research.github.io/IndustrialJEPA/09_v9_data_first.html
-- **v10**: https://forgis-research.github.io/IndustrialJEPA/10_v10_trajectory_jepa.html
-- **v11**: https://forgis-research.github.io/IndustrialJEPA/11_v11_cmapss_trajectory_jepa.html
+## Experiments guide
 
-Sources live at `mechanical-jepa/notebooks/*.qmd`. Publish with `quarto publish gh-pages <file>.qmd` from the `mechanical-jepa/notebooks/` directory.
+| Directory | Purpose | Key files |
+|-----------|---------|-----------|
+| `experiments/v11/` | Main model: V2 Trajectory JEPA | `models.py`, `RESULTS.md` |
+| `experiments/v12/` | Verification gate (diagnostics, shuffle test, health index) | `RESULTS.md` |
+| `experiments/v13/` | Label efficiency + cross-fault transfer | `RESULTS.md` |
+| `experiments/v14/` | Full-seq target, cross-sensor, bearings | `RESULTS.md` |
+| `experiments/v15/` | SIGReg, SMAP/MSL anomaly, metrics framework | `RESULTS.md`, `phase*.json` |
+| `experiments/v16/` | V16a/V16b bidi ablation, label efficiency, cross-machine | `RESULTS.md`, `phase*.json` |
 
-## Running experiments
+## Building the paper
 
-Each live subproject manages its own environment. See:
+```bash
+cd paper-neurips
+pdflatex paper.tex
+bibtex paper
+pdflatex paper.tex
+pdflatex paper.tex
+```
 
-- `mechanical-jepa/README.md` — JEPA pretraining + RUL downstream
-- `mechanical-jepa/experiments/v11/run_experiments.py` — current v11 entry point
-- `paper-replications/*/README.md` + `REPLICATION_SPEC.md` — individual replication setup
+Figures are pre-compiled PDFs in `figures/`. To rebuild a TikZ figure:
+```bash
+cd figure-pipeline
+bash compile_figure.sh fig_<name>.tex   # compiles + quality checks
+python validate_figure.py fig_<name>.pdf # automated validation
+cp fig_<name>.pdf ../figures/
+```
 
-The root `pyproject.toml` contains only shared tooling config (ruff, black, isort). It does not define a package to install — each subproject has its own `requirements.txt`.
+## Running experiments on the VM
+
+```bash
+# On SageMaker or similar GPU instance
+cd mechanical-jepa
+pip install -r requirements.txt
+python experiments/v11/models.py  # verify model loads
+
+# Overnight session (autonomous Claude Code)
+# Paste contents of paper-neurips/SESSION_PROMPT_V16.md as opening prompt
+```
 
 ## Archive
 
-`archive/` contains pre-pivot research from the earlier "industrial robotics" scope (AURSAD, voraus, world-model experiments, foundation-model probes, lit review, early paper draft). Everything under `archive/` is frozen and kept in git for history; no active code depends on it.
+`archive/` contains frozen material from earlier research phases:
+- `pre-paper/` -- autoresearch, dataset curation, mechanical-datasets, dcssl-replication
+- `paper-neurips-drafts/` -- early paper scaffolding (v8 bearing era), literature reviews
+- Root `archive/` -- robotics-era code (AURSAD, voraus, world-model)
 
-## License
-
-MIT (see individual files for copyright headers).
+Nothing under `archive/` is imported by active code.
