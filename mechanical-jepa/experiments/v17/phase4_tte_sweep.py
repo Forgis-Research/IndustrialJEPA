@@ -215,53 +215,73 @@ def train_tte_probe(model, train_engines, val_engines, test_engines,
     if best_state is not None:
         probe.load_state_dict(best_state)
 
-    # ---- Test-set TTE sweep ----
+    # ---- Test-set TTE sweep: sample multiple t per engine ----
+    # At test time we don't have future for test engines, but we CAN evaluate at
+    # every cycle t of each test engine using THEIR OWN data x[:t] and the TTE
+    # label defined on their OWN sensor trajectory (since we compute TTE from
+    # baseline cycles 1-50). Use t spanning from min_past to the last cycle where
+    # tte label is still finite (i.e. before the exceedance occurred).
     probe.eval()
-    # For each test engine, for the FULL sequence (last cycle), sweep k=1..K_MAX
-    all_pred_tte = []   # predicted first k where p>0.5
+    all_pred_tte = []
     all_true_tte = []
-    # Binary "within K_EVAL_F1 cycles" task
-    all_bin_pred = []   # p_{k=K_EVAL_F1}
+    all_bin_pred = []
     all_bin_true = []
+    # For reproducibility, use a fixed grid of cycles per engine rather than
+    # random sampling. Walks at 10% increments of usable range.
+    N_CYCLES_PER_ENGINE = 8
 
     with torch.no_grad():
         for eid, arr in test_engines.items():
             T = len(arr)
-            if T < MIN_PAST:
+            if T < MIN_PAST + 5:
                 continue
             tte_eng = tte_test.get(eid)
             if tte_eng is None:
                 continue
-            # Last-cycle only (match CMAPSSTestDataset style)
-            t = T
-            past = torch.from_numpy(arr[:t]).float().unsqueeze(0).to(DEVICE)
-            mask = torch.zeros(1, t, dtype=torch.bool, device=DEVICE)
-            h = model.encode_past(past, mask)  # (1, D)
-
-            # Sweep k
-            ks = torch.arange(1, K_MAX + 1, dtype=torch.long, device=DEVICE)
-            h_rep = h.expand(K_MAX, -1)
-            g = model.predictor(h_rep, ks)  # (K, D)
-            probs = torch.sigmoid(probe(g).squeeze(-1)).cpu().numpy()  # (K,)
-
-            # TTE_hat = first k with p>0.5, else K_MAX+1
-            fired = np.where(probs > 0.5)[0]
-            pred_tte = float(fired[0] + 1) if len(fired) > 0 else float(K_MAX + 1)
-
-            # Ground-truth TTE at last cycle
-            true_tte = tte_eng[t - 1] if t - 1 < len(tte_eng) else np.nan
-
-            all_pred_tte.append(pred_tte)
-            all_true_tte.append(float(true_tte) if not np.isnan(true_tte) else np.nan)
-
-            # Binary task: within K_EVAL_F1 cycles
-            bin_pred = float(probs[K_EVAL_F1 - 1])  # score
-            if np.isnan(true_tte):
-                bin_true = 0
+            # Find valid t range: tte_eng is finite
+            valid_t = np.where(np.isfinite(tte_eng))[0]
+            if len(valid_t) == 0:
+                # No exceedance in this engine - include a few 'negative' samples
+                # (long TTE horizon). Use last cycles.
+                ts = [max(MIN_PAST, T - 50), max(MIN_PAST, T - 20),
+                      max(MIN_PAST, T - 5)]
+                ts = sorted(set(t for t in ts if MIN_PAST <= t < T))
             else:
-                bin_true = 1 if true_tte <= K_EVAL_F1 else 0
-            all_bin_pred.append(bin_pred)
-            all_bin_true.append(bin_true)
+                t_lo = max(MIN_PAST, int(valid_t[0]) + 1)
+                t_hi = int(valid_t[-1]) + 1
+                if t_hi <= t_lo:
+                    continue
+                ts = np.linspace(t_lo, t_hi, N_CYCLES_PER_ENGINE).astype(int).tolist()
+                ts = sorted(set(ts))
+
+            # Batch all ts for this engine
+            for t in ts:
+                if t < MIN_PAST or t > T:
+                    continue
+                past = torch.from_numpy(arr[:t]).float().unsqueeze(0).to(DEVICE)
+                mask = torch.zeros(1, t, dtype=torch.bool, device=DEVICE)
+                h = model.encode_past(past, mask)
+
+                ks = torch.arange(1, K_MAX + 1, dtype=torch.long, device=DEVICE)
+                h_rep = h.expand(K_MAX, -1)
+                g = model.predictor(h_rep, ks)
+                probs = torch.sigmoid(probe(g).squeeze(-1)).cpu().numpy()
+
+                fired = np.where(probs > 0.5)[0]
+                pred_tte = float(fired[0] + 1) if len(fired) > 0 else float(K_MAX + 1)
+                true_tte = tte_eng[t - 1] if t - 1 < len(tte_eng) else np.nan
+
+                all_pred_tte.append(pred_tte)
+                all_true_tte.append(float(true_tte) if not np.isnan(true_tte)
+                                     else np.nan)
+
+                bin_pred = float(probs[K_EVAL_F1 - 1])
+                if np.isnan(true_tte):
+                    bin_true = 0
+                else:
+                    bin_true = 1 if true_tte <= K_EVAL_F1 else 0
+                all_bin_pred.append(bin_pred)
+                all_bin_true.append(bin_true)
 
     all_pred_tte = np.array(all_pred_tte)
     all_true_tte = np.array(all_true_tte)
