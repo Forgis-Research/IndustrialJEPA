@@ -1,4 +1,5 @@
-\documentclass[border=12pt]{standalone}
+% Tokenization pipeline: compact version for NeurIPS
+\documentclass[border=6pt]{standalone}
 \usepackage{tikz}
 \usepackage{amsmath,amssymb}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,
@@ -10,155 +11,131 @@
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily\small,
-    dataarrow/.style={->,line width=0.8pt,ctextdark},
+    dataarrow/.style={->,line width=0.7pt,ctextdark},
     sechead/.style={font=\sffamily\scriptsize\bfseries,text=ctextmid},
     annot/.style={font=\sffamily\scriptsize,text=ctextmid},
-    % Tall narrow pipeline block (Chronos-inspired)
     tallblock/.style={
-        rounded corners=3pt, line width=0.5pt,
-        minimum height=2.2cm, minimum width=1.1cm,
-        align=center, text=ctextdark, inner sep=3pt,
+        rounded corners=2.5pt, line width=0.5pt,
+        minimum height=1.8cm, minimum width=0.9cm,
+        align=center, text=ctextdark, inner sep=2pt,
     },
 ]
 
 % ============================================================
 % SECTION HEADERS
 % ============================================================
-\node[sechead] at (0,3.0) {INPUT};
-\node[sechead] at (3.5,3.0) {PREPROCESSING};
-\node[sechead] at (8.0,3.0) {TOKENIZATION};
-\node[sechead] at (12.2,3.0) {TO ENCODER};
+\node[sechead] at (0,2.5) {INPUT};
+\node[sechead] at (2.8,2.5) {PREPROCESS};
+\node[sechead] at (6.3,2.5) {TOKENIZE};
+\node[sechead] at (9.8,2.5) {OUTPUT};
 
 % ============================================================
 % INPUT: Raw multivariate time series
 % ============================================================
-
-% Signal box with multiple channels
 \node[rounded corners=2pt, draw=cborder, fill=white,
-    minimum height=2.2cm, minimum width=2.2cm,
-    inner sep=0pt] (signals) at (0,1.0) {};
+    minimum height=1.8cm, minimum width=1.8cm,
+    inner sep=0pt] (signals) at (0,0.8) {};
 
-% Draw 5 sensor channel lines with different styles
 \begin{scope}
     \clip ([xshift=2pt,yshift=2pt]signals.south west)
         rectangle ([xshift=-2pt,yshift=-2pt]signals.north east);
-    % Channel labels on left
-    \foreach \yoff/\col/\lbl in {
-        0.7/cprimary/{\scriptsize$s_1$},
-        0.35/csecondary/{\scriptsize$s_2$},
-        0.0/caccent/{\scriptsize$s_3$},
-        -0.35/chighlight/{\scriptsize$\vdots$},
-        -0.7/ctextmid/{\scriptsize$s_S$}} {
-        \draw[\col,line width=0.5pt,opacity=0.85,
-              decorate,decoration={snake,amplitude=1.5pt,segment length=4pt}]
-            ([xshift=5pt,yshift=\yoff cm]signals.west)
-            -- ([xshift=-5pt,yshift=\yoff cm]signals.east);
+    \foreach \yoff/\col in {
+        0.55/cprimary, 0.3/csecondary, 0.05/caccent,
+        -0.2/chighlight, -0.45/ctextmid} {
+        \draw[\col,line width=0.45pt,opacity=0.8,
+              decorate,decoration={snake,amplitude=1.2pt,segment length=4pt}]
+            ([xshift=4pt,yshift=\yoff cm]signals.center)
+            -- ([xshift=-4pt,yshift=\yoff cm]signals.center);
     }
 \end{scope}
 
-\node[annot,below=0.2cm of signals] {$\mathbf{X}\in\mathbb{R}^{T\times S}$};
-\node[font=\sffamily\scriptsize,ctextmid,above=0.15cm of signals] {
-    $T$ timesteps $\times$ $S$ sensors
-};
+\node[annot,below=0.12cm of signals] {$\mathbf{X}\in\mathbb{R}^{T\times S}$};
 
-% Time arrow below signal box
-\draw[->,line width=0.3pt,ctextmid]
-    ([xshift=5pt,yshift=-3pt]signals.south west)
-    -- ([xshift=-5pt,yshift=-3pt]signals.south east)
-    node[midway,below=1pt,annot] {time};
+% Time arrow
+\draw[->,line width=0.25pt,ctextmid]
+    ([xshift=4pt,yshift=-2pt]signals.south west)
+    -- ([xshift=-4pt,yshift=-2pt]signals.south east)
+    node[midway,below=0pt,font=\sffamily\tiny,text=ctextmid] {$t$};
 
 % ============================================================
-% PREPROCESSING: Two tall blocks
+% PREPROCESSING
 % ============================================================
 
-% Normalize block
 \node[tallblock, draw=caccent!40, fill=caccentbg,
-    right=0.8cm of signals] (norm) {
+    right=0.6cm of signals] (norm) {
     \rotatebox{90}{\scriptsize\textbf{NORMALIZE}}
 };
-\node[annot,below=0.2cm of norm,align=center] {
-    per-sensor\\[-2pt]z-score
+\node[annot,below=0.12cm of norm,align=center] {
+    {\tiny per-sensor}\\[-2pt]{\tiny z-score}
 };
 \draw[dataarrow] (signals.east) -- (norm.west);
 
-% Condition-aware block
 \node[tallblock, draw=caccent!40, fill=caccentbg,
-    right=0.35cm of norm] (cond) {
-    \rotatebox{90}{\scriptsize\textbf{CONDITION}}
+    right=0.25cm of norm] (cond) {
+    \rotatebox{90}{\scriptsize\textbf{CLUSTER}}
 };
-\node[annot,below=0.2cm of cond,align=center] {
-    per-cluster\\[-2pt]if multi-op
+\node[annot,below=0.12cm of cond,align=center] {
+    {\tiny per-op cond.}\\[-2pt]{\tiny (optional)}
 };
 \draw[dataarrow] (norm.east) -- (cond.west);
 
 % ============================================================
-% TOKENIZATION: Three tall blocks
+% TOKENIZATION
 % ============================================================
 
-% Linear projection
 \node[tallblock, draw=cprimary!40, fill=cprimarybg,
-    right=0.7cm of cond] (proj) {
-    \rotatebox{90}{\scriptsize\textbf{LINEAR PROJ.}}
+    right=0.5cm of cond] (proj) {
+    \rotatebox{90}{\scriptsize\textbf{LINEAR}}
 };
-\node[annot,below=0.2cm of proj,align=center] {
-    $\mathbf{W}\mathbf{x}^{(t)}\!+\!\mathbf{b}$\\[-2pt]
-    $\to \mathbf{e}_t\!\in\!\mathbb{R}^{256}$
+\node[annot,below=0.12cm of proj,align=center] {
+    {\tiny $\mathbf{W}\mathbf{x}^{(t)}\!+\!\mathbf{b}$}\\[-2pt]
+    {\tiny $\to\mathbf{e}_t\!\in\!\mathbb{R}^{256}$}
 };
 \draw[dataarrow] (cond.east) -- (proj.west);
 
-% Positional encoding
 \node[tallblock, draw=cprimary!40, fill=cprimarybg,
-    right=0.35cm of proj] (pe) {
-    \rotatebox{90}{\scriptsize\textbf{POSITION ENC.}}
+    right=0.25cm of proj] (pe) {
+    \rotatebox{90}{\scriptsize\textbf{POS. ENC.}}
 };
-\node[annot,below=0.2cm of pe,align=center] {
-    sinusoidal\\[-2pt]cycle $t$ index
+\node[annot,below=0.12cm of pe,align=center] {
+    {\tiny sinusoidal}\\[-2pt]{\tiny cycle index}
 };
 \draw[dataarrow] (proj.east) -- (pe.west);
 
-% Sensor ID (optional)
 \node[tallblock, draw=cprimary!25, fill=cprimarybg!50,
-    right=0.35cm of pe] (sid) {
+    right=0.25cm of pe] (sid) {
     \rotatebox{90}{\scriptsize\textbf{SENSOR ID}}
 };
-\node[annot,below=0.2cm of sid,align=center] {
-    learnable\\[-2pt](optional)
+\node[annot,below=0.12cm of sid,align=center] {
+    {\tiny learnable}\\[-2pt]{\tiny (optional)}
 };
 \draw[dataarrow] (pe.east) -- (sid.west);
 
+% Brace over tokenization blocks
+\draw[decorate,decoration={brace,amplitude=3pt,raise=2pt},ctextmid,line width=0.35pt]
+    ([yshift=0.1cm]proj.north west) -- ([yshift=0.1cm]sid.north east)
+    node[midway,above=4pt,font=\sffamily\tiny,text=ctextmid] {tokenization};
+
 % ============================================================
-% OUTPUT: Token sequence to encoder
+% OUTPUT
 % ============================================================
 
-% Output capsules (sequence of tokens)
-\node[rounded corners=3pt, draw=csecondary!40, fill=csecondarybg,
-    minimum height=2.2cm, minimum width=1.3cm,
-    right=0.7cm of sid, align=center, inner sep=3pt] (out) {};
+\node[rounded corners=2.5pt, draw=csecondary!40, fill=csecondarybg,
+    minimum height=1.8cm, minimum width=1.0cm,
+    right=0.5cm of sid, align=center, inner sep=2pt] (out) {};
 
-% Draw token dots inside
-\foreach \y in {0.7,0.4,0.1,-0.2,-0.5,-0.8} {
-    \fill[csecondary!60] ([yshift=\y cm]out.center) circle (2pt);
+\foreach \y in {0.55,0.3,0.05,-0.2,-0.45,-0.7} {
+    \fill[csecondary!55] ([yshift=\y cm]out.center) circle (1.8pt);
 }
 
-\node[annot,below=0.2cm of out] {$[\mathbf{e}_1,\ldots,\mathbf{e}_T]$};
-\node[font=\sffamily\scriptsize,csecondary,above=0.15cm of out] {
-    token sequence
-};
+\node[annot,below=0.12cm of out] {$[\mathbf{e}_1,\ldots,\mathbf{e}_T]$};
+\node[font=\sffamily\tiny,csecondary,above=0.1cm of out] {tokens};
 \draw[dataarrow] (sid.east) -- (out.west);
 
-% Big arrow to encoder
-\draw[->,line width=1.2pt,csecondary]
-    (out.east) -- ++(0.6,0)
+% Arrow to encoder
+\draw[->,line width=1.0pt,csecondary]
+    (out.east) -- ++(0.45,0)
     node[right,annot] {$f_\theta$};
-
-% ============================================================
-% $\times N$ annotation (like Chronos)
-% ============================================================
-
-% Bracket around tokenization blocks
-\draw[decorate,decoration={brace,amplitude=4pt,raise=3pt},ctextmid,line width=0.4pt]
-    ([yshift=0.15cm]proj.north west) -- ([yshift=0.15cm]sid.north east)
-    node[midway,above=6pt,annot] {tokenization};
 
 \end{tikzpicture}
 \end{document}
