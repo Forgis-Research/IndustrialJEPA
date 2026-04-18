@@ -39,8 +39,10 @@ D_FF = 4 * D_MODEL
 EMA_MOMENTUM = 0.99
 
 PROBE_LR = 1e-3
+PROBE_WD = 1e-2          # weight decay to prevent overfit on 1536-dim features
 PROBE_EPOCHS = 200
 PROBE_PATIENCE = 25
+VAL_N_CUTS = 10          # multiple cuts per val engine (more robust than last-only)
 K_SET = [5, 10, 20, 50, 100]
 K_EVAL_F1 = 30
 SEEDS = [42, 123, 456]
@@ -101,10 +103,12 @@ def train_probe(model, variant, train_engines, val_engines, test_engines,
         feat_dim = D_MODEL
 
     probe = nn.Sequential(nn.Linear(feat_dim, 1), nn.Sigmoid()).to(DEVICE)
-    opt = torch.optim.Adam(probe.parameters(), lr=PROBE_LR)
+    opt = torch.optim.AdamW(probe.parameters(), lr=PROBE_LR, weight_decay=PROBE_WD)
 
     tr_ds = CMAPSSFinetuneDataset(train_engines, n_cuts_per_engine=5, seed=seed)
-    va_ds = CMAPSSFinetuneDataset(val_engines, use_last_only=True)
+    # Use multiple cuts per val engine -> more samples -> less probe overfit
+    va_ds = CMAPSSFinetuneDataset(val_engines, n_cuts_per_engine=VAL_N_CUTS,
+                                    seed=seed + 111)
     te_ds = CMAPSSTestDataset(test_engines, test_rul)
     tr = DataLoader(tr_ds, batch_size=32, shuffle=True, collate_fn=collate_finetune)
     va = DataLoader(va_ds, batch_size=32, shuffle=False, collate_fn=collate_finetune)
