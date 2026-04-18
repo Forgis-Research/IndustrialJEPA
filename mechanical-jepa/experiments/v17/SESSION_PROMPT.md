@@ -23,11 +23,13 @@ Execute the V17 experiment plan (`experiments/v17/PLAN.md`) in 6 phases:
 
 ## Read first (mandatory)
 
-1. `experiments/v17/PLAN.md` — full plan with architecture, phases, success criteria
-2. `experiments/v11/models.py` — V2 model definition (ContextEncoder, TargetEncoder, Predictor, TrajectoryJEPA)
-3. `experiments/v11/train_utils.py` — training utilities (data loading, C-MAPSS preprocessing)
-4. `experiments/v15/phase1_sigreg.py` — SIGReg implementation (SIGRegEP class, lines 82-257)
-5. `experiments/v16/RESULTS.md` — V16 results for context
+1. `experiments/v17/PLAN.md` — full plan with architecture, phases, success criteria, F1 evaluation protocol
+2. `experiments/v17/SMAP_FIX.md` — SMAP/MSL bug diagnosis (argument order, encoder choice, overtraining)
+3. `experiments/v11/models.py` — V2 model definition (ContextEncoder, TargetEncoder, Predictor, TrajectoryJEPA)
+4. `experiments/v11/train_utils.py` — training utilities (data loading, C-MAPSS preprocessing)
+5. `experiments/v15/phase1_sigreg.py` — SIGReg implementation (SIGRegEP class, lines 82-257)
+6. `experiments/v16/RESULTS.md` — V16 results for context
+7. `evaluation/grey_swan_metrics.py` — anomaly_metrics signature: `(scores, y_true, threshold)` — NOT (labels, scores)
 
 ---
 
@@ -52,6 +54,8 @@ K_max = 150 for C-MAPSS.
 
 **Evaluation**: every 10 epochs, run frozen linear probe on h_past (same protocol as V2). Save best checkpoint. 3 seeds (42, 123, 456).
 
+**F1 evaluation** (in addition to RMSE): for each test engine at each cycle t, compute binary label y_k = 1 if RUL(t) ≤ k (for k=30). Probe output thresholded → binary → compute F1, precision, recall, AUC-PR. This makes C-MAPSS results directly comparable to anomaly detection metrics.
+
 **Save results to** `experiments/v17/phase1_results.json`:
 ```json
 {
@@ -61,11 +65,13 @@ K_max = 150 for C-MAPSS.
   "probe_rmse_per_seed": [...],
   "probe_rmse_mean": ...,
   "probe_rmse_std": ...,
-  "v2_baseline": 17.81
+  "f1_at_k30": ...,
+  "auc_pr_at_k30": ...,
+  "v2_baseline_rmse": 17.81
 }
 ```
 
-**Success**: mean frozen probe ≤ 17.81.
+**Success**: mean frozen probe RMSE ≤ 17.81.
 
 ---
 
@@ -84,7 +90,9 @@ Write `experiments/v17/phase2_trajectory_probe.py`.
 
 3. Compare to Phase 1 (h_past only, 256-dim) and V2 (17.81).
 
-**Also test**: probe on γ(k) alone for each k (which horizon is most informative?).
+4. Report RMSE + F1/AUC-PR at k=30 (same binary task as Phase 1).
+
+**Also test**: probe on γ(k) alone for each k (which horizon is most informative for RUL? for F1?).
 
 **Save results to** `experiments/v17/phase2_trajectory_probe_results.json`.
 
@@ -153,11 +161,11 @@ Write `experiments/v17/phase4_tte_sweep.py`.
    - TTE_hat = min { k : probe(γ(k)) > 0.5 }
    - Compare to ground-truth TTE
 
-4. Evaluate: RMSE and nRMSE on TTE predictions.
+4. Evaluate: **F1 (primary)**, precision, recall, AUC-PR. Also RMSE for backward compat.
 
 **Save results to** `experiments/v17/phase4_tte_results.json`.
 
-**Success**: TTE numbers exist. Any RMSE is fine — we just need the first real numbers for paper section 5.4.
+**Success**: TTE F1 and AUC-PR reported. Paper section 5.4 stops being future work.
 
 ---
 
@@ -165,22 +173,32 @@ Write `experiments/v17/phase4_tte_sweep.py`.
 
 Write `experiments/v17/phase5_smap_anomaly.py`.
 
+**CRITICAL: Read `experiments/v17/SMAP_FIX.md` first.** V16 Phase 3 crashed due to 3 bugs.
+
 **Pretrain V17 on SMAP:**
 - Use data adapter from `data/smap_msl.py`
 - k ~ LogU[1, 500], w=10
 - Same encoder/predictor architecture (adjust n_sensors=25 for SMAP)
-- 100 epochs
+- **Use EMA mode, NOT SIGReg** (V16 used SIGReg which overfits anomaly patterns)
+- **50 epochs** (not 100 — V16 showed overtraining inverts the anomaly signal)
+
+**Bug fixes to apply:**
+1. `anomaly_metrics(scores, labels, threshold)` — NOT `(labels, scores)`. Check signature.
+2. For scoring: use `target_encoder` (EMA copy), NOT `context_encoder`.
+3. Monitor anomaly-vs-normal score gap. If anomalies score LOWER, stop early.
 
 **Anomaly scoring:**
-- For each test timestep t: score(t) = ||predictor(encoder(x_{1:t}), k) - ema_encoder(x_{t+k:t+k+w})||_1
+- score(t) = ||predictor(encoder(x_{1:t}), k) - **ema_target_encoder**(x_{t+k:t+k+w})||_1
 - Test with k ∈ {5, 10, 20, 50} and average scores across k values
 - Also test: use trajectory probe score instead of raw prediction error
 
-**Evaluate**: non-PA F1 and PA-F1 using the evaluation module from `evaluation/grey_swan_metrics.py`.
+**Evaluate**: **non-PA F1 (primary)**, PA-F1 (MTS-JEPA comparability), AUC-PR.
+MTS-JEPA references: SMAP PA-F1=33.6%, SWaT PA-F1=72.9%.
+Use `evaluation/grey_swan_metrics.py` — `anomaly_metrics(scores, y_true, threshold)`.
 
 **Save results to** `experiments/v17/phase5_smap_results.json`.
 
-**Success**: non-PA F1 > 0.069 (beat V15 baseline). Multi-k scoring should improve over single-k.
+**Success**: non-PA F1 > 0.10. PA-F1 reported alongside for MTS-JEPA comparison.
 
 ---
 

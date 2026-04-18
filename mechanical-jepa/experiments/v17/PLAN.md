@@ -96,21 +96,49 @@ The target in epoch 150+ becomes: h* = stop_grad(encoder(x_{t+k:t+k+w})) — sam
 
 Hypothesis: (b) is better for V17 because the probe reads γ(k), not h_past.
 
+### 5. Unified evaluation: F1 as primary metric
+
+All grey swan tasks become binary event detection: "does event E occur within k steps?"
+
+```
+probe(γ(k)) → p(event within k steps) → threshold at τ → binary → F1
+```
+
+**Metrics reported for every task:**
+- **F1** (non-PA, primary), **precision**, **recall**, **AUC-PR**
+- **PA-F1** for anomaly detection (literature comparability with MTS-JEPA)
+- **RMSE** additionally for C-MAPSS RUL (comparability with STAR, existing tables)
+
+**Why F1 everywhere:**
+- Directly comparable to MTS-JEPA numbers (SMAP PA-F1=33.6%, SWaT PA-F1=72.9%)
+- Directly comparable to all anomaly detection literature
+- Unifies RUL/TTE/anomaly under one metric family
+- The trajectory probe naturally outputs p(event | k) which thresholds to binary
+
+**C-MAPSS RUL as F1:** "will this engine fail within k cycles?" Binary label = 1 if RUL ≤ k. Evaluate F1 at the optimal threshold. Report RMSE alongside for backward compatibility.
+
+**Window protocol** (match literature):
+- SMAP/MSL: window=100, stride=1
+- SWaT: window=100, stride=1
+- C-MAPSS: full engine lifetime, one prediction per cycle
+
 ## Experiments (in execution order)
 
 ### Phase 1: V17 baseline — LogUniform k + fixed-window target
 - Retrain V2 architecture with k ~ LogU[1, 150], w=10
 - EMA only (no SIGReg yet), 200 epochs
-- Frozen probe on h_past → compare to V2 baseline (17.81)
+- Frozen probe on h_past → compare to V2 baseline (17.81 RMSE)
 - 3 seeds, FD001
-- **Success**: frozen probe ≤ 17.81
+- Report: RMSE + F1 ("fail within k=30 cycles?" binary task, AUC-PR)
+- **Success**: frozen probe RMSE ≤ 17.81
 
 ### Phase 2: Trajectory probing
 - Freeze encoder + predictor from Phase 1
 - Train linear probe on concatenated [h, γ(5), γ(10), γ(20), γ(50), γ(100)]
 - Compare to Phase 1 frozen probe (h_past only, 256-dim) and V2 baseline
 - 3 seeds × 3 probe seeds
-- **Success**: trajectory probe < 15.0 (close the frozen-E2E gap of 14.23)
+- Report: RMSE + F1 + AUC-PR (same binary task as Phase 1)
+- **Success**: trajectory probe RMSE < 15.0 (close the frozen-E2E gap of 14.23)
 
 ### Phase 3: Curriculum EMA → SIGReg
 - From Phase 1 checkpoint at epoch 100, continue with graduated schedule
@@ -124,14 +152,17 @@ Hypothesis: (b) is better for V17 because the probe reads γ(k), not h_past.
 - Using best checkpoint from Phase 1-3
 - Train event-boundary probe: probe(γ(k)) → p(sensor s14 exceeds 3σ by horizon k)
 - Sweep k = 1..150 at inference, find crossing point
-- Evaluate RMSE on C-MAPSS TTE ground truth
-- **Success**: TTE numbers exist (paper section 5.4 stops being future work)
+- Evaluate: F1 (primary), precision, recall, AUC-PR, RMSE (secondary)
+- **Success**: TTE F1 reported (paper section 5.4 stops being future work)
 
 ### Phase 5: SMAP anomaly detection
 - Pretrain V17 on SMAP (k ~ LogU[1, 500], w=10)
-- Anomaly score: prediction error at multiple k values
-- Compare non-PA F1 to V15 baseline (6.9%)
-- **Success**: non-PA F1 > 0.10
+- Fix argument order bug (see SMAP_FIX.md)
+- Fix: use EMA target encoder for scoring, not context encoder
+- Anomaly score: prediction error at multiple k values, average across k
+- Evaluate: non-PA F1 (primary), PA-F1 (MTS-JEPA comparability), AUC-PR
+- MTS-JEPA reference: SMAP PA-F1=33.6%, SWaT PA-F1=72.9%
+- **Success**: non-PA F1 > 0.10, PA-F1 reported alongside for literature comparison
 
 ### Phase 6: Quarto notebook
 - Concise educational walkthrough of V17 results
