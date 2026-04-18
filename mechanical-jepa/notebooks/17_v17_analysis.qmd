@@ -372,9 +372,38 @@ else:
 
 ---
 
-## Takeaways
+## Takeaways (with results in)
 
-1. **Fixed-window target + LogUniform k generalizes the horizon** without changing the architecture.
-2. **The predictor is a usable asset at inference**: trajectory probing gives a meaningful lift over h_past alone when horizon matters.
-3. **Curriculum SIGReg stabilizes isotropy** from a warm start that cold-start SIGReg couldn't reach (V15).
-4. **F1 unifies the grey swan family**: RUL, TTE, and anomaly all reduce to event-boundary detection.
+1. **Fixed-window target + LogUniform k beats V2 on RUL probe** (15.53 vs 17.81
+   test RMSE, 12% improvement) once probe regularization is honest (weight
+   decay 1e-2 + multi-cut val). Phase 1's naive probe over-fit the 15-engine
+   val set to 10 RMSE while test stayed at 20 — misleading in isolation.
+
+2. **Trajectory concatenation does not help RUL**. Concat `[h, gamma(5..100)]`
+   at 1536-d overfits with ~500 training samples and loses ~6 RMSE vs h alone.
+   Individual `gamma(k)` probes trail `h_past` by 2-3 RMSE. The predictor's
+   per-horizon output adds little for *regression*; its value is in
+   *event-specific queries* (Phase 4 direction, still weak here).
+
+3. **SIGReg placement matters: predictor, not encoder** (Phase 3).
+   Applying SIGReg to `h_past` drives PC1 to 0.22 (near-isotropic) but *erases
+   the RUL gradient* (+7 RMSE). Applying it to `gamma(k)` keeps h_past less
+   isotropic (PC1=0.43) but *preserves* downstream usefulness (15.38 test RMSE,
+   matching Phase 2 h_past). Curriculum successfully removes the target network
+   in epochs 150-200.
+
+4. **TTE via trajectory sweep is weak** (F1=0.08 at k=30). The predictor was
+   trained on generic reconstruction, not on s14 3-sigma events. A task-aware
+   predictor or joint pretraining is needed.
+
+5. **SMAP anomaly signal is structurally inverted**. Even with bug fixes (arg
+   order + EMA target), 50 epochs, and LogU[1,500] k, anomalies score *lower*
+   than normals (gap=-0.61) -> non-PA F1=0.038. SMAP anomalies are recurrent
+   patterns that any well-trained JEPA learns to predict. A different scoring
+   objective (sensitivity, spectral divergence) would be required.
+
+**Bottom line for the paper**: the *LogUniform + fixed-window* change plus an
+honest probe protocol lifts V17 above the V2 baseline on C-MAPSS RUL. The
+predictor as an inference asset is promising for event detection but needs
+task-aware training. SIGReg-after-predictor is a clean way to drop the EMA
+target network.
