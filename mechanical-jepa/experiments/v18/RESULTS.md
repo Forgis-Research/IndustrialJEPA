@@ -230,6 +230,30 @@ Hardware: A10G on SageMaker Studio. Total compute: ~1 hour.
  - `reviewer_synthesis.md` - Phase 3 synthesis.
  - `RESULTS.md` - this file.
 
+### Phase 4f: Multi-seed SMAP + MSL Mahalanobis (~29 min)
+
+Addresses reviewer round-2 Q3 (SMAP single-seed) and W2 (unsupported MSL 43.3):
+
+**SMAP multi-seed**:
+ - Seed 42: PA-F1 0.733 (original finding)
+ - Seed 123: PA-F1 0.626
+ - Seed 456: PA-F1 0.639
+ - **Mean: 0.666 ± 0.048** (still ~2x MTS-JEPA 0.336)
+ - Seed 42 was a high outlier; the honest headline is the 3-seed mean.
+
+**MSL (seed 42, freshly pretrained)**:
+ - PA-F1: **0.000**, non-PA F1: 0.000, AUC-PR 0.083
+ - Random baseline: ~0.105 anomaly rate
+ - MSL pretraining loss stayed at ~0.02 (vs SMAP 0.015) - model didn't converge
+ - **Mahalanobis generalizes poorly to MSL**
+ - Possible causes: 55 channels (vs SMAP's 25), different anomaly structure, insufficient training epochs, or Mahalanobis geometry doesn't fit MSL representations
+
+**Honest story** (paper framing):
+ - The SMAP win is robust (0.666 ± 0.048) but not universal.
+ - The Mahalanobis approach works on SMAP but fails on MSL - a benchmark-specific failure we report honestly rather than hide.
+ - "One encoder, two probes" framing applies to FD001 + SMAP, not universally.
+ - Scoring-geometry decomposition: random-init 0.588 + JEPA pretraining +0.08 (3-seed mean) = 0.666.
+
 ### Phase 4d: Random-init Mahalanobis control (~0.3 min)
 
 Critical question from round-2 reviewer B: "Is the Mahalanobis win JEPA-
