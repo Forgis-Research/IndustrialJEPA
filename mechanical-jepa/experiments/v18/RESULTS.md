@@ -6,11 +6,20 @@ Datasets: C-MAPSS FD001/FD003/FD004 (RUL regression); SMAP (anomaly detection).
 
 ## Headline Findings
 
-0. **Two round-2 reviewers scored the revised paper 5/10 and 4/10** (up from
-   unanimous 4/10 round 1). Weakest point: the Mahalanobis SMAP finding needed
-   a random-init control and the crossover needed significance tests - both
-   delivered in Phases 4d and 4e. Post-v18 score target: 5-6/10 (weak
-   accept) if all identified fixes land.
+0. **Reviewer score trajectory: 4/4/4/4 → 4/5 → 5 → 6.**
+   Four NeurIPS review rounds this session. Round 1: unanimous 4/10 (weak
+   reject). Round 2: 4 and 5. Round 3: 5 ("borderline, much closer to
+   acceptance than prior rounds"). Round 4: **6/10 (weak accept)** with
+   explicit "the paper has cleared the 6/10 bar."
+
+   Round-3 reviewer had promised that ONE of {label-free k-selection, TS2Vec
+   baseline, paired STAR} would get to 6. Phase 4j delivered path (a)
+   (label-free k via cumulative variance retention >=0.99) at "higher
+   quality than promised." Paths (b) and (c) remain open for camera-ready.
+
+   Remaining blockers to 7/10 (per round-4 reviewer): TS2Vec/PatchTST
+   baseline on FD001. Camera-ready polish items: regenerate label-efficiency
+   figure, fill 50% cells, MSL Welch significance, FD003/4 honest reruns.
 
 1. **V17's "17.81 → 15.38" improvement over V2 was ~93% probe protocol fix.**
    Under an honest probe protocol (AdamW WD=1e-2, val n_cuts=10), V2 itself
