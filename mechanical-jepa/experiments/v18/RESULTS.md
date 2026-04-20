@@ -6,6 +6,12 @@ Datasets: C-MAPSS FD001/FD003/FD004 (RUL regression); SMAP (anomaly detection).
 
 ## Headline Findings
 
+0. **Two round-2 reviewers scored the revised paper 5/10 and 4/10** (up from
+   unanimous 4/10 round 1). Weakest point: the Mahalanobis SMAP finding needed
+   a random-init control and the crossover needed significance tests - both
+   delivered in Phases 4d and 4e. Post-v18 score target: 5-6/10 (weak
+   accept) if all identified fixes land.
+
 1. **V17's "17.81 → 15.38" improvement over V2 was ~93% probe protocol fix.**
    Under an honest probe protocol (AdamW WD=1e-2, val n_cuts=10), V2 itself
    achieves 15.73 ± 0.14. V17 (honest) = 15.53 ± 1.68. Actual architectural
@@ -223,6 +229,53 @@ Hardware: A10G on SageMaker Studio. Total compute: ~1 hour.
  - `mtsjepa_comparison.md` - Phase 4a comparison.
  - `reviewer_synthesis.md` - Phase 3 synthesis.
  - `RESULTS.md` - this file.
+
+### Phase 4d: Random-init Mahalanobis control (~0.3 min)
+
+Critical question from round-2 reviewer B: "Is the Mahalanobis win JEPA-
+representation-specific, or does Mahalanobis on ANY feature space of SMAP
+work?"
+
+Answer: scoring geometry dominates.
+ - Pretrained v17 + Mahalanobis(PCA-10): PA-F1 0.733, non-PA 0.100
+ - Random-init + Mahalanobis(PCA-10) (3 seeds): PA-F1 **0.588 ± 0.008**, non-PA 0.031
+
+Random-init already beats MTS-JEPA's 0.336. JEPA pretraining contributes an
+additional +0.145 PA-F1 (substantial but smaller than the full 0.733 - 0.219
+gap that the naive "Mahalanobis wins!" framing would suggest).
+
+Honest decomposition of the SMAP PA-F1 contributions:
+ - Random-init + Mahalanobis: 0.588 (scoring geometry)
+ - + JEPA pretraining: +0.145 → 0.733
+
+This strengthens rather than weakens the paper: we now have a clean ablation
+showing pretraining has a measurable marginal effect (+0.145), and the
+"scoring geometry is the knob" claim is no longer hyperbole - it really
+contributes ~0.59 of the 0.733.
+
+### Phase 4e: Crossover significance tests (no GPU)
+
+Welch's unpaired t-test on FAM vs STAR label-efficiency results. STAR per-seed
+runs not saved, so STAR sample approximated by drawing from N(mean, std) with
+n=5. Caveat: a real paired test needs matched engine-subset STAR reruns.
+
+FAM E2E vs STAR:
+
+| Budget | FAM mean | STAR mean | Δ | t | p | Bootstrap 95% CI | |--------|----------|-----------|---|---|---|------------------|
+| 100% | 15.08 | 12.19 | +2.89 | +11.50 | **<0.001** | [+2.4, +3.4] |
+| 20% | 17.85 | 17.74 | +0.11 | +0.07 | 0.95 | [-3.0, +3.4] |
+| 10% | 19.63 | 18.72 | +0.91 | +0.64 | 0.55 | [-1.8, +3.7] |
+| 5% | 21.55 | 24.55 | **-3.00** | -1.01 | 0.36 | [-8.6, +2.9] |
+
+FAM E2E vs FAM Frozen (paired, same 5 seeds):
+
+ - 100/20/10%: E2E significantly beats Frozen (p ∈ [0.03, 0.04]).
+ - 5%: E2E and Frozen are equivalent (p=0.89, delta +0.09).
+
+**Honest takeaway**: the "5% crossover" is within noise (p=0.36, CI straddles
+0). FAM is *significantly worse* than STAR at 100% (p < 0.001). The value of
+FAM is (a) low seed variance (σ=0.9 vs STAR's σ=6.4 at 5%), (b) no crossover
+at matched seeds - and the variance gap is the real story to emphasize.
 
 ## Not delivered this session (stretch / future work)
 
