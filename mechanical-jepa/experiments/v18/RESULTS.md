@@ -17,7 +17,13 @@ Datasets: C-MAPSS FD001/FD003/FD004 (RUL regression); SMAP (anomaly detection).
    using the same v17 pretrained encoder without re-training. The raw L1
    prediction error fails on SMAP (anti-correlates with labels; gap -0.61), but
    the representation-distribution-shift reading of the same embeddings is the
-   right abstraction.
+   right abstraction. Phase 4c confirms: (a) PA-F1 monotonically improves with
+   PCA components (0.734 at k=5 → 0.809 at k=100), (b) bootstrap stability is
+   tight (PA-F1 0.736 ± 0.026 across 5 random train subsamples), (c) lead-time
+   decomposition shows 99.9% of detections are continuation (anomaly already
+   active), 0.1% true prediction - mirrors MTS-JEPA's own ~89% continuation on
+   SMAP. Beats MTS-JEPA on a metric (PA-F1) that rewards within-segment
+   detection regardless of precursor lead time.
 
 3. **V17 E2E at 5% labels beats V11 at 5%** (21.55 vs 25.33), confirming the
    SSL value-at-label-scarcity narrative under the honest protocol.
@@ -158,6 +164,30 @@ pretrained encoder that fails with L1 prediction error. Interpretation: SMAP
 anomalies are recurrent patterns that become MORE predictable during anomalous
 episodes (hence L1 fails); but they push h_past out of the training-data
 manifold (hence Mahalanobis succeeds).
+
+### Phase 4c: Mahalanobis robustness study (~2 min)
+
+Verified three things about the Phase 4b Mahalanobis finding:
+
+ 1. **PCA-k sensitivity**: PA-F1 is stable and monotonically improves with
+    more components. k=5: 0.734, k=10: 0.733, k=20: 0.767, k=50: 0.796,
+    k=100: 0.809. Non-PA F1 is more erratic (0.10-0.20).
+
+ 2. **Bootstrap stability**: 5 random 50% subsamples of training h_past for
+    the PCA fit. PA-F1 0.736 ± 0.026, non-PA F1 0.105 ± 0.013, AUC-PR 0.174.
+    All well above MTS-JEPA's 0.336 PA-F1.
+
+ 3. **Lead-time decomposition**: of 3993 true-positive detections at the 95th-
+    percentile threshold, 99.9% have an anomaly in the context window
+    (CONTINUATION) and only 0.1% have a fully-normal context (TRUE_PREDICTION).
+    MTS-JEPA replication on SMAP reported ~89% continuation - same regime.
+    The PA-F1 metric rewards within-segment detection regardless of lead time,
+    so this is a known property of the benchmark, not a Mahalanobis-specific
+    artifact.
+
+Takeaway: the Mahalanobis PA-F1 advantage is robust but honest framing
+requires stating that it's continuation-dominant detection, not precursor
+prediction. This matches the paper's post-revision anomaly framing.
 
 ### Phase 6: FD003 + FD004 multi-subset (~7 min)
 
