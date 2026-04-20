@@ -1,0 +1,89 @@
+{
+  "config": "v18_phase4b_smap_rescore",
+  "ckpt": "/home/sagemaker-user/IndustrialJEPA/mechanical-jepa/experiments/v17/ckpts/v17_smap_seed42.pt",
+  "data": {
+    "test_shape": [
+      427617,
+      25
+    ],
+    "anomaly_rate": 0.12790885301566587
+  },
+  "settings": {
+    "window": 100,
+    "stride": 10,
+    "k_short": 5,
+    "k_long": 100,
+    "thresh_percentile": 95
+  },
+  "v17_ref_l1_score": {
+    "non_pa_f1": 0.038,
+    "pa_f1": 0.219,
+    "gap": -0.61
+  },
+  "mts_jepa_ref": {
+    "smap_pa_f1": 0.336
+  },
+  "results": [
+    {
+      "name": "rep_shift",
+      "score_gap": -0.5981400012969971,
+      "anom_mean": 2.618403911590576,
+      "norm_mean": 3.2165439128875732,
+      "threshold": 9.901247024536133,
+      "f1_non_pa": 0.05718488553829181,
+      "f1_pa": 0.5926776884271515,
+      "auc_pr": 0.11544083318777111,
+      "precision_non_pa": 0.07698019801980198,
+      "recall_non_pa": 0.045487787041099896
+    },
+    {
+      "name": "traj_divergence",
+      "score_gap": -0.6429595947265625,
+      "anom_mean": 15.40005874633789,
+      "norm_mean": 16.043018341064453,
+      "threshold": 20.83820915222168,
+      "f1_non_pa": 0.08984841667571719,
+      "f1_pa": 0.6046208510662413,
+      "auc_pr": 0.12367511084102606,
+      "precision_non_pa": 0.0780353052149306,
+      "recall_non_pa": 0.1058761152552289
+    },
+    {
+      "name": "mahalanobis_pca10",
+      "score_gap": 1.7030906677246094,
+      "anom_mean": 10.770219802856445,
+      "norm_mean": 9.067129135131836,
+      "threshold": 17.850271224975586,
+      "f1_non_pa": 0.09980503899220156,
+      "f1_pa": 0.7329183229580739,
+      "auc_pr": 0.17305161196134608,
+      "precision_non_pa": 0.15770142180094787,
+      "recall_non_pa": 0.07300351031154015
+    },
+    {
+      "name": "neg_rep_shift",
+      "score_gap": 0.5981400012969971,
+      "anom_mean": -2.618403911590576,
+      "norm_mean": -3.2165439128875732,
+      "threshold": -0.0005035006324760616,
+      "f1_non_pa": 0.07262700294603722,
+      "f1_pa": 0.17991670836902773,
+      "auc_pr": 0.14948184028569417,
+      "precision_non_pa": 0.07138064971751412,
+      "recall_non_pa": 0.07391765394178733
+    },
+    {
+      "name": "neg_traj_div",
+      "score_gap": 0.6429595947265625,
+      "anom_mean": -15.40005874633789,
+      "norm_mean": -16.043018341064453,
+      "threshold": -8.790106773376465,
+      "f1_non_pa": 0.06417259697303798,
+      "f1_pa": 0.6822174840085288,
+      "auc_pr": 0.11705462993697482,
+      "precision_non_pa": 0.10195063694267516,
+      "recall_non_pa": 0.046822436741260784
+    }
+  ],
+  "runtime_min": 0.2210323452949524
+}
