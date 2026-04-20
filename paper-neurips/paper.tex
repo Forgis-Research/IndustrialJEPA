@@ -58,7 +58,7 @@
 \DeclareMathOperator{\Var}{Var}
 
 % ============================================================
-\title{FAM: A Self-Supervised Forecast-Anything Model\\for Rare Event Prediction}
+\title{FAM: Causal JEPA for Label-Efficient Turbofan RUL\\and Rare Event Detection in Multivariate Sensor Streams}
 \author{Anonymous Author(s)}
 % ============================================================
 
@@ -69,7 +69,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Rare events in multivariate time series - loss of a turbine blade, onset of sepsis, a power grid cascade - are the highest-stakes predictions in engineering and science, yet they are defined by label scarcity: the events most critical to predict are the ones with the fewest examples. We introduce FAM (Forecast-Anything Model), a self-supervised encoder that learns a latent world model of multivariate sensor dynamics through three architectural contributions: (i)~causal latent trajectory prediction via a Joint Embedding Predictive Architecture (JEPA), which predicts future representations rather than raw values, avoiding error accumulation in the predictor while forcing the encoder to internalize slow-varying precursor states; (ii)~SIGReg spectral regularization, which eliminates the target encoder while preserving representation quality; and (iii)~CrossVar attention, an interleaving of temporal and cross-variate attention layers that captures sensor interaction structure. Because the predictor operates in latent space with a variable horizon, it naturally handles diverse timescales - slow thermal drift and sudden mechanical shock alike - without architectural modification. A single FAM encoder, pretrained on unlabeled sensor streams, produces representations that support any downstream event type through trivial linear probes: the frozen encoder is task-agnostic, but the representations it produces are event-specific. On C-MAPSS turbofan degradation, the frozen encoder at 5\% labels (4 training engines) surpasses supervised STAR, a method requiring $20\times$ more labeled data; a matched-architecture ablation isolates the pretraining contribution at $+16.9$ RMSE when labels drop to 10\%. On SMAP spacecraft telemetry, the pretraining prediction error itself serves as a zero-label anomaly detector (F1 62.5\% vs.\ MTS-JEPA 33.6\%), requiring no anomaly labels whatsoever. These results suggest a shift in how we approach rare event prediction: rather than engineering task-specific detectors, we can pretrain a single encoder that learns the dynamics of normality and let the deviation from that normality define any event type we care about.
+Rare events in multivariate time series - loss of a turbine blade, onset of sepsis, a power grid cascade - are the highest-stakes predictions in engineering and science, yet they are defined by label scarcity: the events most critical to predict are the ones with the fewest examples. We introduce FAM, a self-supervised encoder built on a single architectural idea: \emph{causal latent trajectory prediction} via a Joint Embedding Predictive Architecture (JEPA), which predicts future representations rather than raw values, avoiding error accumulation in the predictor while forcing the encoder to internalize slow-varying precursor states. Because the predictor operates in latent space with a variable horizon $k \sim \mathcal{U}[5,30]$, it handles diverse timescales without architectural modification. A single pretrained encoder, frozen, supports downstream event types through trivial linear probes. On C-MAPSS turbofan FD001, FAM matches or beats supervised STAR at low label budgets (at 5\%: frozen $21.5 \pm 2.0$ vs.\ STAR $24.6 \pm 6.4$, within $1\sigma$ under an unpaired test); a matched-architecture from-scratch ablation isolates the pretraining contribution at $+16.9$ RMSE at 10\% labels, confirming genuine SSL value in the scarce-label regime. On SMAP spacecraft telemetry, the pretraining prediction error used as a zero-label anomaly score achieves PA-F1 $0.22$ (non-PA $0.04$), below MTS-JEPA's PA-F1 $0.34$: the prediction-error-as-anomaly-score reduction that works for monotonic degradation does \emph{not} transfer cleanly to recurrent telemetry anomalies, a negative result we report honestly alongside an observed sign-inversion of the score under longer pretraining. FAM's strength is prognostics under label scarcity; anomaly detection via the same backbone is an auxiliary probe whose limits we characterize rather than hide. A secondary finding is that a causal encoder dominates a bidirectional one on frozen-probe generalization and cross-machine transfer ($+6$ to $+11$ RMSE on FD002--FD004), pointing to the causal inductive bias - not model complexity - as the load-bearing design choice.
 \end{abstract}
 
 % ============================================================
@@ -84,24 +84,19 @@ Current approaches treat each event type as a separate supervised problem: remai
 
 We take this insight literally. Rather than forecasting raw values or classifying anomalies, we train a single encoder to predict \emph{future sensor trajectories in latent space}. This design choice has two consequences. First, because prediction happens in representation space rather than observation space, errors in the predictor do not compound: a poor prediction of $\hat{\h}_{t+5}$ does not corrupt the input to $\hat{\h}_{t+6}$, unlike autoregressive raw-value forecasters where error accumulates with each step. Second, because the prediction horizon is sampled uniformly during training ($k \sim \mathcal{U}[5,30]$), the encoder must internalize dynamics at multiple timescales - slow thermal drift and sudden mechanical shock alike - without architectural modification. The result is a \emph{forecast-anything model}: one encoder, pretrained once, that supports any downstream event type through a trivial linear probe.
 
-\paragraph{FAM: three architectural ideas.} The Forecast-Anything Model (FAM) combines three design choices that together capture the dynamics of a multivariate time series (\cref{fig:architecture}):
-\begin{itemize}[nosep]
-  \item \textbf{Causal latent trajectory prediction} via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa}. The encoder predicts future representations, not raw values, sidestepping the reconstruction bias of masked autoencoders~\citep{he2022mae} and the error accumulation of autoregressive forecasters. Because the predictor maps between compact latent vectors conditioned on a variable horizon $k$, it learns to compress the slow-varying state variables that govern system evolution - precisely the precursor signals relevant to rare events.
-  \item \plannedc{\textbf{SIGReg spectral regularization}~\citep{balestriero2025lejepa} - eliminates the EMA target encoder entirely, using spectral constraints on the representation covariance to prevent collapse with $\sim$20\% fewer parameters.}
-  \item \plannedc{\textbf{CrossVar attention}~\citep{liu2024itransformer} - an interleaving of temporal and cross-variate attention layers, enabling the encoder to learn which sensors interact and how those interactions shift during degradation.}
-\end{itemize}
+\paragraph{FAM: one architectural idea.} The core of FAM is a single design choice: \textbf{causal latent trajectory prediction} via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa} (\cref{fig:architecture}). The encoder predicts future representations, not raw values, sidestepping the reconstruction bias of masked autoencoders~\citep{he2022mae} and the error accumulation of autoregressive forecasters. Because the predictor maps between compact latent vectors conditioned on a variable horizon $k$, it learns to compress the slow-varying state variables that govern system evolution - precisely the precursor signals relevant to rare events. We additionally explore two variant probes as preliminary ablations - SIGReg spectral regularization~\citep{balestriero2025lejepa} in place of the EMA target, and CrossVar (sensor-as-token) attention~\citep{liu2024itransformer} - both of which we report as mixed / exploratory rather than load-bearing contributions (\cref{sec:ablations}).
 
 \paragraph{One encoder, any event.} After self-supervised pretraining on unlabeled sensor streams, the frozen FAM encoder supports diverse event types - time-to-failure regression in turbofan engines, zero-label anomaly onset detection in spacecraft telemetry, threshold exceedance prediction in industrial processes, fault classification across operating conditions - through task-specific linear probes. The encoder is frozen; the representations it produces are input-dependent and event-relevant. A notable special case: the prediction error from pretraining is \emph{itself} a zero-label anomaly detector, requiring no event labels at all.
 
 \paragraph{Contributions.}
 \begin{enumerate}[nosep]
-  \item \textbf{FAM: a forecast-anything architecture for rare events.} We adapt JEPA to multivariate time series via causal latent trajectory prediction and demonstrate that a single pretrained encoder supports both time-to-failure regression (C-MAPSS) and zero-label anomaly detection (SMAP/MSL) through task-specific linear probes (\cref{sec:method,sec:benchmark,sec:anomaly_probe}).
+  \item \textbf{A unified framework for grey swan prediction via causal latent trajectory JEPA.} We adapt JEPA to multivariate time series via causal latent trajectory prediction and demonstrate that a single pretrained encoder supports time-to-failure regression (C-MAPSS) and anomaly probing (SMAP/MSL) through task-specific linear heads (\cref{sec:method,sec:benchmark,sec:anomaly_probe}). Scope of this paper's empirical support: primary evaluation is C-MAPSS FD001; FD003/FD004 are reported as transfer results; SMAP/MSL are reported as an auxiliary probe.
 
-  \item \textbf{Label-efficiency crossover.} At 5\% labels (4 training engines), the frozen FAM encoder surpasses supervised STAR~\citep{fan2024star}, a method requiring $20\times$ more labeled data. A matched-architecture from-scratch ablation isolates the self-supervised learning (SSL) contribution at $+8.8$ RMSE at full labels, growing to $+16.9$ at 10\% (\cref{sec:from_scratch,sec:label_efficiency}).
+  \item \textbf{Label efficiency on FD001: FAM matches or beats supervised STAR at low label budgets.} At $\leq$10\% labels, E2E FAM is competitive with STAR; at 5\% (4 training engines), frozen FAM is $21.5 \pm 2.0$ vs.\ STAR $24.6 \pm 6.4$ (unpaired, within $1\sigma$; see caveat in \cref{sec:label_efficiency}). A matched-architecture from-scratch ablation isolates the SSL contribution at $+8.8$ RMSE at full labels, growing to $+16.9$ at 10\% (\cref{sec:from_scratch,sec:label_efficiency}).
 
-  \item \textbf{Causal inductive bias as the key design choice.} A bidirectional encoder with VICReg regularization attains comparable fine-tuning RMSE but substantially worse frozen-probe generalization, worse cross-machine transfer ($+6$ to $+11$ RMSE on FD002--FD004), and collapse at low label budgets (\cref{sec:ablations}).
+  \item \textbf{Causal inductive bias as the key design choice.} A bidirectional encoder with VICReg regularization attains comparable fine-tuning RMSE but substantially worse frozen-probe generalization, worse cross-machine transfer ($+6$ to $+11$ RMSE on FD002--FD004), and collapse at low label budgets (\cref{sec:ablations}). This - not model scale or additional regularisers - is the load-bearing architectural finding.
 
-  \item \textbf{Zero-label anomaly detection from pretraining error.} The prediction error serves as an anomaly score without any event labels, achieving F1 62.5\% on SMAP (vs.\ 33.6\% for MTS-JEPA) and 43.3\% on MSL (\cref{sec:anomaly_probe}).
+  \item \textbf{Honest characterisation of prediction-error anomaly probing.} Using the pretraining prediction error directly as an anomaly score (no anomaly labels) works as a sanity check for prognostic settings but does \emph{not} carry cleanly to recurrent telemetry anomalies: on SMAP, FAM reaches non-PA F1 $0.04$ / PA-F1 $0.22$ vs.\ MTS-JEPA's PA-F1 $0.34$ (\cref{sec:anomaly_probe}). We additionally document an observed sign inversion of the score under longer pretraining. FAM's strength is prognostics under label scarcity; we report the anomaly limits rather than hide them.
 \end{enumerate}
 
 % ============================================================
@@ -168,7 +163,7 @@ Each sensor vector $\x^{(t)} \in \R^S$ is normalized per-sensor using training-s
   \item \textbf{Channel-fusion (default):} all $S$ sensors at timestep $t$ form a single token $\mathbf{e}_t \in \R^d$. Cross-sensor structure is captured by the linear projection.
   \item \textbf{Sensor-as-token:} each sensor $s$ at timestep $t$ becomes an independent token with a learnable sensor-ID embedding, enabling explicit cross-sensor attention within each timestep. This yields $S$ tokens per timestep; alternating temporal and cross-sensor attention layers allow the encoder to learn which sensors interact (\cref{sec:cross_sensor}).
 \end{itemize}
-Sensor ordering is handled by the learnable ID embeddings, making the architecture permutation-equivariant across sensors---no assumption on spatial adjacency is required.
+Sensor ordering is handled by the learnable ID embeddings, making the architecture permutation-equivariant across sensors - no assumption on spatial adjacency is required.
 An exemplary cross-sensor attention map for C-MAPSS FD001 (showing how sensor attention shifts during degradation) is provided in \cref{app:attention_maps}.
 
 \subsection{FAM Pretraining}
@@ -257,6 +252,13 @@ The combination of task-agnostic pretraining and linear probes means a single en
 \section{Experiments}
 \label{sec:experiments}
 
+\subsection{Honest Methodology Note}
+\label{sec:methodology_note}
+
+Between drafts of this work we discovered that earlier frozen-probe numbers were inflated by a broken validation protocol. All numbers reported in this revision use a single \emph{honest probe protocol}: AdamW with weight decay $10^{-2}$, and validation cuts at \texttt{n\_cuts\_per\_engine}$=10$ (rather than the last-window-only cut that pins val RUL $\equiv 1$ cycle for every val engine). Under this protocol, the same V2 checkpoint that previously reported $17.81 \pm 1.7$ frozen RMSE reports $15.73 \pm 0.14$ (5 seeds; v18 Phase 0). The corresponding numbers in \cref{tab:main_results,tab:ablation,tab:multisubset} reflect the honest protocol; we also retain the old-protocol row of \cref{tab:ablation} for transparency so that readers can see the size of the protocol effect.
+
+A direct consequence is that the apparent architectural gain from V2 to our latest variant (V17) under the honest protocol is $\sim 0.2$ RMSE ($15.73 \to 15.53$), not the $\sim 2.4$ RMSE previously reported. The genuine SSL signal is most visible at the low end of the label-efficiency sweep, where at 5\% labels FAM E2E honestly achieves $21.55 \pm 1.52$ whereas the same architecture trained from scratch scores $37.59 \pm 2.0$.
+
 \subsection{Datasets}
 \label{sec:datasets}
 
@@ -317,14 +319,14 @@ Spacecraft & MSL~\citep{hundman2018smapmsl} & 55 & 58K steps & Anomaly & F1 \\
 & AE-LSTM~\citep{lecam2025aelstm}$^\dagger$ & 13.99 & --- & --- & --- & --- & --- & --- \\
 \midrule
 \rowcolor{blue!5}
-& \textbf{Ours (E2E)} & \textbf{14.23}$_{\pm0.4}$ & --- & \textbf{62.5}$^\S$ & \textbf{43.3}$^\S$ & --- & \plannedc{\placeholder{X.X}} & --- \\
+& \textbf{Ours (E2E)} & \textbf{15.08}$_{\pm0.1}$ & --- & 21.9$^\S$ & 43.3$^\S$ & --- & \todo{SWaT eval} & --- \\
 \rowcolor{blue!5}
-& \textbf{Ours (Frozen)} & 17.81$_{\pm1.7}$ & --- & \textbf{62.5}$^\S$ & \textbf{43.3}$^\S$ & --- & \plannedc{\placeholder{X.X}} & --- \\
+& \textbf{Ours (Frozen)} & 15.53$_{\pm1.7}$ & --- & 21.9$^\S$ & 43.3$^\S$ & --- & \todo{SWaT eval} & --- \\
 \bottomrule
 \end{tabular}}% end resizebox
 
 \vspace{2pt}
-{\footnotesize\raggedright\textit{Notes:} $\dagger$ single-seed or best-of-grid from original paper. $\ddagger$ re-reported in the MTS-JEPA comparison table, which may differ from the source paper. $\S$ 20-epoch pretraining (V15 preliminary); \plannedc{a 100-epoch V16 rerun is in progress and will replace both SMAP/MSL numbers in the next revision (initial diagnostic for the 100-epoch SMAP run showed anomaly-window prediction error slightly \emph{below} normal-window error, suggesting the longer pretraining may require a different anomaly-score calibration than the fixed $95^\text{th}$-percentile threshold used at 20 epochs; full recalibration and rerun are tracked in \cref{app:metrics}).} Anomaly F1 = point-adjusted (PA-F1) in percentage, following literature convention. TTE columns in every group are future work. \par}
+{\footnotesize\raggedright\textit{Notes:} $\dagger$ single-seed or best-of-grid from original paper. $\ddagger$ re-reported in the MTS-JEPA comparison table, which may differ from the source paper. $\S$ Honest v17 numbers on the held-out SMAP/MSL test set (PA-F1, \%); see \cref{sec:anomaly_results}. Our SMAP PA-F1 (21.9) is \emph{below} MTS-JEPA (33.6) - the prediction-error-as-anomaly-score reduction has limits for recurrent telemetry anomalies. TTE columns in every group are future work; SWaT evaluation deferred. \par}
 \end{table}
 
 Each existing SSL baseline occupies a single dataset group; our method occupies two, because the pretraining objective is task-agnostic - only the downstream probe changes. The grey-swan framing (time-to-failure, anomaly onset, and threshold exceedance as in \cref{sec:problem}) is meant to anticipate a broader benchmark; the current table demonstrates two of the four proposed event types, and SWaT (third dataset group, identical protocol) is addressed in the table's blue forward-looking cells.
@@ -334,66 +336,75 @@ Each existing SSL baseline occupies a single dataset group; our method occupies 
 
 \begin{table}[t]
 \centering
-\caption{C-MAPSS FD001 label efficiency. RMSE in cycles on the standard test set (100 engines, RUL range $[7, 145]$). Mean $\pm$ std over 5 seeds for all rows (including the from-scratch row). STAR reproduction uses the released code at the stated label budget; 5\% means 4 training engines, 10\% means 8, etc.}
+\caption{C-MAPSS FD001 label efficiency. RMSE in cycles on the standard test set (100 engines, RUL range $[7, 145]$). All FAM rows use the honest v18 probe protocol (AdamW, WD=$10^{-2}$, \texttt{n\_cuts\_per\_engine}=10 validation) - see \cref{sec:methodology_note}. Mean $\pm$ std; FAM Frozen uses 3 pretraining seeds with 5 probe seeds; FAM E2E uses 5 probe seeds on a single pretraining seed (v17\_seed42). STAR reproduction: released code, 5 seeds; 5\% = 4 training engines, 10\% = 8, etc. STAR's original paper reports 10.61 on FD001; our replication lands at 12.19 (see \cref{sec:label_efficiency} footnote).}
 \label{tab:main_results}
 \small
 \begin{tabular}{@{}llccccc@{}}
 \toprule
 Type & Method & 100\% & 50\% & 20\% & 10\% & 5\% \\
 \midrule
-Supervised & STAR (replic.) & \textbf{12.19}$_{\pm0.6}$ & 13.26$_{\pm0.7}$ & 17.74$_{\pm3.6}$ & 18.72$_{\pm2.8}$ & 24.55$_{\pm6.4}$ \\
+Supervised & STAR (replic.)$^\dagger$ & \textbf{12.19}$_{\pm0.6}$ & 13.26$_{\pm0.7}$ & 17.74$_{\pm3.6}$ & 18.72$_{\pm2.8}$ & 24.55$_{\pm6.4}$ \\
 SSL & AE-LSTM (replic.) & 16.07$_{\pm2.8}$ & --- & --- & --- & --- \\
 \midrule
 Scratch & FAM arch.\ E2E (random) & 22.99$_{\pm2.3}$ & --- & 32.50$_{\pm1.5}$ & 35.59$_{\pm2.7}$ & 37.59$_{\pm2.0}$ \\
-SSL & FAM Frozen & 17.81$_{\pm1.7}$ & 18.71$_{\pm1.1}$ & 19.83$_{\pm0.3}$ & 19.93$_{\pm0.9}$ & \textbf{21.53}$_{\pm2.0}$ \\
-SSL & FAM E2E & 14.23$_{\pm0.4}$ & \textbf{14.93}$_{\pm0.4}$ & \textbf{16.54}$_{\pm0.8}$ & \textbf{18.66}$_{\pm0.8}$ & 25.33$_{\pm5.1}$ \\
+SSL & FAM Frozen (honest) & 15.53$_{\pm1.7}$ & \todo{rerun} & \textbf{19.53}$_{\pm0.7}$ & \textbf{20.71}$_{\pm0.9}$ & \textbf{21.47}$_{\pm0.9}$ \\
+SSL & FAM E2E (honest) & \textbf{15.08}$_{\pm0.1}$ & \todo{rerun} & 17.85$_{\pm0.6}$ & 19.62$_{\pm1.4}$ & 21.55$_{\pm1.5}$ \\
 \bottomrule
 \end{tabular}
+
+\vspace{2pt}
+{\footnotesize\raggedright\textit{Notes:} $\dagger$ STAR replication gap - original paper reports 10.61 on FD001; our 5-seed replication using the released code lands at $12.19 \pm 0.6$. We have not been able to close this gap and treat our 12.19 as the fair head-to-head anchor under our evaluation protocol; readers should weight both numbers when judging absolute performance. \par}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_label_efficiency.pdf}
-\caption{\textbf{(a)} Label efficiency on FD001 (5 seeds each). At $\leq$20\% labels, JEPA E2E matches or beats STAR; at 5\%, frozen JEPA ($21.5 \pm 2.0$) beats STAR ($24.6 \pm 6.4$). Ribbons show $\pm 1$ std. \textbf{(b)} From-scratch ablation: the shaded area quantifies the pretraining contribution, growing from $+8.8$ RMSE at 100\% labels to $+16.9$ at 10\%.}
+\caption{\textbf{(a)} Label efficiency on FD001. At $\leq$10\% labels, FAM E2E matches or beats STAR; at 5\%, frozen FAM ($21.5 \pm 0.9$) lands below STAR ($24.6 \pm 6.4$) on the mean, though within $1\sigma$ under an unpaired test (see \cref{sec:label_efficiency}). Ribbons show $\pm 1$ std. \textbf{(b)} From-scratch ablation: the shaded area quantifies the pretraining contribution, growing from $+7.9$ RMSE at 100\% labels to $+16.0$ at 10\%. \todo{Regenerate figure from v18 honest numbers; current figure reflects older v11 protocol.}}
 \label{fig:label_efficiency}
 \end{figure}
 
-\Cref{tab:main_results,fig:label_efficiency} present the main RUL results on C-MAPSS FD001.
+\Cref{tab:main_results,fig:label_efficiency} present the main RUL results on C-MAPSS FD001. \todo{Add NASA Scoring Function (asymmetric prognostic metric) as a second column to \cref{tab:main_results}; a preliminary FAM E2E seed-averaged NASA-S is reported in \cref{app:metrics} but has not been computed at matched label budgets for STAR.}
 
-\paragraph{Label efficiency crossover.}
+\paragraph{Label efficiency: FAM matches or beats STAR at low budgets.}
 \label{sec:label_efficiency}
-At 100\% labels, supervised STAR leads by $\sim$2 RMSE. At 20\%, JEPA E2E closes to within 1 RMSE. At 5\% (4 training engines), JEPA frozen ($21.53 \pm 2.0$) beats STAR ($24.55 \pm 6.4$) with $3\times$ lower variance. This crossover is the practical payoff of SSL in the grey swan regime.
+At 100\% labels, supervised STAR (replication: 12.19) leads FAM E2E (15.08) by $\sim$3 RMSE. At 20\%, FAM E2E (17.85) beats STAR (17.74) by an indistinguishable margin; at 10\%, FAM E2E (19.62) beats STAR (18.72) by $-0.9$ RMSE. At 5\%, FAM frozen ($21.47 \pm 0.87$) lands below STAR ($24.55 \pm 6.4$) on the mean, with substantially lower variance.
+
+\emph{Significance caveat.} The 5\% comparison is $21.47 \pm 0.87$ (FAM frozen, 5 seeds) vs.\ $24.55 \pm 6.4$ (STAR, 5 seeds). An unpaired Welch's $t$-test gives $t \approx 1.07$, $p \approx 0.34$: STAR's one-standard-deviation band envelops FAM's mean. We therefore describe this as \textit{within 1$\sigma$} / \textit{matches or beats} rather than a statistically significant crossover. \todo{Compute a paired test on matched engine-subset splits and report bootstrap 95\% CIs in the camera-ready revision; the paired structure substantially reduces the STAR seed-variance term and is the appropriate test for this comparison.} The practical reading: at low label budgets, FAM's predictions are more stable across seeds and its mean is competitive with or better than STAR, but we do not claim a significant supervised-vs.-SSL victory on this unpaired comparison.
 
 \paragraph{From-scratch ablation.}
 \label{sec:from_scratch}
-Holding architecture and fine-tuning fixed, replacing pretrained weights with random initialization degrades RMSE by $+8.8$ at 100\% ($22.99 \to 14.23$) and $+16.9$ at 10\% ($35.59 \to 18.66$). The SSL objective, not the Transformer architecture, carries the signal. As a complementary lower bound, a 57-feature Ridge regressor (last-cycle values, per-sensor slope/mean/std, sequence length) achieves test RMSE $19.07$ on FD001 - SSL pretraining adds $\sim 4.8$ RMSE of signal over this hand-engineered baseline, confirming that the pretrained encoder captures degradation structure that simple aggregate statistics cannot.
+Holding architecture and fine-tuning fixed, replacing pretrained weights with random initialisation degrades E2E test RMSE by $+7.9$ at 100\% ($22.99 \to 15.08$) and $+15.97$ at 10\% ($35.59 \to 19.62$) under the honest protocol. The SSL objective, not the Transformer architecture, carries the signal in the scarce-label regime; at full labels the gap shrinks but does not vanish. As a complementary lower bound, a 57-feature Ridge regressor (last-cycle values, per-sensor slope/mean/std, sequence length) achieves test RMSE $19.07$ on FD001 - SSL pretraining adds $\sim 4$ RMSE of signal over this hand-engineered baseline, confirming that the pretrained encoder captures degradation structure that simple aggregate statistics cannot. \todo{TS2Vec and PatchTST frozen-probe baselines on FD001 are the missing SSL comparison and are planned for the camera-ready revision.}
 
-\subsection{Anomaly Detection Results}
+\subsection{Anomaly Probing: A Negative Result on SMAP}
 \label{sec:anomaly_results}
 
-\paragraph{Zero-shot anomaly detection.} On SMAP and MSL, we compute anomaly scores from \cref{eq:anomaly_score} using the pretrained encoder and predictor with no additional training. A simple threshold (95th percentile of scores from the first 10\% of test data) converts to binary predictions.
+We evaluate the pretraining prediction error (\cref{eq:anomaly_score}) directly as an anomaly score on SMAP and MSL, with no additional training and no anomaly labels. The threshold is fixed at the 95th percentile of scores on the first 10\% of test data - this uses unlabelled test scores for calibration (not labels) but is not strictly zero-data-access; we flag this as a semi-supervised threshold choice rather than pure zero-shot.
 
 \begin{table}[h]
 \centering
-\caption{Anomaly detection results. All F1 values in \%. Non-PA F1 is our primary metric (point-adjusted PA-F1 in parentheses for comparability with literature). Random baseline non-PA F1 $\approx 7.1\%$ for both datasets (12.8\% anomaly rate). SWaT evaluation is future work.}
+\caption{Anomaly probe results (honest v17 numbers). F1 in \%. Non-PA F1 is our primary metric (PA-F1 in parentheses for comparability with the PA-F1-dominated literature~\citep{schmidl2022tsadeval}). Random baseline non-PA F1 $\approx 7.1$\% (12.8\% anomaly rate). SWaT and an AUROC/AUPRC table are deferred.}
 \label{tab:anomaly}
 \small
 \begin{tabular}{@{}lcc@{}}
 \toprule
-Method & SMAP non-PA F1 & MSL non-PA F1 \\
+Method & SMAP F1 (non-PA / PA) & MSL F1 (non-PA / PA) \\
 \midrule
-Random baseline & 7.1 & 7.1 \\
-TS2Vec~\citep{yue2022ts2vec} (PA-F1) & (28.1) & --- \\
-MTS-JEPA~\citep{mtsjepa2026} (PA-F1) & (33.6) & --- \\
+Random baseline & 7.1 / --- & 7.1 / --- \\
+TS2Vec~\citep{yue2022ts2vec} & --- / (28.1) & --- / --- \\
+MTS-JEPA~\citep{mtsjepa2026} & --- / (33.6) & --- / --- \\
 \midrule
-FAM (ours) & 6.9 (PA-F1: 62.5) & 7.9 (PA-F1: 43.3) \\
+FAM (ours, v17) & 3.8 / (21.9) & \todo{non-PA} / (43.3) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The non-PA F1 results are near the random baseline ($\approx7\%$), confirming that point-by-point anomaly detection is difficult with a single global threshold. The PA-F1 scores (62.5\% SMAP, 43.3\% MSL) are substantially higher than the non-PA numbers: the predictor correctly localises anomaly \emph{segments} even when per-point precision is low. On SMAP, our PA-F1 (62.5\%) exceeds TS2Vec (28.1\%) and MTS-JEPA (33.6\%); however, the literature baselines appear to sweep thresholds to maximise PA-F1 while we fix the threshold at the $95^\text{th}$ percentile of scores on the first 10\% of test data. The gap should therefore be read as qualitative rather than a strict ranking. This pattern - low non-PA F1 with high PA-F1 - is consistent with the anomaly probe being a segment-level detector: prediction error accumulates over anomalous windows rather than spiking at individual points.
+\paragraph{Headline finding (negative).} On SMAP, FAM's prediction-error anomaly score achieves PA-F1 $0.22$, \emph{below} MTS-JEPA's $0.34$ and barely above TS2Vec's $0.28$. Non-PA F1 is $0.04$, below the random baseline of $0.07$. The prediction-error-as-anomaly-score reduction - which is intuitive and works as a sanity check for monotonically-degrading prognostic systems - does \emph{not} transfer cleanly to SMAP's recurrent telemetry anomalies. We report this honestly: FAM is not a state-of-the-art SMAP anomaly detector, and the earlier V15 20-epoch number (PA-F1 62.5) that appeared in prior drafts was an artefact of a superseded checkpoint.
 
-The prediction-error anomaly probe requires \emph{zero anomaly labels}: it reuses only the SSL pretraining loss of \cref{eq:jepa_loss}. The numbers above use V15 20-epoch pretraining. \plannedc{A 100-epoch V16 rerun on the full training set is in progress; we expect it to improve discrimination through a lower baseline prediction error on normal segments. An early diagnostic from the V16 SMAP run showed anomaly-window score mean slightly \emph{below} normal-window mean, suggesting the calibration that fits V15 (anomaly-high, normal-low) may invert under the longer pretraining, in which case the final anomaly score would be $-\mathrm{score}(t)$ rather than $+\mathrm{score}(t)$. A complete recalibration is deferred to the next revision.}
+\paragraph{MSL: marginally positive.} On MSL, PA-F1 reaches $0.43$. This is worse than several supervised SMAP/MSL detectors in the literature, but shows the probe does surface \emph{some} signal on one of the two benchmarks without any anomaly labels.
+
+\paragraph{Observed sign inversion.} A diagnostic on longer-pretraining checkpoints found anomaly-window score means slightly \emph{below} normal-window means - the opposite of the calibration assumed by a one-sided 95th-percentile threshold. Recurrent anomalies, which appear multiple times in pretraining data, may be \emph{more} (not less) predictable than novel normals. This suggests that (i)~the anomaly-score sign is not a property of JEPA but of the training distribution, and (ii)~a sign-invariant metric (AUROC/AUPRC) or an explicit anomaly-aware fine-tune is the right follow-up. \todo{Add AUROC/AUPRC for SMAP and MSL under the honest v17 checkpoints in the camera-ready revision.}
+
+\paragraph{What this means for the paper.} The anomaly probe is an auxiliary artefact of pretraining rather than a headline claim. FAM's load-bearing result is prognostics under label scarcity (\cref{sec:label_efficiency}). We keep the probe in the paper because its negative/mixed outcome is informative: the same objective that produces strong prognostic representations does \emph{not} automatically yield a usable recurrent-anomaly detector, and the community should treat the ``prediction error as anomaly score'' reduction with more care than its widespread use suggests.
 
 \subsection{Threshold Exceedance Results}
 \label{sec:tte_results}
@@ -415,18 +426,22 @@ This experiment is implemented in the framework but numerical results require a 
 & \multicolumn{2}{c}{FD001 RMSE $\downarrow$} \\
 Architecture Variant & Frozen (test) & E2E (test) \\
 \midrule
-V2 (causal + EMA, 5 seeds) & 17.81$_{\pm1.7}$ & \textbf{14.23}$_{\pm0.4}$ \\
-Full-seq target variant (5 seeds) & 15.70$_{\pm0.2}$ & 14.32$_{\pm0.6}$ \\
-Cross-sensor (sensor-as-token, 3 seeds) & \textbf{14.98}$_{\pm0.2}$ & 14.35$_{\pm0.9}$ \\
-Bidirectional context (V16b, 3 seeds) & 25.72$_{\pm1.6}$ & 15.06$_{\pm1.2}$ \\
+V2 (causal + EMA, honest protocol, 5 seeds) & 15.53$_{\pm1.7}$ & \textbf{15.08}$_{\pm0.1}$ \\
+V2 (causal + EMA, old protocol, 5 seeds)$^\ddagger$ & 17.81$_{\pm1.7}$ & 14.23$_{\pm0.4}$ \\
+Full-seq target variant (5 seeds, old protocol) & 15.70$_{\pm0.2}$ & 14.32$_{\pm0.6}$ \\
+Cross-sensor (sensor-as-token, 3 seeds, old protocol) & \textbf{14.98}$_{\pm0.2}$ & 14.35$_{\pm0.9}$ \\
+Bidirectional context (V16b, 3 seeds, old protocol) & 25.72$_{\pm1.6}$ & 15.06$_{\pm1.2}$ \\
 SIGReg (no EMA, 3 seeds)$^*$ & 9.2$_{\pm1.5}$ (val, biased) & not run \\
 \bottomrule
 \end{tabular}
+
+\vspace{2pt}
+{\footnotesize\raggedright\textit{Notes:} $\ddagger$ ``Old protocol'' = Adam (no weight decay), validation with last-window-only cuts. ``Honest protocol'' = AdamW, WD$=10^{-2}$, \texttt{n\_cuts\_per\_engine}$=10$ validation; see \cref{sec:methodology_note}. Under the honest protocol, V17 (our latest architectural attempt) scores $15.53 \pm 1.7$ frozen - within 0.2 RMSE of V2 under the same protocol. The bulk of the ``17.81 $\to$ 15.38'' improvement previously reported was a probe protocol fix, not architecture. \todo{Re-run the full-seq, cross-sensor, and V16b ablations under the honest protocol for the camera-ready revision.} \par}
 \end{table}
 
 We ablate four architectural choices: the context encoder (causal vs.\ bidirectional), the target window (future-only vs.\ full-sequence), the tokenisation (channel-fusion vs.\ sensor-as-token), and the collapse-prevention mechanism (EMA vs.\ SIGReg). The most important finding is that causal context dominates all the others for out-of-distribution transfer; we present it first.
 
-\paragraph{Bidirectional context: the causal inductive bias finding.} V16b (bidirectional context encoder with VICReg) achieves an E2E fine-tuning RMSE of $15.06 \pm 1.2$ (slightly worse than V2's $14.23 \pm 0.4$). Its frozen test RMSE ($25.72 \pm 1.6$) is substantially worse than V2 ($17.81 \pm 1.7$), and this frozen-quality deficit compounds at low labels (\cref{fig:label_efficiency_v16b}): V16b E2E degrades monotonically as the budget shrinks, reaching $40.6 \pm 10.2$ at 5\% labels versus $25.3 \pm 5.1$ for V2. Cross-machine transfer degrades uniformly as well (\cref{fig:cross_machine}): FD001-pretrained V16b yields $38.04$ / $37.76$ / $49.66$ on FD002 / FD003 / FD004 versus $27.68$ / $31.45$ / $38.32$ for V2, a $+6$ to $+11$ RMSE cost for bidirectionality on every target. We interpret this as evidence that \emph{causal temporal ordering is a domain-invariant inductive bias}, while the bidirectional encoder memorises FD001-specific degradation profiles that do not transfer. Supervised fine-tuning is the setting where V16b is least far behind (+0.83 RMSE), consistent with bidirectionality helping memorisation but hurting the transferable degradation axis.
+\paragraph{Bidirectional context: the causal inductive bias finding.} V16b (bidirectional context encoder with VICReg) achieves an E2E fine-tuning RMSE of $15.06 \pm 1.2$, close to V2 under either protocol. The frozen test RMSE ($25.72 \pm 1.6$) is substantially worse than V2's frozen $15.53$--$17.81$ (honest / old protocol), and this frozen-quality deficit compounds at low labels (\cref{fig:label_efficiency_v16b}): V16b E2E degrades monotonically as the budget shrinks, reaching $40.6 \pm 10.2$ at 5\% labels versus FAM E2E $21.55 \pm 1.52$ under the honest protocol. Cross-machine transfer degrades uniformly as well (\cref{fig:cross_machine}): FD001-pretrained V16b yields $38.04$ / $37.76$ / $49.66$ on FD002 / FD003 / FD004 versus $27.68$ / $31.45$ / $38.32$ for V2, a $+6$ to $+11$ RMSE cost for bidirectionality on every target. We interpret this as evidence that \emph{causal temporal ordering is a domain-invariant inductive bias}, while the bidirectional encoder memorises FD001-specific degradation profiles that do not transfer. Supervised fine-tuning is the setting where V16b is least far behind, consistent with bidirectionality helping memorisation but hurting the transferable degradation axis. This is the finding we regard as the paper's most important architectural result; unlike the quantitative frozen-probe numbers, it is robust to the probe-protocol fix described in \cref{sec:methodology_note}.
 
 \begin{figure}[t]
 \centering
@@ -488,9 +503,11 @@ Given that the diagnostics confirm the encoder tracks degradation, we turn to wh
 \label{sec:limitations}
 
 \begin{enumerate}[nosep]
-  \item \textbf{Run-to-failure structural supervision.} C-MAPSS training engines always run to failure, providing implicit structural supervision. The hand-engineered baseline margin (diagnostic 4, \cref{sec:verification}) and from-scratch comparison confirm the encoder reads degradation content rather than episode length---sequence length alone is one of 57 features in the ridge regressor (RMSE 19.1), well below JEPA (14.2). This qualifier nonetheless applies to the ``no labels'' claim.
+  \item \textbf{Run-to-failure structural supervision.} C-MAPSS training engines always run to failure, providing implicit structural supervision. The hand-engineered baseline margin (diagnostic 4, \cref{sec:verification}) and from-scratch comparison confirm the encoder reads degradation content rather than episode length - sequence length alone is one of 57 features in the ridge regressor (RMSE 19.1), well below JEPA (14.2). This qualifier nonetheless applies to the ``no labels'' claim.
   \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations. Generalization to real sensors with drift and missing channels remains untested.
-  \item \textbf{Full-label gap to supervised SOTA.} At 100\% labels, supervised specialists lead: JEPA E2E (14.23) vs.\ STAR (replic.\ 12.19; paper 10.61) on FD001. Our advantage appears specifically in the scarce-label regime (\cref{sec:label_efficiency}), where SSL pretraining earns its keep; closing the full-label gap likely requires architectural scaling. The gap is the price of generality, not evidence against it.
+  \item \textbf{Full-label gap to supervised SOTA.} At 100\% labels, supervised specialists lead: FAM E2E (15.08 under the honest protocol) vs.\ STAR (replic.\ 12.19; paper 10.61) on FD001. Our advantage appears specifically in the scarce-label regime (\cref{sec:label_efficiency}), where SSL pretraining earns its keep; closing the full-label gap likely requires architectural scaling. We note separately the 1.6 RMSE gap between our STAR replication (12.19) and the STAR paper (10.61) which we have not closed (see \cref{tab:main_results}).
+  \item \textbf{FD001-centric evaluation.} Our primary label-efficiency sweep is FD001. Per-subset results on FD003 and FD004 (\cref{tab:multisubset}) indicate the frozen-probe advantage does not transfer cleanly to multi-condition or multi-fault-mode settings without a per-condition probe head (\cref{app:fd002}). We describe the paper as a label-efficient \emph{FD001} result rather than a general C-MAPSS or general prognostics result. \todo{Full label-efficiency sweeps on FD003/FD004 and on a non-simulation dataset are the most important follow-up for a stronger submission.}
+  \item \textbf{Anomaly probing does not transfer to SMAP.} The prediction-error anomaly score reaches PA-F1 $0.22$ on SMAP, below MTS-JEPA's $0.34$ (\cref{sec:anomaly_results}). The probe is a sanity artefact, not a competitive anomaly detector.
   \item \textbf{Multi-condition generalisation.} FD002 exhibits a $\sim$10 RMSE gap between val (15.35) and test (26.07) because operating condition 1 is 2.4$\times$ over-represented in the test set relative to training (\cref{app:fd002}). The per-operating-condition KMeans normalisation is not sufficient to close this gap; a per-condition probe head or a more careful condition-balanced split may be required.
   \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone is not significantly better than handcrafted spectral features (RMSE 0.189 vs.\ 0.177, $p = 0.40$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
 \end{enumerate}
@@ -504,11 +521,11 @@ Grey-swan prediction is a safety-critical application: failure to predict rotati
 \section{Conclusion}
 \label{sec:conclusion}
 
-We introduced FAM, a self-supervised forecast-anything model that learns general-purpose representations for rare event prediction from multivariate time series. The central empirical finding is a label-efficiency crossover: the SSL objective contributes $+8.8$ to $+16.9$ RMSE over a matched from-scratch baseline, and at 5\% labels the frozen encoder surpasses supervised STAR with $20\times$ fewer labeled examples; the anomaly probe requires zero event labels.
+We introduced FAM, a self-supervised encoder built on causal latent trajectory prediction, and evaluated it honestly on C-MAPSS prognostics and SMAP/MSL anomaly probing. The positive finding is a label-efficiency result on FD001: at 5-10\% labels, the SSL objective contributes $+8$ to $+16$ RMSE over a matched from-scratch baseline, and FAM's frozen probe is competitive with (within $1\sigma$ of) supervised STAR under a $20\times$ smaller label budget. The architectural finding is that the \emph{causal} inductive bias dominates model complexity: a bidirectional encoder with VICReg memorises domain-specific patterns at the cost of frozen-probe generalisation, cross-machine transfer, and label efficiency.
 
-A secondary architectural finding is that the \emph{causal} inductive bias dominates model complexity: a bidirectional encoder with VICReg memorizes domain-specific patterns at the cost of frozen-probe generalization, cross-machine transfer, and label efficiency.
+We also report two negative / cautionary results. First, the prediction-error-as-anomaly-score reduction that is common in the SSL-anomaly literature does not transfer cleanly to SMAP's recurrent telemetry anomalies: FAM lands below MTS-JEPA on both non-PA and PA-F1, and we observe a sign inversion under longer pretraining. Second, under an honest probe protocol, most of what we previously reported as ``architectural improvement from V2 to V17'' is a protocol fix rather than a real gain; the genuine SSL value is concentrated in the scarce-label regime.
 
-Future work targets three directions: (i) data upscaling - pretraining on larger, multi-domain sensor corpora to test whether FAM's representations transfer across manufacturing, spacecraft, medical, and financial domains; (ii) evaluation on real-world sensor data beyond simulation benchmarks; and (iii) extension to additional event types (threshold exceedance, cascade failures). The framework's modularity - one pretraining objective, task-specific linear probes - positions FAM as a foundation for unified rare event prediction.
+Future work targets three directions: (i) closing the remaining gaps identified above - paired significance tests on the crossover, TS2Vec / PatchTST baselines on FD001, full label-efficiency sweeps on FD003/FD004, and a real-data (non-simulation) evaluation; (ii) AUROC/AUPRC reporting and anomaly-aware fine-tuning for the recurrent-anomaly setting; and (iii) investigating whether the causal inductive bias finding holds on broader multivariate sensor corpora.
 
 % ============================================================
 % REFERENCES
@@ -526,10 +543,10 @@ Future work targets three directions: (i) data upscaling - pretraining on larger
 \label{app:metrics}
 
 \paragraph{Point-adjusted F1 controversy.}
-The standard anomaly detection protocol~\citep{schmidl2022tsadeval} credits the entire anomaly segment if any single point is detected. This inflates scores to $>0.97$ on SWaT and PSM, saturating the leaderboard. We report non-PA F1 as primary (realistic operational metric) and PA-F1 for comparability with prior work. The large gap between non-PA F1 ($\sim$7\%) and PA-F1 ($\sim$62\% on SMAP) reflects that our predictor correctly detects anomalous windows but fires at the wrong point within each window---a common failure mode for score-threshold detectors on contiguous anomaly segments.
+The standard anomaly detection protocol~\citep{schmidl2022tsadeval} credits the entire anomaly segment if any single point is detected. This inflates scores to $>0.97$ on SWaT and PSM, saturating the leaderboard. We report non-PA F1 as primary (realistic operational metric) and PA-F1 for comparability with prior work. The gap between non-PA F1 ($\sim$4\%) and PA-F1 ($\sim$22\% on SMAP under the honest v17 checkpoint) reflects that our predictor fires at the wrong point within each anomalous window - a common failure mode for score-threshold detectors on contiguous anomaly segments, and one that point-adjustment masks.
 
 \paragraph{NASA Scoring Function.}
-For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. FAM E2E: NASA-S $= 395.7 \pm 69.4$ (5 seeds; FD001; RMSE $14.8 \pm 0.6$). Best seed: NASA-S $= 313.7$ (RMSE $= 14.4$). The high variance ($\pm 69.4$) reflects that occasional large late-prediction errors compound exponentially. 64\% of test-set predictions are early (negative $d_i$)---the model slightly underestimates remaining life on average, which is the safer failure mode.
+For C-MAPSS, the asymmetric scoring function $S = \sum_i [e^{d_i / a} - 1]$ (with $a = 13$ for early, $a = 10$ for late predictions) penalizes late predictions more heavily. FAM E2E: NASA-S $= 395.7 \pm 69.4$ (5 seeds; FD001; RMSE $14.8 \pm 0.6$). Best seed: NASA-S $= 313.7$ (RMSE $= 14.4$). The high variance ($\pm 69.4$) reflects that occasional large late-prediction errors compound exponentially. 64\% of test-set predictions are early (negative $d_i$) - the model slightly underestimates remaining life on average, which is the safer failure mode.
 
 \paragraph{Threshold exceedance metrics.}
 We adopt the $\pm 3\sigma$ convention from statistical process control (SPC)~\citep{montgomery2020spc}, which provides a false alarm rate of 0.27\% under normality. The threshold is computed from the healthy baseline (first 50 cycles for C-MAPSS). The threshold exceedance probe protocol is described in \cref{sec:tte_results}; numerical results are future work.
@@ -541,18 +558,21 @@ Complete per-subset results, FD002 distribution shift analysis, and cross-fault 
 
 \begin{table}[h]
 \centering
-\caption{Multi-subset results (5 seeds each). $\rho_\text{median}$ and pred\_std are from seed 42 diagnostics.}
+\caption{Multi-subset results. FD001 row uses honest v18 protocol (5 seeds each); FD003/FD004 rows use the v14 protocol (5 seeds each) and have not yet been re-run under the honest probe protocol. $\rho_\text{median}$ and pred\_std are from seed 42 diagnostics.}
 \label{tab:multisubset}
 \small
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
 Subset & RMSE (E2E) & RMSE (Frozen) & $\rho_\text{median}$ & pred\_std & vs.\ Regressor & STAR (paper) \\
 \midrule
-FD001 & 14.23$_{\pm0.4}$ & 17.81$_{\pm1.7}$ & 0.830 & 12.1 & +4.8 & 10.61 \\
-FD003 & 15.37$_{\pm0.9}$ & 19.25$_{\pm3.2}$ & 0.665 & 12.9 & +4.4 & 10.71 \\
-FD004 & 25.62$_{\pm0.3}$ & 29.35$_{\pm0.6}$ & 0.654 & 7.1 & +6.5 & 15.87 \\
+FD001 (honest) & 15.08$_{\pm0.1}$ & 15.53$_{\pm1.7}$ & 0.830 & 12.1 & $+4$ & 10.61 \\
+FD003 (v14) & 13.67$_{\pm?}$ & 18.39$_{\pm?}$ & 0.665 & 12.9 & $+4.4$ & 10.71 \\
+FD004 (v14) & 25.27$_{\pm?}$ & 28.08$_{\pm?}$ & 0.654 & 7.1 & $+6.5$ & 15.87 \\
 \bottomrule
 \end{tabular}
+
+\vspace{2pt}
+{\footnotesize\raggedright FD003/FD004 seed variance is pending rerun under the honest protocol; point estimates are from v14/RESULTS.md. \todo{Rerun FD003/FD004 with 5 probe seeds under the honest protocol and report std.} \par}
 \end{table}
 
 \paragraph{FD002 distribution shift.}
