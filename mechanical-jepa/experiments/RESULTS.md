@@ -145,14 +145,34 @@ but SIGReg-pred is much more stable (RMSE std 3.55 vs 6.83). Source:
 
 Using v19 PSM ckpts (seed 42/123/456), chronological 60/10/30 split of labeled test:
 
-| Mode | F1w | AUROCw | global F1 |
-|------|-----|--------|-----------|
-| probe_h      | 0.411 ± 0.054 | 0.548 | 0.411 |
-| frozen_multi | 0.401 ± 0.106 | 0.531 | 0.401 |
-| pred_ft      | 0.326 ± 0.014 | 0.460 | 0.326 |
+| Mode | F1w | AUROCw (range) | global F1 |
+|------|-----|---------------|-----------|
+| probe_h      | 0.411 ± 0.054 | 0.548 (0.47-0.63) | 0.411 |
+| frozen_multi | 0.401 ± 0.106 | 0.531 (0.49-0.58) | 0.401 |
+| pred_ft      | 0.326 ± 0.014 | 0.460 (0.39-0.52) | 0.326 |
 
-AUROCw near random across all modes => distribution shift in PSM test timeline
-defeats supervised FT. Keep Mahalanobis for PSM primary (0.813 PA-F1 from v19).
+AUROCw mean ~0.55 (probe_h/frozen_multi) or ~0.46 (pred_ft) - not uniformly random
+but close to chance. Distribution shift in PSM test timeline defeats supervised FT
+for this dataset. Keep Mahalanobis for PSM primary (0.813 PA-F1 from v19).
+
+### Phase 5: Label-efficiency curve (pred_ft vs e2e, FD001, 5 seeds)
+
+Full paired-t p-values on F1w:
+
+| Budget | pred_ft F1w | e2e F1w | Δ(pred-e2e) | paired p |
+|--------|-------------|---------|-------------|----------|
+| 100%   | 0.391 ± 0.085 | 0.408 ± 0.119 | -0.017 | 0.84 |
+|  50%   | 0.391 ± 0.083 | 0.356 ± 0.074 | +0.035 | 0.27 |
+|  20%   | 0.212 ± 0.201 | 0.295 ± 0.113 | -0.083 | 0.28 |
+| **10%**| **0.258 ± 0.116** | 0.081 ± 0.153 | **+0.177** | 0.15 |
+|   5%   | 0.260 ± 0.165 | 0.177 ± 0.242 | +0.083 | 0.50 |
+
+Statistically significant (p<0.05) findings from Phase 0b:
+- pred_ft vs scratch @ 5%: paired t=3.03, p=0.039, Cohen d=1.35 (solid pretraining-delta claim)
+- pred_ft vs e2e @ 5%: not significant (p=0.50)
+- pred_ft has ZERO seed collapses to F1w=0 at any budget; e2e collapses on 3/5 seeds at both 5% and 10%
+
+Source: `v20/phase5_label_efficiency.json`.
 
 ### Phase 2: Chronos-T5-tiny baseline (FD001, 3 seeds)
 
