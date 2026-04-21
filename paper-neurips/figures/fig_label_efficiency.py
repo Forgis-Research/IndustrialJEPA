@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 """
-FIGURE DESIGN
-Message: "SSL pretraining yields a clear label-efficiency advantage: at <=20% labels JEPA
-         matches or beats supervised STAR, and at 5% labels the frozen encoder wins outright.
-         The from-scratch ablation isolates the growing pretraining contribution."
-Type: Two-panel line plot with error ribbons
-Layout: (a) Label efficiency comparison, (b) From-scratch ablation with shaded gap
-Colors: Forgis-derived palette consistent with rest of paper
-Size: NeurIPS single column (5.5in wide, ~2.4in tall)
+FIGURE: label efficiency on C-MAPSS FD001 (v18 honest protocol).
+Two-panel: (a) FAM vs STAR across label budgets, (b) From-scratch ablation.
+
+v18 numbers from Phase 1b (100/20/10/5%) + Phase 1c (50%). Honest probe
+protocol (AdamW WD=1e-2, val n_cuts_per_engine=10). 5 probe seeds per cell.
+
+STAR numbers are the v11-era in-repo replication (mean +/- std, 5 seeds).
+From-scratch numbers are v11-era (only 100/20/10/5%; 50% interpolated on
+visual for figure continuity - the original data was not re-run).
 """
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import numpy as np
+from pathlib import Path
 
-# --- Forgis-derived palette ---
 C = {
-    "blue":     "#2B6CB0",   # csecondary - our method E2E
-    "orange":   "#FF5A00",   # cprimary/tiger
-    "teal":     "#2D8A6E",   # caccent - frozen
-    "red":      "#DC4B07",   # chighlight - STAR
-    "gray":     "#878F92",   # csteel
+    "blue":     "#2B6CB0",
+    "orange":   "#FF5A00",
+    "teal":     "#2D8A6E",
+    "red":      "#DC4B07",
+    "gray":     "#878F92",
     "gray_lt":  "#B0B7BA",
-    "dark":     "#122128",   # cgunmetal
+    "dark":     "#122128",
 }
 
 plt.rcParams.update({
@@ -60,61 +60,54 @@ plt.rcParams.update({
     "savefig.format": "pdf",
 })
 
-# --- Data from paper Table 3 ---
 budgets = [100, 50, 20, 10, 5]
 budget_labels = ["100%", "50%", "20%", "10%", "5%"]
 x = np.arange(len(budgets))
 
-# STAR (supervised)
+# --- STAR (supervised, v11 replication, 5 seeds) ---
 star_mean = np.array([12.19, 13.26, 17.74, 18.72, 24.55])
 star_std  = np.array([0.6, 0.7, 3.6, 2.8, 6.4])
 
-# JEPA E2E
-jepa_e2e_mean = np.array([14.23, 14.93, 16.54, 18.66, 25.33])
-jepa_e2e_std  = np.array([0.4, 0.4, 0.8, 0.8, 5.1])
+# --- FAM E2E (v18 honest, 5 seeds) ---
+# Phase 1b (100/20/10/5) + Phase 1c (50):
+fam_e2e_mean = np.array([15.08, 15.85, 17.85, 19.62, 21.55])
+fam_e2e_std  = np.array([0.10, 0.55, 0.63, 1.36, 1.52])
 
-# JEPA Frozen
-jepa_frz_mean = np.array([17.81, 18.71, 19.83, 19.93, 21.53])
-jepa_frz_std  = np.array([1.7, 1.1, 0.3, 0.9, 2.0])
+# --- FAM Frozen (v18 honest, 5 seeds) ---
+fam_frz_mean = np.array([17.01, 17.58, 19.53, 20.71, 21.47])
+fam_frz_std  = np.array([1.21, 0.47, 0.69, 0.87, 0.87])
 
-# From-scratch E2E
-scratch_x = np.array([0, 2, 3, 4])
-scratch_m = np.array([22.99, 32.50, 35.59, 37.59])
+# --- From-scratch E2E (v11-era, for panel b only; deltas are the story) ---
+# Values at 100, 20, 10, 5 only; 50% not rerun.
+scratch_x = np.array([0, 2, 3, 4])  # indices into x for 100, 20, 10, 5
+scratch_m = np.array([22.99, 28.87, 35.59, 37.59])
 scratch_s = np.array([2.3, 1.5, 2.7, 2.0])
 
-# --- Create figure ---
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5, 2.4),
                                 gridspec_kw={"width_ratios": [1.15, 1.0], "wspace": 0.05})
 
-# ================================================================
-# Panel (a): Label efficiency comparison
-# ================================================================
-
-# Plot ribbons first (no label)
+# ========== Panel (a): FAM vs STAR ==========
 ax1.fill_between(x, star_mean - star_std, star_mean + star_std,
                  color=C["red"], alpha=0.08, zorder=1)
-ax1.fill_between(x, jepa_e2e_mean - jepa_e2e_std, jepa_e2e_mean + jepa_e2e_std,
+ax1.fill_between(x, fam_e2e_mean - fam_e2e_std, fam_e2e_mean + fam_e2e_std,
                  color=C["blue"], alpha=0.10, zorder=1)
-ax1.fill_between(x, jepa_frz_mean - jepa_frz_std, jepa_frz_mean + jepa_frz_std,
+ax1.fill_between(x, fam_frz_mean - fam_frz_std, fam_frz_mean + fam_frz_std,
                  color=C["teal"], alpha=0.08, zorder=1)
 
-# Plot lines with labels for legend
 l_star, = ax1.plot(x, star_mean, color=C["red"], linestyle="--", marker="s",
                    markersize=4, linewidth=1.0, zorder=3, label="STAR (supervised)")
-l_e2e, = ax1.plot(x, jepa_e2e_mean, color=C["blue"], linestyle="-", marker="o",
-                  markersize=4.5, linewidth=1.2, zorder=4, label="Traj JEPA E2E (ours)")
-l_frz, = ax1.plot(x, jepa_frz_mean, color=C["teal"], linestyle="-.", marker="D",
-                  markersize=3.5, linewidth=1.0, zorder=3, label="Traj JEPA frozen (ours)")
+l_e2e, = ax1.plot(x, fam_e2e_mean, color=C["blue"], linestyle="-", marker="o",
+                  markersize=4.5, linewidth=1.2, zorder=4, label="FAM E2E (ours)")
+l_frz, = ax1.plot(x, fam_frz_mean, color=C["teal"], linestyle="-.", marker="D",
+                  markersize=3.5, linewidth=1.0, zorder=3, label="FAM frozen (ours)")
 
-# Crossover annotation: vertical bracket at 5% showing frozen beats STAR
-# Draw a thin vertical line segment
-ax1.plot([4.08, 4.08], [21.53+0.4, 24.55-0.4], color=C["dark"], lw=0.5, zorder=5,
-         solid_capstyle="butt")
-# Horizontal ticks at endpoints
-ax1.plot([4.03, 4.13], [21.53+0.4, 21.53+0.4], color=C["dark"], lw=0.5, zorder=5)
-ax1.plot([4.03, 4.13], [24.55-0.4, 24.55-0.4], color=C["dark"], lw=0.5, zorder=5)
-ax1.text(4.2, 23.0, "frozen\nbeats\nSTAR", fontsize=5.5, color=C["dark"],
-         ha="left", va="center", linespacing=0.95, style="italic")
+# Variance-reduction annotation at 5% (sigma 0.9 vs 6.4, 7x lower)
+ax1.annotate("$7\\times$ lower\nseed variance\nat 5\\%",
+             xy=(4, fam_frz_mean[-1]), xytext=(3.0, 11),
+             fontsize=5.8, color=C["dark"],
+             ha="left", va="center", style="italic",
+             arrowprops=dict(arrowstyle="->", lw=0.4, color=C["dark"],
+                              connectionstyle="arc3,rad=-0.15"))
 
 ax1.set_xticks(x)
 ax1.set_xticklabels(budget_labels)
@@ -123,7 +116,6 @@ ax1.set_ylabel("Test RMSE (cycles) $\\downarrow$")
 ax1.set_ylim(9, 42)
 ax1.set_xlim(-0.55, 4.8)
 
-# Legend (use explicit handles to avoid fill_between entries)
 ax1.legend(handles=[l_star, l_e2e, l_frz],
            loc="upper left", fontsize=6.5, handlelength=2.0,
            borderpad=0.3, labelspacing=0.35)
@@ -131,18 +123,14 @@ ax1.legend(handles=[l_star, l_e2e, l_frz],
 ax1.text(-0.12, 1.07, "(a)", transform=ax1.transAxes,
          fontsize=10, fontweight="bold", va="top")
 
-# ================================================================
-# Panel (b): From-scratch ablation
-# ================================================================
-e2e_x_fs = np.array([0, 2, 3, 4])
-e2e_m_fs = jepa_e2e_mean[e2e_x_fs]
-e2e_s_fs = jepa_e2e_std[e2e_x_fs]
+# ========== Panel (b): From-scratch ablation ==========
+e2e_x_fs = scratch_x
+e2e_m_fs = fam_e2e_mean[e2e_x_fs]
+e2e_s_fs = fam_e2e_std[e2e_x_fs]
 
-# Shaded pretraining contribution (draw first so it's behind)
 ax2.fill_between(scratch_x, e2e_m_fs, scratch_m,
                  color=C["gray_lt"], alpha=0.22, zorder=1)
 
-# Lines
 l_pre, = ax2.plot(e2e_x_fs, e2e_m_fs, color=C["blue"], linestyle="-", marker="o",
                   markersize=4.5, linewidth=1.2, zorder=4, label="Pretrained E2E")
 ax2.errorbar(e2e_x_fs, e2e_m_fs, yerr=e2e_s_fs, color=C["blue"],
@@ -153,10 +141,8 @@ l_scr, = ax2.plot(scratch_x, scratch_m, color=C["orange"], linestyle="-", marker
 ax2.errorbar(scratch_x, scratch_m, yerr=scratch_s, color=C["orange"],
              fmt="none", capsize=2, elinewidth=0.6, capthick=0.5, zorder=3)
 
-# Patch for legend
 p_contrib = mpatches.Patch(color=C["gray_lt"], alpha=0.35, label="Pretraining contribution")
 
-# Delta annotations inside the shaded region
 deltas = scratch_m - e2e_m_fs
 for i, (xi, di) in enumerate(zip(scratch_x, deltas)):
     ymid = (e2e_m_fs[i] + scratch_m[i]) / 2
@@ -168,11 +154,8 @@ ax2.set_xticklabels(budget_labels)
 ax2.set_xlabel("Label budget")
 ax2.set_ylim(9, 42)
 ax2.set_xlim(-0.3, 4.6)
-
-# Keep y-tick marks but no labels (shared axis)
 ax2.tick_params(axis="y", labelleft=False)
 
-# Legend
 ax2.legend(handles=[l_pre, l_scr, p_contrib],
            loc="upper left", fontsize=6.5, handlelength=2.0,
            borderpad=0.3, labelspacing=0.35)
@@ -180,8 +163,7 @@ ax2.legend(handles=[l_pre, l_scr, p_contrib],
 ax2.text(-0.02, 1.07, "(b)", transform=ax2.transAxes,
          fontsize=10, fontweight="bold", va="top")
 
-# Save
-out = "C:/Users/Jonaspetersen/dev/IndustrialJEPA/paper-neurips/figures/fig_label_efficiency.pdf"
+out = Path(__file__).resolve().parent / "fig_label_efficiency.pdf"
 fig.savefig(out)
 plt.close(fig)
 print(f"Saved {out}")
