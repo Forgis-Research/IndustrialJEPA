@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Predicting rare events in multivariate time series - Loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches train a separate supervised model for each. We introduce FAM, a 1.26M-parameter causal JEPA encoder that is pretrained per-dataset with no labels, after which we freeze the encoder and finetune only the horizon-conditioned predictor (198K parameters, 16\% of total) for each downstream event. This \emph{predictor finetuning} is the paper's core idea: the encoder learns domain dynamics; the predictor is steered toward the specific event of interest. We apply the same architecture and pipeline across \placeholder{N} datasets in \placeholder{M} domains (turbofan degradation, spacecraft telemetry, server monitoring, cardiac ECG, bearing vibration), evaluating every task under a single label definition (predict the \emph{first} event) and a unified two-stage F1 protocol, with legacy metrics for literature comparison. FAM matches or exceeds domain-specific supervised models $100$-$560\times$ its size using $\leq 5\%$ of labeled data. Code and evaluation suite at \placeholder{URL}.
+Predicting rare events in multivariate time series - Loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches train a separate supervised model for each. We introduce FAM, a 1.26M-parameter causal JEPA encoder that is pretrained per-dataset with no labels, after which we freeze the encoder and finetune only the horizon-conditioned predictor (198K parameters, 16\% of total) for each downstream event. This \emph{predictor finetuning} is the paper's core idea: the encoder learns domain dynamics; the predictor is steered toward the specific event of interest. We apply the same architecture and pipeline across \placeholder{N} datasets in \placeholder{M} domains (turbofan degradation, spacecraft telemetry, server monitoring, cardiac ECG, bearing vibration), evaluating every task with per-window binary F1 at patch resolution over a 16-window prediction horizon, with legacy metrics for literature comparison. FAM matches or exceeds domain-specific supervised models $100$-$560\times$ its size using $\leq 5\%$ of labeled data. Code and evaluation suite at \placeholder{URL}.
 \end{abstract}
 
 % ============================================================
@@ -188,27 +188,21 @@ The predictor is run at multiple horizons $k_1, \ldots, k_W$ corresponding to th
 \section{Evaluation}
 \label{sec:metrics}
 
-\subsection{First-Event Labeling}
+\subsection{Per-Window Event Labeling}
 
-We unify all event types under a single label definition. For each sample (engine, time series, patient record), define:
+We evaluate at the granularity of one patch-token: the natural resolution of the model. For each window (= one patch of $P$ raw samples), the label is:
 \begin{equation}
-  y(t) = \mathbb{1}[\text{the first event has occurred by time } t]
+  y_w = \mathbb{1}[\text{an event is active during window } w]
 \end{equation}
-Before the first event: $y(t) = 0$. From the first event onset onward: $y(t) = 1$. This applies uniformly to failure (C-MAPSS), anomaly onset (SMAP/MSL/PSM), arrhythmia onset (MBA), and fault onset (Paderborn). Subsequent events, if any, are ignored - they are continuation, not prediction. This scope restriction is deliberate: predicting the \emph{first} occurrence is the hardest and most operationally relevant case; extending to recurrent events is future work.
+This is standard binary event labeling - identical to MTS-JEPA and the anomaly detection literature, but evaluated at patch resolution rather than raw-sample resolution. For C-MAPSS ($P{=}1$), this means per-cycle labels. For SMAP ($P{=}16$), per-16-step labels. The label applies uniformly to all event types: failure, anomaly, arrhythmia, fault.
 
-\subsection{Two-Stage F1}
+\subsection{Evaluation Protocol}
 
-Every event prediction task is evaluated with a unified two-stage protocol:
+\textbf{Prediction horizon.} The model predicts event labels for the next $W{=}16$ patch-windows beyond the context. The predictor $\predictor$ is run at horizons $k \in \{1, 2, \ldots, 16\}$; each $\hat{\h}_{k}$ feeds a linear head that outputs $\hat{y}_k \in \{0, 1\}$.
 
-\textbf{Stage 1 - Detection.} ``Will the first event occur within horizon $H$?'' Given ground-truth time-to-first-event $\tau$ and predicted $\hat{\tau}$, define $\hat{y} = \mathbb{1}[\hat{\tau} \leq H]$. Report F1, Precision, Recall, AUROC at each window boundary.
+\textbf{Metrics.} Per-window binary F1 (with Precision and Recall), averaged across the $W{=}16$ horizon windows. AUROC as a threshold-free summary. This is the same metric family as MTS-JEPA and the anomaly detection literature, applied at patch resolution over a prediction horizon. No point-adjustment, no segment-level credit inflation.
 
-\textbf{Stage 2 - Timing.} ``In which of $W{=}4$ windows will the first event occur?'' The horizon is quantized into $W$ windows of width $\Delta$; the model predicts the window containing the first event. Macro-F1 across $W{+}1$ classes (including ``no event within horizon'').
-
-$\Delta$ is set per dataset from the event timescale ($\Delta{=}30$ cycles for C-MAPSS, $\Delta{=}50$ steps for SMAP). Sensitivity in \cref{app:window_sensitivity}. The metric is always F1 - no point-adjustment, no segment-level credit.
-
-\subsection{Comparison to Prior Metrics}
-
-The anomaly detection literature predominantly reports point-adjusted F1 (PA-F1)~\citep{schmidl2022tsadeval}, which credits the \emph{entire} anomaly segment if any single point is detected - inflating scores by up to 30 percentage points on datasets with long segments. The RUL literature reports RMSE, which is not comparable across event types. Our first-event F1 avoids both problems: it is a standard binary classification metric on a well-defined label. For literature cross-reference, we report RMSE (C-MAPSS) and PA-F1 (SMAP/MSL/PSM) in a legacy column.
+\textbf{Legacy metrics.} For direct literature comparison: RMSE and NASA-S for C-MAPSS (matching STAR), PA-F1 for SMAP/MSL/PSM (matching MTS-JEPA). We report these in a separate column; our primary metric is always F1. PA-F1 inflates scores by crediting entire anomaly segments from a single detection~\citep{schmidl2022tsadeval}.
 
 \textbf{Statistical reporting.} Mean $\pm$ std ($N$ seeds, 95\% CI). Paired tests with $p$-values for all claims. Published baselines that report single numbers are noted as such.
 
