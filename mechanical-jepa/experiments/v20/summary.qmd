@@ -1,0 +1,187 @@
+---
+title: "V20 overnight session summary"
+author: "FAM paper-writer"
+date: "2026-04-21"
+format:
+  html:
+    toc: true
+    code-fold: show
+    df-print: paged
+  gfm: default
+---
+
+# TL;DR
+
+- **Predictor finetuning (pred-FT) vs scratch at 5% labels is the statistically supported contribution**: paired t(4) = 3.03, p = 0.039, Cohen's d = 1.35 on C-MAPSS FD001 per-window F1 (5 seeds). F1w = 0.261 (pred-FT) vs 0.035 (scratch).
+- **Pred-FT vs E2E at 5% labels is NOT significant**: paired t(4) = 0.74, p = 0.50 (two-sided). Point estimate favors pred-FT (0.261 vs 0.177) but CIs overlap fully [0.056, 0.466] vs [-0.124, 0.477]. Frame as "directional advantage + robustness" not "superiority".
+- **Pred-FT's real defensible advantage is robustness**: 0 seed-level collapses across any label budget, while E2E collapses to F1w = 0 on 3/5 seeds at both 5% and 10%.
+- **SIGReg-pred pretraining beats EMA**: F1w 0.451 vs 0.391 at 100% labels (+0.06), RMSE 13.71 vs 16.90 (-3.19). Lower variance at 5% (std 3.55 vs 6.83 on RMSE).
+- **PSM pred-FT fails**: AUROC near chance (0.46-0.55) across modes. Chronological test-split distribution shift defeats supervised fine-tuning. Mahalanobis from pretrained encoder is the PSM recipe (PA-F1 0.813).
+- **Chronos-T5-tiny (8.4M) matches FAM pred-FT (2.37M)** at linear-probe vs pred-FT setting: F1w 0.419 vs 0.391 (within CI). FAM E2E wins overall at 100% labels (F1w 0.408, RMSE 14.96).
+- **Multi-domain: FAM + Mahalanobis outperforms MTS-JEPA** on SMAP (+0.46 PA-F1), MSL (+0.37), PSM (+0.20). Uses ONE architecture across 7 datasets.
+- **NeurIPS reviewer gave 4/10 borderline reject**; paper revisions pushed in-session addressed: stale 1.26M/198K param refs (→ 2.37M/790K), removed unsupported "560x" claim, added paired t-tests, filled all TODO sections, framed PSM failure honestly in Limitations.
+
+# Headline Results Table
+
+| Phase | Experiment | Metric | Value | Note |
+|-------|------------|--------|-------|------|
+| 0b | pred-FT @ 5% vs scratch | paired t p-value | **0.039** | Clean significant finding |
+| 0b | pred-FT @ 5% vs e2e | paired t p-value | 0.50 | Not significant; directional |
+| 0b | pred-FT @ 5% F1w (FD001) | F1w | 0.261 ± 0.165 | 5 seeds |
+| 0b | e2e @ 5% F1w | F1w | 0.177 ± 0.242 | 3/5 seeds at 0.00 |
+| 0b | scratch @ 5% F1w | F1w | 0.035 ± 0.049 | 3/5 seeds at 0.00 |
+| 3b | SIGReg-pred @ 100% F1w | F1w | **0.451 ± 0.064** | Beats EMA by +0.06 |
+| 3b | SIGReg-pred @ 100% RMSE | cycles | **13.71 ± 0.34** | Beats EMA by -3.19 |
+| 1b | PSM pred-FT (all modes) | AUROC range | 0.46-0.55 | FAIL (near chance) |
+| 1b | PSM Mahal (v19 ref) | PA-F1 | 0.813 ± 0.048 | Keeps PSM alive |
+| 2 | Chronos-T5-tiny (FD001) | F1w | 0.419 ± 0.028 | 8.4M params |
+| 2 | FAM pred-FT (FD001) | F1w | 0.391 ± 0.085 | 2.37M (3.5× smaller) |
+| Benchmark | SMAP PA-F1 | PA-F1 | 0.793 ± 0.014 | vs MTS-JEPA 0.336 |
+| Benchmark | MSL PA-F1 | PA-F1 | 0.707 ± 0.050 | vs MTS-JEPA 0.336 |
+| Benchmark | PSM PA-F1 | PA-F1 | 0.813 ± 0.048 | vs MTS-JEPA 0.616 |
+| Benchmark | Paderborn macro-F1 | macro-F1 | 0.781 ± 0.035 | Classification |
+
+## Per-seed raw numbers (F1w, FD001, Phase 0b - transparency)
+
+### 5% labels
+
+| Seed | probe_h | frozen_multi | pred_ft | e2e | scratch |
+|------|---------|--------------|---------|-----|---------|
+| 0    | 0.239   | 0.000        | 0.448   | 0.000 | 0.000 |
+| 1    | 0.000   | 0.266        | 0.212   | 0.000 | 0.104 |
+| 2    | 0.046   | 0.075        | 0.229   | 0.435 | 0.000 |
+| 3    | 0.000   | 0.218        | 0.027   | 0.000 | 0.000 |
+| 4    | 0.019   | 0.348        | 0.387   | 0.448 | 0.069 |
+| mean | 0.061   | 0.181        | 0.261   | 0.177 | 0.035 |
+
+**Observation**: pred-FT never produces F1w = 0.000. E2E and scratch both have 3 complete collapses.
+
+# Label-Efficiency Curve (FD001, 5 seeds, paired t-test)
+
+| Budget | pred-FT F1w | e2e F1w | Δ(pred-e2e) | paired p |
+|--------|-------------|---------|-------------|----------|
+| 100%   | 0.391 ± 0.085 | 0.408 ± 0.119 | -0.017 | 0.84 |
+| 50%    | 0.391 ± 0.083 | 0.356 ± 0.074 | +0.035 | 0.27 |
+| 20%    | 0.212 ± 0.201 | 0.295 ± 0.113 | -0.083 | 0.28 |
+| **10%** | **0.258 ± 0.116** | 0.081 ± 0.153 | **+0.177** | 0.15 |
+| 5%     | 0.260 ± 0.165 | 0.177 ± 0.242 | +0.083 | 0.50 |
+
+The crossover is non-monotonic. Clean win at 10%, small win at 5%, tie/loss at 20%, tie at ≥50%. The honest story: *pred-FT helps below ~10% labels*, not uniformly at all low budgets.
+
+# Phase-by-phase detail
+
+## Phase 0a: Build predictor-FT infrastructure (~30 min)
+
+`pred_ft_utils.py` implements five downstream modes (probe_h, frozen_multi, pred_ft, e2e, scratch) with a shared scalar-RUL regression objective and per-window F1 derived by thresholding at each window boundary (W=16).
+
+Key bug caught during bring-up: V17 predictor outputs have std ~5 (no trailing LayerNorm after the predictor's MLP) while h_past has std ~1. Without a LayerNorm in `MultiHorizonHead` before the linear layer, the sigmoid saturates at init and frozen_multi can't learn. Added `nn.LayerNorm` pre-head. Also verified that predictor outputs have cos_sim > 0.98 between h_hat_1 and h_hat_15 - the horizon-conditioning signal is weak in the pretrained predictor, which is WHY frozen_multi underperforms probe_h (0.148 vs 0.299 F1w) and why pred-FT's value is in reshaping the predictor, not in extracting forward rollouts.
+
+## Phase 0b: Five-mode label sweep (8.5 min, 50 runs)
+
+Five modes × two budgets (100%, 5%) × five seeds = 50 runs on C-MAPSS FD001. Pred-FT beats scratch at 5% with p=0.039 (clean significant finding). Pred-FT vs E2E gap (0.084 F1w in favor of pred-FT at 5%) is not significant at N=5. See headline table above.
+
+## Phase 1: Multi-domain benchmark aggregation
+
+Built `phase1_aggregate.py` to collate v18/v19/v20 JSONs into a single table. FAM+Mahalanobis numbers from v18/v19:
+- SMAP PA-F1 = 0.793 ± 0.014 (v18 phase 4)
+- MSL PA-F1 = 0.707 ± 0.050 (v18 phase 4)
+- PSM PA-F1 = 0.813 ± 0.048 (v19 phase 1)
+- MBA PA-F1 = 0.551 ± 0.054 (v19 phase 2)
+- SMD PA-F1 = 0.252 ± 0.017 (v19 phase 4)
+- Paderborn macro-F1 = 0.781 ± 0.035 (v19 phase 5)
+
+## Phase 1b: PSM pred-FT (NEGATIVE RESULT)
+
+Attempted pred-FT on PSM using v19 PSM ckpts with chronological 60/10/30 split of the labeled test timeline. Result: AUROCw in [0.46, 0.55] across all modes and seeds - essentially chance. The chronological split induces anomaly-distribution shift between FT-train and FT-eval halves that defeats supervised FT. Mahalanobis (v19) doesn't share this problem and remains the PSM recipe.
+
+## Phase 2: Chronos-T5-tiny baseline (0.3 min, 3 seeds)
+
+Chronos-T5-tiny (8.4M): F1w 0.419 ± 0.028, RMSE 16.80 ± 1.54 on frozen linear probe. FAM pred-FT (2.37M) matches within CI (F1w 0.391 ± 0.085, RMSE 16.90 ± 1.71). FAM E2E is the winner at 100% labels (F1w 0.408, RMSE 14.96).
+
+## Phase 3b: EMA vs SIGReg pretraining (1.5 min, 20 runs)
+
+SIGReg-pred pretraining (applied at predictor output during v17 phase 3) beats EMA default on FD001 pred-FT:
+- 100%: F1w 0.451 vs 0.391 (+0.06), RMSE 13.71 vs 16.90 (-3.19)
+- 5%: F1w tied, but RMSE std drops from 6.83 to 3.55 (more stable)
+
+SIGReg-enc (applied at encoder output) is between the two.
+
+## Phase 5: Full label-efficiency curve (2.1 min, 30 runs)
+
+Extended Phase 0b with 50%, 20%, 10% budgets for pred-FT and E2E. Result table above. Crossover is at ~10%, not uniform across all low budgets.
+
+## Phase 6: FD003 replication (7.5 min)
+
+Pretrained V17 arch on FD003 (100 epochs, 3.4 min) then ran pred-FT + E2E at 5 label budgets (50 downstream runs). FD003 numbers are absolutely lower than FD001 (F1w 0.146 vs 0.391 at 100%) likely because the FD003 pretraining was undertrained (100 epochs vs v17's 200 epochs on FD001). But the qualitative crossover pattern replicates:
+
+| Budget | FD001 Δ(pred-e2e) | FD003 Δ(pred-e2e) |
+|--------|-------------------|--------------------|
+| 100%   | -0.017 | -0.100 |
+| 50%    | +0.035 | +0.048 |
+| 20%    | -0.083 | +0.012 |
+| 10%    | +0.177 | +0.047 |
+| 5%     | +0.083 | +0.099 |
+
+Direction consistent: pred-FT positive at ≤10% on both subsets, negative at 100% on both. FD003 5%: pred_ft 0.115 vs e2e 0.016 - E2E collapses on 4/5 seeds, pred-FT stays at ~0.12. This is cross-subset replication of the "E2E fails at 5% labels while pred-FT has a floor" finding.
+
+## Phase 4: Paper + reviewer
+
+- Filled Tab 1 (multi-domain benchmark), Tab 2 (finetune mode), Tab 3 (label efficiency), Tab 4 (SIGReg pretraining), Tab 5 (Chronos baseline).
+- Wrote §5.2 (C-MAPSS), §5.3 (Anomaly), §5.4 (Classification), §5.5 (Foundation baseline), §6.1-6.5 (ablations) in full.
+- Filled all four appendices (Window, Decisions, Extended, PA-F1, Preprocessing).
+- Removed stale "1.26M / 198K" parameter refs throughout; replaced with V17 numbers (2.37M / 790K).
+- Removed unsupported "100-560x" claim that appeared only in intro.
+- Launched ml-researcher as NeurIPS reviewer. Verdict: 4/10 borderline reject. Main issues flagged: (a) pred-FT vs E2E not statistically supported at N=5, (b) two-pipeline problem (pred-FT for C-MAPSS, Mahalanobis for anomaly), (c) PSM failure undermines "one pipeline" claim. Revisions in-session addressed all three by reframing claims honestly and adding paired t-tests. Not a re-review yet.
+
+# What we did NOT run
+
+- **Causal vs bidirectional encoder ablation**: requires a new bidirectional pretraining run (~45 min) we did not budget for. Noted explicitly in §6.3 text and in the decision log.
+- **FD002 and FD004 pred-FT replication**: multi-operating-condition subsets, would be the strongest replication of the crossover claim. Only FD003 (single op. cond., like FD001) was run in Phase 6. Reviewer's top recommendation was all four subsets.
+- **10 seeds on FD001 5%**: would convert the p=0.50 (N=5) to a more powered test. Ran 5 only due to time.
+- **Chronos-T5-small and -base**: kept in the `MODELS` list but disabled to save time; tiny is the scale-matched comparison anyway.
+- **Pred-FT on Paderborn classification**: session prompt listed this as stretch goal, not attempted.
+- **Window sensitivity sweep (vary W ∈ {4, 8, 16, 32})**: noted as future work in Appendix A.
+
+# Commit log
+
+```
+82d7176 v20 paper: fill all remaining TODO sections + launch phase 6
+9c5521d v20 phase 5 + reviewer pass: statistical rigor, label efficiency, honest PSM
+dd3a852 v20: update RESULTS.md with phase 0b/1b/2/3b numbers
+62b595e v20 phase 1b + 2 results + paper tables
+ae70c9f v20 phase 0b + 3b results + paper tables
+1b5b26f v20 phase 1/2 infrastructure: pred-FT on PSM + Chronos per-window + aggregator
+1b627f6 v20 phase 0a: predictor finetuning infrastructure
+```
+
+(Phase 6 commit will be appended after run completes.)
+
+# Artifact Index
+
+| File | Purpose |
+|------|---------|
+| `pred_ft_utils.py` | Reusable 5-mode framework with LayerNorm-fixed MultiHorizonHead |
+| `phase0_pred_ft.py` | Phase 0b driver: 50 runs (5 modes × 2 budgets × 5 seeds) |
+| `phase0_pred_ft.json` | Phase 0b raw results |
+| `phase1_pred_ft_psm.py` | PSM pred-FT (NEGATIVE result) |
+| `phase1_pred_ft_psm.json` | PSM raw |
+| `phase1_aggregate.py` | Benchmark table builder from all v18/v19/v20 JSONs |
+| `phase1_benchmark.md` | Rendered benchmark markdown |
+| `phase1_benchmark.json` | Benchmark structured |
+| `phase2_chronos_perwindow.py` | Chronos-T5-tiny linear probe + per-window F1 |
+| `phase2_chronos_perwindow.json` | Chronos raw |
+| `phase3_sigreg.py` | EMA vs SIGReg-enc vs SIGReg-pred |
+| `phase3_sigreg.json` | Phase 3b raw |
+| `phase5_label_efficiency.py` | Label-eff curve (50/20/10%) |
+| `phase5_label_efficiency.json` | Phase 5 raw |
+| `phase6_fd003.py` | FD003 pretrain + label-eff replication |
+| `phase6_fd003.json` | Phase 6 raw |
+| `ckpts_fd003/v20_fd003_seed42_ep100.pt` | FD003 pretrained encoder (3.4 min training) |
+| `summary.qmd` | This document |
+
+# Caveats for the user
+
+1. **Do not quote "pred-FT beats E2E" anywhere** - the numbers don't support it at N=5. Use "pred-FT is more robust (no collapses) and has a directional advantage". The pred-FT-vs-scratch claim (p=0.039) is the safe one.
+2. **The PSM pred-FT failure is in Limitations, not swept under the rug**. If a reviewer asks "does pred-FT work on all your datasets?" the answer is No, it works on C-MAPSS-like supervised-RUL settings; Mahalanobis is the anomaly recipe.
+3. **Phase 6 FD003 F1w numbers (at 100% labels: 0.04-0.22, mean 0.146) are considerably lower than FD001's 0.39**. FD003 pretraining was 100 epochs (vs 200 on FD001), so absolute numbers are undertrained. The crossover direction DOES match FD001 (pred-FT > e2e at 5%, e2e > pred-FT at 100%), but neither individual cell reaches p<0.05 at N=5. A 200-epoch FD003 pretraining run would likely tighten the story.
+4. **The paper abstract says "2.37M-parameter" FAM** - this is the context encoder + predictor. The EMA target encoder adds another 1.85M during pretraining but is dropped at inference. Total inference footprint = 2.37M.

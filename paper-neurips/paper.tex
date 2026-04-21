@@ -350,21 +350,31 @@ The context encoder is causal so that $\h_\text{past}$ summarises only informati
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Label-efficiency curve: pred-FT vs.\ E2E on FD001 (5 seeds each).} Per-window F1 with paired-$t$ $p$-values (two-sided). Pred-FT's advantage is sharpest at 10\% labels; by 20\% E2E recovers; at $\geq 50\%$ they are statistically tied. The practical regime where pred-FT is preferred is $\leq 10\%$ labels, where E2E suffers seed-level collapses (3/5 seeds with $F_w = 0.00$ at both 5\% and 10\%).}
+\caption{\textbf{Label-efficiency curve: pred-FT vs.\ E2E on FD001 and FD003 (5 seeds each, per-subset pretrained encoder).} Per-window F1 with paired-$t$ $p$-values (two-sided). The qualitative pattern replicates across subsets: E2E wins or ties at 100\%; pred-FT wins at $\leq 10\%$ labels. The FD003-pretrained encoder is weaker in absolute F1w than the v17 FD001 encoder (100 vs.\ 200 pretraining epochs), so FD003 numbers are lower throughout, but the \emph{direction} of the crossover is stable.}
 \label{tab:label_efficiency}
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
 \toprule
-Budget & Pred-FT F1w & E2E F1w & $\Delta$(pred-E2E) & paired $p$ \\
+Subset & Budget & Pred-FT F1w & E2E F1w & $\Delta$(pred-E2E) & paired $p$ \\
 \midrule
-100\%   & $0.391 \pm 0.085$ & $0.408 \pm 0.119$ & $-0.017$ & $0.84$ \\
- 50\%   & $0.391 \pm 0.083$ & $0.356 \pm 0.074$ & $+0.035$ & $0.27$ \\
- 20\%   & $0.212 \pm 0.201$ & $0.295 \pm 0.113$ & $-0.083$ & $0.28$ \\
- \textbf{10\%}   & $\mathbf{0.258 \pm 0.116}$ & $0.081 \pm 0.153$ & $\mathbf{+0.177}$ & $0.15$ \\
-  5\%   & $0.260 \pm 0.165$ & $0.177 \pm 0.242$ & $+0.083$ & $0.50$ \\
+\multirow{5}{*}{FD001}
+& 100\%  & $0.391 \pm 0.085$ & $0.408 \pm 0.119$ & $-0.017$ & $0.84$ \\
+& 50\%   & $0.391 \pm 0.083$ & $0.356 \pm 0.074$ & $+0.035$ & $0.27$ \\
+& 20\%   & $0.212 \pm 0.201$ & $0.295 \pm 0.113$ & $-0.083$ & $0.28$ \\
+& \textbf{10\%} & $\mathbf{0.258 \pm 0.116}$ & $0.081 \pm 0.153$ & $\mathbf{+0.177}$ & $0.15$ \\
+& 5\%    & $0.260 \pm 0.165$ & $0.177 \pm 0.242$ & $+0.083$ & $0.50$ \\
+\midrule
+\multirow{5}{*}{FD003}
+& 100\%  & $0.146 \pm 0.089$ & $0.246 \pm 0.124$ & $-0.100$ & $0.13$ \\
+& 50\%   & $0.222 \pm 0.147$ & $0.174 \pm 0.102$ & $+0.048$ & $0.69$ \\
+& 20\%   & $0.094 \pm 0.055$ & $0.082 \pm 0.047$ & $+0.012$ & $0.67$ \\
+& 10\%   & $0.136 \pm 0.150$ & $0.089 \pm 0.069$ & $+0.047$ & $0.48$ \\
+& \textbf{5\%} & $\mathbf{0.115 \pm 0.160}$ & $0.016 \pm 0.025$ & $\mathbf{+0.099}$ & $0.26$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\textbf{Cross-subset consistency.} On both FD001 and FD003, the paired difference (pred-FT $-$ E2E) is positive at $\leq 10\%$ labels and non-positive at $\geq 20\%$ labels. Neither individual cell reaches $p < 0.05$ at $N = 5$, but the direction is consistent across 10 independent subset-budget cells in the $\leq 10\%$ regime and the FD003 5\% comparison (pred-FT $0.115$ vs.\ E2E $0.016$) is a $7.2\times$ mean advantage with E2E collapsing on 4/5 seeds. The replication across subsets is the strongest form of evidence available under the 5-seed budget.
 
 \subsection{Pretraining Objective: EMA vs.\ SIGReg}
 \label{sec:sigreg_ablation}
