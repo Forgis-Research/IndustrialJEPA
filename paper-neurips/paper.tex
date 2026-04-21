@@ -355,8 +355,8 @@ Supervised & STAR (replic.)$^\dagger$ & \textbf{12.19}$_{\pm0.6}$ & 13.26$_{\pm0
 SSL & AE-LSTM (replic.) & 16.07$_{\pm2.8}$ & --- & --- & --- & --- \\
 \midrule
 Scratch & FAM arch.\ E2E (random) & 22.99$_{\pm2.3}$ & --- & 32.50$_{\pm1.5}$ & 35.59$_{\pm2.7}$ & 37.59$_{\pm2.0}$ \\
-SSL & FAM Frozen (honest) & 15.53$_{\pm1.7}$ & \todo{rerun} & \textbf{19.53}$_{\pm0.7}$ & \textbf{20.71}$_{\pm0.9}$ & \textbf{21.47}$_{\pm0.9}$ \\
-SSL & FAM E2E (honest) & \textbf{15.08}$_{\pm0.1}$ & \todo{rerun} & 17.85$_{\pm0.6}$ & 19.62$_{\pm1.4}$ & 21.55$_{\pm1.5}$ \\
+SSL & FAM Frozen (honest) & 15.53$_{\pm1.7}$ & 17.58$_{\pm0.5}$ & \textbf{19.53}$_{\pm0.7}$ & \textbf{20.71}$_{\pm0.9}$ & \textbf{21.47}$_{\pm0.9}$ \\
+SSL & FAM E2E (honest) & \textbf{15.08}$_{\pm0.1}$ & \textbf{15.85}$_{\pm0.6}$ & 17.85$_{\pm0.6}$ & 19.62$_{\pm1.4}$ & 21.55$_{\pm1.5}$ \\
 \bottomrule
 \end{tabular}
 
@@ -367,7 +367,7 @@ SSL & FAM E2E (honest) & \textbf{15.08}$_{\pm0.1}$ & \todo{rerun} & 17.85$_{\pm0
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_label_efficiency.pdf}
-\caption{\textbf{(a)} Label efficiency on FD001. At $\leq$10\% labels, FAM E2E is competitive with STAR; at 5\%, frozen FAM ($21.5 \pm 0.9$) lands below STAR ($24.6 \pm 6.4$) on the mean, though the Welch's unpaired $t$ comparison is not significant ($p = 0.36$, bootstrap 95\% CI for the delta includes $0$; see \cref{sec:label_efficiency}). Ribbons show $\pm 1$ std. \textbf{(b)} From-scratch ablation: the shaded area quantifies the pretraining contribution, growing from $+7.9$ RMSE at 100\% labels to $+16.0$ at 10\%. \todo{Regenerate figure from v18 honest numbers; current figure reflects older v11 protocol.}}
+\caption{\textbf{(a)} Label efficiency on FD001 under the v18 honest protocol (5 probe seeds per cell). At $\leq$10\% labels, FAM E2E is competitive with STAR; at 5\%, frozen FAM ($21.5 \pm 0.9$) lands below STAR ($24.6 \pm 6.4$) on the mean, though the Welch's unpaired $t$ comparison is not significant ($p = 0.36$, bootstrap 95\% CI for the delta includes $0$; see \cref{sec:label_efficiency}). The empirically supported finding at 5\% is variance-reduction ($\sigma = 0.9$ vs.\ STAR $\sigma = 6.4$, $\sim 7\times$), not mean outperformance. Ribbons show $\pm 1$ std. \textbf{(b)} From-scratch ablation: the shaded area quantifies the pretraining contribution, growing from $+7.9$ RMSE at 100\% labels to $+16.0$ at 10\%. (From-scratch 50\% not re-run; v11-era scratch values used for 100/20/10/5\%.)}
 \label{fig:label_efficiency}
 \end{figure}
 
