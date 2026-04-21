@@ -1,0 +1,2 @@
+- [NeurIPS paper v17 pass 3](project_paper_v17_pass3.md) — third revision pass 2026-04-20: integrated Phase 4c/d/e random-init control, PCA sweep, Welch's t; reframed Mahalanobis as empirical not methodological
+- [NeurIPS paper v18 MSL pass](project_paper_v18_pass_msl.md) — 2026-04-20: SMAP headline moved to 0.666 +/- 0.048 (3 seeds); MSL reported as PA-F1 0.00 honest failure with 3 hypotheses; \todo{MSL} removed from benchmark table

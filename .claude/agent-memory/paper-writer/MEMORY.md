@@ -1,0 +1,1 @@
+- [SMAP Mahalanobis Finding](project_smap_mahalanobis.md) — V18 Phase 4b: Mahalanobis(PCA-10) on h_past gives SMAP PA-F1 0.73 vs MTS-JEPA 0.34, same v17 encoder
