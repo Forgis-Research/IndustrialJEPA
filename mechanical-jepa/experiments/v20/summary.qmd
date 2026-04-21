@@ -13,8 +13,8 @@ format:
 # TL;DR
 
 - **Predictor finetuning (pred-FT) vs scratch at 5% labels is the statistically supported contribution**: paired t(4) = 3.03, p = 0.039, Cohen's d = 1.35 on C-MAPSS FD001 per-window F1 (5 seeds). F1w = 0.261 (pred-FT) vs 0.035 (scratch).
-- **Pred-FT vs E2E at 5% labels is NOT significant**: paired t(4) = 0.74, p = 0.50 (two-sided). Point estimate favors pred-FT (0.261 vs 0.177) but CIs overlap fully [0.056, 0.466] vs [-0.124, 0.477]. Frame as "directional advantage + robustness" not "superiority".
-- **Pred-FT's real defensible advantage is robustness**: 0 seed-level collapses across any label budget, while E2E collapses to F1w = 0 on 3/5 seeds at both 5% and 10%.
+- **Pred-FT vs E2E at 5% labels (N=10 after Phase 7)**: pred-FT 0.229 ± 0.141 vs E2E 0.124 ± 0.201. Paired t(9)=1.75, p=0.114 two-sided (p=0.057 one-sided); Wilcoxon one-sided p=0.065; Cohen's d=0.55. Just outside p<0.05 but medium effect.
+- **Pred-FT's real defensible advantage is robustness**: 1/10 pred-FT runs collapse to F1w=0 vs 7/10 E2E runs at 5% labels. A 7x reduction in collapse rate is the publishable claim.
 - **SIGReg-pred pretraining beats EMA**: F1w 0.451 vs 0.391 at 100% labels (+0.06), RMSE 13.71 vs 16.90 (-3.19). Lower variance at 5% (std 3.55 vs 6.83 on RMSE).
 - **PSM pred-FT fails**: AUROC near chance (0.46-0.55) across modes. Chronological test-split distribution shift defeats supervised fine-tuning. Mahalanobis from pretrained encoder is the PSM recipe (PA-F1 0.813).
 - **Chronos-T5-tiny (8.4M) matches FAM pred-FT (2.37M)** at linear-probe vs pred-FT setting: F1w 0.419 vs 0.391 (within CI). FAM E2E wins overall at 100% labels (F1w 0.408, RMSE 14.96).
