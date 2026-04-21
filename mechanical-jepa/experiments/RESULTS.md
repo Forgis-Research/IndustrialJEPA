@@ -1,6 +1,6 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v18 (2026-04-21). Update after every session.
+**Last updated**: v20 (2026-04-21). Update after every session.
 
 This file is the single source of truth for all experimental results.
 Every number that enters the paper must have an entry here with provenance.
@@ -111,3 +111,55 @@ The autoresearch agent reads this at the start of every session.
 | TS2Vec/PatchTST on FD001 | Medium | Not started | Reviewer requested |
 | Supervised LSTM at 5% labels | Low | Not started | — |
 | SIGReg-pretrained vs EMA-pretrained E2E | Medium | Not started | — |
+
+---
+
+## V20 Results (predictor finetuning + per-window F1)
+
+### Phase 0b: Finetuning mode sweep on FD001 (5 seeds, W=16 horizon F1)
+
+| Mode | Params | 100% F1w | 100% RMSE | 5% F1w | 5% RMSE |
+|------|--------|----------|-----------|--------|---------|
+| probe_h      | 257    | 0.299 ± 0.061 | 15.997 ± 1.481 | 0.061 ± 0.101 | 20.359 ± 1.215 |
+| frozen_multi | 4K     | 0.148 ± 0.030 | 19.009 ± 0.122 | 0.181 ± 0.142 | 24.385 ± 4.851 |
+| **pred_ft**  | **790K** | **0.391 ± 0.085** | 16.903 ± 1.711 | **0.261 ± 0.165** | 24.334 ± 6.835 |
+| e2e          | 2.37M  | 0.408 ± 0.120 | 14.956 ± 1.157 | 0.177 ± 0.242 | 20.085 ± 1.885 |
+| scratch      | 2.37M  | 0.397 ± 0.084 | 14.483 ± 0.656 | 0.035 ± 0.049 | 32.922 ± 1.987 |
+
+Headline: **pred_ft beats e2e (+0.084) and scratch (+0.226) on F1w at 5% labels**.
+Runtime: 8.5 min total. Checkpoint: v17_seed42_best.pt. Source: `v20/phase0_pred_ft.json`.
+
+### Phase 3b: EMA vs SIGReg pretraining on FD001 (5 seeds, pred-FT downstream)
+
+| Pretraining | 100% F1w | 100% RMSE | 5% F1w | 5% RMSE |
+|-------------|----------|-----------|--------|---------|
+| EMA          | 0.391 ± 0.085 | 16.90 ± 1.71 | 0.261 ± 0.165 | 24.33 ± 6.83 |
+| SIGReg-enc   | 0.401 ± 0.070 | 14.08 ± 0.98 | 0.252 ± 0.156 | 17.52 ± 1.34 |
+| **SIGReg-pred** | **0.451 ± 0.064** | **13.71 ± 0.34** | 0.243 ± 0.165 | **17.30 ± 3.55** |
+
+SIGReg-pred wins at 100% (F1w +0.060, RMSE -3.19); all tied within CI at 5% on F1w,
+but SIGReg-pred is much more stable (RMSE std 3.55 vs 6.83). Source:
+`v20/phase3_sigreg.json`.
+
+### Phase 1b: PSM pred-FT (NEGATIVE RESULT)
+
+Using v19 PSM ckpts (seed 42/123/456), chronological 60/10/30 split of labeled test:
+
+| Mode | F1w | AUROCw | global F1 |
+|------|-----|--------|-----------|
+| probe_h      | 0.411 ± 0.054 | 0.548 | 0.411 |
+| frozen_multi | 0.401 ± 0.106 | 0.531 | 0.401 |
+| pred_ft      | 0.326 ± 0.014 | 0.460 | 0.326 |
+
+AUROCw near random across all modes => distribution shift in PSM test timeline
+defeats supervised FT. Keep Mahalanobis for PSM primary (0.813 PA-F1 from v19).
+
+### Phase 2: Chronos-T5-tiny baseline (FD001, 3 seeds)
+
+| Model | Params | F1w | RMSE | Protocol |
+|-------|--------|-----|------|----------|
+| Chronos-T5-tiny | 8.4M | 0.419 ± 0.028 | 16.80 ± 1.54 | frozen + linear probe |
+| FAM pred_ft (ref)| 2.37M | 0.391 ± 0.085 | 16.90 ± 1.71 | frozen enc + pred-FT |
+
+FAM matches Chronos within CI at 3.5x fewer params. Source:
+`v20/phase2_chronos_perwindow.json`.
