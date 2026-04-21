@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Predicting rare events in multivariate time series - Loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches train a separate supervised model for each. We introduce FAM, a 1.26M-parameter causal JEPA encoder that is pretrained per-dataset with no labels, after which we freeze the encoder and finetune only the horizon-conditioned predictor (198K parameters, 16\% of total) for each downstream event. This \emph{predictor finetuning} is the paper's core idea: the encoder learns domain dynamics; the predictor is steered toward the specific event of interest. We apply the same architecture and pipeline across \placeholder{N} datasets in \placeholder{M} domains (turbofan degradation, spacecraft telemetry, server monitoring, cardiac ECG, bearing vibration), evaluating every task with a unified two-stage F1 protocol alongside legacy metrics for direct literature comparison. FAM matches or exceeds domain-specific supervised models $100$-$560\times$ its size using $\leq 5\%$ of labeled data. Code and evaluation suite at \placeholder{URL}.
+Predicting rare events in multivariate time series - Loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches train a separate supervised model for each. We introduce FAM, a 1.26M-parameter causal JEPA encoder that is pretrained per-dataset with no labels, after which we freeze the encoder and finetune only the horizon-conditioned predictor (198K parameters, 16\% of total) for each downstream event. This \emph{predictor finetuning} is the paper's core idea: the encoder learns domain dynamics; the predictor is steered toward the specific event of interest. We apply the same architecture and pipeline across \placeholder{N} datasets in \placeholder{M} domains (turbofan degradation, spacecraft telemetry, server monitoring, cardiac ECG, bearing vibration), evaluating every task under a single label definition (predict the \emph{first} event) and a unified two-stage F1 protocol, with legacy metrics for literature comparison. FAM matches or exceeds domain-specific supervised models $100$-$560\times$ its size using $\leq 5\%$ of labeled data. Code and evaluation suite at \placeholder{URL}.
 \end{abstract}
 
 % ============================================================
@@ -93,7 +93,7 @@ Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}
 Chronos~\citep{ansari2024chronos}, TimesFM~\citep{das2024timesfm}, and MOMENT~\citep{goswami2024moment} pretrain on large-scale corpora for generic forecasting. FAM is complementary: a mid-scale encoder (1.26M) specialised for event prediction, not forecasting. We benchmark against Chronos as the strongest available foundation model (\cref{sec:foundation_baselines}).
 
 \paragraph{Prognostics and anomaly prediction.}
-C-MAPSS~\citep{saxena2008cmapss} is the standard RUL benchmark; supervised SOTA: STAR~\citep{fan2024star} (RMSE 10.61). Anomaly prediction methods (Anomaly Transformer~\citep{xu2022anomalytransformer}, DCdetector~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad}) typically report point-adjusted F1 (PA-F1), which inflates scores by crediting entire anomaly segments from a single detection~\citep{schmidl2022tsadeval}. We report PA-F1 only for cross-reference and use clean F1 as our primary metric.
+C-MAPSS~\citep{saxena2008cmapss} is the standard RUL benchmark; supervised SOTA: STAR~\citep{fan2024star} (RMSE 10.61). Anomaly prediction methods (Anomaly Transformer~\citep{xu2022anomalytransformer}, DCdetector~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad}) report point-adjusted F1 (PA-F1), which inflates scores by crediting entire segments from a single detection~\citep{schmidl2022tsadeval}. We sidestep this by evaluating only first-event prediction under standard F1 (\cref{sec:metrics}).
 
 \paragraph{Channel strategies.}
 PatchTST~\citep{nie2023patchtst} showed channel-independent processing often wins; iTransformer~\citep{liu2024itransformer} showed variate-as-token wins on high-correlation data. Our default is channel-fusion (linear projection); we ablate against sensor-as-token (\cref{sec:ablations}).
@@ -188,15 +188,27 @@ The predictor is run at multiple horizons $k_1, \ldots, k_W$ corresponding to th
 \section{Evaluation}
 \label{sec:metrics}
 
+\subsection{First-Event Labeling}
+
+We unify all event types under a single label definition. For each sample (engine, time series, patient record), define:
+\begin{equation}
+  y(t) = \mathbb{1}[\text{the first event has occurred by time } t]
+\end{equation}
+Before the first event: $y(t) = 0$. From the first event onset onward: $y(t) = 1$. This applies uniformly to failure (C-MAPSS), anomaly onset (SMAP/MSL/PSM), arrhythmia onset (MBA), and fault onset (Paderborn). Subsequent events, if any, are ignored - they are continuation, not prediction. This scope restriction is deliberate: predicting the \emph{first} occurrence is the hardest and most operationally relevant case; extending to recurrent events is future work.
+
+\subsection{Two-Stage F1}
+
 Every event prediction task is evaluated with a unified two-stage protocol:
 
-\textbf{Stage 1 - Detection.} ``Will an event occur within horizon $H$?'' Binary F1, Precision, Recall, AUROC.
+\textbf{Stage 1 - Detection.} ``Will the first event occur within horizon $H$?'' Given ground-truth time-to-first-event $\tau$ and predicted $\hat{\tau}$, define $\hat{y} = \mathbb{1}[\hat{\tau} \leq H]$. Report F1, Precision, Recall, AUROC at each window boundary.
 
-\textbf{Stage 2 - Timing.} ``In which of $W{=}4$ windows?'' The time axis is quantized into $W$ windows of width $\Delta$; the model predicts the window containing the event. Macro-F1 across $W{+}1$ classes (including ``no event'').
+\textbf{Stage 2 - Timing.} ``In which of $W{=}4$ windows will the first event occur?'' The horizon is quantized into $W$ windows of width $\Delta$; the model predicts the window containing the first event. Macro-F1 across $W{+}1$ classes (including ``no event within horizon'').
 
-$\Delta$ is set per dataset from the event timescale ($\Delta{=}30$ cycles for C-MAPSS, $\Delta{=}50$ steps for SMAP). Sensitivity in \cref{app:window_sensitivity}.
+$\Delta$ is set per dataset from the event timescale ($\Delta{=}30$ cycles for C-MAPSS, $\Delta{=}50$ steps for SMAP). Sensitivity in \cref{app:window_sensitivity}. The metric is always F1 - no point-adjustment, no segment-level credit.
 
-\textbf{Legacy metrics.} For direct literature comparison we also report each domain's standard metric: RMSE + NASA-S for C-MAPSS, PA-F1 for SMAP/MSL/PSM/SMD, macro-F1 for classification. PA-F1 inflates scores by crediting entire anomaly segments from a single detection~\citep{schmidl2022tsadeval}; we report it only for cross-reference, never as a primary result.
+\subsection{Comparison to Prior Metrics}
+
+The anomaly detection literature predominantly reports point-adjusted F1 (PA-F1)~\citep{schmidl2022tsadeval}, which credits the \emph{entire} anomaly segment if any single point is detected - inflating scores by up to 30 percentage points on datasets with long segments. The RUL literature reports RMSE, which is not comparable across event types. Our first-event F1 avoids both problems: it is a standard binary classification metric on a well-defined label. For literature cross-reference, we report RMSE (C-MAPSS) and PA-F1 (SMAP/MSL/PSM) in a legacy column.
 
 \textbf{Statistical reporting.} Mean $\pm$ std ($N$ seeds, 95\% CI). Paired tests with $p$-values for all claims. Published baselines that report single numbers are noted as such.
 

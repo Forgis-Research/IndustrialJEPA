@@ -1,28 +1,27 @@
 """
 Grey Swan Unified Evaluation Module (V20).
 
-Unified two-stage evaluation for event prediction in multivariate time series:
+FIRST-EVENT PREDICTION: all tasks use the same label definition.
 
-  Stage 1 — EVENT DETECTION: "Will an event occur within horizon H?"
-    Binary classification → F1, Precision, Recall, AUROC, AUPRC.
+  y(t) = 1 if the first event has occurred by time t, else 0.
 
-  Stage 2 — EVENT TIMING: "In which window will it occur?"
-    The time axis is quantized into W non-overlapping windows of width Δ.
-    For each sample, we predict which window contains the event.
-    Evaluated as ordinal classification → F1 per window, macro-F1, AUROC.
+This applies to failure (C-MAPSS), anomaly onset (SMAP/MSL/PSM),
+arrhythmia (MBA), fault onset (Paderborn). Subsequent events are ignored.
 
-This two-stage framing unifies RUL, anomaly detection, and threshold exceedance
-under the same metric (F1). We additionally report domain-specific legacy metrics
-(RMSE for C-MAPSS, PA-F1 for SMAP/MSL) for literature comparability.
+Two-stage evaluation:
 
-The key insight: JEPA's variable-horizon predictor h_hat(t, k) naturally maps
-to both stages. Stage 1 uses h_past; Stage 2 uses h_hat at multiple k values.
+  Stage 1 — DETECTION: "Will the first event occur within horizon H?"
+    Binary F1, Precision, Recall, AUROC.
+
+  Stage 2 — TIMING: "In which of W windows will it occur?"
+    Ordinal classification → per-window F1, macro-F1.
+
+The metric is always F1. No point-adjustment. No segment credit.
+Legacy metrics (RMSE, PA-F1) are computed for literature comparability only.
 
 References:
   - NASA Scoring Function: Saxena et al. (2008), IJRPC
-  - TaPR: Kim et al. (2022), KDD
-  - TSAD-Eval: Schmidl et al. (2022), VLDB
-  - nRMSE definition: Heimes (2008)
+  - TSAD-Eval / PA-F1 critique: Schmidl et al. (2022), VLDB
 """
 
 import numpy as np
@@ -31,7 +30,48 @@ from dataclasses import dataclass, field
 
 
 # ---------------------------------------------------------------------------
-# 1. RUL METRICS
+# 0. FIRST-EVENT LABEL CONVERSION
+# ---------------------------------------------------------------------------
+
+def labels_to_first_event_tte(labels: np.ndarray) -> np.ndarray:
+    """
+    Convert a binary label array (0=normal, 1=event) to time-to-first-event.
+
+    For each timestep t, returns the number of steps until the first event onset.
+    After the first event onset, returns 0 (event has occurred).
+    If no event exists in the sequence, returns inf for all timesteps.
+
+    This is the canonical label conversion for anomaly/fault datasets.
+    For RUL datasets (C-MAPSS), ground-truth RUL is already time-to-event.
+
+    Args:
+        labels: (T,) binary array, 1 = event active
+
+    Returns:
+        tte: (T,) float array, time-to-first-event from each timestep
+    """
+    labels = np.asarray(labels, dtype=int)
+    T = len(labels)
+    tte = np.full(T, np.inf, dtype=float)
+
+    # Find first event onset
+    event_indices = np.where(labels == 1)[0]
+    if len(event_indices) == 0:
+        return tte  # no event in this sequence
+
+    first_event = int(event_indices[0])
+
+    for t in range(T):
+        if t < first_event:
+            tte[t] = float(first_event - t)
+        else:
+            tte[t] = 0.0  # event has occurred
+
+    return tte
+
+
+# ---------------------------------------------------------------------------
+# 1. RUL METRICS (legacy)
 # ---------------------------------------------------------------------------
 
 def rul_metrics(pred: np.ndarray, target: np.ndarray,
