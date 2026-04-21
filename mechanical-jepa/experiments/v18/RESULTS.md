@@ -207,6 +207,24 @@ Takeaway: the Mahalanobis PA-F1 advantage is robust but honest framing
 requires stating that it's continuation-dominant detection, not precursor
 prediction. This matches the paper's post-revision anomaly framing.
 
+### Phase 6b: V14 full-sequence FD001 honest probe (~4 min)
+
+Under the honest protocol (AdamW WD=1e-2, val n_cuts=10), 3 seeds:
+ - V14 full-seq: **15.54 ± 0.04**
+ - V17:          15.53 (reference)
+ - V2:           15.73 (reference)
+
+V14 published old-protocol number: 15.70. Honest probe drops it to 15.54
+(within noise of V17 and V2). All three architectures cluster tightly at
+~15.5 RMSE on FD001 frozen probe. The architectural contribution of
+"full-sequence target" claimed in v14 (v14: 15.70, v2: 17.81, gap 2.1) is
+mostly a protocol artifact; the real architectural gap is 0.01 RMSE
+(15.54 vs 15.53).
+
+Addresses round-4 reviewer MAJOR-4. Strengthens the paper's Honest
+Methodology Note: all 15.5-range FD001 "wins" from v14/v17 era collapse
+to near-zero under the honest protocol.
+
 ### Phase 6: FD003 + FD004 multi-subset (~7 min)
 
 Honest frozen probe of 4 existing checkpoints (V2 and full-sequence for each of
