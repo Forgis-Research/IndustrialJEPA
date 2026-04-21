@@ -13,11 +13,13 @@ format:
 # TL;DR
 
 - **Predictor finetuning (pred-FT) vs scratch at 5% labels is the statistically supported contribution**: paired t(4) = 3.03, p = 0.039, Cohen's d = 1.35 on C-MAPSS FD001 per-window F1 (5 seeds). F1w = 0.261 (pred-FT) vs 0.035 (scratch).
-- **Crossover characterized at N=10**: pred-FT wins at ≤10% labels, E2E wins at ≥20%.
+- **Crossover characterized at N=10 on FD001**: pred-FT wins at ≤10% labels, E2E wins at ≥20%.
   - 5% (Phase 7): pred-FT 0.229 ± 0.141 vs E2E 0.124 ± 0.201. Wilcoxon p=0.065 (miss). Collapses pred 1/10, e2e 7/10.
   - 10% (Phase 8): pred-FT 0.291 ± 0.120 vs E2E 0.133 ± 0.164. **Paired t p=0.023, Wilcoxon p=0.010, d=0.87**. Collapses pred 0/10, e2e 4/10.
   - 20% (Phase 9): pred-FT 0.276 ± 0.184 vs E2E 0.312 ± 0.102. p=0.57 (tied). Collapses pred 2/10, e2e 0/10 (flipped!).
   - 50-100% (Phase 0+5, N=5): pred-FT and E2E statistically tied.
+- **FD003 replication (Phase 10, N=5, 200-ep pretrain)**: pred-FT significantly beats E2E at 100% labels on FD003 (pred 0.270 vs e2e 0.123, **paired t p=0.043**, d=1.25). Direction differs from FD001 (where E2E wins at 100%) because E2E collapses 2/5 seeds on FD003 even at full labels.
+- **Longer pretraining trades scarce-label adaptability for rich-label ceiling**: FD003 100% pred-FT 200-ep 0.270 vs 100-ep 0.146 (+0.124). FD003 5-10% pred-FT: 200-ep WORSE by 0.05-0.09. Not seen on FD001 (only 200-ep ckpt tested).
 - **SIGReg-pred pretraining beats EMA**: F1w 0.451 vs 0.391 at 100% labels (+0.06), RMSE 13.71 vs 16.90 (-3.19). Lower variance at 5% (std 3.55 vs 6.83 on RMSE).
 - **PSM pred-FT fails**: AUROC near chance (0.46-0.55) across modes. Chronological test-split distribution shift defeats supervised fine-tuning. Mahalanobis from pretrained encoder is the PSM recipe (PA-F1 0.813).
 - **Chronos-T5-tiny (8.4M) matches FAM pred-FT (2.37M)** at linear-probe vs pred-FT setting: F1w 0.419 vs 0.391 (within CI). FAM E2E wins overall at 100% labels (F1w 0.408, RMSE 14.96).

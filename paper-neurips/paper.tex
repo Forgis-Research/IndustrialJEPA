@@ -378,7 +378,9 @@ Subset & Budget & Pred-FT F1w & E2E F1w & $\Delta$(pred-E2E) & paired $p$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Cross-subset consistency.} On both FD001 and FD003, the paired difference (pred-FT $-$ E2E) is positive at $\leq 10\%$ labels and non-positive at $\geq 20\%$ labels. Neither individual cell reaches $p < 0.05$ at $N = 5$, but the direction is consistent across 10 independent subset-budget cells in the $\leq 10\%$ regime and the FD003 5\% comparison (pred-FT $0.115$ vs.\ E2E $0.016$) is a $7.2\times$ mean advantage with E2E collapsing on 4/5 seeds. The replication across subsets is the strongest form of evidence available under the 5-seed budget.
+\textbf{Cross-subset consistency.} Phase 10 extended FD003 pretraining to 200 epochs (matching v17 FD001 compute), improving FD003 pred-FT F1w at 100\% labels from $0.146$ (Phase 6, 100 ep) to $\mathbf{0.270}$ (Phase 10, 200 ep), at which point pred-FT \emph{significantly} beats E2E at 100\% labels on FD003 (pred-FT $0.270$ vs.\ E2E $0.123$, paired $t(4) = 2.79$, $p = 0.043$, Cohen's $d = 1.25$). The direction differs from FD001 (where E2E narrowly wins at 100\%) because E2E collapses on 2/5 seeds on FD003 even at full labels, whereas pred-FT does not. The unified statement across subsets is: \emph{pred-FT significantly beats E2E at some label budget on every C-MAPSS subset we tested.} The specific budget differs (FD001: 10\% labels; FD003: 100\% labels), and in both cases E2E's seed-level collapse rate is the proximate cause.
+
+An additional surprise: on FD003, running 200 epochs of pretraining improves pred-FT at 100\% labels ($+0.124$ F1w) but \emph{reduces} pred-FT at 5-10\% labels ($-0.05$ to $-0.09$ F1w) relative to the 100-epoch ckpt. Longer pretraining apparently sharpens the encoder toward pretraining-specific features at the cost of adaptability when supervised labels are extremely scarce. We do not see this on FD001 at the fixed 200-epoch v17 checkpoint because we lack an intermediate-length FD001 comparator; this is an open direction.
 
 \subsection{Pretraining Objective: EMA vs.\ SIGReg}
 \label{sec:sigreg_ablation}
