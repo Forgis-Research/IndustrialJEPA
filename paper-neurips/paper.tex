@@ -621,7 +621,27 @@ Given that the diagnostics confirm the encoder tracks degradation, we turn to wh
   \item \textbf{Run-to-failure structural supervision.} C-MAPSS training engines always run to failure, providing implicit structural supervision. The hand-engineered baseline margin (diagnostic 4, \cref{sec:verification}) and from-scratch comparison confirm the encoder reads degradation content rather than episode length - sequence length alone is one of 57 features in the ridge regressor (RMSE 19.1), well below JEPA (14.2). This qualifier nonetheless applies to the ``no labels'' claim.
   \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations. Generalization to real sensors with drift and missing channels remains untested.
   \item \textbf{Full-label gap to supervised SOTA.} At 100\% labels, supervised specialists lead: FAM E2E (15.08 under the honest protocol) vs.\ STAR (replic.\ 12.19; paper 10.61) on FD001. Our advantage appears specifically in the scarce-label regime (\cref{sec:label_efficiency}), where SSL pretraining earns its keep; closing the full-label gap likely requires architectural scaling. We note separately the 1.6 RMSE gap between our STAR replication (12.19) and the STAR paper (10.61) which we have not closed (see \cref{tab:main_results}).
-  \item \textbf{FD001-centric evaluation.} Our primary label-efficiency sweep is FD001. Per-subset results on FD003 and FD004 (\cref{tab:multisubset}) indicate the frozen-probe advantage does not transfer cleanly to multi-condition or multi-fault-mode settings without a per-condition probe head (\cref{app:fd002}). We describe the paper as a label-efficient \emph{FD001} result rather than a general C-MAPSS or general prognostics result. \todo{Full label-efficiency sweeps on FD003/FD004 and on a non-simulation dataset are the most important follow-up for a stronger submission.} FD003/FD004 single-budget (100\% labels) honest-protocol results are delivered (v18 Phase 6 + 6c); the label-efficiency sweeps on those subsets remain future work.
+  \item \textbf{Label-efficiency is a FD001 phenomenon, not a general C-MAPSS one.} Per-subset E2E label-efficiency sweeps on FD003 and FD004 (\cref{tab:fd003_fd004_labels}, 3 seeds per cell, honest protocol) show that the label-efficiency story does not transfer: at 5\% labels FD003 reaches $31.27 \pm 2.86$ RMSE (vs.\ FD001 $21.55 \pm 1.52$, a $+9.7$ RMSE gap), and FD004 reaches $40.42 \pm 1.63$. Per-subset NASA-S at 5\% on FD004 runs into $10^{4}$--$10^{5}$ territory - operationally useless. We describe the paper as a label-efficient \emph{FD001} result and a protocol-honest FD003/FD004 result; a dataset where label-efficiency transfers is the most important follow-up.
+
+\begin{table}[h]
+\centering
+\caption{FD003 / FD004 E2E label-efficiency sweep under the v18 honest protocol (3 seeds per cell, v14 full-seq ckpt fine-tuned end-to-end with the honest val protocol). Label-efficiency does not transfer: at 5\% labels FD003 is $+9.7$ RMSE worse than FD001 and FD004 is in the 40s.}
+\label{tab:fd003_fd004_labels}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Subset & 100\% & 20\% & 10\% & 5\% \\
+\midrule
+FD001 (reference) & 15.08$_{\pm0.1}$ & 17.85$_{\pm0.6}$ & 19.62$_{\pm1.4}$ & 21.55$_{\pm1.5}$ \\
+FD003 & 15.38$_{\pm1.2}$ & 23.08$_{\pm3.9}$ & 27.47$_{\pm2.8}$ & 31.27$_{\pm2.9}$ \\
+FD004 & 26.32$_{\pm0.6}$ & 28.33$_{\pm1.1}$ & 33.82$_{\pm1.0}$ & 40.42$_{\pm1.6}$ \\
+\midrule
+STAR (paper, 100\%) & 10.61 & - & - & - \\
+\phantom{STAR (paper, 100\%)}\textit{FD003} & 10.71 & - & - & - \\
+\phantom{STAR (paper, 100\%)}\textit{FD004} & 15.87 & - & - & - \\
+\bottomrule
+\end{tabular}
+\end{table}
   \item \textbf{Anomaly probe PA-F1 is highly sensitive to PCA rank; no principled $k$-selection method.} The Mahalanobis scoring reaches PA-F1 $0.793 \pm 0.014$ on SMAP and $0.707 \pm 0.050$ on MSL at $k=100$ across 3 pretraining seeds (\cref{sec:anomaly_results}), both substantially above MTS-JEPA's $0.336$. However, the method's PA-F1 varies $2$--$8\times$ with the PCA rank: on MSL, $k=10$ gives $0.093 \pm 0.066$ while $k=100$ gives $0.707 \pm 0.050$. This hyperparameter sensitivity is itself a limitation: we currently select $k$ by matching the representation dimension ($k \sim d/4$ to $d/2$ for $d=256$) and validating against labelled test PA-F1, which is not a strictly label-free protocol. A principled $k$-selection method - via a representation-variance diagnostic, cross-validation on held-out normal data, or a covariance-regularisation schedule - is an open follow-up. A bona fide zero-data-access threshold is also untested on both benchmarks.
   \item \textbf{Multi-condition generalisation.} FD002 exhibits a $\sim$10 RMSE gap between val (15.35) and test (26.07) because operating condition 1 is 2.4$\times$ over-represented in the test set relative to training (\cref{app:fd002}). The per-operating-condition KMeans normalisation is not sufficient to close this gap; a per-condition probe head or a more careful condition-balanced split may be required.
   \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone is not significantly better than handcrafted spectral features (RMSE 0.189 vs.\ 0.177, $p = 0.40$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
