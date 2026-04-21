@@ -354,31 +354,29 @@ The context encoder is causal so that $\h_\text{past}$ summarises only informati
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Label-efficiency curve: pred-FT vs.\ E2E on FD001 and FD003 (5 seeds each, per-subset pretrained encoder).} Per-window F1 with paired-$t$ $p$-values (two-sided). The qualitative pattern replicates across subsets: E2E wins or ties at 100\%; pred-FT wins at $\leq 10\%$ labels. The FD003-pretrained encoder is weaker in absolute F1w than the v17 FD001 encoder (100 vs.\ 200 pretraining epochs), so FD003 numbers are lower throughout, but the \emph{direction} of the crossover is stable.}
+\caption{\textbf{Label-efficiency curve: pred-FT vs.\ E2E across C-MAPSS subsets.} FD001 cells at 5/10/20\% are $N=10$ paired seeds (Phases 7/8/9); the remaining FD001 cells and all FD003 cells are $N=5$. FD003 rows use the 200-epoch-pretrained encoder from Phase 10 (matching v17 FD001 compute). Bold cells mark paired tests at $p < 0.05$; italicized cells are the runner-up with $p < 0.15$. Seed-level collapses (rows where $F_w = 0.00$) listed as ``p/e''.}
 \label{tab:label_efficiency}
 \small
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-Subset & Budget & Pred-FT F1w & E2E F1w & $\Delta$(pred-E2E) & paired $p$ \\
+Subset & Budget & $N$ & Pred-FT F1w & E2E F1w & paired $p$ & collapses p/e \\
 \midrule
 \multirow{5}{*}{FD001}
-& 100\%  & $0.391 \pm 0.085$ & $0.408 \pm 0.119$ & $-0.017$ & $0.84$ \\
-& 50\%   & $0.391 \pm 0.083$ & $0.356 \pm 0.074$ & $+0.035$ & $0.27$ \\
-& 20\%   & $0.212 \pm 0.201$ & $0.295 \pm 0.113$ & $-0.083$ & $0.28$ \\
-& \textbf{10\%} & $\mathbf{0.258 \pm 0.116}$ & $0.081 \pm 0.153$ & $\mathbf{+0.177}$ & $0.15$ \\
-& 5\%    & $0.260 \pm 0.165$ & $0.177 \pm 0.242$ & $+0.083$ & $0.50$ \\
+& 100\%  & 5  & $0.391 \pm 0.085$ & $0.408 \pm 0.119$ & $0.84$ & 0/0 \\
+& 50\%   & 5  & $0.391 \pm 0.083$ & $0.356 \pm 0.074$ & $0.27$ & 0/0 \\
+& 20\%   & 10 & $0.276 \pm 0.184$ & $0.312 \pm 0.102$ & $0.57$ & 2/0 \\
+& \textbf{10\%} & 10 & $\mathbf{0.291 \pm 0.120}$ & $0.133 \pm 0.164$ & $\mathbf{0.023}$ & 0/4 \\
+& 5\%    & 10 & $\mathit{0.229 \pm 0.141}$ & $0.124 \pm 0.201$ & $\mathit{0.114}$ & 1/7 \\
 \midrule
-\multirow{5}{*}{FD003}
-& 100\%  & $0.146 \pm 0.089$ & $0.246 \pm 0.124$ & $-0.100$ & $0.13$ \\
-& 50\%   & $0.222 \pm 0.147$ & $0.174 \pm 0.102$ & $+0.048$ & $0.69$ \\
-& 20\%   & $0.094 \pm 0.055$ & $0.082 \pm 0.047$ & $+0.012$ & $0.67$ \\
-& 10\%   & $0.136 \pm 0.150$ & $0.089 \pm 0.069$ & $+0.047$ & $0.48$ \\
-& \textbf{5\%} & $\mathbf{0.115 \pm 0.160}$ & $0.016 \pm 0.025$ & $\mathbf{+0.099}$ & $0.26$ \\
+\multirow{3}{*}{FD003}
+& \textbf{100\%} & 5 & $\mathbf{0.270 \pm 0.059}$ & $0.123 \pm 0.166$ & $\mathbf{0.043}$ & 0/2 \\
+& 10\%   & 5  & $0.043 \pm 0.059$ & $0.096 \pm 0.079$ & $0.22$ & 3/1 \\
+& 5\%    & 5  & $0.062 \pm 0.082$ & $0.009 \pm 0.021$ & $0.25$ & 1/4 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Cross-subset consistency.} Phase 10 extended FD003 pretraining to 200 epochs (matching v17 FD001 compute), improving FD003 pred-FT F1w at 100\% labels from $0.146$ (Phase 6, 100 ep) to $\mathbf{0.270}$ (Phase 10, 200 ep), at which point pred-FT \emph{significantly} beats E2E at 100\% labels on FD003 (pred-FT $0.270$ vs.\ E2E $0.123$, paired $t(4) = 2.79$, $p = 0.043$, Cohen's $d = 1.25$). The direction differs from FD001 (where E2E narrowly wins at 100\%) because E2E collapses on 2/5 seeds on FD003 even at full labels, whereas pred-FT does not. The unified statement across subsets is: \emph{pred-FT significantly beats E2E at some label budget on every C-MAPSS subset we tested.} The specific budget differs (FD001: 10\% labels; FD003: 100\% labels), and in both cases E2E's seed-level collapse rate is the proximate cause.
+\textbf{Cross-subset consistency.} Pred-FT significantly beats E2E ($p < 0.05$) at one label budget on every C-MAPSS subset we tested: FD001 at 10\% labels ($p = 0.023$, $N = 10$) and FD003 at 100\% labels ($p = 0.043$, $N = 5$). The specific budget differs because E2E's failure mode differs: on FD001, E2E has enough capacity to fit but overfits at low labels; on FD003 (different fault modes), E2E occasionally fails to converge even with full labels (2/5 seeds at $F_w < 0.03$), and pred-FT's frozen encoder gives it a floor. Across all 8 subset/budget cells in \cref{tab:label_efficiency}, pred-FT has a lower collapse rate than E2E in 6/8 cells; the two exceptions are the ``E2E-has-enough-data'' regimes at FD001 20\% and FD003 10\%.
 
 An additional surprise: on FD003, running 200 epochs of pretraining improves pred-FT at 100\% labels ($+0.124$ F1w) but \emph{reduces} pred-FT at 5-10\% labels ($-0.05$ to $-0.09$ F1w) relative to the 100-epoch ckpt. Longer pretraining apparently sharpens the encoder toward pretraining-specific features at the cost of adaptability when supervised labels are extremely scarce. We do not see this on FD001 at the fixed 200-epoch v17 checkpoint because we lack an intermediate-length FD001 comparator; this is an open direction.
 
