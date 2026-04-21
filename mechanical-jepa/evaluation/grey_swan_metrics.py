@@ -1,10 +1,22 @@
 """
-Grey Swan Unified Evaluation Module (V15).
+Grey Swan Unified Evaluation Module (V20).
 
-Supports three event types:
-  - 'rul'      : Time-to-failure (RUL) regression
-  - 'anomaly'  : Point/sequence anomaly detection
-  - 'tte'      : Threshold exceedance (SPC 3-sigma rule)
+Unified two-stage evaluation for event prediction in multivariate time series:
+
+  Stage 1 — EVENT DETECTION: "Will an event occur within horizon H?"
+    Binary classification → F1, Precision, Recall, AUROC, AUPRC.
+
+  Stage 2 — EVENT TIMING: "In which window will it occur?"
+    The time axis is quantized into W non-overlapping windows of width Δ.
+    For each sample, we predict which window contains the event.
+    Evaluated as ordinal classification → F1 per window, macro-F1, AUROC.
+
+This two-stage framing unifies RUL, anomaly detection, and threshold exceedance
+under the same metric (F1). We additionally report domain-specific legacy metrics
+(RMSE for C-MAPSS, PA-F1 for SMAP/MSL) for literature comparability.
+
+The key insight: JEPA's variable-horizon predictor h_hat(t, k) naturally maps
+to both stages. Stage 1 uses h_past; Stage 2 uses h_hat at multiple k values.
 
 References:
   - NASA Scoring Function: Saxena et al. (2008), IJRPC
@@ -210,27 +222,102 @@ def tapr(y_true: np.ndarray, y_pred: np.ndarray,
     return tapr_prec, tapr_rec, tapr_f1
 
 
-def auc_pr(scores: np.ndarray, y_true: np.ndarray,
-           n_thresholds: int = 200) -> float:
+def auroc(scores: np.ndarray, y_true: np.ndarray) -> float:
     """
-    Area under the precision-recall curve.
-    Uses trapezoidal rule. Threshold swept from max to min score.
+    Area under the ROC curve via sklearn (exact, uses all unique thresholds).
+    Falls back to manual computation if sklearn unavailable.
     """
-    thresholds = np.linspace(scores.max(), scores.min(), n_thresholds)
-    precisions, recalls = [1.0], [0.0]
-    for thresh in thresholds:
-        y_pred = (scores >= thresh).astype(int)
-        tp, fp, _, fn = _confusion(y_true, y_pred)
-        prec, rec = _precision_recall(tp, fp, fn)
-        precisions.append(prec)
-        recalls.append(rec)
-    precisions.append(0.0)
-    recalls.append(1.0)
-    # Sort by recall for trapezoidal integration
-    sort_idx = np.argsort(recalls)
-    rec_sorted = np.array(recalls)[sort_idx]
-    prec_sorted = np.array(precisions)[sort_idx]
-    return float(np.trapz(prec_sorted, rec_sorted))
+    try:
+        from sklearn.metrics import roc_auc_score
+        if len(np.unique(y_true)) < 2:
+            return float('nan')
+        return float(roc_auc_score(y_true, scores))
+    except ImportError:
+        # Fallback: manual trapezoidal
+        n_thresholds = 500
+        thresholds = np.linspace(scores.max(), scores.min(), n_thresholds)
+        tprs, fprs = [0.0], [0.0]
+        for thresh in thresholds:
+            y_pred = (scores >= thresh).astype(int)
+            tp, fp, tn, fn = _confusion(y_true, y_pred)
+            tpr = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+            tprs.append(tpr)
+            fprs.append(fpr)
+        tprs.append(1.0)
+        fprs.append(1.0)
+        sort_idx = np.argsort(fprs)
+        return float(np.trapz(np.array(tprs)[sort_idx], np.array(fprs)[sort_idx]))
+
+
+def f1_at_horizon(pred_rul: np.ndarray, true_rul: np.ndarray,
+                  k: int, rul_cap: float = 125.0) -> dict:
+    """
+    Binary F1 for 'will fail within k cycles'.
+
+    Converts RUL regression to binary classification:
+      y_true_bin = (true_rul <= k)
+      y_pred_bin = (pred_rul <= k)
+
+    Args:
+        pred_rul: (N,) predicted RUL (uncapped scale)
+        true_rul: (N,) ground-truth RUL (uncapped scale)
+        k: horizon in cycles
+        rul_cap: RUL cap (for reference only)
+
+    Returns dict with f1, precision, recall, auc_pr.
+    """
+    pred_rul = np.asarray(pred_rul, dtype=float)
+    true_rul = np.asarray(true_rul, dtype=float)
+
+    y_true_bin = (true_rul <= k).astype(int)
+    y_pred_bin = (pred_rul <= k).astype(int)
+
+    tp, fp, tn, fn = _confusion(y_true_bin, y_pred_bin)
+    prec, rec = _precision_recall(tp, fp, fn)
+    f1 = _f1(tp, fp, fn)
+
+    # Use negative predicted RUL as "score" for AUC-PR (lower RUL = more likely to fail)
+    aucpr = auc_pr(-pred_rul, y_true_bin)
+
+    return {
+        'f1': f1,
+        'precision': prec,
+        'recall': rec,
+        'auc_pr': aucpr,
+        'k': k,
+        'n_positive': int(y_true_bin.sum()),
+        'n_total': int(len(y_true_bin)),
+    }
+
+
+def auc_pr(scores: np.ndarray, y_true: np.ndarray) -> float:
+    """
+    Area under the precision-recall curve via sklearn (exact).
+    Falls back to manual computation if sklearn unavailable.
+    """
+    try:
+        from sklearn.metrics import average_precision_score
+        if len(np.unique(y_true)) < 2:
+            return float('nan')
+        return float(average_precision_score(y_true, scores))
+    except ImportError:
+        # Fallback: manual trapezoidal
+        n_thresholds = 500
+        thresholds = np.linspace(scores.max(), scores.min(), n_thresholds)
+        precisions, recalls = [1.0], [0.0]
+        for thresh in thresholds:
+            y_pred = (scores >= thresh).astype(int)
+            tp, fp, _, fn = _confusion(y_true, y_pred)
+            prec, rec = _precision_recall(tp, fp, fn)
+            precisions.append(prec)
+            recalls.append(rec)
+        precisions.append(0.0)
+        recalls.append(1.0)
+        sort_idx = np.argsort(recalls)
+        rec_sorted = np.array(recalls)[sort_idx]
+        prec_sorted = np.array(precisions)[sort_idx]
+        return float(np.trapz(prec_sorted, rec_sorted))
 
 
 def anomaly_metrics(scores: np.ndarray, y_true: np.ndarray,
@@ -282,8 +369,12 @@ def anomaly_metrics(scores: np.ndarray, y_true: np.ndarray,
     tp_pa, fp_pa, _, fn_pa = _confusion(y_true, y_pred_pa)
     f1_pa = _f1(tp_pa, fp_pa, fn_pa)
 
-    # AUC-PR
+    # PA precision and recall
+    prec_pa, rec_pa = _precision_recall(tp_pa, fp_pa, fn_pa)
+
+    # AUC-PR and AUROC
     aucpr = auc_pr(scores, y_true)
+    auc_roc = auroc(scores, y_true)
 
     # TaPR
     tapr_p, tapr_r, tapr_f = tapr(y_true, y_pred)
@@ -293,7 +384,10 @@ def anomaly_metrics(scores: np.ndarray, y_true: np.ndarray,
         'f1_pa': f1_pa,
         'precision_non_pa': prec,
         'recall_non_pa': rec,
+        'precision_pa': prec_pa,
+        'recall_pa': rec_pa,
         'auc_pr': aucpr,
+        'auroc': auc_roc,
         'tapr_f1': tapr_f,
         'tapr_prec': tapr_p,
         'tapr_rec': tapr_r,
@@ -470,43 +564,284 @@ class GreySwanEvaluator:
 
 
 # ---------------------------------------------------------------------------
-# 5. METRIC RATIONALE (programmatic reference)
+# 5. UNIFIED EVALUATION ENTRY POINTS
 # ---------------------------------------------------------------------------
 
-METRIC_RATIONALE = {
-    'rul': {
-        'primary': 'rmse',
-        'secondary': 'nrmse',
-        'rationale': (
-            "RMSE is the universal currency for C-MAPSS comparisons (STAR, AE-LSTM, "
-            "DC-SSL, CTTS, all use it). nRMSE allows cross-domain comparison where "
-            "RUL scales differ (e.g., C-MAPSS ~125 cycles vs FEMTO ~thousands). "
-            "NASA score is useful for safety-critical reporting (penalizes late "
-            "predictions 2.5x more than early ones) but is unbounded and hard to "
-            "compare across papers. RA is operationally interpretable but "
-            "threshold-sensitive and rarely reported in ML papers."
-        ),
-    },
-    'anomaly': {
-        'primary': 'f1_non_pa',
-        'secondary': 'auc_pr',
-        'rationale': (
-            "Non-PA F1 is the honest metric - no credit for detecting any point in "
-            "an anomaly segment. PA-F1 (standard in THOC, TranAD, AnomalyTransformer) "
-            "inflates results by up to 30pp and masks model failures. We report both "
-            "for compatibility. AUC-PR is threshold-free and better for imbalanced "
-            "data (anomalies are rare). TaPR provides segment-level temporal credit "
-            "with buffer delta=0.1 (Kim et al. AAAI 2022)."
-        ),
-    },
-    'tte': {
-        'primary': 'nrmse',
-        'secondary': 'rmse',
-        'rationale': (
-            "TTE-RMSE in cycles is useful for reporting to operators (e.g., 'off by "
-            "N cycles'). nRMSE is better for cross-domain comparison where event "
-            "horizons differ. We define TTE using SPC 3-sigma rule on baseline "
-            "cycles 1-50 (healthy baseline); this is operationally standard."
-        ),
-    },
-}
+def evaluate_rul_run(pred: np.ndarray, target: np.ndarray,
+                     rul_cap: float = 125.0,
+                     horizons: tuple = (10, 20, 30, 50)) -> dict:
+    """
+    Single entry point for RUL evaluation. Returns standardized dict.
+
+    Every RUL experiment script should call this instead of rul_metrics directly.
+    Returns RMSE, NASA-S, and F1@k for all horizons in one dict.
+    """
+    base = rul_metrics(pred, target, rul_cap=rul_cap)
+    f1_by_k = {}
+    for k in horizons:
+        f1_by_k[k] = f1_at_horizon(pred, target, k=k, rul_cap=rul_cap)
+    base['f1_by_k'] = f1_by_k
+    return base
+
+
+def evaluate_anomaly_run(scores: np.ndarray, y_true: np.ndarray,
+                         threshold: Optional[float] = None,
+                         threshold_percentile: float = 95.0) -> dict:
+    """
+    Single entry point for anomaly evaluation. Returns standardized dict.
+
+    Every anomaly experiment script should call this instead of anomaly_metrics directly.
+    Returns all metrics: F1 (PA + non-PA), P, R, AUROC, AUPRC, TaPR.
+    """
+    return anomaly_metrics(scores, y_true, threshold=threshold,
+                           threshold_percentile=threshold_percentile)
+
+
+def aggregate_seeds(per_seed_metrics: list, key_metrics: Optional[list] = None) -> dict:
+    """
+    Aggregate metrics across seeds into standardized reporting format.
+
+    Args:
+        per_seed_metrics: list of dicts, one per seed (from evaluate_*_run)
+        key_metrics: which keys to aggregate. If None, aggregates all float keys.
+
+    Returns dict with:
+        {metric}_mean, {metric}_std, {metric}_ci95_lo, {metric}_ci95_hi,
+        n_seeds, per_seed (the raw list)
+
+    95% CI uses t-distribution: mean ± t_{n-1, 0.025} * std / sqrt(n)
+    """
+    from scipy.stats import t as t_dist
+
+    n = len(per_seed_metrics)
+    if n == 0:
+        return {'n_seeds': 0, 'per_seed': []}
+
+    if key_metrics is None:
+        # Auto-detect: all float/int keys in first dict (skip nested dicts)
+        key_metrics = [k for k, v in per_seed_metrics[0].items()
+                       if isinstance(v, (int, float)) and not isinstance(v, bool)]
+
+    result = {'n_seeds': n, 'per_seed': per_seed_metrics}
+
+    for key in key_metrics:
+        values = [m[key] for m in per_seed_metrics if key in m
+                  and np.isfinite(m[key])]
+        if not values:
+            result[f'{key}_mean'] = float('nan')
+            result[f'{key}_std'] = float('nan')
+            result[f'{key}_ci95_lo'] = float('nan')
+            result[f'{key}_ci95_hi'] = float('nan')
+            continue
+
+        arr = np.array(values, dtype=float)
+        mean = float(arr.mean())
+        std = float(arr.std(ddof=1)) if len(arr) > 1 else 0.0
+
+        if len(arr) > 1:
+            t_crit = float(t_dist.ppf(0.975, df=len(arr) - 1))
+            margin = t_crit * std / np.sqrt(len(arr))
+        else:
+            margin = float('nan')
+
+        result[f'{key}_mean'] = mean
+        result[f'{key}_std'] = std
+        result[f'{key}_ci95_lo'] = mean - margin
+        result[f'{key}_ci95_hi'] = mean + margin
+
+    return result
+
+
+def format_result(agg: dict, metric: str) -> str:
+    """
+    Format an aggregated metric as a standardized string.
+
+    Example: format_result(agg, 'rmse') -> '15.53 ± 1.68 (3s, 95% CI [11.35, 19.71])'
+    """
+    mean = agg.get(f'{metric}_mean', float('nan'))
+    std = agg.get(f'{metric}_std', float('nan'))
+    lo = agg.get(f'{metric}_ci95_lo', float('nan'))
+    hi = agg.get(f'{metric}_ci95_hi', float('nan'))
+    n = agg.get('n_seeds', 0)
+
+    if np.isnan(mean):
+        return 'N/A'
+    if n <= 1 or np.isnan(std):
+        return f'{mean:.4f} (1s, no CI)'
+    return f'{mean:.4f} ± {std:.4f} ({n}s, 95% CI [{lo:.4f}, {hi:.4f}])'
+
+
+# ---------------------------------------------------------------------------
+# 6. UNIFIED TWO-STAGE EVENT PREDICTION EVALUATION
+# ---------------------------------------------------------------------------
+
+def event_detection(time_to_event: np.ndarray, pred_time_to_event: np.ndarray,
+                    horizon: float) -> dict:
+    """
+    Stage 1: Event detection — "Will an event occur within horizon H?"
+
+    Converts continuous time-to-event predictions into binary classification.
+    Works for ANY event type: RUL, anomaly onset, threshold exceedance.
+
+    Args:
+        time_to_event:      (N,) ground-truth time-to-event (cycles, steps, seconds...)
+                            NaN/inf = no event observed in this sample's future.
+        pred_time_to_event: (N,) predicted time-to-event (same units)
+        horizon:            detection horizon H (same units). "Will event occur within H?"
+
+    Returns dict with:
+        f1, precision, recall, auroc, auprc, n_positive, n_total
+    """
+    tte = np.asarray(time_to_event, dtype=float)
+    pred = np.asarray(pred_time_to_event, dtype=float)
+
+    # Ground truth: event within horizon?
+    y_true = (np.isfinite(tte) & (tte <= horizon)).astype(int)
+    y_pred = (np.isfinite(pred) & (pred <= horizon)).astype(int)
+
+    # Continuous score for AUROC/AUPRC: lower predicted TTE = more likely event
+    # Clamp inf/nan to horizon+1 so they score as "no event"
+    score = np.where(np.isfinite(pred), -pred, -(horizon + 1))
+
+    tp, fp, tn, fn = _confusion(y_true, y_pred)
+    prec, rec = _precision_recall(tp, fp, fn)
+    f1 = _f1(tp, fp, fn)
+    auc_roc = auroc(score, y_true)
+    aucpr = auc_pr(score, y_true)
+
+    return {
+        'f1': f1,
+        'precision': prec,
+        'recall': rec,
+        'auroc': auc_roc,
+        'auprc': aucpr,
+        'horizon': horizon,
+        'n_positive': int(y_true.sum()),
+        'n_total': int(len(y_true)),
+    }
+
+
+def event_timing(time_to_event: np.ndarray, pred_time_to_event: np.ndarray,
+                 window_size: float, n_windows: int) -> dict:
+    """
+    Stage 2: Event timing — "In which window will the event occur?"
+
+    Quantizes the time axis into n_windows bins of width window_size:
+      Window 0: [0, Δ), Window 1: [Δ, 2Δ), ..., Window n-1: [(n-1)Δ, nΔ)
+    Plus a "no event within horizon" bin (class = n_windows).
+
+    Both ground-truth and predicted TTE are mapped to window indices.
+    Evaluated as classification over (n_windows + 1) classes.
+
+    Args:
+        time_to_event:      (N,) ground-truth time-to-event
+        pred_time_to_event: (N,) predicted time-to-event
+        window_size:        width Δ of each window (same units as TTE)
+        n_windows:          number of windows (total horizon = n_windows * window_size)
+
+    Returns dict with:
+        macro_f1, per_window_f1, per_window_precision, per_window_recall,
+        accuracy, confusion_matrix, window_size, n_windows
+    """
+    tte = np.asarray(time_to_event, dtype=float)
+    pred = np.asarray(pred_time_to_event, dtype=float)
+    total_horizon = window_size * n_windows
+
+    def _to_window(arr):
+        w = np.full(len(arr), n_windows, dtype=int)  # default = "no event"
+        finite = np.isfinite(arr) & (arr >= 0)
+        w[finite] = np.clip(
+            (arr[finite] / window_size).astype(int),
+            0, n_windows - 1
+        )
+        # If finite but beyond total_horizon, mark as "no event"
+        w[finite & (arr >= total_horizon)] = n_windows
+        return w
+
+    y_true_w = _to_window(tte)
+    y_pred_w = _to_window(pred)
+
+    n_classes = n_windows + 1  # +1 for "no event"
+    per_window = {}
+    f1s = []
+
+    for c in range(n_classes):
+        label = f'w{c}' if c < n_windows else 'no_event'
+        yt = (y_true_w == c).astype(int)
+        yp = (y_pred_w == c).astype(int)
+        tp, fp, _, fn = _confusion(yt, yp)
+        p, r = _precision_recall(tp, fp, fn)
+        f = _f1(tp, fp, fn)
+        per_window[label] = {'f1': f, 'precision': p, 'recall': r,
+                             'n_true': int(yt.sum())}
+        f1s.append(f)
+
+    # Macro-F1: average over all classes with support > 0
+    supported = [f1s[c] for c in range(n_classes)
+                 if (y_true_w == c).sum() > 0]
+    macro_f1 = float(np.mean(supported)) if supported else 0.0
+
+    return {
+        'macro_f1': macro_f1,
+        'accuracy': float((y_true_w == y_pred_w).mean()),
+        'per_window': per_window,
+        'window_size': window_size,
+        'n_windows': n_windows,
+        'total_horizon': total_horizon,
+        'n_total': int(len(tte)),
+    }
+
+
+def evaluate_event_prediction(time_to_event: np.ndarray,
+                              pred_time_to_event: np.ndarray,
+                              window_size: float,
+                              n_windows: int,
+                              legacy_rul_cap: Optional[float] = None) -> dict:
+    """
+    UNIFIED ENTRY POINT: Run both stages + optional legacy metrics.
+
+    This is the ONE function every experiment script should call.
+
+    Args:
+        time_to_event:      (N,) ground-truth time-to-event
+        pred_time_to_event: (N,) predicted time-to-event
+        window_size:        width of each quantization window
+        n_windows:          number of windows
+        legacy_rul_cap:     if set, also compute RMSE/NASA-S for C-MAPSS compat
+
+    Returns dict with:
+        stage1: {detection at each window boundary as horizon}
+        stage2: {window-quantized timing F1}
+        legacy: {RMSE, NASA-S if applicable}
+    """
+    total_horizon = window_size * n_windows
+
+    # Stage 1: detection at multiple horizons (each window boundary)
+    stage1 = {}
+    for w in range(1, n_windows + 1):
+        h = w * window_size
+        stage1[f'h{int(h)}'] = event_detection(
+            time_to_event, pred_time_to_event, horizon=h)
+    # Also overall detection at total horizon
+    stage1['overall'] = event_detection(
+        time_to_event, pred_time_to_event, horizon=total_horizon)
+
+    # Stage 2: timing
+    stage2 = event_timing(time_to_event, pred_time_to_event,
+                          window_size=window_size, n_windows=n_windows)
+
+    result = {
+        'detection': stage1,
+        'timing': stage2,
+    }
+
+    # Legacy metrics for backward compatibility
+    if legacy_rul_cap is not None:
+        tte = np.asarray(time_to_event, dtype=float)
+        pred = np.asarray(pred_time_to_event, dtype=float)
+        valid = np.isfinite(tte) & np.isfinite(pred)
+        if valid.sum() > 0:
+            result['legacy'] = rul_metrics(
+                pred[valid], tte[valid], rul_cap=legacy_rul_cap)
+
+    return result

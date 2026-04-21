@@ -1,0 +1,315 @@
+\documentclass{article}
+
+% NeurIPS 2026 style
+\usepackage[preprint]{neurips_2026}
+
+% Standard packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{nicefrac}
+\usepackage{graphicx}
+\usepackage[table]{xcolor}
+\usepackage{cleveref}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+% ============================================================
+% Draft mode macros
+% ============================================================
+\newif\ifdraftmode \draftmodetrue
+\ifdraftmode
+  \newcommand{\placeholder}[1]{{\color{red}\textbf{[#1]}}}
+  \newcommand{\todo}[1]{{\color{orange}\textbf{[TODO: #1]}}}
+\else
+  \newcommand{\placeholder}[1]{#1}
+  \newcommand{\todo}[1]{}
+\fi
+
+% ============================================================
+% Notation macros
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\h}{\mathbf{h}}
+\newcommand{\W}{\mathbf{W}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\encoder}{f_\theta}
+\newcommand{\predictor}{g_\phi}
+\newcommand{\target}{\bar{f}_\xi}
+
+% ============================================================
+\title{FAM: A Self-Supervised Forecast-Anything Model\\for Rare Event Prediction}
+\author{Anonymous Author(s)}
+% ============================================================
+
+\begin{document}
+\maketitle
+
+% ============================================================
+% ABSTRACT
+% ============================================================
+\begin{abstract}
+Predicting rare events in multivariate time series - Loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches train a separate supervised model for each. We introduce FAM, a 1.26M-parameter causal JEPA encoder that is pretrained per-dataset with no labels, after which we freeze the encoder and finetune only the horizon-conditioned predictor (198K parameters, 16\% of total) for each downstream event. This \emph{predictor finetuning} is the paper's core idea: the encoder learns domain dynamics; the predictor is steered toward the specific event of interest. We apply the same architecture and pipeline across \placeholder{N} datasets in \placeholder{M} domains (turbofan degradation, spacecraft telemetry, server monitoring, cardiac ECG, bearing vibration), evaluating every task with a unified two-stage F1 protocol alongside legacy metrics for direct literature comparison. FAM matches or exceeds domain-specific supervised models $100$-$560\times$ its size using $\leq 5\%$ of labeled data. Code and evaluation suite at \placeholder{URL}.
+\end{abstract}
+
+% ============================================================
+% 1. INTRODUCTION
+% ============================================================
+\section{Introduction}
+\label{sec:intro}
+
+A turbine blade cracks after 12{,}000 flight hours. A satellite sensor drifts silently for 48 hours. A patient's ECG shifts six hours before cardiac arrest. These events are rare in operational data, yet they follow partially predictable precursor dynamics~\citep{taleb2007blackswan,scheffer2009earlywarning}. Current methods treat each event type as a separate supervised problem: RUL models~\citep{fan2024star} never see anomaly benchmarks; anomaly detectors~\citep{xu2022anomalytransformer,mtsjepa2026} never predict time-to-failure.
+
+Yet every event prediction task reduces to two questions: (1)~\emph{will an event occur within horizon $H$?} and (2)~\emph{when?} The model that answers these does not need to know what kind of event it is predicting. It needs to learn the dynamics of normality; the deviation from that normality defines the event.
+
+\paragraph{FAM.} We pretrain a causal Transformer encoder to predict future sensor representations in latent space via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa}. The horizon-conditioned predictor $\predictor$ maps the encoder's summary of the past, $\h_\text{past}$, to a predicted future representation $\hat{\h}_\text{fut}$ at variable horizon $k$, forcing the encoder to internalise dynamics at multiple timescales. Pretraining uses standard components - patches~\citep{nie2023patchtst}, instance normalisation, causal attention, EMA target~\citep{assran2023ijepa}, L1 loss - and is self-supervised.
+
+\paragraph{Core idea: predictor finetuning.} After pretraining, every SSL method discards its prediction head and probes the encoder. We do the opposite: we freeze the encoder and finetune the predictor. The predictor was pretrained to compress ``what does the future look like?'' Finetuning steers it toward ``does the future contain \emph{this} event?'' At 198K parameters (16\% of total), this is more expressive than a linear probe (257 parameters) but far cheaper and more label-efficient than end-to-end finetuning (1.26M parameters). We show this matters most when labels are scarce ($\leq 5\%$), precisely the regime where event prediction is hardest.
+
+\paragraph{Contributions.}
+\begin{enumerate}[nosep]
+  \item \textbf{Predictor finetuning as the downstream abstraction for JEPA.} Freezing the encoder and finetuning only the predictor + linear head matches or beats full E2E finetuning at $\leq 20\%$ labels and substantially outperforms it at $\leq 5\%$. The predictor is the right level of adaptation for event-specific prediction (\cref{sec:downstream,sec:finetune_ablation}).
+
+  \item \textbf{One architecture, \placeholder{N} datasets, \placeholder{M} domains.} The same 1.26M-parameter model, pretrained per-dataset with no labels, matches or exceeds domain-specific supervised models $100$-$560\times$ larger (Chronos-T5-large 709M, STAR) and dedicated SSL methods (MTS-JEPA) across turbofan degradation, spacecraft telemetry, server monitoring, cardiac ECG, and bearing vibration (\cref{sec:experiments}).
+\end{enumerate}
+
+% ============================================================
+% 2. RELATED WORK
+% ============================================================
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Self-supervised learning for time series.}
+Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}) learn by contrasting pairs. Masked reconstruction (PatchTST~\citep{nie2023patchtst}, SimMTM~\citep{dong2023simmtm}) reconstructs masked patches. JEPA predicts future \emph{representations}, avoiding reconstruction bias~\citep{assran2023ijepa,bardes2024vjepa}. For time series, TS-JEPA~\citep{tsjepa2024} applies temporal masking for classification; MTS-JEPA~\citep{mtsjepa2026} adds codebook regularisation for anomaly detection. All of these discard their pretraining head at inference and probe only the encoder. We keep the predictor and show it carries event-relevant signal.
+
+\paragraph{Foundation models for time series.}
+Chronos~\citep{ansari2024chronos}, TimesFM~\citep{das2024timesfm}, and MOMENT~\citep{goswami2024moment} pretrain on large-scale corpora for generic forecasting. FAM is complementary: a mid-scale encoder (1.26M) specialised for event prediction, not forecasting. We benchmark against Chronos as the strongest available foundation model (\cref{sec:foundation_baselines}).
+
+\paragraph{Prognostics and anomaly prediction.}
+C-MAPSS~\citep{saxena2008cmapss} is the standard RUL benchmark; supervised SOTA: STAR~\citep{fan2024star} (RMSE 10.61). Anomaly prediction methods (Anomaly Transformer~\citep{xu2022anomalytransformer}, DCdetector~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad}) typically report point-adjusted F1 (PA-F1), which inflates scores by crediting entire anomaly segments from a single detection~\citep{schmidl2022tsadeval}. We report PA-F1 only for cross-reference and use clean F1 as our primary metric.
+
+\paragraph{Channel strategies.}
+PatchTST~\citep{nie2023patchtst} showed channel-independent processing often wins; iTransformer~\citep{liu2024itransformer} showed variate-as-token wins on high-correlation data. Our default is channel-fusion (linear projection); we ablate against sensor-as-token (\cref{sec:ablations}).
+
+% ============================================================
+% 3. METHOD
+% ============================================================
+\section{Method}
+\label{sec:method}
+
+\subsection{Preprocessing}
+\label{sec:preprocessing}
+
+We follow standard practice for multi-domain time series~\citep{nie2023patchtst,ansari2024chronos,goswami2024moment}: patch tokenisation with per-window instance normalisation.
+
+\textbf{Patches.} $P$ consecutive raw samples form one token. $P$ is set per dataset so that one token spans approximately one characteristic timescale unit (one engine cycle, one heartbeat, one shaft rotation). The context window is $T{=}64$ tokens for all domains. \Cref{tab:tokenization} lists per-dataset values.
+
+\textbf{Instance normalisation.} Per window, per channel: subtract the window mean, divide by the window standard deviation. This removes distribution shift across machines and operating conditions without requiring training-set statistics at inference.
+
+\textbf{Projection.} A linear layer $\W \in \R^{d \times (S \cdot P)}$ maps each patch to a $d$-dimensional token ($d{=}256$). Sinusoidal positional encodings are added.
+
+\begin{table}[h]
+\centering
+\caption{Tokenization per dataset. $P$ is the only dataset-specific parameter.}
+\label{tab:tokenization}
+\small
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+Dataset & Sensors & Rate & Patch $P$ & Window ($T{=}64$) \\
+\midrule
+C-MAPSS FD001-004 & 14 & 1/cycle & 1 & 64 cycles \\
+SMAP / MSL & 25 / 55 & 1 Hz & 16 & ${\sim}17$ min \\
+PSM & 25 & 1 Hz & 16 & ${\sim}17$ min \\
+MBA (ECG) & 1 & 360 Hz & 16 & ${\sim}2.8$ s \\
+Paderborn & 7 & 8 kHz$^\dagger$ & 16 & 128 ms \\
+SMD & 38 & native & 16 & varies \\
+\bottomrule
+\end{tabular}
+{\footnotesize\par $\dagger$ Downsampled $8\times$ from 64~kHz.}
+\end{table}
+
+\subsection{Architecture}
+\label{sec:architecture}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_architecture_ema.pdf}
+\caption{\textbf{FAM.} Context encoder $\encoder$ (causal) produces $\h_\text{past}$. Predictor $\predictor$ maps $(\h_\text{past}, k)$ to $\hat{\h}_\text{fut}$. Target encoder $\target$ (EMA) encodes the future window bidirectionally to $\h_\text{fut}$. Loss: $\|\hat{\h}_\text{fut} - \h_\text{fut}\|_1$.}
+\label{fig:architecture}
+\end{figure}
+
+\textbf{Context encoder} $\encoder$: causal Transformer ($d{=}256$, 2 layers, 4 heads, 1.06M params). Outputs $\h_\text{past} \in \R^d$ from the last token.
+
+\textbf{Target encoder.} We support two collapse-prevention strategies:
+\begin{itemize}[nosep]
+  \item \textbf{EMA (default):} $\target$ is an exponential moving average copy of $\encoder$ ($\tau{=}0.99$), encoding a future window of $w{=}10$ tokens bidirectionally with attention pooling $\to \h_\text{fut} \in \R^d$. The stop-gradient on $\h_\text{fut}$ prevents collapse; the slow-moving target provides a stable prediction target.
+  \item \textbf{SIGReg~\citep{balestriero2025lejepa}:} The target encoder is eliminated entirely. Instead, a spectral regularisation term $\loss_\text{SIG}$ on the representation covariance prevents collapse by maintaining spectral diversity across the batch. This removes the EMA copy (${\sim}20\%$ fewer parameters) and avoids the momentum schedule as a hyperparameter. We use a curriculum: EMA for the first 150 epochs, then transition to SIGReg for the remaining epochs, which avoids the loss spike of a hard switch (\cref{sec:ablations}).
+\end{itemize}
+
+\textbf{Predictor} $\predictor$: 2-layer MLP (198K params). Maps $(\h_\text{past}, \text{PE}(k)) \to \hat{\h}_\text{fut}$, with $k \sim \text{LogU}[1, K_\text{max}]$.
+
+\textbf{Loss}: $\loss = \|\hat{\h}_\text{fut} - \text{sg}(\h_\text{fut})\|_1 + \lambda_\text{var} \cdot \text{var-reg}$, where $\text{sg}$ denotes stop-gradient (EMA mode) or $\loss = \|\hat{\h}_\text{fut} - \h_\text{fut}\|_1 + \lambda_\text{SIG} \cdot \loss_\text{SIG}$ (SIGReg mode).
+
+\textbf{Total}: 1.26M parameters (encoder 1.06M + predictor 198K + projection 4K). With SIGReg, the target encoder is dropped entirely at the end of training.
+
+\subsection{Downstream: Freeze Encoder, Finetune Predictor}
+\label{sec:downstream}
+
+Given event labels, we freeze $\encoder$ and finetune $\predictor$ + a linear head:
+
+\begin{table}[h]
+\centering
+\caption{Finetuning modes. Predictor-FT is our default.}
+\label{tab:finetune_modes}
+\small
+\begin{tabular}{@{}lcccr@{}}
+\toprule
+Mode & Encoder & Predictor & Head & Params tuned \\
+\midrule
+Frozen probe & frozen & frozen & linear & 257 \\
+\textbf{Predictor-FT} & \textbf{frozen} & \textbf{finetuned} & \textbf{linear} & \textbf{198K} \\
+E2E & finetuned & finetuned & linear & 1.26M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The predictor is run at multiple horizons $k_1, \ldots, k_W$ corresponding to the evaluation window boundaries. The concatenated representations $[\hat{\h}_{k_1}; \ldots; \hat{\h}_{k_W}]$ feed the linear head, which classifies the event window. This directly uses JEPA's horizon-conditioned future prediction for event timing.
+
+% ============================================================
+% 4. EVALUATION
+% ============================================================
+\section{Evaluation}
+\label{sec:metrics}
+
+Every event prediction task is evaluated with a unified two-stage protocol:
+
+\textbf{Stage 1 - Detection.} ``Will an event occur within horizon $H$?'' Binary F1, Precision, Recall, AUROC.
+
+\textbf{Stage 2 - Timing.} ``In which of $W{=}4$ windows?'' The time axis is quantized into $W$ windows of width $\Delta$; the model predicts the window containing the event. Macro-F1 across $W{+}1$ classes (including ``no event'').
+
+$\Delta$ is set per dataset from the event timescale ($\Delta{=}30$ cycles for C-MAPSS, $\Delta{=}50$ steps for SMAP). Sensitivity in \cref{app:window_sensitivity}.
+
+\textbf{Legacy metrics.} For direct literature comparison we also report each domain's standard metric: RMSE + NASA-S for C-MAPSS, PA-F1 for SMAP/MSL/PSM/SMD, macro-F1 for classification. PA-F1 inflates scores by crediting entire anomaly segments from a single detection~\citep{schmidl2022tsadeval}; we report it only for cross-reference, never as a primary result.
+
+\textbf{Statistical reporting.} Mean $\pm$ std ($N$ seeds, 95\% CI). Paired tests with $p$-values for all claims. Published baselines that report single numbers are noted as such.
+
+% ============================================================
+% 5. EXPERIMENTS
+% ============================================================
+\section{Experiments}
+\label{sec:experiments}
+
+We pretrain a separate FAM encoder per dataset using unlabeled training data. Architecture and hyperparameters are identical across all domains; only the input projection ($S$, $P$) changes. Pretraining: ${\sim}45$ min per dataset on a single A10G GPU.
+
+\subsection{Main Results}
+\label{sec:benchmark}
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Event prediction across \placeholder{M} domains.} Same architecture and pretraining recipe everywhere. Detection F1 at horizon $H$; legacy metric per domain convention. \placeholder{Fill from v20.}}
+\label{tab:benchmark}
+\small
+\placeholder{Columns: Dataset, Domain, Event, FAM Det-F1, FAM Timing-F1, Legacy, SOTA, SOTA Legacy, SOTA params.}
+\end{table}
+
+\subsection{C-MAPSS: Time-to-Failure}
+\label{sec:rul_results}
+
+\todo{Pred-FT label efficiency: 100\%, 20\%, 5\%. Comparison to STAR, Chronos. Two-stage F1 + RMSE.}
+
+\subsection{Anomaly Prediction: SMAP, MSL, PSM, SMD}
+\label{sec:anomaly_results}
+
+\todo{Pred-FT anomaly results. Comparison to MTS-JEPA. Two-stage F1 + PA-F1 (legacy).}
+
+\subsection{Classification: Paderborn, MBA}
+\label{sec:classification_results}
+
+\todo{Bearing fault classification, ECG arrhythmia. Macro-F1.}
+
+\subsection{Foundation Model Baselines}
+\label{sec:foundation_baselines}
+
+\todo{Chronos family (8M-709M) vs FAM (1.26M). Same frozen-probe protocol. FAM wins at 1/560th the parameters.}
+
+% ============================================================
+% 6. ABLATIONS
+% ============================================================
+\section{Ablations}
+\label{sec:ablations}
+
+\subsection{Finetuning Mode}
+\label{sec:finetune_ablation}
+
+\todo{Frozen (257) vs Pred-FT (198K) vs E2E (1.26M) at 100\%/20\%/5\% labels on FD001. The central ablation.}
+
+\subsection{Does the Predictor Help at Inference?}
+\label{sec:predictor_ablation}
+
+\todo{Probe on $\h_\text{past}$ only vs $\hat{\h}_\text{fut}$ vs multi-horizon concat. Expected: h\_past suffices for detection, predictor helps timing.}
+
+\subsection{Causal vs.\ Bidirectional Encoder}
+\label{sec:causal_ablation}
+
+\todo{5 seeds, FD001 + FD003. Causal wins on frozen probe and transfer.}
+
+\subsection{Architecture Sensitivity}
+\label{sec:arch_sensitivity}
+
+\todo{Horizon sampling, EMA momentum, depth, width. Summary in \cref{app:decisions}.}
+
+% ============================================================
+% 7. LIMITATIONS
+% ============================================================
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}[nosep]
+  \item Per-dataset pretraining, not cross-domain. A foundation model would pretrain on a union.
+  \item Label efficiency varies by dataset: strong on C-MAPSS FD001, weaker on FD003/FD004.
+  \item Anomaly ``prediction'' on SMAP is mostly within-segment continuation, not lead-time.
+  \item SMD results are weak; we report them honestly.
+\end{itemize}
+
+% ============================================================
+% 8. CONCLUSION
+% ============================================================
+\section{Conclusion}
+
+We showed that a JEPA predictor - trained to compress future dynamics during self-supervised pretraining - can be repurposed as an event-specific prediction head by finetuning it with minimal labels while keeping the encoder frozen. This simple idea yields a 1.26M-parameter model that matches or exceeds domain-specific supervised models $100$-$560\times$ its size, across \placeholder{N} datasets in \placeholder{M} domains. The encoder learns dynamics; the predictor learns the event.
+
+% ============================================================
+\bibliography{references}
+\bibliographystyle{plainnat}
+
+% ============================================================
+\appendix
+
+\section{Window Sensitivity}
+\label{app:window_sensitivity}
+\todo{Vary $\Delta$ and $W$. Show F1 is robust.}
+
+\section{Architectural Decision Log}
+\label{app:decisions}
+\todo{Decision table with evidence per choice.}
+
+\section{Extended Results}
+\label{app:extended}
+\todo{Per-seed numbers, label-efficiency sweeps, cross-subset transfer.}
+
+\section{PA-F1 Inflation}
+\label{app:pa_f1}
+\todo{Random-baseline PA-F1 per dataset. Quantify inflation.}
+
+\section{Preprocessing Details}
+\label{app:preprocessing}
+\todo{Per-dataset specifics.}
+
+\end{document}

@@ -220,6 +220,35 @@ For any claim of "A beats B":
 - **For publication**: Effect size (Cohen's d), confidence intervals
 - **Never**: Single seed, no variance reported, p-hacking
 
+### Reporting Format (NON-NEGOTIABLE)
+
+**Every numeric result must include variance information.** Use this format:
+
+```
+X.XX ± Y.YY (N seeds, 95% CI [lo, hi])
+```
+
+- Always report: **mean**, **std**, **number of seeds**, **95% CI**
+- 95% CI = mean ± t_{N-1, 0.025} × std / √N (use t-distribution, not z)
+- Be concise: `15.53 ± 1.68 (3s, 95% CI [11.35, 19.71])` — one line
+- When comparing two methods, report the **paired test p-value** inline
+- For JSON outputs, always include fields: `mean`, `std`, `n_seeds`, `ci_95_lo`, `ci_95_hi`, `per_seed`
+
+**SOTA-matched metrics.** For every dataset, compute the metric that published SOTA uses so results are directly comparable:
+
+| Dataset | Primary metric (SOTA convention) | Also compute |
+|---------|----------------------------------|-------------|
+| C-MAPSS FD001-004 | **RMSE** (cycles) + **NASA-S** (asymmetric) | F1@k for k ∈ {10, 20, 30, 50} |
+| SMAP | **PA-F1** (segment-adjusted) + **non-PA F1** (point-level) | Precision, Recall, AUROC, AUPRC |
+| MSL | **PA-F1** + **non-PA F1** | Precision, Recall, AUROC, AUPRC |
+| SWaT | **PA-F1** + **non-PA F1** | Precision, Recall |
+
+Report PA-F1 for comparability with literature but always pair it with non-PA F1 (the honest metric). Decompose F1 into Precision and Recall so reviewers can see the tradeoff.
+
+When a SOTA paper reports a single number without seeds (e.g., STAR 10.61), note this explicitly: `STAR: 10.61 (paper, 1 run, no CI)`.
+
+**Update agents on the VM** to follow these same reporting conventions (add this section to the VM's `.claude/agents/ml-researcher.md` at the start of every overnight session).
+
 ---
 
 ## Deep Research Mode

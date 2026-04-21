@@ -58,7 +58,7 @@
 \DeclareMathOperator{\Var}{Var}
 
 % ============================================================
-\title{FAM: Causal JEPA for Label-Efficient Turbofan RUL\\and Anomaly Segment Scoring in Multivariate Sensor Streams}
+\title{FAM: A Self-Supervised Forecast-Anything Model\\for Rare Event Prediction}
 \author{Anonymous Author(s)}
 % ============================================================
 
@@ -86,7 +86,7 @@ We take this insight literally. Rather than forecasting raw values or classifyin
 
 \paragraph{FAM: one architectural idea.} The core of FAM is a single design choice: \textbf{causal latent trajectory prediction} via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa} (\cref{fig:architecture}). The encoder predicts future representations, not raw values, sidestepping the reconstruction bias of masked autoencoders~\citep{he2022mae} and the error accumulation of autoregressive forecasters. Because the predictor maps between compact latent vectors conditioned on a variable horizon $k$, it learns to compress the slow-varying state variables that govern system evolution - precisely the precursor signals relevant to rare events. We additionally explore two variant probes as preliminary ablations - SIGReg spectral regularization~\citep{balestriero2025lejepa} in place of the EMA target, and CrossVar (sensor-as-token) attention~\citep{liu2024itransformer} - both of which we report as mixed / exploratory rather than load-bearing contributions (\cref{sec:ablations}).
 
-\paragraph{One encoder, any event.} After self-supervised pretraining on unlabeled sensor streams, the frozen FAM encoder supports diverse event types - time-to-failure regression in turbofan engines, zero-label anomaly onset detection in spacecraft telemetry, threshold exceedance prediction in industrial processes, fault classification across operating conditions - through task-specific linear probes. The encoder is frozen; the representations it produces are input-dependent and event-relevant. A notable special case: the prediction error from pretraining is \emph{itself} a zero-label anomaly detector, requiring no event labels at all.
+\paragraph{One encoder, any event — unified evaluation.} After self-supervised pretraining on unlabeled sensor streams, the frozen FAM encoder supports diverse event types through task-specific linear probes. Rather than using task-specific metrics (RMSE for RUL, PA-F1 for anomaly detection), we evaluate all event types through a \emph{unified two-stage protocol}: \textbf{Stage~1} asks ``will an event occur within horizon $H$?'' (binary detection $\to$ F1, Precision, Recall, AUROC), while \textbf{Stage~2} asks ``in which time window?'' by quantizing the time axis into $W$ windows of width $\Delta$ and predicting the window index (ordinal classification $\to$ per-window F1, macro-F1). This framing applies to any event type --- turbofan failure, anomaly onset, threshold exceedance --- and makes results directly comparable across domains. We additionally report legacy metrics (RMSE, NASA-S, PA-F1) for literature comparability; the window width $\Delta$ is fixed per domain and its sensitivity is studied in \cref{app:window_sensitivity}.
 
 \paragraph{Contributions.}
 \begin{enumerate}[nosep]
@@ -168,6 +168,8 @@ Each sensor vector $\x^{(t)} \in \R^S$ is normalized per-sensor using training-s
 \end{itemize}
 Sensor ordering is handled by the learnable ID embeddings, making the architecture permutation-equivariant across sensors - no assumption on spatial adjacency is required.
 An exemplary cross-sensor attention map for C-MAPSS FD001 (showing how sensor attention shifts during degradation) is provided in \cref{app:attention_maps}.
+
+\textbf{Handling heterogeneous inputs.} A ``forecast-anything'' encoder must accommodate time series that differ in sampling frequency, number of sensors, and event semantics. FAM addresses each: (i)~\emph{Sampling frequency}: the encoder operates on fixed-length windows of $T$ timesteps; data sampled at different rates are resampled to a canonical rate per dataset (e.g., per-cycle for C-MAPSS, per-second for SMAP). The variable-horizon predictor ($k$ sampled over a wide range during training) ensures that the latent space is not tuned to a single timescale. (ii)~\emph{Number of sensors}: the linear input projection $\W \in \R^{d \times S}$ absorbs any sensor count $S$ --- changing domain only requires replacing this layer (and optionally the sensor-ID embeddings), not the encoder or predictor. (iii)~\emph{Event semantics}: the two-stage evaluation protocol (Stage~1: detection; Stage~2: timing) is event-agnostic. Only the downstream probe is task-specific; the pretrained encoder and predictor are shared.
 
 \subsection{FAM Pretraining}
 \label{sec:jepa}
