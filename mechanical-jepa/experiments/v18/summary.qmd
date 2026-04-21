@@ -31,6 +31,22 @@ Round 5 followup (Phase 12): SMAP random-init Mahalanobis @ $k{=}100$ was a miss
 
 **Reviewer trajectory: 4 → 4 → 5 → 6 → 7 (weak accept).** Round-5 reviewer explicitly credited Chronos comparison for pushing past 6. Path to 8 requires either (a) FD003/FD004 label-efficiency that actually transfers (open scientific problem) or (b) a title/framing refresh matching the delivered scope.
 
+## Chronos-2 comparison: what adapter, and is it fair?
+
+Chronos is a forecaster - it does not natively output failure scores. We need an adapter from its encoder to RUL. The obvious clean solution, and what we used:
+
+1. **Freeze the Chronos encoder** - no fine-tuning. Same treatment as FAM frozen probe.
+2. **Extract encoder features**: `pipe.embed(x)` on each test-engine window. For Chronos-T5 (univariate) we run per-sensor and concat across 14 sensors; for Chronos-2 (multivariate native) we take the last patch per sensor and concat.
+3. **Linear probe trained on labelled RUL** - identical protocol to FAM frozen probe: AdamW, LR=1e-3, weight decay 1e-2, honest val with `n_cuts_per_engine=10`, 200 epochs + patience 25, 3 seeds, identical seed management.
+
+Fairness considerations:
+ - **No fine-tuning on either side.** Fair.
+ - **Same probe capacity on both sides?** No: FAM probe input is 256-d, Chronos-T5-large probe input is 14,336-d (55x wider). The probe has far more capacity for Chronos. This favours Chronos, not FAM.
+ - **Same label protocol?** Yes. Identical `CMAPSSFinetuneDataset` with `n_cuts_per_engine=10` val.
+ - **Pooling choice (last-patch vs mean-pool vs learnable attention).** We use last-patch. Alternatives unexplored.
+
+**Deferred for future work**: Chronos with fine-tuned last layer, with mean-pool features, with learned attention pooling. These are all strictly stronger Chronos baselines. Our frozen-encoder-plus-linear-probe matches the standard SSL comparison protocol, and FAM still wins by a clear margin (15.53 vs 16.00 for Chronos-T5-large), so we consider the finding robust to reasonable variations.
+
 ```{python}
 #| label: tbl-chronos
 #| tbl-cap: "FD001 frozen-probe RUL: FAM vs Chronos foundation models (3 seeds, honest probe protocol)"
