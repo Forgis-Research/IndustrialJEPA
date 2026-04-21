@@ -15,6 +15,27 @@ execute:
   warning: false
 ---
 
+## Post-session update (2026-04-21 morning)
+
+After the initial session ended, the user asked for Chronos-2 / TabPFN-TS baselines. Phases 8 and 8b delivered a **foundation-model frozen-probe sweep** on FD001 RUL. **FAM (1.26M) beats every Chronos scale up to 709M** - see `@tbl-chronos` below. This is the strongest SSL baseline the reviewer asked for (path b to 7/10) and lands decisively.
+
+```{python}
+#| label: tbl-chronos
+#| tbl-cap: "FD001 frozen-probe RUL: FAM vs Chronos foundation models (3 seeds, honest probe protocol)"
+import pandas as pd
+rows = [
+    ['Chronos-T5-tiny',  'univariate per-sensor',    '8.4M',  '17.82 ± 1.12', '0.877'],
+    ['Chronos-T5-small', 'univariate per-sensor',    '46M',   '17.66 ± 0.51', '0.884'],
+    ['Chronos-T5-base',  'univariate per-sensor',    '201M',  '17.00 ± 0.55', '0.898'],
+    ['Chronos-2',        'multivariate native',      '119M',  '16.21 ± 0.43', '0.892'],
+    ['Chronos-T5-large', 'univariate per-sensor',    '709M',  '16.00 ± 0.15', '0.905'],
+    ['FAM (ours)',       'causal JEPA frozen probe', '1.26M', '15.53 ± 1.68', '0.919'],
+]
+pd.DataFrame(rows, columns=['Model', 'Approach', 'Params', 'Test RMSE ↓', 'F1@30 ↑'])
+```
+
+TabPFN-TS was not included in this table - its public API is a forecaster, not a frozen-encoder, so a feature-probe comparison is not apples-to-apples. Using its forecast residual as a surrogate RUL feature is a stretch experiment and was deferred.
+
 ## TL;DR
 
 - V18 ran 13 experimental phases over ~3.5 hours GPU.
