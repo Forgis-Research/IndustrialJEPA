@@ -371,7 +371,26 @@ SSL & FAM E2E (honest) & \textbf{15.08}$_{\pm0.1}$ & \textbf{15.85}$_{\pm0.6}$ &
 \label{fig:label_efficiency}
 \end{figure}
 
-\Cref{tab:main_results,fig:label_efficiency} present the main RUL results on C-MAPSS FD001. \todo{Add NASA Scoring Function (asymmetric prognostic metric) as a second column to \cref{tab:main_results}; a preliminary FAM E2E seed-averaged NASA-S is reported in \cref{app:metrics} but has not been computed at matched label budgets for STAR.}
+\Cref{tab:main_results,fig:label_efficiency} present the main RUL results on C-MAPSS FD001. The asymmetric NASA Prognostic Score~\citep{saxena2008cmapss}, reported in \cref{tab:nasa_score} for FAM E2E at each label budget (3 seeds), tells a more pessimistic operational story than RMSE: FAM's NASA-S at 100\% labels is $402 \pm 109$ vs.\ STAR paper-reported $169$, a $2.4\times$ gap that is larger than the RMSE gap ($1.5\times$). The asymmetric penalty on late predictions (which are more operationally dangerous) surfaces a residual late-prediction bias in FAM's output distribution that the symmetric RMSE does not. We treat this as an honest operational-metric caveat and document it in \cref{sec:limitations}.
+
+\begin{table}[h]
+\centering
+\caption{NASA Prognostic Score~\citep{saxena2008cmapss} at matched label budgets. FAM E2E, 3 seeds per cell. Lower is better for both metrics. NASA-S's asymmetric penalty ($e^{-d/13}-1$ for early, $e^{d/10}-1$ for late) surfaces a late-prediction bias: FAM's NASA-S gap to STAR ($2.4\times$) exceeds its RMSE gap ($1.5\times$).}
+\label{tab:nasa_score}
+\small
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Labels & RMSE $\downarrow$ & NASA-S (total) $\downarrow$ \\
+\midrule
+100\% & 15.03$_{\pm0.05}$ & 402$_{\pm109}$ \\
+20\% & 18.06$_{\pm0.67}$ & 829$_{\pm113}$ \\
+10\% & 20.42$_{\pm0.63}$ & 957$_{\pm70}$ \\
+5\% & 21.65$_{\pm0.95}$ & 1042$_{\pm200}$ \\
+\midrule
+STAR (paper, 100\%) & 10.61 & 169 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Label efficiency: FAM is comparable to STAR within seed variance at low budgets.}
 \label{sec:label_efficiency}
