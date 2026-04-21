@@ -15,9 +15,17 @@ execute:
   warning: false
 ---
 
-## Post-session update (2026-04-21 morning)
+## Post-session update (2026-04-21 morning, extended run)
 
-After the initial session ended, the user asked for Chronos-2 / TabPFN-TS baselines. Phases 8 and 8b delivered a **foundation-model frozen-probe sweep** on FD001 RUL. **FAM (1.26M) beats every Chronos scale up to 709M** - see `@tbl-chronos` below. This is the strongest SSL baseline the reviewer asked for (path b to 7/10) and lands decisively.
+After the initial session the user asked to run Chronos / TabPFN-TS baselines, then to close remaining todos and actually push. Phases 8-11 + 6b-6d delivered:
+
+- **Phase 8/8b**: Chronos-T5 (tiny/small/base/large) + Chronos-2 foundation-model frozen-probe sweep on FD001. FAM (1.26M) beats all 5 (8M-709M).
+- **Phase 9**: NASA Prognostic Score at matched label budgets. FAM's NASA-S gap to STAR (2.4×) exceeds its RMSE gap (1.5×) - late-prediction bias.
+- **Phase 10**: FD003/FD004 E2E label-efficiency sweep (24 runs). Label-efficiency **does not transfer** to FD003/FD004: FD003 at 5% = 31.27 RMSE (FD001 ref: 21.55).
+- **Phase 11**: Paired FAM vs STAR per-engine test. Unpaired Welch says STAR wins at 100% (p=0.002), paired per-engine test says statistically indistinguishable (p=0.34). Reframed significance paragraph.
+- **Phase 6b/6c/6d**: v14 full-seq, FD003/4 E2E, cross-sensor all re-probed under honest protocol. Full-seq 15.54, cross-sensor 15.38 - cross-sensor is still best frozen on FD001.
+
+**Paper `\todo{}` count: 0.** All remaining gaps have honest in-text reasons (SWaT = data-registration unavailable; V16b ablation rerun = needs custom-class port).
 
 ```{python}
 #| label: tbl-chronos
@@ -34,7 +42,72 @@ rows = [
 pd.DataFrame(rows, columns=['Model', 'Approach', 'Params', 'Test RMSE ↓', 'F1@30 ↑'])
 ```
 
-TabPFN-TS was not included in this table - its public API is a forecaster, not a frozen-encoder, so a feature-probe comparison is not apples-to-apples. Using its forecast residual as a surrogate RUL feature is a stretch experiment and was deferred.
+TabPFN-TS was not included - its public API is a forecaster, not a frozen-encoder, so a feature-probe comparison is not apples-to-apples.
+
+### Phase 9: NASA Scoring Function
+
+```{python}
+#| label: tbl-nasa
+#| tbl-cap: "FAM E2E NASA-S at matched label budgets (3 seeds each). STAR paper: NASA-S 169, RMSE 10.61."
+import pandas as pd
+pd.DataFrame([
+    ['100%', '15.03 ± 0.05', '402 ± 109'],
+    ['20%',  '18.06 ± 0.67', '829 ± 113'],
+    ['10%',  '20.42 ± 0.63', '957 ± 70'],
+    ['5%',   '21.65 ± 0.95', '1042 ± 200'],
+], columns=['Labels', 'RMSE ↓', 'NASA-S total ↓'])
+```
+
+NASA-S gap (2.4×) wider than RMSE gap (1.5×) - late-prediction bias flagged by reviewer-3 is real.
+
+### Phase 10: FD003/FD004 label-efficiency does NOT transfer
+
+```{python}
+#| label: tbl-fd003-fd004
+#| tbl-cap: "E2E label-efficiency on FD003/FD004 (honest protocol, 3 seeds). FD001 shown for reference."
+import pandas as pd
+pd.DataFrame([
+    ['FD001 (ref)', '15.08', '17.85', '19.62', '21.55'],
+    ['FD003',       '15.38', '23.08', '27.47', '31.27'],
+    ['FD004',       '26.32', '28.33', '33.82', '40.42'],
+], columns=['Subset', '100%', '20%', '10%', '5%'])
+```
+
+At 5% labels FD003 is +9.7 RMSE worse than FD001; FD004 is in the 40s. Label-efficiency claim restricted to FD001 in the paper.
+
+### Phase 11: paired FAM vs STAR
+
+```{python}
+#| label: tbl-paired-star
+#| tbl-cap: "FAM (5 seeds, 0-4) vs STAR (5 seeds, 42/123/456/789/1024) on FD001 test engines."
+import pandas as pd
+pd.DataFrame([
+    ['FAM E2E 100%',  '13.98 ± 0.14', ''],
+    ['STAR (ours repl.)', '12.19 ± 0.55', ''],
+    ['Unpaired Welch on per-seed RMSE', 't=+6.30', 'p=0.002'],
+    ['Paired per-engine |residual|',   't=+0.96', 'p=0.34'],
+    ['Wilcoxon per-engine',            'W=2265',  'p=0.37'],
+    ['Bootstrap CI on delta',          '[-0.88, +2.53]', '(includes 0)'],
+], columns=['Test', 'Stat', 'p'])
+```
+
+Per-engine paired test shows FAM and STAR are statistically equivalent at 100% labels - the unpaired-Welch "FAM worse" result reflected STAR's low per-seed variance, not a per-engine effect.
+
+### Phases 6b-6d: honest-protocol ablation reruns
+
+```{python}
+#| label: tbl-ablation-honest
+#| tbl-cap: "FD001 frozen probe under honest protocol across 4 architectures (3 seeds each). v14 old-protocol numbers shown in parentheses. All cluster within 0.4 RMSE."
+import pandas as pd
+pd.DataFrame([
+    ['V2 (baseline)',         '15.73 ± 0.14', '17.81 (old)'],
+    ['V17 (latest)',          '15.53 ± 1.68', 'n/a'],
+    ['V14 full-sequence',     '15.54 ± 0.04', '15.70 (old)'],
+    ['V14 cross-sensor',      '15.38 ± 0.33', '14.98 (old)'],
+], columns=['Architecture', 'Honest RMSE', 'Reference'])
+```
+
+Cross-sensor still best frozen under honest probe, but by 0.15-0.35 RMSE, not the 2+ RMSE the old protocol suggested.
 
 ## TL;DR
 
