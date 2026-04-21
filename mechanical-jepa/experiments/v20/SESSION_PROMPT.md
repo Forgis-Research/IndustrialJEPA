@@ -192,6 +192,7 @@ In priority order, if time remains:
 5. **Commit + push every 1-2 phases.** Tag: `v20 phase N: ...`
 6. **Paper is `paper_v20_draft.tex`** (not the old `paper.tex`).
 7. **Phase 0 is 50% of the session budget.** If predictor finetuning doesn't work, the paper doesn't work. Invest the time.
+8. **Memory guard.** Before loading any dataset, check its size: `arr = np.load(f); print(f'{f}: {arr.nbytes/1e9:.1f} GB')`. If >2GB, stream or chunk. V19 likely OOM'd loading a large dataset into memory. Never load a full high-frequency dataset (Paderborn, Hydraulic) without downsampling first.
 
 ---
 
