@@ -580,7 +580,7 @@ Given that the diagnostics confirm the encoder tracks degradation, we turn to wh
   \item \textbf{Run-to-failure structural supervision.} C-MAPSS training engines always run to failure, providing implicit structural supervision. The hand-engineered baseline margin (diagnostic 4, \cref{sec:verification}) and from-scratch comparison confirm the encoder reads degradation content rather than episode length - sequence length alone is one of 57 features in the ridge regressor (RMSE 19.1), well below JEPA (14.2). This qualifier nonetheless applies to the ``no labels'' claim.
   \item \textbf{Simulation-dominated evaluation.} C-MAPSS and N-CMAPSS are simulations. Generalization to real sensors with drift and missing channels remains untested.
   \item \textbf{Full-label gap to supervised SOTA.} At 100\% labels, supervised specialists lead: FAM E2E (15.08 under the honest protocol) vs.\ STAR (replic.\ 12.19; paper 10.61) on FD001. Our advantage appears specifically in the scarce-label regime (\cref{sec:label_efficiency}), where SSL pretraining earns its keep; closing the full-label gap likely requires architectural scaling. We note separately the 1.6 RMSE gap between our STAR replication (12.19) and the STAR paper (10.61) which we have not closed (see \cref{tab:main_results}).
-  \item \textbf{FD001-centric evaluation.} Our primary label-efficiency sweep is FD001. Per-subset results on FD003 and FD004 (\cref{tab:multisubset}) indicate the frozen-probe advantage does not transfer cleanly to multi-condition or multi-fault-mode settings without a per-condition probe head (\cref{app:fd002}). We describe the paper as a label-efficient \emph{FD001} result rather than a general C-MAPSS or general prognostics result. \todo{Full label-efficiency sweeps on FD003/FD004 and on a non-simulation dataset are the most important follow-up for a stronger submission.}
+  \item \textbf{FD001-centric evaluation.} Our primary label-efficiency sweep is FD001. Per-subset results on FD003 and FD004 (\cref{tab:multisubset}) indicate the frozen-probe advantage does not transfer cleanly to multi-condition or multi-fault-mode settings without a per-condition probe head (\cref{app:fd002}). We describe the paper as a label-efficient \emph{FD001} result rather than a general C-MAPSS or general prognostics result. \todo{Full label-efficiency sweeps on FD003/FD004 and on a non-simulation dataset are the most important follow-up for a stronger submission.} FD003/FD004 single-budget (100\% labels) honest-protocol results are delivered (v18 Phase 6 + 6c); the label-efficiency sweeps on those subsets remain future work.
   \item \textbf{Anomaly probe PA-F1 is highly sensitive to PCA rank; no principled $k$-selection method.} The Mahalanobis scoring reaches PA-F1 $0.793 \pm 0.014$ on SMAP and $0.707 \pm 0.050$ on MSL at $k=100$ across 3 pretraining seeds (\cref{sec:anomaly_results}), both substantially above MTS-JEPA's $0.336$. However, the method's PA-F1 varies $2$--$8\times$ with the PCA rank: on MSL, $k=10$ gives $0.093 \pm 0.066$ while $k=100$ gives $0.707 \pm 0.050$. This hyperparameter sensitivity is itself a limitation: we currently select $k$ by matching the representation dimension ($k \sim d/4$ to $d/2$ for $d=256$) and validating against labelled test PA-F1, which is not a strictly label-free protocol. A principled $k$-selection method - via a representation-variance diagnostic, cross-validation on held-out normal data, or a covariance-regularisation schedule - is an open follow-up. A bona fide zero-data-access threshold is also untested on both benchmarks.
   \item \textbf{Multi-condition generalisation.} FD002 exhibits a $\sim$10 RMSE gap between val (15.35) and test (26.07) because operating condition 1 is 2.4$\times$ over-represented in the test set relative to training (\cref{app:fd002}). The per-operating-condition KMeans normalisation is not sufficient to close this gap; a per-condition probe head or a more careful condition-balanced split may be required.
   \item \textbf{Data-scale requirements.} On single-channel bearing vibration (23 episodes), JEPA alone is not significantly better than handcrafted spectral features (RMSE 0.189 vs.\ 0.177, $p = 0.40$). The framework requires multivariate richness and sufficient episodes (\cref{app:bearings}).
@@ -634,7 +634,7 @@ Complete per-subset results, FD002 distribution shift analysis, and cross-fault 
 
 \begin{table}[h]
 \centering
-\caption{Multi-subset results. FD001 row uses honest v18 protocol (5 seeds each); FD003/FD004 rows use the v14 protocol point estimates (per-seed archives not retained, so std is omitted and will be added on rerun). $\rho_\text{median}$ and pred\_std are from seed 42 diagnostics.}
+\caption{Multi-subset results under the honest v18 probe protocol (3 seeds for FD003/FD004, 5 seeds for FD001). Frozen RMSE uses the v14 full-sequence checkpoints; E2E fine-tunes those same checkpoints under honest val (n\_cuts=10). $\rho_\text{median}$ and pred\_std are from seed 42 diagnostics.}
 \label{tab:multisubset}
 \small
 \begin{tabular}{@{}lcccccc@{}}
@@ -642,13 +642,13 @@ Complete per-subset results, FD002 distribution shift analysis, and cross-fault 
 Subset & RMSE (E2E) & RMSE (Frozen) & $\rho_\text{median}$ & pred\_std & vs.\ Regressor & STAR (paper) \\
 \midrule
 FD001 (honest) & 15.08$_{\pm0.1}$ & 15.53$_{\pm1.7}$ & 0.830 & 12.1 & $+4$ & 10.61 \\
-FD003 (v14) & 13.67 & 18.39 & 0.665 & 12.9 & $+4.4$ & 10.71 \\
-FD004 (v14) & 25.27 & 28.08 & 0.654 & 7.1 & $+6.5$ & 15.87 \\
+FD003 (honest) & 15.40$_{\pm0.77}$ & 16.42$_{\pm0.09}$ & 0.665 & 12.9 & $+4.4$ & 10.71 \\
+FD004 (honest) & 25.55$_{\pm0.24}$ & 27.87$_{\pm0.31}$ & 0.654 & 7.1 & $+6.5$ & 15.87 \\
 \bottomrule
 \end{tabular}
 
 \vspace{2pt}
-{\footnotesize\raggedright FD003/FD004 seed variance is pending rerun under the honest protocol; point estimates are from v14/RESULTS.md. \todo{Rerun FD003/FD004 with 5 probe seeds under the honest protocol and report std.} \par}
+{\footnotesize\raggedright FD003/FD004 rows: v18 Phase 6 (frozen, 3 seeds, v14 and V2 ckpts) + Phase 6c (E2E, 3 seeds, v14 full-seq ckpts). The v14-era old-protocol numbers (FD003 E2E 13.67, FD004 E2E 25.27) inflated FD003 by $\sim 1.7$ RMSE; FD004 is stable under protocol change. \par}
 \end{table}
 
 \paragraph{FD002 distribution shift.}
