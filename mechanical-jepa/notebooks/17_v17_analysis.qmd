@@ -14,7 +14,8 @@ execute:
   echo: true
   warning: false
   error: false
-jupyter: python3
+  jupyter: python3
+
 ---
 
 ## Overview

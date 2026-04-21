@@ -144,7 +144,10 @@
       "Bash(pdflatex -interaction=nonstopmode -halt-on-error fig_domain_overview.tex)",
       "Bash(cp fig_domain_overview.pdf ../figures/)",
       "Bash(rm -f fig_domain_overview.aux fig_domain_overview.log)",
-      "Bash(pdflatex -interaction=nonstopmode -halt-on-error fig_architecture_ema.tex)"
+      "Bash(pdflatex -interaction=nonstopmode -halt-on-error fig_architecture_ema.tex)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)"
     ]
   }
 }

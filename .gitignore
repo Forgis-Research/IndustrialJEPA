@@ -139,3 +139,6 @@ hf_cache/
 
 # Claude Code scheduled tasks lock
 .claude/scheduled_tasks.lock
+
+/.quarto/
+**/*.quarto_ipynb

@@ -39,7 +39,7 @@ print('OK')
 ### C. Read context
 1. `experiments/RESULTS.md` — master results table
 2. `experiments/v19/` — v19 already delivered PSM, MBA, SMD, Paderborn results. **Incorporate these.**
-3. `paper-neurips/paper_v20_draft.tex` — the clean paper draft. This is the target.
+3. `paper-neurips/paper.tex` — the clean paper draft. This is the target.
 4. `experiments/v18/RESULTS.md` — v18 results
 5. `experiments/v11/models.py` — model definitions
 
@@ -169,7 +169,7 @@ Only ablations that serve the paper. Three questions:
 ### 4b. Run neurips-reviewer
 Focus: (1) Is predictor finetuning convincing? (2) Is multi-domain breadth sufficient? (3) Any missing baselines?
 
-**Save**: commit to `paper-neurips/paper_v20_draft.tex`
+**Save**: commit to `paper-neurips/paper.tex`
 
 ---
 
