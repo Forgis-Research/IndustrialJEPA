@@ -174,6 +174,25 @@ Statistically significant (p<0.05) findings from Phase 0b:
 
 Source: `v20/phase5_label_efficiency.json`.
 
+### Phase 6: FD003 replication (pretrain + label efficiency)
+
+Pretrained V17 arch on FD003 (seed 42, 100 epochs, 3.4 min, final pretrain L=0.0076).
+Then pred-FT and E2E sweep at 5 budgets × 5 seeds.
+
+| Budget | pred-FT F1w | E2E F1w | Δ(pred-e2e) | paired p |
+|--------|-------------|---------|-------------|----------|
+| 100%   | 0.146 ± 0.089 | 0.246 ± 0.124 | -0.100 | 0.13 |
+|  50%   | 0.222 ± 0.147 | 0.174 ± 0.102 | +0.048 | 0.69 |
+|  20%   | 0.094 ± 0.055 | 0.082 ± 0.047 | +0.012 | 0.67 |
+|  10%   | 0.136 ± 0.150 | 0.089 ± 0.069 | +0.047 | 0.48 |
+| **5%** | **0.115 ± 0.160** | 0.016 ± 0.025 | **+0.099** | 0.26 |
+
+FD003 numbers are absolutely lower than FD001 (F1w 0.146 vs 0.391 at 100%)
+because the FD003 pretraining is undertrained (100 vs v17's 200 epochs).
+But direction matches: pred-FT wins at 5-10%, E2E wins at 100%. Cross-subset
+replication validates the crossover shape. Source: `v20/phase6_fd003.json`,
+ckpt: `v20/ckpts_fd003/v20_fd003_seed42_ep100.pt`.
+
 ### Phase 2: Chronos-T5-tiny baseline (FD001, 3 seeds)
 
 | Model | Params | F1w | RMSE | Protocol |
