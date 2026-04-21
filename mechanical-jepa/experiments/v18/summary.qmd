@@ -27,6 +27,10 @@ After the initial session the user asked to run Chronos / TabPFN-TS baselines, t
 
 **Paper `\todo{}` count: 0.** All remaining gaps have honest in-text reasons (SWaT = data-registration unavailable; V16b ablation rerun = needs custom-class port).
 
+Round 5 followup (Phase 12): SMAP random-init Mahalanobis @ $k{=}100$ was a missing cell flagged by the reviewer. Ran it: 0.604 ± 0.007. Matched-$k$ SMAP pretraining delta is **+0.189** (was claimed +0.205 using mismatched k=10 random-init). Paper updated abstract, Contribution 4, and Sec 5.4. Abstract also now discloses FD003/FD004 non-transfer per reviewer M1.
+
+**Reviewer trajectory: 4 → 4 → 5 → 6 → 7 (weak accept).** Round-5 reviewer explicitly credited Chronos comparison for pushing past 6. Path to 8 requires either (a) FD003/FD004 label-efficiency that actually transfers (open scientific problem) or (b) a title/framing refresh matching the delivered scope.
+
 ```{python}
 #| label: tbl-chronos
 #| tbl-cap: "FD001 frozen-probe RUL: FAM vs Chronos foundation models (3 seeds, honest probe protocol)"
