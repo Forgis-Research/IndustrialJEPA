@@ -225,6 +225,20 @@ Addresses round-4 reviewer MAJOR-4. Strengthens the paper's Honest
 Methodology Note: all 15.5-range FD001 "wins" from v14/v17 era collapse
 to near-zero under the honest protocol.
 
+### Phase 6c: FD003/FD004 E2E honest protocol (~2 min)
+
+E2E fine-tuning of v14 full-sequence ckpts on FD003/FD004 with honest val:
+
+| Subset | E2E honest | v14 old-protocol E2E | Δ |
+|--------|------------|----------------------|---|
+| FD003 | 15.40 ± 0.77 | 13.67 | +1.73 (old was inflated) |
+| FD004 | 25.55 ± 0.24 | 25.27 | +0.28 (stable) |
+
+FD003's "13.67 E2E" in v14 was another protocol artifact (-1.73 under
+honest). FD004 survives. Together with Phase 6b (fullseq FD001 frozen:
+15.54 honest vs 15.70 old), this completes the honest-protocol rerun of
+v14 across FD001/FD003/FD004 (FD002 skipped due to known dist shift).
+
 ### Phase 6: FD003 + FD004 multi-subset (~7 min)
 
 Honest frozen probe of 4 existing checkpoints (V2 and full-sequence for each of
