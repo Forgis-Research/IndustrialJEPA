@@ -188,33 +188,31 @@ The predictor is run at multiple horizons $k_1, \ldots, k_W$ corresponding to th
 \section{Evaluation}
 \label{sec:metrics}
 
-We evaluate \emph{event prediction}: given a context window ending at time $t$, the model must classify whether an event will be active in a future window beginning at $t{+}k$. This is strictly a forward-looking task. It differs from anomaly \emph{detection}, where the goal is to label the present or recent past, and from RUL \emph{regression}, where the target is a continuous time-to-failure. The distinction matters for metric choice: detection metrics such as point-adjusted F1 (PA-F1) reward identifying that an event \emph{has happened}, not that one \emph{will happen}.
+The model's complete output is a probability surface $P(\text{event} \mid t, k)$: for each observation time $t$ and prediction horizon $k$, the linear head produces the probability that an event will be active in the window beginning at $t{+}k$. Rather than selecting a single domain-specific metric, we evaluate this distribution directly. We adopt the time-dependent AUROC framework from survival analysis~\citep{heagerty2005survival,antolini2005time}, which defines discrimination quality as a function of prediction horizon. Every metric reported in this paper is a projection of the same underlying probability surface.
 
-\subsection{Window-Level Binary Prediction}
+\subsection{Metrics}
 
-For each patch-window $w$ of $P$ raw timesteps, we define
-\begin{equation}
-  y_w = \mathbb{1}[\text{an event is active during window } w].
-\end{equation}
-The label applies uniformly to all event types (failure, anomaly, arrhythmia, fault). For C-MAPSS ($P{=}1$) this gives per-cycle labels; for SMAP ($P{=}16$), per-16-step labels.
+\paragraph{AUROC($k$).} At each horizon $k$, we compute AUROC across all test positions $t$. This measures whether the model can rank which samples will experience events at horizon $k$, without committing to a decision threshold. Time-dependent AUC is the standard discrimination measure in survival analysis~\citep{heagerty2005survival}; \citet{schmidl2022tsadeval} independently recommend AUROC as the primary metric in their 71-algorithm time-series anomaly benchmark for the same reason: it avoids the threshold-selection confound.
 
-\paragraph{Prediction horizons.} The predictor $\predictor$ is run at horizon $k{=}1$ (one window ahead) as the primary comparison point, matching MTS-JEPA's single-step target window of $T_t{=}100$ timesteps~\citep{mtsjepa2026}. We additionally report $k \in \{4, 8, 16\}$ to measure how prediction quality degrades with horizon - a capability that detection-only methods cannot provide, since they have no forward predictor.
+\paragraph{Integrated AUC (iAUC).} The mean of AUROC($k$) over $k = 1, \ldots, K$. This yields a single scalar summarizing prediction quality across all horizons, analogous to the integrated concordance index of \citet{antolini2005time}. Practical estimation follows \citet{blanche2013estimating}.
 
-\subsection{Metrics and Their Justification}
+\paragraph{Per-horizon F1($k$).} We threshold $P(\text{event} \mid t, k)$ using a cutoff optimized on the validation split (chronological 6:2:2, matching MTS-JEPA~\citep{mtsjepa2026}). We report precision, recall, and F1 at each $k$. At $k{=}1$ this is directly comparable to MTS-JEPA's next-window evaluation.
 
-\paragraph{Primary: AUROC.} A threshold-free metric that evaluates the ranking quality of predicted scores across all windows. \citet{schmidl2022tsadeval} adopt AUROC and AUPRC as primary metrics in their 71-algorithm time-series benchmark precisely because they avoid the threshold-selection confound. We follow this recommendation.
+\paragraph{Derived event time.} Converting $P(\text{event} \mid k)$ to a point estimate (e.g., the expected event time under the predicted distribution) yields a predicted RUL. RMSE on this quantity is therefore a calibration metric on the same underlying distribution, not an independent evaluation.
 
-\paragraph{Secondary: window-level F1.} We threshold predicted scores using a held-out validation split (chronological 6:2:2 train/val/test, matching MTS-JEPA~\citep{mtsjepa2026}) and report precision, recall, and F1 per horizon $k$. The threshold is selected to maximise F1 on the validation set. This avoids two pitfalls common in the detection literature: (i)~training-set percentile thresholds, where the percentile $r$ implicitly encodes the test anomaly ratio~\citep{xu2022anomalytransformer}, and (ii)~oracle thresholds selected on the test set itself.
+\subsection{Derivation of Legacy Metrics}
 
-\paragraph{Why not PA-F1?} Point-adjustment~\citep{hundman2018smapmsl} credits every point in an anomaly segment once any single point is flagged, inflating recall for long contiguous events. \citet{kim2022rigorous} demonstrate that under PA-F1, a random anomaly score can outperform published deep learning detectors. We confirm this in our own experiments: on SMAP, a near-constant scoring baseline achieves PA-F1 $= 0.625$ versus non-adjusted F1 $= 0.069$ (a $+$55\,pp gap). PA-F1 was designed for the detection setting, where flagging an ongoing anomaly anywhere within its span may be operationally useful. In the prediction setting, where the model must anticipate future windows, this credit-sharing mechanism is not meaningful. We therefore report PA-F1 only as a legacy metric for cross-reference with prior work~\citep{mtsjepa2026,xu2022anomalytransformer,yang2023dcdetector}.
+All domain-specific metrics in prior work are projections of $P(\text{event} \mid t, k)$:
+\begin{itemize}[nosep,leftmargin=*]
+  \item \textbf{F1, PA-F1:} AUROC($k$) $\to$ sweep threshold $\to$ F1($k$) $\to$ apply point-adjustment $\to$ PA-F1.
+  \item \textbf{RMSE, NASA-S:} $P(\text{event} \mid k)$ $\to$ expected event time $\to$ RMSE, scoring function.
+  \item \textbf{Next-window evaluation:} AUROC($k{=}1$) recovers MTS-JEPA's single-step setting.
+\end{itemize}
+We deprecate PA-F1 as a primary metric. Point-adjustment~\citep{hundman2018smapmsl} credits every point in an anomaly segment once any single point is flagged. \citet{kim2022rigorous} show that a random score can outperform published deep-learning detectors under PA-F1; we confirm a $+$55\,pp inflation on SMAP in our own experiments. PA-F1 was designed for detection ($k{=}0$), where flagging an ongoing anomaly anywhere within its span may be operationally useful. In the prediction setting ($k \geq 1$), this credit-sharing mechanism is not meaningful. We report PA-F1 only as a legacy metric for cross-reference~\citep{mtsjepa2026,xu2022anomalytransformer}.
 
-\paragraph{Other principled alternatives.} Recent work has proposed VUS-ROC~\citep{paparrizos2022vus}, PA\%K~\citep{kim2022rigorous}, and Affiliation F1~\citep{huet2022affiliation} as improved segment-aware metrics. These address real limitations of both PA-F1 and pointwise F1, but remain oriented toward the detection setting and lack adoption in the prediction literature. We note them for completeness.
+\subsection{What We Report}
 
-\paragraph{Legacy metrics.} For direct comparison with domain-specific baselines: RMSE for C-MAPSS (matching STAR~\citep{fan2024star}) and PA-F1 for SMAP/MSL/PSM (matching MTS-JEPA~\citep{mtsjepa2026}). These are reported in a separate column and are not used for model selection.
-
-\subsection{Statistical Reporting}
-
-All primary results report mean $\pm$ std over $N$ seeds with 95\% confidence intervals. Key comparisons include paired $t$-tests and Wilcoxon signed-rank tests with two-sided $p$-values and effect sizes (Cohen's $d$). Published baselines that report single numbers are noted as such and excluded from paired tests.
+\textbf{Primary:} iAUC (threshold-free, horizon-integrated). \textbf{Comparable:} AUROC($k{=}1$) for direct comparison with next-window methods. \textbf{Legacy:} RMSE + NASA-S for C-MAPSS~\citep{fan2024star}; PA-F1 for SMAP/MSL/PSM~\citep{mtsjepa2026}. \textbf{Visualization:} AUROC($k$) curves in~\cref{sec:experiments}. All results: mean $\pm$ std over $N$ seeds with 95\% confidence intervals ($t$-distribution). Key claims: paired $t$-tests, Wilcoxon signed-rank tests, Cohen's $d$. Published baselines reporting single numbers are noted as such and excluded from paired tests.
 
 % ============================================================
 % 5. EXPERIMENTS
