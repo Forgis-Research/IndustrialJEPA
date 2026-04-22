@@ -12,6 +12,8 @@ Fill every red placeholder in the paper's results table with real numbers. The p
 
 The probability surface must be STORED (as .npy) so we can recompute any legacy metric from it without rerunning inference.
 
+**PRIORITY ORDER**: Start with anomaly datasets (SMAP/MSL/PSM/SMD/MBA) FIRST. C-MAPSS is proven and can run later. The anomaly datasets use the MTS-JEPA benchmark data and have historically been flakier — getting these right is the highest-value use of time.
+
 ---
 
 ## Paper Story (read this first)
@@ -19,6 +21,21 @@ The probability surface must be STORED (as .npy) so we can recompute any legacy 
 **1. Predictor finetuning.** Freeze encoder, finetune predictor (790K params) + per-horizon sigmoid head. Trained with positive-weighted BCE on the probability surface y(t, Δt). More label-efficient than E2E at ≤10% labels.
 
 **2. One architecture, N datasets, unified metric.** Same 2.37M-param causal JEPA, pretrained per-dataset with no labels. Primary metric: AUPRC pooled over all (t, Δt) cells. Secondary: AUROC. Legacy metrics derived from the stored surface for literature comparability.
+
+---
+
+## Prior results on these datasets (READ THIS — they DID work before)
+
+All 5 anomaly datasets were successfully pretrained and evaluated in v18/v19:
+- **SMAP**: v17 pretrained 150ep → v18 Mahalanobis → PA-F1 0.793±0.014 (3 seeds) ✓
+- **MSL**: v17 pretrained 150ep → v18 Mahalanobis → PA-F1 0.707±0.050 (3 seeds) ✓
+- **PSM**: v19 pretrained 50ep → Mahalanobis → PA-F1 0.813±0.048 (3 seeds) ✓
+- **SMD**: v19 pretrained 50ep → Mahalanobis → PA-F1 0.252±0.017 (3 seeds) ✓
+- **MBA**: v19 pretrained 50ep → Mahalanobis → PA-F1 0.551±0.054 (3 seeds) ✓
+
+Earlier failures (v15-v16) were due to insufficient pretraining (20 epochs). With 50-150 epochs, all succeed. Data is already downloaded on the VM at paths in `fam-jepa/data/config.py`.
+
+**What's NEW in v21**: per-horizon sigmoid + BCE (replacing Mahalanobis-only), probability surface storage, AUPRC as primary metric.
 
 ---
 
@@ -142,7 +159,7 @@ for loader in [load_smap, load_msl, load_psm, load_smd, load_mba]:
 
 ---
 
-## Phase 0: Infrastructure — BCE Head + Surface Eval (~1.5 hours)
+## Phase 0: Infrastructure — BCE Head + Surface Eval (~1.5 hours, est. 90 min)
 
 ### 0a. Implement EventHead + BCE training loop
 
@@ -169,18 +186,78 @@ def surface_to_anomaly_scores(p_surface, horizons):
     """
 ```
 
-### 0c. Validate on C-MAPSS FD001 (1 seed)
+### 0c. Validate on SMAP (1 seed) — NOT C-MAPSS
 
-Quick sanity: pretrain → pred-FT with BCE → p_surface → AUPRC + RMSE.
-Compare RMSE to v20's 16.90 — should be similar (different loss but same architecture).
+Quick sanity on SMAP first: load existing v17 SMAP checkpoint → pred-FT with BCE → p_surface → AUPRC + PA-F1.
+Compare PA-F1 to v18's 0.793 — should be in the same ballpark (different downstream head).
 
 **Save**: `v21/phase0_infrastructure.json`
 
 ---
 
-## Phase 1: C-MAPSS Breakthrough Table (~2.5 hours)
+## Phase 1: Anomaly Datasets — SMAP, MSL, PSM, SMD, MBA (~3 hours, est. 180 min)
 
-### 1a. FD001 full sweep (5 seeds)
+**START HERE.** These datasets have existing pretrained checkpoints from v17-v19. The new work is: (a) add per-horizon sigmoid + BCE finetuning on labeled data, (b) compute AUPRC from stored surfaces.
+
+### Time estimate per dataset
+
+| Dataset | Pretrain | Checkpoint exists? | Pred-FT (3 seeds) | Mahalanobis (3 seeds) | Total est. |
+|---------|----------|--------------------|--------------------|-----------------------|------------|
+| SMAP | — | ✓ v17 (150ep) | ~20 min | ~10 min | ~30 min |
+| MSL | — | ✓ v17 (150ep) | ~20 min | ~10 min | ~30 min |
+| PSM | — | ✓ v19 (50ep) | SKIP (dist mismatch) | ~10 min | ~15 min |
+| SMD | — | ✓ v19 (50ep) | ~20 min | ~10 min | ~30 min |
+| MBA | — | ✓ v19 (50ep) | ~15 min | ~10 min | ~25 min |
+| **Total** | | | | | **~130 min** |
+
+If checkpoints are NOT on the VM (were they pushed?), re-pretrain:
+- SMAP/MSL: 150 epochs ~45 min each
+- PSM/SMD/MBA: 50 epochs ~20 min each
+
+### 1a. For each dataset: Mahalanobis baseline (unsupervised)
+
+Same as v18/v19: encode windows → PCA-Mahalanobis → anomaly scores.
+Convert scores to p_surface: calibrate via sigmoid on validation scores.
+Store surface. Compute AUPRC + PA-F1 (legacy).
+
+3 seeds each.
+
+### 1b. For each dataset: Pred-FT (supervised, where feasible)
+
+For datasets where we can create a clean train/val/test split of labels:
+- SMAP: chronological split of labeled test (60/10/30)
+- MSL: same
+- PSM: SKIP pred-FT (known distribution mismatch from v20)
+- SMD: chronological split
+- MBA: chronological split
+
+3 seeds each. Store surfaces.
+
+### 1c. Aggregate
+
+For each dataset: AUPRC (primary), AUROC, PA-F1 (legacy), non-PA F1, P, R.
+
+**Save**: `v21/phase1_anomaly.json`, `v21/surfaces/anomaly_*.npz`
+
+---
+
+## Phase 2: C-MAPSS Breakthrough Table (~2.5 hours, est. 150 min)
+
+C-MAPSS is proven. The new work: replace MSE→BCE, compute AUPRC.
+
+### Time estimate
+
+| Task | Seeds | Est. time |
+|------|-------|-----------|
+| FD001 pred-FT 100% | 5 | ~25 min |
+| FD001 pred-FT 5% | 5 | ~25 min |
+| FD001 e2e 100% | 5 | ~25 min |
+| FD001 e2e 5% | 5 | ~25 min |
+| FD002 pred-FT (100%+5%) | 3 | ~30 min |
+| FD003 pred-FT (100%+5%) | 3 | ~30 min |
+| **Total** | | **~160 min** |
+
+### 2a. FD001 full sweep (5 seeds)
 
 Using V17 checkpoint (or SIGReg-pred if available):
 
@@ -191,53 +268,17 @@ Using V17 checkpoint (or SIGReg-pred if available):
 | e2e | Full finetune, BCE | 5 |
 | scratch | Random init, BCE | 5 |
 
-At 100% and 5% labels. 8 configs × 5 seeds = 40 runs.
+At 100% and 5% labels. Store ALL surfaces. Compute: AUPRC (primary), AUROC, RMSE (legacy).
 
-Store ALL surfaces. Compute: AUPRC (primary), AUROC, RMSE (legacy), NASA-S (legacy).
-
-### 1b. FD002 + FD003 (3 seeds each)
+### 2b. FD002 + FD003 (3 seeds each)
 
 Same modes but 3 seeds for time efficiency. Only 100% and 5% labels.
 
-### 1c. STAR comparison
-
-Compute STAR's AUPRC from their published RMSE predictions (if raw preds available from v18).
-Otherwise, note STAR's RMSE in the legacy column.
-
-**Save**: `v21/phase1_cmapss.json`, `v21/surfaces/cmapss_*.npz`
+**Save**: `v21/phase2_cmapss.json`, `v21/surfaces/cmapss_*.npz`
 
 ---
 
-## Phase 2: Anomaly Datasets — SMAP, MSL, PSM, SMD, MBA (~3 hours)
-
-For each dataset, two evaluation modes:
-
-### 2a. Mahalanobis baseline (unsupervised, no labels)
-
-Same as v18/v19: encode windows → PCA-Mahalanobis → anomaly scores.
-Convert scores to p_surface: calibrate via sigmoid on validation scores.
-Store surface. Compute AUPRC + PA-F1 (legacy).
-
-### 2b. Pred-FT (supervised, if labels available)
-
-For datasets where we can create a clean train/val/test split of labels:
-- SMAP: chronological split of labeled test (60/10/30)
-- MSL: same
-- PSM: SKIP pred-FT (known distribution mismatch, see v20 limitations)
-- SMD: chronological split
-- MBA: chronological split
-
-3 seeds each. Store surfaces.
-
-### 2c. Aggregate
-
-For each dataset: AUPRC (primary), AUROC, PA-F1 (legacy), non-PA F1, P, R.
-
-**Save**: `v21/phase2_anomaly.json`, `v21/surfaces/anomaly_*.npz`
-
----
-
-## Phase 3: Fill Paper Table (~1 hour)
+## Phase 3: Fill Paper Table (~1 hour, est. 60 min)
 
 ### The target table (paper.tex Tab 1):
 
@@ -256,9 +297,7 @@ MBA            | Cardiac     | Arrhythmia| [FILL]      | [FILL]     | PA-F1 [FIL
 
 ### 3a. Update paper.tex
 
-Replace Tab 1 (tab:benchmark) with the new format. Add AUPRC and AUROC columns.
-Update abstract with real numbers.
-Update §4 Evaluation to describe AUPRC as primary (replace Brier score).
+Replace Tab 1 placeholders with real numbers. Update abstract. Write summary paragraph (currently a placeholder at §5.1).
 
 ### 3b. Update RESULTS.md
 
@@ -268,7 +307,7 @@ Add all v21 numbers to the master table.
 
 ---
 
-## Phase 4: Label Efficiency with AUPRC (~1.5 hours)
+## Phase 4: Label Efficiency with AUPRC (~1.5 hours, est. 90 min)
 
 Extend the v20 label efficiency study with AUPRC:
 
@@ -286,7 +325,7 @@ Extend the v20 label efficiency study with AUPRC:
 
 ---
 
-## Phase 5: Chronos + Foundation Baselines (~1 hour)
+## Phase 5: Chronos + Foundation Baselines (~1 hour, est. 45 min)
 
 Re-evaluate Chronos-T5-tiny on FD001 with the p_surface framework.
 Store surface. Compute AUPRC + RMSE.
@@ -297,7 +336,7 @@ Add to paper table for head-to-head: FAM AUPRC vs Chronos AUPRC.
 
 ---
 
-## Phase 6: Appendix + Quality (~1 hour)
+## Phase 6: Appendix + Quality (~1 hour, est. 60 min)
 
 ### 6a. Per-horizon AUPRC curves
 
@@ -322,6 +361,23 @@ Render to HTML: `quarto render notebooks/21_v21_analysis.qmd`
 
 ---
 
+## Total Time Budget
+
+| Phase | Est. time | Cumulative | Priority |
+|-------|-----------|------------|----------|
+| Setup | 15 min | 0:15 | Required |
+| Phase 0: Infrastructure | 90 min | 1:45 | Required |
+| Phase 1: Anomaly datasets | 130-180 min | 4:45 | **CRITICAL** |
+| Phase 2: C-MAPSS | 150 min | 7:15 | **CRITICAL** |
+| Phase 3: Fill paper | 60 min | 8:15 | **CRITICAL** |
+| Phase 4: Label efficiency | 90 min | 9:45 | Important |
+| Phase 5: Chronos | 45 min | 10:30 | Important |
+| Phase 6: Appendix + Quarto | 60 min | 11:30 | Nice-to-have |
+
+**If time is short**: Phase 0 → Phase 1 → Phase 2 → Phase 3 delivers the full paper table.
+
+---
+
 ## Ground Rules
 
 1. **AUPRC for every experiment.** Pooled over all (t, Δt) cells. One number per dataset per config.
@@ -331,7 +387,8 @@ Render to HTML: `quarto render notebooks/21_v21_analysis.qmd`
 5. **No ad-hoc metrics.** Use `evaluation.surface_metrics.evaluate_probability_surface()`.
 6. **Commit after every phase.** Push results so they survive crashes.
 7. **Update RESULTS.md** after every phase with new numbers.
-8. **Budget**: ~10-12 hours. Phase 0-2 are critical. Phase 3-6 are important. If time is short, Phase 0-2 deliver the paper table numbers; Phase 3 fills the paper; Phase 4-6 are stretch.
+8. **Budget**: ~10-12 hours. Phase 0-3 are critical (8h). Phase 4-6 are stretch (3h).
+9. **Anomaly datasets FIRST.** They are the highest-risk, highest-value targets.
 
 ---
 

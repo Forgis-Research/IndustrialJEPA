@@ -307,7 +307,7 @@ We compare FAM to Amazon's Chronos-T5 family~\citep{chronos2024} - a time-series
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Chronos-T5-tiny vs.\ FAM on FD001 (3 seeds Chronos / 5 seeds FAM).} FAM's pred-FT matches Chronos-tiny's frozen linear probe on F1w within CI ($0.391$ vs.\ $0.419$) and RMSE within $0.1$, while using $3.5\times$ fewer parameters and $\mathord{\sim}45$\,min of pretraining on a single A10G rather than the large-scale corpus Chronos was pretrained on. FAM with full E2E ($2.37$M) is the best configuration shown ($0.408$ F1w, $14.96$ RMSE).}
+  \caption{\textbf{Chronos-T5-tiny vs.\ FAM on FD001 (v20 protocol, F1w metric; 3 seeds Chronos / 5 seeds FAM).} FAM's pred-FT matches Chronos-tiny within CI on F1w ($0.391$ vs.\ $0.419$) and RMSE ($16.9$ vs.\ $16.8$), using $3.5\times$ fewer parameters and ${\sim}45$\,min pretraining on a single A10G. V21 re-evaluates with AUPRC.}
   \label{tab:chronos}
   \small
   \begin{tabular}{lcccc}
@@ -345,7 +345,7 @@ We compare FAM to Amazon's Chronos-T5 family~\citep{chronos2024} - a time-series
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Finetuning-mode ablation on C-MAPSS FD001 (5 seeds).} Per-window F1 over $W{=}16$ horizons (primary); RMSE on the last test cycle (legacy, cycles). \textbf{Pred-FT is the best label-efficient mode}: at $5\%$ labels it beats E2E by $+0.084$ F1w and scratch by $+0.226$ F1w, even though E2E and scratch are $3\times$ its trainable parameters. Scratch collapses at low labels (RMSE~$33$), confirming that pretraining contributes the signal that pred-FT extracts. 95\% CIs use $t$-distribution with $N{-}1$ d.o.f.}
+  \caption{\textbf{Finetuning-mode ablation on C-MAPSS FD001 (5 seeds, v20 protocol).} F1w = per-window F1 over $W{=}16$ horizons (v20 metric; v21 replaces with AUPRC). RMSE on last test cycle (legacy). \textbf{Pred-FT is the best label-efficient mode}: at $5\%$ labels it beats E2E by $+0.084$ F1w and scratch by $+0.226$ F1w. Scratch collapses at low labels (RMSE~$33$), confirming pretraining signal. 95\% CIs use $t$-distribution with $N{-}1$ d.o.f.}
   \label{tab:finetune_ablation}
   \small
   \begin{tabular}{lcccc}
@@ -399,7 +399,7 @@ The context encoder is causal so that $\h_\text{past}$ summarises only informati
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Label-efficiency curve: pred-FT vs.\ E2E across C-MAPSS subsets.} FD001 cells at 5/10/20\% are $N=10$ paired seeds (Phases 7/8/9); the remaining FD001 cells and all FD003 cells are $N=5$. FD003 rows use the 200-epoch-pretrained encoder from Phase 10 (matching v17 FD001 compute). Bold cells mark paired tests at $p < 0.05$; italicized cells are the runner-up with $p < 0.15$. Seed-level collapses (rows where $F_w = 0.00$) listed as ``p/e''.}
+  \caption{\textbf{Label-efficiency curve: pred-FT vs.\ E2E across C-MAPSS subsets (v20 protocol, F1w metric).} FD001 cells at 5/10/20\% are $N=10$ paired seeds; remaining cells are $N=5$. FD003 rows use 200-epoch-pretrained encoder (matching v17 compute). Bold: $p < 0.05$; italic: $p < 0.15$. Collapses ($F_w = 0.00$) listed as ``p/e''. V21 re-evaluates with AUPRC.}
   \label{tab:label_efficiency}
   \small
   \begin{tabular}{lcccccc}
@@ -556,6 +556,6 @@ PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predict
   \end{tabular}
 \end{center}
 
-The normalisation, channel-drop thresholds, and window sizes follow the conventions in the cited SSL and anomaly-detection benchmarks; specific numeric thresholds are in \texttt{mechanical-jepa/data/*.py}. For C-MAPSS we use the SELECTED\_SENSORS subset from the v11 pipeline (14 sensors after removing near-constant channels). RUL cap is 125 cycles, following STAR.
+The normalisation, channel-drop thresholds, and window sizes follow the conventions in the cited SSL and anomaly-detection benchmarks; specific numeric thresholds are in \texttt{fam-jepa/data/*.py}. For C-MAPSS we use the SELECTED\_SENSORS subset from the v11 pipeline (14 sensors after removing near-constant channels). RUL cap is 125 cycles, following STAR.
 
 \end{document}
