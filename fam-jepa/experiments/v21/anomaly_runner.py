@@ -49,8 +49,46 @@ from pred_ft_utils import (  # noqa: E402
 from surface_to_legacy import anomaly_legacy_metrics, binary_prf  # noqa: E402
 from data.smap_msl import load_smap, load_msl  # noqa: E402
 from data.psm import load_psm  # noqa: E402
-from data.smd import load_smd  # noqa: E402
+from data.smd import load_smd as _load_smd_default  # noqa: E402
 from data.mba import load_mba  # noqa: E402
+
+# SMD data is shipped as per-machine .txt under the tranad repo. The canonical
+# loader expects combined .npy or `machine-*` dirs. Provide a fallback loader
+# that aggregates across all machines (same protocol v19 phase4_smd used).
+
+def load_smd(normalize: bool = True):
+    from pathlib import Path
+    import glob, os
+    import numpy as np
+    try:
+        d = _load_smd_default(normalize=normalize)
+        if d is not None:
+            return d
+    except Exception:
+        pass
+    SMD_PATH = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/'
+                    'mts-jepa/data/tranad_repo/data/SMD')
+    tr_files = sorted(glob.glob(str(SMD_PATH / 'train' / '*.txt')))
+    trains, tests, labels = [], [], []
+    for tp in tr_files:
+        name = os.path.basename(tp)
+        tr = np.loadtxt(tp, delimiter=',').astype(np.float32)
+        te = np.loadtxt(str(SMD_PATH / 'test' / name),
+                        delimiter=',').astype(np.float32)
+        lb = np.loadtxt(str(SMD_PATH / 'labels' / name),
+                        delimiter=',').astype(np.int32)
+        trains.append(tr); tests.append(te); labels.append(lb)
+    train = np.concatenate(trains, axis=0)
+    test = np.concatenate(tests, axis=0)
+    labels_cat = np.concatenate(labels, axis=0)
+    if normalize:
+        mu = train.mean(axis=0, keepdims=True)
+        std = train.std(axis=0, keepdims=True) + 1e-6
+        train = (train - mu) / std
+        test = (test - mu) / std
+    return {'train': train, 'test': test, 'labels': labels_cat,
+            'n_channels': train.shape[1], 'name': 'SMD',
+            'anomaly_rate': float(labels_cat.mean())}
 from evaluation.surface_metrics import (  # noqa: E402
     evaluate_probability_surface, auprc_per_horizon,
     monotonicity_violation_rate,

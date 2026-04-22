@@ -427,8 +427,15 @@ def train_bce(model, head, tr_loader, va_loader, mode: str,
 @torch.no_grad()
 def evaluate_surface(model, head, loader, mode: str,
                      horizons: Sequence[int] = HORIZONS_STEPS,
-                     device: str = 'cuda') -> dict:
+                     device: str = 'cuda',
+                     enforce_monotonic: bool = True) -> dict:
     """Run inference and return probability + label surfaces.
+
+    The surface is monotonicity-enforced along Δt by default: if event
+    within Δt=5 then certainly within Δt=10, so p(t, Δt) must be
+    non-decreasing in Δt. This is applied post-sigmoid with a running
+    max across the Δt axis. Enforcing this before metric computation
+    ensures AUPRC reflects a well-formed surface.
 
     Returns:
       p_surface: (N, K) float32 in [0, 1]
@@ -451,8 +458,11 @@ def evaluate_surface(model, head, loader, mode: str,
         y_list.append(y.cpu().numpy().astype(np.int8))
         t_list.append(t.cpu().numpy().astype(np.int64))
 
+    p_arr = np.concatenate(p_list, axis=0)
+    if enforce_monotonic and p_arr.shape[1] > 1:
+        p_arr = np.maximum.accumulate(p_arr, axis=1)
     return {
-        'p_surface': np.concatenate(p_list, axis=0),
+        'p_surface': p_arr,
         'y_surface': np.concatenate(y_list, axis=0),
         't_index':   np.concatenate(t_list, axis=0),
         'horizons':  np.asarray(list(horizons), dtype=np.int32),
