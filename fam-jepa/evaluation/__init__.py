@@ -17,6 +17,7 @@ from .surface_metrics import (
     evaluate_probability_surface,
     auprc_per_horizon,
     reliability_diagram,
+    monotonicity_violation_rate,
 )
 from .losses import (
     weighted_bce_loss,

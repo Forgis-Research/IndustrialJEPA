@@ -244,3 +244,57 @@ def reliability_diagram(
         'ece': ece,
         'n_bins': n_bins,
     }
+
+
+def monotonicity_violation_rate(
+    p_surface: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+) -> dict:
+    """
+    Sanity check: p(t, Δt) should be non-decreasing in Δt.
+
+    If event occurs within 5 steps, it certainly occurs within 10.
+    Violations indicate the predictor is not respecting horizon semantics.
+
+    Args:
+        p_surface: (N, K) predicted probabilities, columns ordered by Δt
+        mask: (N, K) bool, True = valid
+
+    Returns dict with:
+        violation_rate:  fraction of consecutive pairs where p(t, k) > p(t, k+1)
+        mean_violation:  mean magnitude of violations (how far above)
+        max_violation:   worst single violation
+        n_pairs:         total consecutive pairs checked
+    """
+    p = np.asarray(p_surface, dtype=np.float64)
+    N, K = p.shape
+
+    if K < 2:
+        return {'violation_rate': 0.0, 'mean_violation': 0.0,
+                'max_violation': 0.0, 'n_pairs': 0}
+
+    # Consecutive differences: p[:, k+1] - p[:, k] should be >= 0
+    diffs = p[:, 1:] - p[:, :-1]  # (N, K-1)
+
+    if mask is not None:
+        # Both columns must be valid
+        mask = np.asarray(mask, dtype=bool)
+        valid_pairs = mask[:, :-1] & mask[:, 1:]
+        diffs_valid = diffs[valid_pairs]
+    else:
+        diffs_valid = diffs.ravel()
+
+    n_pairs = len(diffs_valid)
+    if n_pairs == 0:
+        return {'violation_rate': 0.0, 'mean_violation': 0.0,
+                'max_violation': 0.0, 'n_pairs': 0}
+
+    violations = diffs_valid < -1e-6  # small tolerance for float noise
+    violation_magnitudes = np.abs(diffs_valid[violations])
+
+    return {
+        'violation_rate': float(violations.sum() / n_pairs),
+        'mean_violation': float(violation_magnitudes.mean()) if violations.any() else 0.0,
+        'max_violation': float(violation_magnitudes.max()) if violations.any() else 0.0,
+        'n_pairs': int(n_pairs),
+    }

@@ -186,15 +186,13 @@ The predictor is run at horizons $\Delta t \in \mathcal{H} = \{{\Delta t}_1, \ld
   p(t, \Delta t) \;=\; \sigma\!\bigl(\mathbf{w}^\top \hat{\h}_{t+\Delta t} + b\bigr) \;\in\; (0, 1).
   \label{eq:event_prob}
 \end{equation}
-Each horizon is an independent binary prediction (sigmoid, not softmax - an event at $\Delta t$ is typically also active at $\Delta t{+}1$). The finetuning loss sums binary cross-entropy over horizons:
+Each horizon is an independent binary prediction (sigmoid, not softmax). The finetuning loss sums positive-weighted binary cross-entropy over horizons:
 \begin{equation}
-  \loss_\text{FT} = \sum_{\Delta t \in \mathcal{H}} \text{BCE}\bigl(p(t, \Delta t),\; y(t, \Delta t)\bigr),
+  \loss_\text{FT} = \sum_{\Delta t \in \mathcal{H}} w^+ \cdot \text{BCE}\bigl(p(t, \Delta t),\; y(t, \Delta t)\bigr),
   \label{eq:ft_loss}
 \end{equation}
-where $y(t, \Delta t) = \mathbb{1}[\text{event at time } t{+}\Delta t]$. BCE encourages calibrated probabilities; residual miscalibration is corrected by temperature scaling on the validation set (one scalar).
+where $y(t, \Delta t) = \mathbb{1}[\text{event occurs within } \Delta t \text{ steps of } t]$ and $w^+ = N_{\text{neg}} / N_{\text{pos}}$ handles class imbalance. This is the conditional CDF of time-to-event, identical in structure to discrete-time survival models~\citep{lee2018deephit,ren2019drsa}. By construction, $p(t, \Delta t)$ should be non-decreasing in $\Delta t$: if an event occurs within 5 steps, it certainly occurs within 10. We verify this monotonicity as a sanity check (\cref{sec:experiments}). Residual miscalibration is corrected by temperature scaling on the validation set.
 
-% ============================================================
-% 4. EVALUATION
 % ============================================================
 % 4. EVALUATION
 % ============================================================
