@@ -195,7 +195,9 @@ The model's complete output is a probability surface
   p(t, k) \;=\; P\!\bigl(\text{event in window } t{+}k \;\bigm|\; \x_{1:t}\bigr),
   \label{eq:prob_surface}
 \end{equation}
-indexed by observation time $t$ (how much history is available) and prediction horizon $k$ (how far ahead). In principle $t$ and $k$ are continuous; in practice the model operates on discrete tokens, so $k \in \{1, \ldots, K\}$ indexes patch-sized steps and the integrals below become sums. Every metric in this paper - and every metric in the prior literature - is a projection of this surface.
+indexed by observation time $t$ (how much history is available) and prediction horizon $k$ (how far ahead). Each $p(t,k)$ is an independent binary probability; the surface does not sum to one over $k$ (an event may span multiple horizons). In practice $k \in \{1, \ldots, K\}$ indexes discrete patch-sized steps and the integrals below become sums. Every metric in this paper - and every metric in the prior literature - is a projection of this surface.
+
+\paragraph{Inference.} At test time, the frozen encoder produces $\h_\text{past}$ from $\x_{1:t}$. The predictor is run at each horizon: $\hat{\h}_k = \predictor(\h_\text{past}, k)$ for $k = 1, \ldots, K$. A linear head maps each $\hat{\h}_k$ to $p(t,k) = \sigma(\mathbf{w}^\top \hat{\h}_k + b)$. This yields $K$ calibrated scores per observation point.
 
 \subsection{Horizon-Dependent AUROC}
 
