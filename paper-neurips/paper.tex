@@ -180,7 +180,12 @@ E2E & finetuned & finetuned & linear & 2.37M \\
 \end{tabular}
 \end{table}
 
-The predictor is run at multiple horizons $k_1, \ldots, k_W$ corresponding to the evaluation window boundaries. The concatenated representations $[\hat{\h}_{k_1}; \ldots; \hat{\h}_{k_W}]$ feed the linear head, which classifies the event window. This directly uses JEPA's horizon-conditioned future prediction for event timing.
+The predictor is run at horizons $k = 1, \ldots, K$. A shared linear head maps each predicted representation to a logit: $z_k = \mathbf{w}^\top \hat{\h}_k + b$, and a sigmoid produces the event probability $p(t,k) = \sigma(z_k) \in (0, 1)$. Each horizon is an independent binary prediction (multi-label, not multi-class); sigmoids are used instead of softmax because an event active at horizon $k$ is typically also active at $k{+}1$. The finetuning loss is the sum of binary cross-entropy terms over horizons:
+\begin{equation}
+  \loss_\text{FT} = \sum_{k=1}^{K} \text{BCE}\bigl(p(t,k),\; y(t,k)\bigr),
+  \label{eq:ft_loss}
+\end{equation}
+where $y(t,k) = \mathbb{1}[\text{event in window } t{+}k]$ is derived from ground-truth labels. BCE is minimised when $p$ matches the empirical event rate, encouraging calibrated probabilities; residual miscalibration is corrected by temperature scaling on the validation set (one scalar parameter).
 
 % ============================================================
 % 4. EVALUATION
