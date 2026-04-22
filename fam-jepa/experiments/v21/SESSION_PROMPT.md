@@ -201,13 +201,24 @@ Compare PA-F1 to v18's 0.793 — should be in the same ballpark (different downs
 
 ### Speed optimizations (IMPORTANT)
 
-**Pretraining loss plateaus at epoch 10-20 across ALL datasets.** Evidence from v17/v19:
-- FD001: loss 0.033→0.006 by epoch 10, then oscillates 0.008-0.01 for 190 more epochs
-- PSM/SMD/MBA: same pattern, plateau by epoch 15-20
+**Pretraining: early stopping with patience=5.** Loss hits 0.006 by epoch 10, then just oscillates for 190 more epochs (verified on FD001, PSM, SMD, MBA). Use early stopping:
 
-**If re-pretraining is needed, use 50 epochs max** (not 150). The extra epochs are wasted compute.
+```python
+best_loss, patience_counter = float('inf'), 0
+for epoch in range(50):  # 50 = safety cap, expect stop at 10-20
+    loss = train_one_epoch(...)
+    if loss < best_loss - 1e-4:
+        best_loss = loss
+        patience_counter = 0
+        save_checkpoint(...)
+    else:
+        patience_counter += 1
+    if patience_counter >= 5:
+        print(f"Early stopping at epoch {epoch}")
+        break
+```
 
-**3 seeds for the benchmark table.** Reserve 5+ seeds only for significance tests (pred-FT vs E2E at 10% labels). 3 seeds gives mean ± std + CI, which is sufficient for Tab 1.
+**3 seeds for the benchmark table.** The only place 5+ seeds mattered was the p=0.023 claim for pred-FT vs E2E at 10% labels — one specific statistical test, not the whole benchmark. If loss plateaued, the model converged to similar solutions and variance should be low. High variance at low labels (e.g., E2E std=6.83 at 5%) comes from finetuning instability, not pretraining randomness.
 
 ### Time estimate per dataset
 
@@ -220,7 +231,7 @@ Compare PA-F1 to v18's 0.793 — should be in the same ballpark (different downs
 | MBA | ✓ v19 | ~10 min | ~5 min | ~15 min |
 | **Total** | | | | **~85 min** |
 
-If checkpoints are NOT on the VM, re-pretrain with **50 epochs** (~15 min each, not 150).
+If checkpoints are NOT on the VM, re-pretrain with early stopping (patience=5, max 50ep, ~10-15 min each).
 
 ### 1a. For each dataset: Mahalanobis baseline (unsupervised)
 
@@ -401,8 +412,8 @@ Render to HTML: `quarto render notebooks/21_v21_analysis.qmd`
 7. **Update RESULTS.md** after every phase with new numbers.
 8. **Budget**: ~10 hours. Phase 0-3 are critical (~5h). Phase 4-6 use the remaining ~5h.
 9. **Anomaly datasets FIRST.** They are the highest-risk, highest-value targets.
-10. **50 epochs max for pretraining.** Loss plateaus at 10-20ep. Don't waste GPU time.
-11. **3 seeds default.** Expand to 5 only for statistical significance claims (pred-FT vs E2E at 10% labels).
+10. **Early stopping (patience=5, max 50ep) for pretraining.** Loss plateaus at 10-20ep. Don't waste GPU time.
+11. **3 seeds default.** Expand to 5 only for the pred-FT vs E2E significance test at 10% labels.
 
 ---
 

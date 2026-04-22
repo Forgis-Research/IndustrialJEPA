@@ -222,8 +222,22 @@ For any claim of "A beats B":
 
 ### Speed Rules (v21+)
 
-- **Pretraining: 50 epochs max.** Loss plateaus at 10-20ep across all datasets (verified on FD001, PSM, SMD, MBA). Extra epochs are wasted compute.
-- **3 seeds default** for benchmark table entries. Expand to 5+ only for specific significance claims.
+- **Pretraining: early stopping with patience=5 epochs.** Loss hits 0.006 by epoch 10 then oscillates for 190 more epochs — verified on FD001, PSM, SMD, MBA. Track validation loss (or pretraining loss on held-out 10%); if no improvement for 5 consecutive epochs, stop. Max 50 epochs as safety cap, but expect convergence at 10-20. This replaces the old 150-200 epoch convention.
+  ```python
+  best_loss, patience_counter = float('inf'), 0
+  for epoch in range(max_epochs):
+      loss = train_one_epoch(...)
+      if loss < best_loss - 1e-4:
+          best_loss = loss
+          patience_counter = 0
+          save_checkpoint(...)
+      else:
+          patience_counter += 1
+      if patience_counter >= 5:
+          print(f"Early stopping at epoch {epoch}")
+          break
+  ```
+- **3 seeds default** for benchmark table entries. The only place 5+ seeds mattered was the p=0.023 claim for pred-FT vs E2E at 10% labels — that's one specific statistical test, not the whole benchmark. If loss has plateaued and the model converged, variance across seeds should be low. High variance at low labels (e.g., E2E RMSE std=6.83 at 5%) comes from finetuning instability, not pretraining randomness.
 - **Store probability surfaces** (.npz) so metrics can be recomputed without re-running inference.
 - **Commit + push after every phase.** VM can crash. Unpushed work is lost.
 
