@@ -35,7 +35,21 @@ Every number that enters the paper must have an entry here with provenance.
 
 ---
 
-## C-MAPSS FD001 — Finetuning Mode (v20, F1w metric)
+## C-MAPSS FD001 — Finetuning Mode (v21, AUPRC metric)
+
+Same V17 backbone, per-horizon EventHead + pos-weighted BCE,
+monotonicity enforced (violation rate = 0).
+
+| Mode | Params | 100% AUPRC | 100% RMSE | 5% AUPRC | 5% RMSE | Seeds | Source |
+|------|--------|-------------|-----------|----------|---------|-------|--------|
+| probe_h | 2.6K | 0.928±0.023 | 22.52±4.00 | 0.866±0.021 | 23.33±2.57 | 3 | v21 phase 2 |
+| **pred_ft** | **790K** | **0.945±0.016** | 17.06±4.64 | **0.808±0.062** | 23.66±4.94 | 3 | v21 phase 2 |
+| e2e | 2.37M | **0.962±0.006** | **14.65±1.76** | 0.726±0.204 | 19.70±1.53 | 3 | v21 phase 2 |
+| scratch | 2.37M | 0.938±0.010 | 19.65±4.34 | 0.646±0.166 | 41.32±7.54 | 3 | v21 phase 2 |
+
+---
+
+## C-MAPSS FD001 — Finetuning Mode (v20, F1w metric, legacy)
 
 These use the v20 per-window F1w metric. v21 will rerun with AUPRC.
 
@@ -51,7 +65,28 @@ These use the v20 per-window F1w metric. v21 will rerun with AUPRC.
 
 ---
 
-## C-MAPSS — Label Efficiency (v20, F1w metric)
+## C-MAPSS FD001 — Label Efficiency (v21, AUPRC, 5 seeds)
+
+Pred-FT vs E2E at 5 budgets under the v21 AUPRC protocol. Paired t-test
+(two-sided) and Wilcoxon one-sided across matched seeds.
+
+| Budget | Pred-FT AUPRC | E2E AUPRC | Δ | paired t(4) | paired p | Wilcoxon p |
+|--------|----------------|-----------|-----|-------------|----------|-------------|
+| 100% | 0.940±0.012 | **0.952±0.012** | -0.012 | -4.30 | **0.013** | 0.062 |
+| 50%  | 0.924±0.012 | 0.938±0.012    | -0.014 | -2.27 | 0.086    | 0.125 |
+| 20%  | 0.912±0.009 | 0.917±0.013    | -0.005 | -0.59 | 0.585    | 0.438 |
+| 10%  | **0.897±0.013** | 0.871±0.051  | +0.026 | +1.33 | 0.253    | 0.438 |
+| 5%   | **0.870±0.030** | 0.855±0.037  | +0.016 | +1.19 | 0.300    | 0.312 |
+
+**Observation.** The v20 F1w-at-fixed-threshold crossover at 10% labels
+($p=0.023$) softens to a non-significant $p=0.25$ under pooled AUPRC
+because the latter is threshold-free and integrates over all operating
+points. Direction is preserved; mean-difference significance is weaker
+with the same 5 seeds.
+
+---
+
+## C-MAPSS — Label Efficiency (v20, F1w metric, legacy)
 
 | Subset | Budget | N | Pred-FT F1w | E2E F1w | paired p | collapses p/e | Source |
 |--------|--------|---|-------------|---------|----------|---------------|--------|
@@ -80,7 +115,19 @@ These use the v20 per-window F1w metric. v21 will rerun with AUPRC.
 
 ---
 
-## Chronos Comparison (v20, FD001)
+## Chronos Comparison (v21, FD001, AUPRC)
+
+Same embedding-then-linear-K-head BCE protocol for Chronos as for
+FAM probe\_h.
+
+| Model | Params | Downstream | AUPRC | AUROC | RMSE | Seeds | Source |
+|-------|--------|------------|-------|-------|------|-------|--------|
+| Chronos-T5-tiny | 8.4M | frozen + linear head | 0.901±0.002 | 0.980±0.001 | 25.58±3.71 | 3 | v21 phase 5 |
+| FAM probe_h    | 2.37M | frozen + linear head | 0.928±0.023 | 0.985±0.004 | 22.52±4.00 | 3 | v21 phase 2 |
+| **FAM pred_ft** | 2.37M | frozen enc + pred-FT | **0.945±0.016** | 0.987±0.004 | 17.06±4.64 | 3 | v21 phase 2 |
+| **FAM E2E**     | 2.37M | full finetune        | **0.962±0.006** | **0.993±0.002** | **14.65±1.76** | 3 | v21 phase 2 |
+
+## Chronos Comparison (v20, FD001, F1w legacy)
 
 | Model | Params | F1w | RMSE | Seeds | Source |
 |-------|--------|-----|------|-------|--------|
