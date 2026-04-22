@@ -25,7 +25,11 @@ from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 from typing import Optional, Tuple
 
-SWAT_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/datasets/data/swat')
+try:
+    from .config import SWAT_DIR
+    SWAT_DATA_DIR = SWAT_DIR
+except ImportError:
+    SWAT_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/datasets/data/swat')
 
 
 def check_swat_available() -> bool:

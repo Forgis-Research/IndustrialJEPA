@@ -19,7 +19,11 @@ from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 from typing import Optional, Tuple, List
 
-SMD_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/SMD')
+try:
+    from .config import SMD_DIR
+    SMD_DATA_DIR = SMD_DIR
+except ImportError:
+    SMD_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/SMD')
 
 WINDOW_SIZE = 100
 TRAIN_STRIDE = 10

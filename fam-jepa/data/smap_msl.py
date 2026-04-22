@@ -286,9 +286,7 @@ def evaluate_anomaly_detection(model, data: dict, window_size: int = WINDOW_SIZE
 
     Returns dict of metrics.
     """
-    import sys
-    sys.path.insert(0, '/home/sagemaker-user/IndustrialJEPA/mechanical-jepa')
-    from evaluation.grey_swan_metrics import anomaly_metrics
+    from ..evaluation.grey_swan_metrics import anomaly_metrics
 
     test_arr = data['test']
     labels = data['labels']

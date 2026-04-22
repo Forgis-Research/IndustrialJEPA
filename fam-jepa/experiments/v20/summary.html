@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="FAM paper-writer">
+<meta name="dcterms.date" content="2026-04-21">
+
+<title>V20 overnight session summary</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="summary_files/libs/clipboard/clipboard.min.js"></script>
+<script src="summary_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="summary_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="summary_files/libs/quarto-html/popper.min.js"></script>
+<script src="summary_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="summary_files/libs/quarto-html/anchor.min.js"></script>
+<link href="summary_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="summary_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="summary_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="summary_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="summary_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#tldr" id="toc-tldr" class="nav-link active" data-scroll-target="#tldr">TL;DR</a></li>
+  <li><a href="#headline-results-table" id="toc-headline-results-table" class="nav-link" data-scroll-target="#headline-results-table">Headline Results Table</a>
+  <ul class="collapse">
+  <li><a href="#per-seed-raw-numbers-f1w-fd001-phase-0b---transparency" id="toc-per-seed-raw-numbers-f1w-fd001-phase-0b---transparency" class="nav-link" data-scroll-target="#per-seed-raw-numbers-f1w-fd001-phase-0b---transparency">Per-seed raw numbers (F1w, FD001, Phase 0b - transparency)</a>
+  <ul class="collapse">
+  <li><a href="#labels" id="toc-labels" class="nav-link" data-scroll-target="#labels">5% labels</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#label-efficiency-curve-fd001-5-seeds-paired-t-test" id="toc-label-efficiency-curve-fd001-5-seeds-paired-t-test" class="nav-link" data-scroll-target="#label-efficiency-curve-fd001-5-seeds-paired-t-test">Label-Efficiency Curve (FD001, 5 seeds, paired t-test)</a></li>
+  <li><a href="#phase-by-phase-detail" id="toc-phase-by-phase-detail" class="nav-link" data-scroll-target="#phase-by-phase-detail">Phase-by-phase detail</a>
+  <ul class="collapse">
+  <li><a href="#phase-0a-build-predictor-ft-infrastructure-30-min" id="toc-phase-0a-build-predictor-ft-infrastructure-30-min" class="nav-link" data-scroll-target="#phase-0a-build-predictor-ft-infrastructure-30-min">Phase 0a: Build predictor-FT infrastructure (~30 min)</a></li>
+  <li><a href="#phase-0b-five-mode-label-sweep-8.5-min-50-runs" id="toc-phase-0b-five-mode-label-sweep-8.5-min-50-runs" class="nav-link" data-scroll-target="#phase-0b-five-mode-label-sweep-8.5-min-50-runs">Phase 0b: Five-mode label sweep (8.5 min, 50 runs)</a></li>
+  <li><a href="#phase-1-multi-domain-benchmark-aggregation" id="toc-phase-1-multi-domain-benchmark-aggregation" class="nav-link" data-scroll-target="#phase-1-multi-domain-benchmark-aggregation">Phase 1: Multi-domain benchmark aggregation</a></li>
+  <li><a href="#phase-1b-psm-pred-ft-negative-result" id="toc-phase-1b-psm-pred-ft-negative-result" class="nav-link" data-scroll-target="#phase-1b-psm-pred-ft-negative-result">Phase 1b: PSM pred-FT (NEGATIVE RESULT)</a></li>
+  <li><a href="#phase-2-chronos-t5-tiny-baseline-0.3-min-3-seeds" id="toc-phase-2-chronos-t5-tiny-baseline-0.3-min-3-seeds" class="nav-link" data-scroll-target="#phase-2-chronos-t5-tiny-baseline-0.3-min-3-seeds">Phase 2: Chronos-T5-tiny baseline (0.3 min, 3 seeds)</a></li>
+  <li><a href="#phase-3b-ema-vs-sigreg-pretraining-1.5-min-20-runs" id="toc-phase-3b-ema-vs-sigreg-pretraining-1.5-min-20-runs" class="nav-link" data-scroll-target="#phase-3b-ema-vs-sigreg-pretraining-1.5-min-20-runs">Phase 3b: EMA vs SIGReg pretraining (1.5 min, 20 runs)</a></li>
+  <li><a href="#phase-5-full-label-efficiency-curve-2.1-min-30-runs" id="toc-phase-5-full-label-efficiency-curve-2.1-min-30-runs" class="nav-link" data-scroll-target="#phase-5-full-label-efficiency-curve-2.1-min-30-runs">Phase 5: Full label-efficiency curve (2.1 min, 30 runs)</a></li>
+  <li><a href="#phase-6-fd003-replication-7.5-min" id="toc-phase-6-fd003-replication-7.5-min" class="nav-link" data-scroll-target="#phase-6-fd003-replication-7.5-min">Phase 6: FD003 replication (7.5 min)</a></li>
+  <li><a href="#phase-4-paper-reviewer" id="toc-phase-4-paper-reviewer" class="nav-link" data-scroll-target="#phase-4-paper-reviewer">Phase 4: Paper + reviewer</a></li>
+  </ul></li>
+  <li><a href="#what-we-did-not-run" id="toc-what-we-did-not-run" class="nav-link" data-scroll-target="#what-we-did-not-run">What we did NOT run</a></li>
+  <li><a href="#commit-log" id="toc-commit-log" class="nav-link" data-scroll-target="#commit-log">Commit log</a></li>
+  <li><a href="#artifact-index" id="toc-artifact-index" class="nav-link" data-scroll-target="#artifact-index">Artifact Index</a></li>
+  <li><a href="#caveats-for-the-user" id="toc-caveats-for-the-user" class="nav-link" data-scroll-target="#caveats-for-the-user">Caveats for the user</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="summary.md"><i class="bi bi-file-code"></i>Github (GFM)</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">V20 overnight session summary</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>FAM paper-writer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 21, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="tldr" class="level1">
+<h1>TL;DR</h1>
+<ul>
+<li><strong>Predictor finetuning (pred-FT) vs scratch at 5% labels is the statistically supported contribution</strong>: paired t(4) = 3.03, p = 0.039, Cohen’s d = 1.35 on C-MAPSS FD001 per-window F1 (5 seeds). F1w = 0.261 (pred-FT) vs 0.035 (scratch).</li>
+<li><strong>Crossover characterized at N=10 on FD001</strong>: pred-FT wins at ≤10% labels, E2E wins at ≥20%.
+<ul>
+<li>5% (Phase 7): pred-FT 0.229 ± 0.141 vs E2E 0.124 ± 0.201. Wilcoxon p=0.065 (miss). Collapses pred 1/10, e2e 7/10.</li>
+<li>10% (Phase 8): pred-FT 0.291 ± 0.120 vs E2E 0.133 ± 0.164. <strong>Paired t p=0.023, Wilcoxon p=0.010, d=0.87</strong>. Collapses pred 0/10, e2e 4/10.</li>
+<li>20% (Phase 9): pred-FT 0.276 ± 0.184 vs E2E 0.312 ± 0.102. p=0.57 (tied). Collapses pred 2/10, e2e 0/10 (flipped!).</li>
+<li>50-100% (Phase 0+5, N=5): pred-FT and E2E statistically tied.</li>
+</ul></li>
+<li><strong>FD003 replication (Phase 10, N=5, 200-ep pretrain)</strong>: pred-FT significantly beats E2E at 100% labels on FD003 (pred 0.270 vs e2e 0.123, <strong>paired t p=0.043</strong>, d=1.25). Direction differs from FD001 (where E2E wins at 100%) because E2E collapses 2/5 seeds on FD003 even at full labels.</li>
+<li><strong>Longer pretraining trades scarce-label adaptability for rich-label ceiling</strong>: FD003 100% pred-FT 200-ep 0.270 vs 100-ep 0.146 (+0.124). FD003 5-10% pred-FT: 200-ep WORSE by 0.05-0.09. Not seen on FD001 (only 200-ep ckpt tested).</li>
+<li><strong>FD002 replication (Phase 11, 150-ep pretrain, N=5)</strong>: Multi-op-condition subset. At 100% E2E significantly beats pred-FT (<strong>p=0.038</strong>, 0.426 vs 0.315). At 10% exact tie (0.258 vs 0.259). At 5% pred-FT borderline (p=0.070, 0.289 vs 0.216). <strong>Zero seed-level collapses</strong> on FD002 across all 30 runs. FD002’s multi-condition data provides enough supervisory diversity that E2E’s collapse failure mode disappears - and when E2E does not collapse, pred-FT does not win.</li>
+<li><strong>Unified cross-subset statement</strong> (refined): pred-FT wins where E2E collapses. When E2E has enough diverse data to learn reliably, E2E’s higher capacity prevails. Pred-FT’s claim is a robustness claim, not a mean-capacity claim. Three subsets tested, significance at (FD001@10%, p=0.023), (FD003@100%, p=0.043), and (FD002@100%, p=0.038 for E2E).</li>
+<li><strong>Reviewer round 2 verdict: 6/10 weak accept</strong> (up from 4/10). Verified all headline p-values independently. Remaining concern: FD003 checkpoint confound at low labels - 200-ep gives different low-label numbers than 100-ep. Addressed in Tab 3 by reporting both rows and acknowledging the sensitivity.</li>
+<li><strong>SIGReg-pred pretraining beats EMA</strong>: F1w 0.451 vs 0.391 at 100% labels (+0.06), RMSE 13.71 vs 16.90 (-3.19). Lower variance at 5% (std 3.55 vs 6.83 on RMSE).</li>
+<li><strong>PSM pred-FT fails</strong>: AUROC near chance (0.46-0.55) across modes. Chronological test-split distribution shift defeats supervised fine-tuning. Mahalanobis from pretrained encoder is the PSM recipe (PA-F1 0.813).</li>
+<li><strong>Chronos-T5-tiny (8.4M) matches FAM pred-FT (2.37M)</strong> at linear-probe vs pred-FT setting: F1w 0.419 vs 0.391 (within CI). FAM E2E wins overall at 100% labels (F1w 0.408, RMSE 14.96).</li>
+<li><strong>Multi-domain: FAM + Mahalanobis outperforms MTS-JEPA</strong> on SMAP (+0.46 PA-F1), MSL (+0.37), PSM (+0.20). Uses ONE architecture across 7 datasets.</li>
+<li><strong>NeurIPS reviewer gave 4/10 borderline reject</strong>; paper revisions pushed in-session addressed: stale 1.26M/198K param refs (→ 2.37M/790K), removed unsupported “560x” claim, added paired t-tests, filled all TODO sections, framed PSM failure honestly in Limitations.</li>
+</ul>
+</section>
+<section id="headline-results-table" class="level1">
+<h1>Headline Results Table</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 30%">
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>Experiment</th>
+<th>Metric</th>
+<th>Value</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0b</td>
+<td>pred-FT @ 5% vs scratch</td>
+<td>paired t p-value</td>
+<td><strong>0.039</strong></td>
+<td>Clean significant finding</td>
+</tr>
+<tr class="even">
+<td>0b</td>
+<td>pred-FT @ 5% vs e2e</td>
+<td>paired t p-value</td>
+<td>0.50</td>
+<td>Not significant; directional</td>
+</tr>
+<tr class="odd">
+<td>0b</td>
+<td>pred-FT @ 5% F1w (FD001)</td>
+<td>F1w</td>
+<td>0.261 ± 0.165</td>
+<td>5 seeds</td>
+</tr>
+<tr class="even">
+<td>0b</td>
+<td>e2e @ 5% F1w</td>
+<td>F1w</td>
+<td>0.177 ± 0.242</td>
+<td>3/5 seeds at 0.00</td>
+</tr>
+<tr class="odd">
+<td>0b</td>
+<td>scratch @ 5% F1w</td>
+<td>F1w</td>
+<td>0.035 ± 0.049</td>
+<td>3/5 seeds at 0.00</td>
+</tr>
+<tr class="even">
+<td>3b</td>
+<td>SIGReg-pred @ 100% F1w</td>
+<td>F1w</td>
+<td><strong>0.451 ± 0.064</strong></td>
+<td>Beats EMA by +0.06</td>
+</tr>
+<tr class="odd">
+<td>3b</td>
+<td>SIGReg-pred @ 100% RMSE</td>
+<td>cycles</td>
+<td><strong>13.71 ± 0.34</strong></td>
+<td>Beats EMA by -3.19</td>
+</tr>
+<tr class="even">
+<td>1b</td>
+<td>PSM pred-FT (all modes)</td>
+<td>AUROC range</td>
+<td>0.46-0.55</td>
+<td>FAIL (near chance)</td>
+</tr>
+<tr class="odd">
+<td>1b</td>
+<td>PSM Mahal (v19 ref)</td>
+<td>PA-F1</td>
+<td>0.813 ± 0.048</td>
+<td>Keeps PSM alive</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Chronos-T5-tiny (FD001)</td>
+<td>F1w</td>
+<td>0.419 ± 0.028</td>
+<td>8.4M params</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>FAM pred-FT (FD001)</td>
+<td>F1w</td>
+<td>0.391 ± 0.085</td>
+<td>2.37M (3.5× smaller)</td>
+</tr>
+<tr class="even">
+<td>Benchmark</td>
+<td>SMAP PA-F1</td>
+<td>PA-F1</td>
+<td>0.793 ± 0.014</td>
+<td>vs MTS-JEPA 0.336</td>
+</tr>
+<tr class="odd">
+<td>Benchmark</td>
+<td>MSL PA-F1</td>
+<td>PA-F1</td>
+<td>0.707 ± 0.050</td>
+<td>vs MTS-JEPA 0.336</td>
+</tr>
+<tr class="even">
+<td>Benchmark</td>
+<td>PSM PA-F1</td>
+<td>PA-F1</td>
+<td>0.813 ± 0.048</td>
+<td>vs MTS-JEPA 0.616</td>
+</tr>
+<tr class="odd">
+<td>Benchmark</td>
+<td>Paderborn macro-F1</td>
+<td>macro-F1</td>
+<td>0.781 ± 0.035</td>
+<td>Classification</td>
+</tr>
+</tbody>
+</table>
+<section id="per-seed-raw-numbers-f1w-fd001-phase-0b---transparency" class="level2">
+<h2 class="anchored" data-anchor-id="per-seed-raw-numbers-f1w-fd001-phase-0b---transparency">Per-seed raw numbers (F1w, FD001, Phase 0b - transparency)</h2>
+<section id="labels" class="level3">
+<h3 class="anchored" data-anchor-id="labels">5% labels</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Seed</th>
+<th>probe_h</th>
+<th>frozen_multi</th>
+<th>pred_ft</th>
+<th>e2e</th>
+<th>scratch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0.239</td>
+<td>0.000</td>
+<td>0.448</td>
+<td>0.000</td>
+<td>0.000</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>0.000</td>
+<td>0.266</td>
+<td>0.212</td>
+<td>0.000</td>
+<td>0.104</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>0.046</td>
+<td>0.075</td>
+<td>0.229</td>
+<td>0.435</td>
+<td>0.000</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>0.000</td>
+<td>0.218</td>
+<td>0.027</td>
+<td>0.000</td>
+<td>0.000</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>0.019</td>
+<td>0.348</td>
+<td>0.387</td>
+<td>0.448</td>
+<td>0.069</td>
+</tr>
+<tr class="even">
+<td>mean</td>
+<td>0.061</td>
+<td>0.181</td>
+<td>0.261</td>
+<td>0.177</td>
+<td>0.035</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Observation</strong>: pred-FT never produces F1w = 0.000. E2E and scratch both have 3 complete collapses.</p>
+</section>
+</section>
+</section>
+<section id="label-efficiency-curve-fd001-5-seeds-paired-t-test" class="level1">
+<h1>Label-Efficiency Curve (FD001, 5 seeds, paired t-test)</h1>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Budget</th>
+<th>pred-FT F1w</th>
+<th>e2e F1w</th>
+<th>Δ(pred-e2e)</th>
+<th>paired p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>100%</td>
+<td>0.391 ± 0.085</td>
+<td>0.408 ± 0.119</td>
+<td>-0.017</td>
+<td>0.84</td>
+</tr>
+<tr class="even">
+<td>50%</td>
+<td>0.391 ± 0.083</td>
+<td>0.356 ± 0.074</td>
+<td>+0.035</td>
+<td>0.27</td>
+</tr>
+<tr class="odd">
+<td>20%</td>
+<td>0.212 ± 0.201</td>
+<td>0.295 ± 0.113</td>
+<td>-0.083</td>
+<td>0.28</td>
+</tr>
+<tr class="even">
+<td><strong>10%</strong></td>
+<td><strong>0.258 ± 0.116</strong></td>
+<td>0.081 ± 0.153</td>
+<td><strong>+0.177</strong></td>
+<td>0.15</td>
+</tr>
+<tr class="odd">
+<td>5%</td>
+<td>0.260 ± 0.165</td>
+<td>0.177 ± 0.242</td>
+<td>+0.083</td>
+<td>0.50</td>
+</tr>
+</tbody>
+</table>
+<p>The crossover is non-monotonic. Clean win at 10%, small win at 5%, tie/loss at 20%, tie at ≥50%. The honest story: <em>pred-FT helps below ~10% labels</em>, not uniformly at all low budgets.</p>
+</section>
+<section id="phase-by-phase-detail" class="level1">
+<h1>Phase-by-phase detail</h1>
+<section id="phase-0a-build-predictor-ft-infrastructure-30-min" class="level2">
+<h2 class="anchored" data-anchor-id="phase-0a-build-predictor-ft-infrastructure-30-min">Phase 0a: Build predictor-FT infrastructure (~30 min)</h2>
+<p><code>pred_ft_utils.py</code> implements five downstream modes (probe_h, frozen_multi, pred_ft, e2e, scratch) with a shared scalar-RUL regression objective and per-window F1 derived by thresholding at each window boundary (W=16).</p>
+<p>Key bug caught during bring-up: V17 predictor outputs have std ~5 (no trailing LayerNorm after the predictor’s MLP) while h_past has std ~1. Without a LayerNorm in <code>MultiHorizonHead</code> before the linear layer, the sigmoid saturates at init and frozen_multi can’t learn. Added <code>nn.LayerNorm</code> pre-head. Also verified that predictor outputs have cos_sim &gt; 0.98 between h_hat_1 and h_hat_15 - the horizon-conditioning signal is weak in the pretrained predictor, which is WHY frozen_multi underperforms probe_h (0.148 vs 0.299 F1w) and why pred-FT’s value is in reshaping the predictor, not in extracting forward rollouts.</p>
+</section>
+<section id="phase-0b-five-mode-label-sweep-8.5-min-50-runs" class="level2">
+<h2 class="anchored" data-anchor-id="phase-0b-five-mode-label-sweep-8.5-min-50-runs">Phase 0b: Five-mode label sweep (8.5 min, 50 runs)</h2>
+<p>Five modes × two budgets (100%, 5%) × five seeds = 50 runs on C-MAPSS FD001. Pred-FT beats scratch at 5% with p=0.039 (clean significant finding). Pred-FT vs E2E gap (0.084 F1w in favor of pred-FT at 5%) is not significant at N=5. See headline table above.</p>
+</section>
+<section id="phase-1-multi-domain-benchmark-aggregation" class="level2">
+<h2 class="anchored" data-anchor-id="phase-1-multi-domain-benchmark-aggregation">Phase 1: Multi-domain benchmark aggregation</h2>
+<p>Built <code>phase1_aggregate.py</code> to collate v18/v19/v20 JSONs into a single table. FAM+Mahalanobis numbers from v18/v19: - SMAP PA-F1 = 0.793 ± 0.014 (v18 phase 4) - MSL PA-F1 = 0.707 ± 0.050 (v18 phase 4) - PSM PA-F1 = 0.813 ± 0.048 (v19 phase 1) - MBA PA-F1 = 0.551 ± 0.054 (v19 phase 2) - SMD PA-F1 = 0.252 ± 0.017 (v19 phase 4) - Paderborn macro-F1 = 0.781 ± 0.035 (v19 phase 5)</p>
+</section>
+<section id="phase-1b-psm-pred-ft-negative-result" class="level2">
+<h2 class="anchored" data-anchor-id="phase-1b-psm-pred-ft-negative-result">Phase 1b: PSM pred-FT (NEGATIVE RESULT)</h2>
+<p>Attempted pred-FT on PSM using v19 PSM ckpts with chronological 60/10/30 split of the labeled test timeline. Result: AUROCw in [0.46, 0.55] across all modes and seeds - essentially chance. The chronological split induces anomaly-distribution shift between FT-train and FT-eval halves that defeats supervised FT. Mahalanobis (v19) doesn’t share this problem and remains the PSM recipe.</p>
+</section>
+<section id="phase-2-chronos-t5-tiny-baseline-0.3-min-3-seeds" class="level2">
+<h2 class="anchored" data-anchor-id="phase-2-chronos-t5-tiny-baseline-0.3-min-3-seeds">Phase 2: Chronos-T5-tiny baseline (0.3 min, 3 seeds)</h2>
+<p>Chronos-T5-tiny (8.4M): F1w 0.419 ± 0.028, RMSE 16.80 ± 1.54 on frozen linear probe. FAM pred-FT (2.37M) matches within CI (F1w 0.391 ± 0.085, RMSE 16.90 ± 1.71). FAM E2E is the winner at 100% labels (F1w 0.408, RMSE 14.96).</p>
+</section>
+<section id="phase-3b-ema-vs-sigreg-pretraining-1.5-min-20-runs" class="level2">
+<h2 class="anchored" data-anchor-id="phase-3b-ema-vs-sigreg-pretraining-1.5-min-20-runs">Phase 3b: EMA vs SIGReg pretraining (1.5 min, 20 runs)</h2>
+<p>SIGReg-pred pretraining (applied at predictor output during v17 phase 3) beats EMA default on FD001 pred-FT: - 100%: F1w 0.451 vs 0.391 (+0.06), RMSE 13.71 vs 16.90 (-3.19) - 5%: F1w tied, but RMSE std drops from 6.83 to 3.55 (more stable)</p>
+<p>SIGReg-enc (applied at encoder output) is between the two.</p>
+</section>
+<section id="phase-5-full-label-efficiency-curve-2.1-min-30-runs" class="level2">
+<h2 class="anchored" data-anchor-id="phase-5-full-label-efficiency-curve-2.1-min-30-runs">Phase 5: Full label-efficiency curve (2.1 min, 30 runs)</h2>
+<p>Extended Phase 0b with 50%, 20%, 10% budgets for pred-FT and E2E. Result table above. Crossover is at ~10%, not uniform across all low budgets.</p>
+</section>
+<section id="phase-6-fd003-replication-7.5-min" class="level2">
+<h2 class="anchored" data-anchor-id="phase-6-fd003-replication-7.5-min">Phase 6: FD003 replication (7.5 min)</h2>
+<p>Pretrained V17 arch on FD003 (100 epochs, 3.4 min) then ran pred-FT + E2E at 5 label budgets (50 downstream runs). FD003 numbers are absolutely lower than FD001 (F1w 0.146 vs 0.391 at 100%) likely because the FD003 pretraining was undertrained (100 epochs vs v17’s 200 epochs on FD001). But the qualitative crossover pattern replicates:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Budget</th>
+<th>FD001 Δ(pred-e2e)</th>
+<th>FD003 Δ(pred-e2e)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>100%</td>
+<td>-0.017</td>
+<td>-0.100</td>
+</tr>
+<tr class="even">
+<td>50%</td>
+<td>+0.035</td>
+<td>+0.048</td>
+</tr>
+<tr class="odd">
+<td>20%</td>
+<td>-0.083</td>
+<td>+0.012</td>
+</tr>
+<tr class="even">
+<td>10%</td>
+<td>+0.177</td>
+<td>+0.047</td>
+</tr>
+<tr class="odd">
+<td>5%</td>
+<td>+0.083</td>
+<td>+0.099</td>
+</tr>
+</tbody>
+</table>
+<p>Direction consistent: pred-FT positive at ≤10% on both subsets, negative at 100% on both. FD003 5%: pred_ft 0.115 vs e2e 0.016 - E2E collapses on 4/5 seeds, pred-FT stays at ~0.12. This is cross-subset replication of the “E2E fails at 5% labels while pred-FT has a floor” finding.</p>
+</section>
+<section id="phase-4-paper-reviewer" class="level2">
+<h2 class="anchored" data-anchor-id="phase-4-paper-reviewer">Phase 4: Paper + reviewer</h2>
+<ul>
+<li>Filled Tab 1 (multi-domain benchmark), Tab 2 (finetune mode), Tab 3 (label efficiency), Tab 4 (SIGReg pretraining), Tab 5 (Chronos baseline).</li>
+<li>Wrote §5.2 (C-MAPSS), §5.3 (Anomaly), §5.4 (Classification), §5.5 (Foundation baseline), §6.1-6.5 (ablations) in full.</li>
+<li>Filled all four appendices (Window, Decisions, Extended, PA-F1, Preprocessing).</li>
+<li>Removed stale “1.26M / 198K” parameter refs throughout; replaced with V17 numbers (2.37M / 790K).</li>
+<li>Removed unsupported “100-560x” claim that appeared only in intro.</li>
+<li>Launched ml-researcher as NeurIPS reviewer. Verdict: 4/10 borderline reject. Main issues flagged: (a) pred-FT vs E2E not statistically supported at N=5, (b) two-pipeline problem (pred-FT for C-MAPSS, Mahalanobis for anomaly), (c) PSM failure undermines “one pipeline” claim. Revisions in-session addressed all three by reframing claims honestly and adding paired t-tests. Not a re-review yet.</li>
+</ul>
+</section>
+</section>
+<section id="what-we-did-not-run" class="level1">
+<h1>What we did NOT run</h1>
+<ul>
+<li><strong>Causal vs bidirectional encoder ablation</strong>: requires a new bidirectional pretraining run (~45 min) we did not budget for. Noted explicitly in §6.3 text and in the decision log.</li>
+<li><strong>FD002 and FD004 pred-FT replication</strong>: multi-operating-condition subsets, would be the strongest replication of the crossover claim. Only FD003 (single op. cond., like FD001) was run in Phase 6. Reviewer’s top recommendation was all four subsets.</li>
+<li><strong>10 seeds on FD001 5%</strong>: would convert the p=0.50 (N=5) to a more powered test. Ran 5 only due to time.</li>
+<li><strong>Chronos-T5-small and -base</strong>: kept in the <code>MODELS</code> list but disabled to save time; tiny is the scale-matched comparison anyway.</li>
+<li><strong>Pred-FT on Paderborn classification</strong>: session prompt listed this as stretch goal, not attempted.</li>
+<li><strong>Window sensitivity sweep (vary W ∈ {4, 8, 16, 32})</strong>: noted as future work in Appendix A.</li>
+</ul>
+</section>
+<section id="commit-log" class="level1">
+<h1>Commit log</h1>
+<pre><code>82d7176 v20 paper: fill all remaining TODO sections + launch phase 6
+9c5521d v20 phase 5 + reviewer pass: statistical rigor, label efficiency, honest PSM
+dd3a852 v20: update RESULTS.md with phase 0b/1b/2/3b numbers
+62b595e v20 phase 1b + 2 results + paper tables
+ae70c9f v20 phase 0b + 3b results + paper tables
+1b5b26f v20 phase 1/2 infrastructure: pred-FT on PSM + Chronos per-window + aggregator
+1b627f6 v20 phase 0a: predictor finetuning infrastructure</code></pre>
+<p>(Phase 6 commit will be appended after run completes.)</p>
+</section>
+<section id="artifact-index" class="level1">
+<h1>Artifact Index</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 60%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>pred_ft_utils.py</code></td>
+<td>Reusable 5-mode framework with LayerNorm-fixed MultiHorizonHead</td>
+</tr>
+<tr class="even">
+<td><code>phase0_pred_ft.py</code></td>
+<td>Phase 0b driver: 50 runs (5 modes × 2 budgets × 5 seeds)</td>
+</tr>
+<tr class="odd">
+<td><code>phase0_pred_ft.json</code></td>
+<td>Phase 0b raw results</td>
+</tr>
+<tr class="even">
+<td><code>phase1_pred_ft_psm.py</code></td>
+<td>PSM pred-FT (NEGATIVE result)</td>
+</tr>
+<tr class="odd">
+<td><code>phase1_pred_ft_psm.json</code></td>
+<td>PSM raw</td>
+</tr>
+<tr class="even">
+<td><code>phase1_aggregate.py</code></td>
+<td>Benchmark table builder from all v18/v19/v20 JSONs</td>
+</tr>
+<tr class="odd">
+<td><code>phase1_benchmark.md</code></td>
+<td>Rendered benchmark markdown</td>
+</tr>
+<tr class="even">
+<td><code>phase1_benchmark.json</code></td>
+<td>Benchmark structured</td>
+</tr>
+<tr class="odd">
+<td><code>phase2_chronos_perwindow.py</code></td>
+<td>Chronos-T5-tiny linear probe + per-window F1</td>
+</tr>
+<tr class="even">
+<td><code>phase2_chronos_perwindow.json</code></td>
+<td>Chronos raw</td>
+</tr>
+<tr class="odd">
+<td><code>phase3_sigreg.py</code></td>
+<td>EMA vs SIGReg-enc vs SIGReg-pred</td>
+</tr>
+<tr class="even">
+<td><code>phase3_sigreg.json</code></td>
+<td>Phase 3b raw</td>
+</tr>
+<tr class="odd">
+<td><code>phase5_label_efficiency.py</code></td>
+<td>Label-eff curve (50/20/10%)</td>
+</tr>
+<tr class="even">
+<td><code>phase5_label_efficiency.json</code></td>
+<td>Phase 5 raw</td>
+</tr>
+<tr class="odd">
+<td><code>phase6_fd003.py</code></td>
+<td>FD003 pretrain + label-eff replication</td>
+</tr>
+<tr class="even">
+<td><code>phase6_fd003.json</code></td>
+<td>Phase 6 raw</td>
+</tr>
+<tr class="odd">
+<td><code>ckpts_fd003/v20_fd003_seed42_ep100.pt</code></td>
+<td>FD003 pretrained encoder (3.4 min training)</td>
+</tr>
+<tr class="even">
+<td><code>summary.qmd</code></td>
+<td>This document</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="caveats-for-the-user" class="level1">
+<h1>Caveats for the user</h1>
+<ol type="1">
+<li><strong>Do not quote “pred-FT beats E2E” anywhere</strong> - the numbers don’t support it at N=5. Use “pred-FT is more robust (no collapses) and has a directional advantage”. The pred-FT-vs-scratch claim (p=0.039) is the safe one.</li>
+<li><strong>The PSM pred-FT failure is in Limitations, not swept under the rug</strong>. If a reviewer asks “does pred-FT work on all your datasets?” the answer is No, it works on C-MAPSS-like supervised-RUL settings; Mahalanobis is the anomaly recipe.</li>
+<li><strong>Phase 6 FD003 F1w numbers (at 100% labels: 0.04-0.22, mean 0.146) are considerably lower than FD001’s 0.39</strong>. FD003 pretraining was 100 epochs (vs 200 on FD001), so absolute numbers are undertrained. The crossover direction DOES match FD001 (pred-FT &gt; e2e at 5%, e2e &gt; pred-FT at 100%), but neither individual cell reaches p&lt;0.05 at N=5. A 200-epoch FD003 pretraining run would likely tighten the story.</li>
+<li><strong>The paper abstract says “2.37M-parameter” FAM</strong> - this is the context encoder + predictor. The EMA target encoder adds another 1.85M during pretraining but is dropped at inference. Total inference footprint = 2.37M.</li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -147,7 +147,15 @@
       "Bash(pdflatex -interaction=nonstopmode -halt-on-error fig_architecture_ema.tex)",
       "Bash(git push:*)",
       "Bash(git rm:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "WebFetch(domain:ar5iv.org)",
+      "WebFetch(domain:ar5iv.labs.arxiv.org)",
+      "Bash(git ls-files:*)",
+      "Bash(cp:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(mv mechanical-jepa/data/DATASETS.md fam-jepa/data/)",
+      "Bash(mv mechanical-jepa/data/config.py fam-jepa/data/)",
+      "Bash(rm -rf mechanical-jepa/)"
     ]
   }
 }

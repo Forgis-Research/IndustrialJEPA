@@ -8,7 +8,7 @@ A NeurIPS 2026 paper: self-supervised event prediction in multivariate time seri
 
 ```
 paper-neurips/          # THE paper (paper.tex) + figures + references
-mechanical-jepa/
+fam-jepa/
   data/                 # Dataset loaders (one file per dataset)
     smap_msl.py         # SMAP + MSL spacecraft telemetry
     psm.py              # PSM server metrics
@@ -47,4 +47,4 @@ archive/                # Old code, old paper drafts, old data pipelines
 ## Datasets (per-dataset pretrain, shared architecture)
 
 C-MAPSS FD001-004, SMAP, MSL, PSM, SMD, MBA (ECG), Paderborn (bearings).
-Data loading: `mechanical-jepa/experiments/v11/data_utils.py` (C-MAPSS), `mechanical-jepa/data/*.py` (others).
+Data loading: `fam-jepa/experiments/v11/data_utils.py` (C-MAPSS), `fam-jepa/data/*.py` (others).
