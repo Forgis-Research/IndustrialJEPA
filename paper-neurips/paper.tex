@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, \emph{horizon-dependent AUROC}: we adopt the time-dependent AUC framework from survival analysis to define discrimination quality as a function of both observation depth and prediction horizon, yielding a single comparable scalar (iAUC) from which every existing metric (PA-F1, RMSE, next-window F1) is derivable as a special case. Across \placeholder{N} datasets in \placeholder{M} domains, FAM achieves iAUC of \placeholder{X.XX} (turbofan degradation), \placeholder{X.XX} (spacecraft telemetry), \placeholder{X.XX} (server monitoring), and \placeholder{X.XX} (cardiac ECG), matching or exceeding domain-specific supervised models under both iAUC and their own legacy metrics. Code and evaluation suite at \placeholder{URL}.
+Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \delta)$ - event probability as a function of observation depth $t$ and prediction horizon $\delta$ - scored by the Brier score, a proper scoring rule from which every existing metric (PA-F1, RMSE, next-window F1) is derivable as a special case. Across \placeholder{N} datasets in \placeholder{M} domains, FAM achieves Brier scores of \placeholder{X.XX} (turbofan), \placeholder{X.XX} (spacecraft), \placeholder{X.XX} (server), and \placeholder{X.XX} (cardiac), matching or exceeding domain-specific supervised models under both the Brier score and their own legacy metrics. Code and evaluation suite at \placeholder{URL}.
 \end{abstract}
 
 % ============================================================
@@ -77,9 +77,7 @@ Yet every event prediction task has the same structure: given observations up to
 \begin{enumerate}[nosep]
   \item \textbf{Predictor finetuning.} We show that freezing a JEPA encoder and finetuning only the predictor (33\% of parameters) for each event type is more label-efficient than end-to-end finetuning: at $\leq 10\%$ labels, pred-FT significantly outperforms E2E ($p = 0.023$, $N{=}10$) while E2E collapses on 40\% of seeds (\cref{sec:downstream,sec:finetune_ablation}).
 
-  \item \textbf{Horizon-dependent AUROC.} We adopt the time-dependent AUC framework from survival analysis~\citep{heagerty2005survival} to define a unified evaluation for event prediction: $A(t,k)$ measures discrimination at observation depth $t$ and horizon $k$; its integral iAUC is a single scalar from which PA-F1, RMSE, and next-window F1 are derivable as special cases (\cref{sec:metrics}).
-
-  \item \textbf{Multi-domain validation.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, and MBA under both iAUC and legacy metrics (\cref{sec:experiments}).
+  \item \textbf{Multi-domain validation under a unified metric.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, and MBA. All tasks are evaluated through the same probability surface $p(t, \delta)$ scored by the Brier score; legacy metrics (PA-F1, RMSE) are derived as projections for direct comparability (\cref{sec:metrics,sec:experiments}).
 \end{enumerate}
 
 % ============================================================
@@ -145,19 +143,22 @@ MBA (ECG) & 1 & 360 Hz & 16 & sliding (1024 steps $\approx$ 2.8 s) \\
 \label{fig:architecture}
 \end{figure}
 
-\textbf{Context encoder} $\encoder$: causal Transformer ($d{=}256$, 2 layers, 4 heads, 1.58M params). Outputs $\h_\text{past} \in \R^d$ from the last token.
+\textbf{Context encoder} $\encoder$: a causal Transformer ($d{=}256$, 2 layers, 4 heads). Given observations $\x_{\leq t}$, it produces a summary embedding:
+\begin{equation}
+  \h_t = \encoder(\x_{\leq t}) \in \R^d.
+  \label{eq:encoder}
+\end{equation}
 
-\textbf{Target encoder.} We support two collapse-prevention strategies:
-\begin{itemize}[nosep]
-  \item \textbf{EMA (default):} $\target$ is an exponential moving average copy of $\encoder$ ($\tau{=}0.99$), encoding a future window of $w{=}10$ tokens bidirectionally with attention pooling $\to \h_\text{fut} \in \R^d$. The stop-gradient on $\h_\text{fut}$ prevents collapse; the slow-moving target provides a stable prediction target.
-  \item \textbf{SIGReg~\citep{balestriero2025lejepa}:} The target encoder is eliminated entirely. Instead, a spectral regularisation term $\loss_\text{SIG}$ on the representation covariance prevents collapse by maintaining spectral diversity across the batch. This removes the EMA copy (${\sim}20\%$ fewer parameters) and avoids the momentum schedule as a hyperparameter. We use a curriculum: EMA for the first 150 epochs, then transition to SIGReg for the remaining epochs, which avoids the loss spike of a hard switch (\cref{sec:ablations}).
-\end{itemize}
+\textbf{Predictor} $\predictor$: a 2-layer MLP. Given $\h_t$ and a prediction horizon $\delta$, it produces a predicted future embedding:
+\begin{equation}
+  \hat{\h}_{t+\delta} = \predictor(\h_t, \delta).
+  \label{eq:predictor}
+\end{equation}
+During pretraining, $\delta \sim \text{LogU}[1, \delta_\text{max}]$ is sampled randomly, forcing the encoder to internalise dynamics at multiple timescales.
 
-\textbf{Predictor} $\predictor$: 2-layer MLP (790K params). Maps $(\h_\text{past}, \text{PE}(k)) \to \hat{\h}_\text{fut}$, with $k \sim \text{LogU}[1, K_\text{max}]$.
+\textbf{Target encoder} $\target$: an EMA copy of $\encoder$ ($\tau{=}0.99$) that encodes the actual future bidirectionally with attention pooling $\to \h^*_{t+\delta} \in \R^d$. This provides the prediction target. We also experiment with a curriculum variant that transitions from EMA to SIGReg spectral regularisation~\citep{balestriero2025lejepa} (which eliminates the target encoder entirely; see \cref{sec:ablations}).
 
-\textbf{Loss}: $\loss = \|\hat{\h}_\text{fut} - \text{sg}(\h_\text{fut})\|_1 + \lambda_\text{var} \cdot \text{var-reg}$, where $\text{sg}$ denotes stop-gradient (EMA mode) or $\loss = \|\hat{\h}_\text{fut} - \h_\text{fut}\|_1 + \lambda_\text{SIG} \cdot \loss_\text{SIG}$ (SIGReg mode).
-
-\textbf{Total}: 2.37M parameters (context encoder 1.58M + predictor 790K, plus a 1.85M EMA target encoder used only during pretraining). With SIGReg the target encoder is dropped entirely at the end of training, leaving the 2.37M context+predictor.
+\textbf{Pretraining loss}: $\loss = \|\hat{\h}_{t+\delta} - \text{sg}(\h^*_{t+\delta})\|_1 + \lambda \cdot \text{var-reg}$, where sg denotes stop-gradient.
 
 \subsection{Downstream: Freeze Encoder, Finetune Predictor}
 \label{sec:downstream}
@@ -180,12 +181,17 @@ E2E & finetuned & finetuned & linear & 2.37M \\
 \end{tabular}
 \end{table}
 
-The predictor is run at horizons $k = 1, \ldots, K$. A shared linear head maps each predicted representation to a logit: $z_k = \mathbf{w}^\top \hat{\h}_k + b$, and a sigmoid produces the event probability $p(t,k) = \sigma(z_k) \in (0, 1)$. Each horizon is an independent binary prediction (multi-label, not multi-class); sigmoids are used instead of softmax because an event active at horizon $k$ is typically also active at $k{+}1$. The finetuning loss is the sum of binary cross-entropy terms over horizons:
+The predictor is run at horizons $\delta \in \Delta = \{\delta_1, \ldots, \delta_K\}$. A shared linear head maps each predicted representation to an event probability:
 \begin{equation}
-  \loss_\text{FT} = \sum_{k=1}^{K} \text{BCE}\bigl(p(t,k),\; y(t,k)\bigr),
+  p(t, \delta) \;=\; \sigma\!\bigl(\mathbf{w}^\top \hat{\h}_{t+\delta} + b\bigr) \;\in\; (0, 1).
+  \label{eq:event_prob}
+\end{equation}
+Each horizon is an independent binary prediction (sigmoid, not softmax - an event at $\delta$ is typically also active at $\delta{+}1$). The finetuning loss sums binary cross-entropy over horizons:
+\begin{equation}
+  \loss_\text{FT} = \sum_{\delta \in \Delta} \text{BCE}\bigl(p(t, \delta),\; y(t, \delta)\bigr),
   \label{eq:ft_loss}
 \end{equation}
-where $y(t,k) = \mathbb{1}[\text{event in window } t{+}k]$ is derived from ground-truth labels. BCE is minimised when $p$ matches the empirical event rate, encouraging calibrated probabilities; residual miscalibration is corrected by temperature scaling on the validation set (one scalar parameter).
+where $y(t, \delta) = \mathbb{1}[\text{event at time } t{+}\delta]$. BCE encourages calibrated probabilities; residual miscalibration is corrected by temperature scaling on the validation set (one scalar).
 
 % ============================================================
 % 4. EVALUATION
@@ -195,71 +201,53 @@ where $y(t,k) = \mathbb{1}[\text{event in window } t{+}k]$ is derived from groun
 \section{Evaluation}
 \label{sec:metrics}
 
-The model's complete output is a probability surface
+The model outputs $p(t, \delta)$ (\cref{eq:event_prob}) for each observation time $t$ and prediction horizon $\delta$. This probability surface is the complete prediction; every metric is a readout of it.
+
+\subsection{Primary Metric: Brier Score}
+
+We compare predicted surfaces to ground truth with the Brier score~\citep{gneiting2007scoring}, a proper scoring rule:
 \begin{equation}
-  p(t, k) \;=\; P\!\bigl(\text{event in window } t{+}k \;\bigm|\; \x_{1:t}\bigr),
-  \label{eq:prob_surface}
+  \text{BS} \;=\; \frac{1}{|\mathcal{T}| \cdot |\Delta|} \sum_{t \in \mathcal{T}} \sum_{\delta \in \Delta} \bigl(p(t, \delta) - y(t, \delta)\bigr)^2.
+  \label{eq:brier}
 \end{equation}
-indexed by observation time $t$ (how much history is available) and prediction horizon $k$ (how far ahead). Each $p(t,k)$ is an independent binary probability; the surface does not sum to one over $k$ (an event may span multiple horizons). In practice $k \in \{1, \ldots, K\}$ indexes discrete patch-sized steps and the integrals below become sums. Every metric in this paper - and every metric in the prior literature - is a projection of this surface.
+One number. Lower is better. Measures both discrimination (can the model separate event from non-event?) and calibration (are the probabilities correct?). Cannot be gamed - it is minimised if and only if $p(t, \delta)$ matches the true conditional probability~\citep{gneiting2007scoring}.
 
-\paragraph{Inference.} At test time, the frozen encoder produces $\h_\text{past}$ from $\x_{1:t}$. The predictor is run at each horizon: $\hat{\h}_k = \predictor(\h_\text{past}, k)$ for $k = 1, \ldots, K$. A linear head maps each $\hat{\h}_k$ to $p(t,k) = \sigma(\mathbf{w}^\top \hat{\h}_k + b)$. This yields $K$ calibrated scores per observation point.
-
-\subsection{Horizon-Dependent AUROC}
-
-Let $y(t,k) = \mathbb{1}[\text{event in window } t{+}k]$. For a concordant pair $(i, j)$ with $y(t_i, k) = 1$ and $y(t_j, k) = 0$, define
-\begin{equation}
-  A(t, k) \;=\; P\!\bigl(p(t_i, k) > p(t_j, k)\bigr),
-  \label{eq:auroc_tk}
-\end{equation}
-the probability that the model ranks event-positive above event-negative at observation depth $t$ and horizon $k$~\citep{heagerty2005survival}. This is threshold-free, as advocated by~\citet{schmidl2022tsadeval}.
-
-Both axes affect difficulty: small $t$ means less history (harder); large $k$ means predicting further ahead (harder). For lifecycle datasets (C-MAPSS), $A(t,k)$ varies meaningfully with $t$: an engine observed for 20 cycles is harder to assess than one observed for 180. For streaming datasets (SMAP, PSM) with sliding-window context, $A(t,k) \approx A(k)$.
-
-\subsection{Integrated AUC (iAUC)}
-
-A single scalar integrating over both axes:
-\begin{equation}
-  \text{iAUC} \;=\; \frac{1}{|\mathcal{T}| \cdot K} \sum_{t \in \mathcal{T}} \sum_{k=1}^{K} A(t, k),
-  \label{eq:iauc}
-\end{equation}
-a discrete analogue of the integrated concordance index~\citep{antolini2005time}, extended over observation depth. For streaming datasets where $A(t,k) \approx A(k)$, this reduces to $\text{iAUC} = \frac{1}{K}\sum_k A(k)$.
+Both axes affect difficulty: small $t$ means less history (harder); large $\delta$ means predicting further ahead (harder). The Brier score averages over both, giving equal weight to all $(t, \delta)$ cells.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_evaluation_framework.pdf}
-  \caption{\textbf{Evaluation framework.} (a)~The model outputs $p(t,k)$ - event probability at observation time~$t$ and horizon~$k$. AUROC is computed at each $(t,k)$ cell; the surface captures both history-dependence ($t$) and horizon-dependence ($k$). Existing metrics evaluate at single points (annotated). (b)~Averaging over~$t$ yields AUROC($k$); iAUC (shaded) integrates over horizons. Illustrative data.}
+  \caption{\textbf{Evaluation framework.} (a)~$p(t, \delta)$ is a surface over observation time $t$ and horizon $\delta$. Existing metrics evaluate at single points (annotated). The Brier score averages over the entire surface. (b)~AUROC($\delta$) curve: discrimination quality vs.\ horizon. Illustrative data.}
   \label{fig:auroc_curve}
 \end{figure}
 
-\subsection{Existing Metrics as Projections}
+\subsection{Legacy Metrics as Projections}
 
-Every domain-specific metric is a lossy projection of $p(t,k)$. \Cref{tab:metric_projections} summarises the three most common, their derivation, and their limitations.
+Every domain-specific metric is a lossy projection of $p(t, \delta)$. \Cref{tab:metric_projections} lists the three most common.
 
 \begin{table}[h]
 \centering
-\caption{Common metrics in the event prediction literature and how they relate to $p(t,k)$.}
+\caption{Common metrics and how they relate to $p(t, \delta)$.}
 \label{tab:metric_projections}
 \small
-\begin{tabular}{@{}p{1.6cm}p{3.8cm}p{4.2cm}p{2.8cm}@{}}
+\begin{tabular}{@{}p{1.6cm}p{3.6cm}p{4.0cm}p{3.0cm}@{}}
 \toprule
-Metric & Derivation from $p(t,k)$ & Limitation & Used by \\
+Metric & Derivation from $p(t,\delta)$ & Limitation & Used by \\
 \midrule
-PA-F1 & Threshold $p$ at $k{=}0$; credit entire segment if any point detected & Random scores beat DL detectors~\citep{kim2022rigorous}; $+$55\,pp inflation on SMAP in our experiments & AT~\citep{xu2022anomalytransformer}, DCdet.~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad} \\
+PA-F1 & Threshold $p$ at $\delta{=}0$; credit entire segment if any point detected & Random scores beat DL detectors~\citep{kim2022rigorous}; $+$55\,pp inflation on SMAP & AT~\citep{xu2022anomalytransformer}, DCdet.~\citep{yang2023dcdetector} \\
 \addlinespace
-RMSE & $\hat{\tau} = \sum_k k \cdot P(\text{event at } k)$; compute $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Measures calibration only; ignores discrimination (a constant prediction can score well) & STAR~\citep{fan2024star}, AE-LSTM~\citep{lecam2025aelstm} \\
+RMSE & $\hat{\tau} = \sum_\delta \delta \cdot P(\text{event at } \delta)$; $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Calibration only; ignores ranking & STAR~\citep{fan2024star} \\
 \addlinespace
-F1($k{=}1$) & Threshold $p(t, 1)$ at val-optimised cutoff & Single horizon; threshold-dependent; no credit for predicting further ahead & MTS-JEPA~\citep{mtsjepa2026} \\
+F1($\delta{=}1$) & Threshold $p(t, \delta_1)$ at val cutoff & Single horizon; threshold-dep. & MTS-JEPA~\citep{mtsjepa2026} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-In our experiments, we report all three legacy metrics for direct comparability with domain-specific baselines. Our primary metric remains iAUC, which avoids all three limitations: it is threshold-free (unlike F1 and PA-F1), horizon-integrated (unlike F1($k{=}1$)), and measures discrimination (unlike RMSE).
-
-\paragraph{Note on difficulty-weighted iAUC.} The uniform average in \cref{eq:iauc} treats all $(t,k)$ cells equally. In practice, small $t$ (less history) and large $k$ (further ahead) are harder. A natural extension weights by difficulty, e.g., $w(t,k) \propto 1/t \cdot k$, rewarding models that predict well under adverse conditions. We leave the choice of weighting to the application domain; the unweighted iAUC is the simplest default and is what we report throughout.
+We report all three for direct comparability. Additionally, we report AUROC at selected horizons $\delta$ (threshold-free discrimination, complementary to the Brier score's joint discrimination + calibration measure).
 
 \subsection{What We Report}
 
-\textbf{Primary:} iAUC (\cref{eq:iauc}). \textbf{Curve:} $A(k)$ vs.\ horizon $k$ (\cref{fig:auroc_curve}). \textbf{Comparable:} $A(k{=}1)$ and F1($k{=}1$) for next-window methods. \textbf{Legacy:} RMSE for C-MAPSS, PA-F1 for SMAP/MSL/PSM (see \cref{tab:metric_projections}). All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
+\textbf{Primary:} Brier score (\cref{eq:brier}). \textbf{Secondary:} AUROC($\delta$) at selected horizons (\cref{fig:auroc_curve}). \textbf{Legacy:} RMSE for C-MAPSS, F1($\delta{=}1$) and PA-F1 for SMAP/MSL/PSM. All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
 
 % ============================================================
 % 5. EXPERIMENTS
