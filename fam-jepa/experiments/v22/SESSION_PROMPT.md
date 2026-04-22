@@ -30,39 +30,49 @@ during training.  Gap = window_size prevents temporal leakage.
 3 seeds.  Store surfaces.  Compute AUPRC + legacy metrics.
 PSM and MBA are single streams — use chronological split with gap.
 
-### Goal B: Cross-channel attention architecture (important)
+### Goal B: Cross-channel attention in the encoder (important)
 
-Replace the flat per-timestep Linear(C, d) with a design that lets the model
-attend across channels.  Must NOT regress at low labels (V14's failure mode).
+Add cross-channel structure to the **encoder** (pretrained self-supervised,
+no labels).  The encoder is frozen during finetuning, so downstream trainable
+params (predictor + head) are identical with or without this change.  Low-label
+performance is NOT a concern — the encoder sees unlimited unlabeled data.
 
-**Architecture sketch — "temporal-first, then cross-channel"**:
+V14 tried cross-channel attention but failed because of **sensor-ID embeddings**
+(shortcut learning: loss→0, probe below random).  The architecture itself
+produced the best-ever frozen result (14.98 RMSE @ 100%).  The lesson: no
+learnable per-sensor embeddings; use fixed positional encoding or nothing.
+
+**Architecture: cross-channel refinement on h_past**
 
 ```
 Input: (B, T, C)
 
-Step 1 — per-timestep channel mixing (lightweight):
-  For each t:  x_t ∈ R^C  →  Linear(C, d)  →  token_t ∈ R^d
-  (Same as current — cheap, preserves all channel info in one vector)
+Temporal path (unchanged):
+  Linear(C, d=256) → (B, T, 256) → causal Transformer → h_past (B, 256)
 
-Step 2 — temporal causal transformer (unchanged):
-  (B, T, d) → causal self-attention (L=2, H=4) → (B, T, d)
-  Extract last token → h_past ∈ R^d
+Channel path (NEW — operates on the LAST window's raw sensor values):
+  x_recent: (B, W_ch, C)  — last W_ch timesteps of input (e.g. W_ch=10)
+  Per-channel: Linear(W_ch, d_ch) for each of C channels → (B, C, d_ch)
+  + sinusoidal PE(channel_index)  — fixed, not learned
+  → channel_tokens: (B, C, d_ch)
 
-Step 3 — cross-channel refinement (NEW, small):
-  Reshape input at time t: (B, C) → per-channel embed → (B, C, d_small)
-  Cross-attend: h_past queries the C channel embeddings
-  h_past_refined = h_past + CrossAttn(Q=h_past, KV=channel_embeds)
+Fusion:
+  h_refined = h_past + α · CrossAttn(Q=h_past, KV=channel_tokens)
+  α: learnable scalar, init=0 → identity at start of training
 ```
 
-Key design choices to avoid V14/V15 failures:
-- **No learnable sensor-ID embeddings** (caused shortcut learning in V15)
-- Cross-channel block is a **refinement** on h_past, not a replacement
-- Small d_small (32-64) to limit capacity at low labels
-- Residual connection: if cross-channel attention learns nothing useful,
-  h_past passes through unchanged (graceful degradation)
+Key choices:
+- **No learnable sensor-ID embeddings** (V15 shortcut lesson)
+- **Zero-init α** → model starts as current architecture, earns cross-channel
+- **Small d_ch (64)** — channel tokens are cheap; C=14 → 14 KV pairs
+- **Shared Linear(W_ch, d_ch)** across channels — no per-channel parameters
+  except the sinusoidal PE (which is fixed)
+- Uses raw sensor values, not encoded tokens — cross-channel sees the
+  actual signal, not the temporal encoder's already-mixed representation
 
-**Ablation**: run with and without cross-channel block at 100% and 5% labels
-on FD001.  Must not regress at 5%.
+**Evaluation**: compare pretraining loss curves (cross-channel vs baseline),
+then freeze both encoders and run identical pred-FT on FD001 (3 seeds).
+Better representations → better AUPRC, regardless of label budget.
 
 ---
 
@@ -74,11 +84,26 @@ on FD001.  Must not regress at 5%.
 | 1 | **Anomaly pred-FT**: SMAP, MSL, SMD (3 seeds each) | 2h |
 | 2 | Anomaly pred-FT: PSM, MBA (chrono split with gap) | 1h |
 | 3 | Update RESULTS.md + paper.tex with real pred-FT numbers | 0.5h |
-| 4 | Cross-channel attention: implement + pretrain FD001 | 2h |
-| 5 | Cross-channel ablation: 100% vs 5% labels, ±cross-attn | 1.5h |
-| 6 | If cross-channel works: pretrain SMAP, run pred-FT | 1.5h |
+| 4 | Cross-channel: implement in models.py, pretrain FD001 | 2h |
+| 5 | Compare: freeze both encoders, pred-FT FD001 (3 seeds) | 1h |
+| 6 | If cross-channel helps: pretrain SMAP, run anomaly pred-FT | 1.5h |
 
 **Critical path**: Phases 0-3 (~4.5h).  Phase 4-6 are the architecture work.
+
+---
+
+## Prior art on cross-channel (READ THIS — avoid repeating failures)
+
+| Attempt | Result | Failure mode |
+|---------|--------|-------------|
+| V14 cross-sensor (iTransformer-style) | 14.98 frozen@100% (best ever), but std=10.19@20% | Sensor-ID embeddings → shortcut |
+| V15 sensor-ID embeddings | loss→0 epoch 20, probe=75 (below random) | Model memorized per-sensor univariate dynamics |
+| V15 bidirectional full-seq | Collapsed (anisotropy 1e15) | Shared prefix made prediction trivial |
+| V18 cross-sensor + LogU k | Never executed (stretch goal) | — |
+
+**Key insight**: V14's low-label regression was likely the sensor-ID shortcut,
+not the cross-channel attention itself.  With fixed PE (no learnable sensor
+embeddings) and zero-init α, the architecture should degrade gracefully.
 
 ---
 
@@ -87,7 +112,6 @@ on FD001.  Must not regress at 5%.
 1. **Use `split_smap_entities()` / `split_msl_entities()` / `split_smd_entities()`** for anomaly pred-FT.  Never split the concatenated array chronologically.
 2. Store surfaces as .npz.  Compute AUPRC (primary) + legacy metrics from surfaces.
 3. Reporting: `mean ± std (Ns)`.  Decompose F1 → P + R.
-4. Cross-channel block: **residual + small capacity**.  No sensor-ID embeddings.
-5. Ablation must include 5% labels.  If cross-channel regresses at 5%, report it honestly and keep the channel-fusion default.
-6. Commit + push hourly.
-7. Update RESULTS.md after every phase.
+4. Cross-channel block: **residual + zero-init α + fixed sinusoidal channel PE**.  NO learnable sensor-ID embeddings.
+5. Commit + push hourly.
+6. Update RESULTS.md after every phase.
