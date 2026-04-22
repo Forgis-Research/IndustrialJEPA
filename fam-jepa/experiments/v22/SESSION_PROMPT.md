@@ -148,13 +148,66 @@ Same predictor, same head, same labels — only the frozen encoder differs.
 
 ---
 
+## Deliverables
+
+### 1. Quarto notebook: `notebooks/22_v22_analysis.qmd`
+
+Render to HTML at the end of the session.  Include:
+- All anomaly pred-FT results (SMAP, MSL, SMD, PSM, MBA) with per-seed breakdowns
+- Encoder variant comparison (baseline vs A vs B) on FD001
+- Pretraining loss curves for each encoder variant
+- AUPRC per-horizon curves where available
+- Surface heatmap visualizations (at least one per dataset)
+- Clear tables with `mean +/- std (N seeds)`
+
+### 2. Paper table update: `paper-neurips/paper.tex` Tab 1
+
+Replace the current benchmark table with a more comprehensive version.
+The current table (Tab 1, `tab:benchmark`) has AUPRC/AUROC/Legacy columns
+but the anomaly rows use Mahalanobis numbers (not pred-FT).
+
+New table structure — compact, minimal whitespace:
+
+```latex
+\begin{tabular}{@{}ll cc cc l@{}}
+  \toprule
+  Dataset & Domain & \multicolumn{2}{c}{FAM (ours)} & \multicolumn{2}{c}{SOTA comparison} & Ref \\
+  \cmidrule(lr){3-4} \cmidrule(lr){5-6}
+          &        & AUPRC$\uparrow$ & Legacy & Legacy & Method & \\
+  \midrule
+  FD001   & Turbofan   & $0.945$ & RMSE $17.1$ & RMSE $10.6$ & STAR & \citep{...} \\
+  FD002   & Turbofan   & $0.955$ & RMSE $12.4$ & RMSE $13.5$ & STAR & \\
+  FD003   & Turbofan   & $0.932$ & RMSE $16.2$ & RMSE $10.7$ & STAR & \\
+  \midrule
+  SMAP    & Spacecraft & \red{TBD} & F1 \red{TBD}  & PA-F1 $0.336$ & MTS-JEPA & \\
+  MSL     & Spacecraft & \red{TBD} & F1 \red{TBD}  & PA-F1 $0.336$ & MTS-JEPA & \\
+  PSM     & Server     & \red{TBD} & F1 \red{TBD}  & PA-F1 $0.616$ & MTS-JEPA & \\
+  SMD     & Server     & \red{TBD} & F1 \red{TBD}  & PA-F1 $0.925$ & AT & \\
+  MBA     & Cardiac    & \red{TBD} & F1 \red{TBD}  & --- & --- & \\
+  \bottomrule
+\end{tabular}
+```
+
+Key changes vs current table:
+- Drop AUROC column (secondary, move to appendix)
+- Drop PA-F1 from our Legacy column — use non-PA F1 (honest metric)
+- Use `\red{TBD}` placeholders for anomaly pred-FT numbers (filled by Phase 3)
+- Keep C-MAPSS numbers from v21 (those are correct, pred-FT based)
+- Tighter column spec (`@{}` padding) to minimize whitespace
+
+**Do NOT change other parts of the paper** — just the table and its caption.
+We will revise the narrative together tomorrow based on the Quarto notebook.
+
+---
+
 ## Ground rules
 
 1. **Use `split_smap_entities()` / `split_msl_entities()` / `split_smd_entities()`** for anomaly pred-FT.  Never split the concatenated array chronologically.
 2. Store surfaces as .npz.  Compute AUPRC (primary) + legacy metrics from surfaces.
-3. Reporting: `mean ± std (Ns)`.  Decompose F1 → P + R.
+3. Reporting: `mean +/- std (Ns)`.  Decompose F1 into P + R.
 4. **NO learnable sensor-ID / channel-ID embeddings.** Fixed sinusoidal PE only.
 5. Commit + push hourly.  Tag each phase completion.
 6. Update RESULTS.md after every phase.
 7. **Use all available time.**  If phases finish early, expand seeds or add datasets.
 8. If an encoder variant clearly fails during pretraining (loss doesn't decrease, collapse), document why and move on.  Don't debug for >30 min.
+9. Render Quarto notebook as last step: `quarto render notebooks/22_v22_analysis.qmd`
