@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \delta)$ - event probability as a function of observation depth $t$ and prediction horizon $\delta$ - scored by the Brier score, a proper scoring rule from which every existing metric (PA-F1, RMSE, next-window F1) is derivable as a special case. Across \placeholder{N} datasets in \placeholder{M} domains, FAM achieves Brier scores of \placeholder{X.XX} (turbofan), \placeholder{X.XX} (spacecraft), \placeholder{X.XX} (server), and \placeholder{X.XX} (cardiac), matching or exceeding domain-specific supervised models under both the Brier score and their own legacy metrics. Code and evaluation suite at \placeholder{URL}.
+Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \Delta t)$ - event probability as a function of observation depth $t$ and prediction horizon $\Delta t$ - scored by the Brier score, a proper scoring rule from which every existing metric (PA-F1, RMSE, next-window F1) is derivable as a special case. Across \placeholder{N} datasets in \placeholder{M} domains, FAM achieves Brier scores of \placeholder{X.XX} (turbofan), \placeholder{X.XX} (spacecraft), \placeholder{X.XX} (server), and \placeholder{X.XX} (cardiac), matching or exceeding domain-specific supervised models under both the Brier score and their own legacy metrics. Code and evaluation suite at \placeholder{URL}.
 \end{abstract}
 
 % ============================================================
@@ -77,7 +77,7 @@ Yet every event prediction task has the same structure: given observations up to
 \begin{enumerate}[nosep]
   \item \textbf{Predictor finetuning.} We show that freezing a JEPA encoder and finetuning only the predictor (33\% of parameters) for each event type is more label-efficient than end-to-end finetuning: at $\leq 10\%$ labels, pred-FT significantly outperforms E2E ($p = 0.023$, $N{=}10$) while E2E collapses on 40\% of seeds (\cref{sec:downstream,sec:finetune_ablation}).
 
-  \item \textbf{Multi-domain validation under a unified metric.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, and MBA. All tasks are evaluated through the same probability surface $p(t, \delta)$ scored by the Brier score; legacy metrics (PA-F1, RMSE) are derived as projections for direct comparability (\cref{sec:metrics,sec:experiments}).
+  \item \textbf{Multi-domain validation under a unified metric.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, and MBA. All tasks are evaluated through the same probability surface $p(t, \Delta t)$ scored by the Brier score; legacy metrics (PA-F1, RMSE) are derived as projections for direct comparability (\cref{sec:metrics,sec:experiments}).
 \end{enumerate}
 
 % ============================================================
@@ -149,16 +149,16 @@ MBA (ECG) & 1 & 360 Hz & 16 & sliding (1024 steps $\approx$ 2.8 s) \\
   \label{eq:encoder}
 \end{equation}
 
-\textbf{Predictor} $\predictor$: a 2-layer MLP. Given $\h_t$ and a prediction horizon $\delta$, it produces a predicted future embedding:
+\textbf{Predictor} $\predictor$: a 2-layer MLP. Given $\h_t$ and a prediction horizon $\Delta t$, it produces a predicted future embedding:
 \begin{equation}
-  \hat{\h}_{t+\delta} = \predictor(\h_t, \delta).
+  \hat{\h}_{t+\Delta t} = \predictor(\h_t, \Delta t).
   \label{eq:predictor}
 \end{equation}
-During pretraining, $\delta \sim \text{LogU}[1, \delta_\text{max}]$ is sampled randomly, forcing the encoder to internalise dynamics at multiple timescales.
+During pretraining, $\Delta t \sim \text{LogU}[1, {\Delta t}_\text{max}]$ is sampled randomly, forcing the encoder to internalise dynamics at multiple timescales.
 
-\textbf{Target encoder} $\target$: an EMA copy of $\encoder$ ($\tau{=}0.99$) that encodes the actual future bidirectionally with attention pooling $\to \h^*_{t+\delta} \in \R^d$. This provides the prediction target. We also experiment with a curriculum variant that transitions from EMA to SIGReg spectral regularisation~\citep{balestriero2025lejepa} (which eliminates the target encoder entirely; see \cref{sec:ablations}).
+\textbf{Target encoder} $\target$: an EMA copy of $\encoder$ ($\tau{=}0.99$) that encodes the actual future bidirectionally with attention pooling $\to \h^*_{t+\Delta t} \in \R^d$. This provides the prediction target. We also experiment with a curriculum variant that transitions from EMA to SIGReg spectral regularisation~\citep{balestriero2025lejepa} (which eliminates the target encoder entirely; see \cref{sec:ablations}).
 
-\textbf{Pretraining loss}: $\loss = \|\hat{\h}_{t+\delta} - \text{sg}(\h^*_{t+\delta})\|_1 + \lambda \cdot \text{var-reg}$, where sg denotes stop-gradient.
+\textbf{Pretraining loss}: $\loss = \|\hat{\h}_{t+\Delta t} - \text{sg}(\h^*_{t+\Delta t})\|_1 + \lambda \cdot \text{var-reg}$, where sg denotes stop-gradient.
 
 \subsection{Downstream: Freeze Encoder, Finetune Predictor}
 \label{sec:downstream}
@@ -181,17 +181,17 @@ E2E & finetuned & finetuned & linear & 2.37M \\
 \end{tabular}
 \end{table}
 
-The predictor is run at horizons $\delta \in \Delta = \{\delta_1, \ldots, \delta_K\}$. A shared linear head maps each predicted representation to an event probability:
+The predictor is run at horizons $\Delta t \in \mathcal{H} = \{{\Delta t}_1, \ldots, {\Delta t}_K\}$. A shared linear head maps each predicted representation to an event probability:
 \begin{equation}
-  p(t, \delta) \;=\; \sigma\!\bigl(\mathbf{w}^\top \hat{\h}_{t+\delta} + b\bigr) \;\in\; (0, 1).
+  p(t, \Delta t) \;=\; \sigma\!\bigl(\mathbf{w}^\top \hat{\h}_{t+\Delta t} + b\bigr) \;\in\; (0, 1).
   \label{eq:event_prob}
 \end{equation}
-Each horizon is an independent binary prediction (sigmoid, not softmax - an event at $\delta$ is typically also active at $\delta{+}1$). The finetuning loss sums binary cross-entropy over horizons:
+Each horizon is an independent binary prediction (sigmoid, not softmax - an event at $\Delta t$ is typically also active at $\Delta t{+}1$). The finetuning loss sums binary cross-entropy over horizons:
 \begin{equation}
-  \loss_\text{FT} = \sum_{\delta \in \Delta} \text{BCE}\bigl(p(t, \delta),\; y(t, \delta)\bigr),
+  \loss_\text{FT} = \sum_{\Delta t \in \mathcal{H}} \text{BCE}\bigl(p(t, \Delta t),\; y(t, \Delta t)\bigr),
   \label{eq:ft_loss}
 \end{equation}
-where $y(t, \delta) = \mathbb{1}[\text{event at time } t{+}\delta]$. BCE encourages calibrated probabilities; residual miscalibration is corrected by temperature scaling on the validation set (one scalar).
+where $y(t, \Delta t) = \mathbb{1}[\text{event at time } t{+}\Delta t]$. BCE encourages calibrated probabilities; residual miscalibration is corrected by temperature scaling on the validation set (one scalar).
 
 % ============================================================
 % 4. EVALUATION
@@ -201,53 +201,53 @@ where $y(t, \delta) = \mathbb{1}[\text{event at time } t{+}\delta]$. BCE encoura
 \section{Evaluation}
 \label{sec:metrics}
 
-The model outputs $p(t, \delta)$ (\cref{eq:event_prob}) for each observation time $t$ and prediction horizon $\delta$. This probability surface is the complete prediction; every metric is a readout of it.
+The model outputs $p(t, \Delta t)$ (\cref{eq:event_prob}) for each observation time $t$ and prediction horizon $\Delta t$. This probability surface is the complete prediction; every metric is a readout of it.
 
 \subsection{Primary Metric: Brier Score}
 
 We compare predicted surfaces to ground truth with the Brier score~\citep{gneiting2007scoring}, a proper scoring rule:
 \begin{equation}
-  \text{BS} \;=\; \frac{1}{|\mathcal{T}| \cdot |\Delta|} \sum_{t \in \mathcal{T}} \sum_{\delta \in \Delta} \bigl(p(t, \delta) - y(t, \delta)\bigr)^2.
+  \text{BS} \;=\; \frac{1}{|\mathcal{T}| \cdot |\mathcal{H}|} \sum_{t \in \mathcal{T}} \sum_{\Delta t \in \mathcal{H}} \bigl(p(t, \Delta t) - y(t, \Delta t)\bigr)^2.
   \label{eq:brier}
 \end{equation}
-One number. Lower is better. Measures both discrimination (can the model separate event from non-event?) and calibration (are the probabilities correct?). Cannot be gamed - it is minimised if and only if $p(t, \delta)$ matches the true conditional probability~\citep{gneiting2007scoring}.
+One number. Lower is better. Measures both discrimination (can the model separate event from non-event?) and calibration (are the probabilities correct?). Cannot be gamed - it is minimised if and only if $p(t, \Delta t)$ matches the true conditional probability~\citep{gneiting2007scoring}.
 
-Both axes affect difficulty: small $t$ means less history (harder); large $\delta$ means predicting further ahead (harder). The Brier score averages over both, giving equal weight to all $(t, \delta)$ cells.
+Both axes affect difficulty: small $t$ means less history (harder); large $\Delta t$ means predicting further ahead (harder). The Brier score averages over both, giving equal weight to all $(t, \Delta t)$ cells.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_evaluation_framework.pdf}
-  \caption{\textbf{Evaluation framework.} (a)~$p(t, \delta)$ is a surface over observation time $t$ and horizon $\delta$. Existing metrics evaluate at single points (annotated). The Brier score averages over the entire surface. (b)~AUROC($\delta$) curve: discrimination quality vs.\ horizon. Illustrative data.}
+  \caption{\textbf{Evaluation framework.} (a)~$p(t, \Delta t)$ is a surface over observation time $t$ and horizon $\Delta t$. Existing metrics evaluate at single points (annotated). The Brier score averages over the entire surface. (b)~AUROC($\Delta t$) curve: discrimination quality vs.\ horizon. Illustrative data.}
   \label{fig:auroc_curve}
 \end{figure}
 
 \subsection{Legacy Metrics as Projections}
 
-Every domain-specific metric is a lossy projection of $p(t, \delta)$. \Cref{tab:metric_projections} lists the three most common.
+Every domain-specific metric is a lossy projection of $p(t, \Delta t)$. \Cref{tab:metric_projections} lists the three most common.
 
 \begin{table}[h]
 \centering
-\caption{Common metrics and how they relate to $p(t, \delta)$.}
+\caption{Common metrics and how they relate to $p(t, \Delta t)$.}
 \label{tab:metric_projections}
 \small
 \begin{tabular}{@{}p{1.6cm}p{3.6cm}p{4.0cm}p{3.0cm}@{}}
 \toprule
-Metric & Derivation from $p(t,\delta)$ & Limitation & Used by \\
+Metric & Derivation from $p(t,\Delta t)$ & Limitation & Used by \\
 \midrule
-PA-F1 & Threshold $p$ at $\delta{=}0$; credit entire segment if any point detected & Random scores beat DL detectors~\citep{kim2022rigorous}; $+$55\,pp inflation on SMAP & AT~\citep{xu2022anomalytransformer}, DCdet.~\citep{yang2023dcdetector} \\
+PA-F1 & Threshold $p$ at $\Delta t{=}0$; credit entire segment if any point detected & Random scores beat DL detectors~\citep{kim2022rigorous}; $+$55\,pp inflation on SMAP & AT~\citep{xu2022anomalytransformer}, DCdet.~\citep{yang2023dcdetector} \\
 \addlinespace
-RMSE & $\hat{\tau} = \sum_\delta \delta \cdot P(\text{event at } \delta)$; $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Calibration only; ignores ranking & STAR~\citep{fan2024star} \\
+RMSE & $\hat{\tau} = \sum_\Delta t \Delta t \cdot P(\text{event at } \Delta t)$; $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Calibration only; ignores ranking & STAR~\citep{fan2024star} \\
 \addlinespace
-F1($\delta{=}1$) & Threshold $p(t, \delta_1)$ at val cutoff & Single horizon; threshold-dep. & MTS-JEPA~\citep{mtsjepa2026} \\
+F1($\Delta t{=}1$) & Threshold $p(t, {\Delta t}_1)$ at val cutoff & Single horizon; threshold-dep. & MTS-JEPA~\citep{mtsjepa2026} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-We report all three for direct comparability. Additionally, we report AUROC at selected horizons $\delta$ (threshold-free discrimination, complementary to the Brier score's joint discrimination + calibration measure).
+We report all three for direct comparability. Additionally, we report AUROC at selected horizons $\Delta t$ (threshold-free discrimination, complementary to the Brier score's joint discrimination + calibration measure).
 
 \subsection{What We Report}
 
-\textbf{Primary:} Brier score (\cref{eq:brier}). \textbf{Secondary:} AUROC($\delta$) at selected horizons (\cref{fig:auroc_curve}). \textbf{Legacy:} RMSE for C-MAPSS, F1($\delta{=}1$) and PA-F1 for SMAP/MSL/PSM. All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
+\textbf{Primary:} Brier score (\cref{eq:brier}). \textbf{Secondary:} AUROC($\Delta t$) at selected horizons (\cref{fig:auroc_curve}). \textbf{Legacy:} RMSE for C-MAPSS, F1($\Delta t{=}1$) and PA-F1 for SMAP/MSL/PSM. All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
 
 % ============================================================
 % 5. EXPERIMENTS
