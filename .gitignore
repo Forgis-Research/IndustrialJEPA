@@ -145,3 +145,6 @@ hf_cache/
 archive/mechanical-jepa-data-v8/bearings/raw/
 archive/mechanical-jepa-data-v8/bearings/*.parquet
 archive/mechanical-jepa-data-v8/bearings/*.json
+
+# Old deprecated dir (tracked files migrated to fam-jepa/, .pt/.mat stay local)
+mechanical-jepa/

@@ -1,0 +1,240 @@
+{
+  "model": "chronos-t5-tiny",
+  "subset": "FD001",
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "agg": {
+    "n_seeds": 3,
+    "auprc_mean": 0.9010993866310683,
+    "auprc_std": 0.0021965329390825207,
+    "auroc_mean": 0.9801006243923952,
+    "auroc_std": 0.0006938294708222238,
+    "rmse_mean": 25.584400812784832,
+    "rmse_std": 3.709216387476386
+  },
+  "per_seed": [
+    {
+      "seed": 42,
+      "primary": {
+        "auprc": 0.8990480275476374,
+        "auroc": 0.9795130641330168,
+        "f1_best": 0.8328445747800587,
+        "precision_best": 0.7759562841530054,
+        "recall_best": 0.8987341772151899,
+        "threshold_best": 0.8671976327896118,
+        "prevalence": 0.158,
+        "n_cells": 1000,
+        "n_positive": 158
+      },
+      "per_horizon": {
+        "auprc_per_k": [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          0.8976190476190475,
+          0.7790067340067339,
+          0.8301589193587408,
+          0.9194978090550652,
+          0.9332552491010877,
+          0.946442889796326
+        ],
+        "auroc_per_k": [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          0.9907834101382489,
+          0.9566666666666667,
+          0.9627976190476191,
+          0.9706666666666668,
+          0.9710538218000905,
+          0.8977838082315694
+        ],
+        "horizon_labels": [
+          1,
+          2,
+          3,
+          5,
+          10,
+          15,
+          20,
+          30,
+          50,
+          100
+        ],
+        "prevalence_per_k": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.1,
+          0.16,
+          0.25,
+          0.33,
+          0.67
+        ]
+      },
+      "monotonicity": {
+        "violation_rate": 0.0,
+        "mean_violation": 0.0,
+        "max_violation": 0.0,
+        "n_pairs": 900
+      },
+      "rmse_capped": 25.615764617919922,
+      "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_chronos_tiny_seed42.npz",
+      "runtime_s": 3.4040610790252686
+    },
+    {
+      "seed": 123,
+      "primary": {
+        "auprc": 0.9034168484244011,
+        "auroc": 0.9799227276827325,
+        "f1_best": 0.8288288288288288,
+        "precision_best": 0.7885714285714286,
+        "recall_best": 0.8734177215189873,
+        "threshold_best": 0.7083345651626587,
+        "prevalence": 0.158,
+        "n_cells": 1000,
+        "n_positive": 158
+      },
+      "per_horizon": {
+        "auprc_per_k": [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          0.6713512677798392,
+          0.7695401382243487,
+          0.7736189197556607,
+          0.9389437226213002,
+          0.9404105670591274,
+          0.9520413739253668
+        ],
+        "auroc_per_k": [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          0.9738863287250384,
+          0.9666666666666667,
+          0.9583333333333334,
+          0.976,
+          0.9696969696969697,
+          0.9014020805065581
+        ],
+        "horizon_labels": [
+          1,
+          2,
+          3,
+          5,
+          10,
+          15,
+          20,
+          30,
+          50,
+          100
+        ],
+        "prevalence_per_k": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.1,
+          0.16,
+          0.25,
+          0.33,
+          0.67
+        ]
+      },
+      "monotonicity": {
+        "violation_rate": 0.0,
+        "mean_violation": 0.0,
+        "max_violation": 0.0,
+        "n_pairs": 900
+      },
+      "rmse_capped": 21.859601974487305,
+      "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_chronos_tiny_seed123.npz",
+      "runtime_s": 3.2188210487365723
+    },
+    {
+      "seed": 456,
+      "primary": {
+        "auprc": 0.9008332839211662,
+        "auroc": 0.980866081361436,
+        "f1_best": 0.8411214953271028,
+        "precision_best": 0.8282208588957055,
+        "recall_best": 0.8544303797468354,
+        "threshold_best": 0.8711275458335876,
+        "prevalence": 0.158,
+        "n_cells": 1000,
+        "n_positive": 158
+      },
+      "per_horizon": {
+        "auprc_per_k": [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          0.9093537414965986,
+          0.8310092633544645,
+          0.7972635984184897,
+          0.9328604680081132,
+          0.9484043456290905,
+          0.9486951801810017
+        ],
+        "auroc_per_k": [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          0.9938556067588326,
+          0.9755555555555556,
+          0.9598214285714286,
+          0.9775999999999999,
+          0.9746720940750793,
+          0.8959746720940751
+        ],
+        "horizon_labels": [
+          1,
+          2,
+          3,
+          5,
+          10,
+          15,
+          20,
+          30,
+          50,
+          100
+        ],
+        "prevalence_per_k": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.07,
+          0.1,
+          0.16,
+          0.25,
+          0.33,
+          0.67
+        ]
+      },
+      "monotonicity": {
+        "violation_rate": 0.0,
+        "mean_violation": 0.0,
+        "max_violation": 0.0,
+        "n_pairs": 900
+      },
+      "rmse_capped": 29.277835845947266,
+      "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_chronos_tiny_seed456.npz",
+      "runtime_s": 3.030639171600342
+    }
+  ],
+  "runtime_min": 0.3023423393567403
+}
