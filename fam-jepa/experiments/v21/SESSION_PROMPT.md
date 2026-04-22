@@ -49,20 +49,31 @@ p(t, Δt_k) = σ(w · ĥ_{t+Δt_k} + b)  for k = 1, ..., K
 ```
 where ĥ_{t+Δt_k} = g_φ(h_t, Δt_k) is the predictor's output at horizon Δt_k.
 
-Ground truth: y(t, Δt_k) = 1 if event occurs within Δt_k steps of time t, else 0.
+Ground truth: y(t, Δt_k) = 1 if event occurs **within** Δt_k steps of time t, else 0.
 
-### Horizons per dataset
+**Key: "within", not "at exactly".** y(t, Δt=100) = "does event occur anywhere in the next 100 steps" — this is the SAME question MTS-JEPA asks with its 100-step window. y(t, Δt=1) = "does event occur in the next 1 step" — much harder. The surface is monotonically non-decreasing along Δt (if event within 1 step, then certainly within 100). **Sanity check: verify monotonicity. If violated, something is wrong.**
 
-| Dataset | K | Horizons (Δt values) | Rationale |
-|---------|---|---------------------|-----------|
-| C-MAPSS FD001 | 16 | 1, 2, ..., 16 patches (= 1-16 cycles) | Matches v20 W=16 |
-| C-MAPSS FD002 | 16 | 1, 2, ..., 16 patches | Same |
-| C-MAPSS FD003 | 16 | 1, 2, ..., 16 patches | Same |
-| SMAP | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Short + long range |
-| MSL | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Same |
-| PSM | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Same |
-| SMD | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Same |
+**Units: Δt is in STEPS** (raw timesteps), not patches. This is unambiguous regardless of patch size P.
+
+### Training vs evaluation horizons
+
+- **Pretraining**: predictor sees Δt ~ LogUniform[1, 150] (continuous, per-batch random sampling). Already trained on arbitrary horizons.
+- **Finetuning with BCE**: sample Δt uniformly from 1-100 steps per batch. Dense supervision ensures the predictor learns the full horizon range.
+- **Evaluation**: read off the discrete grid {1, 2, 3, 5, 10, 15, 20, 30, 50, 100}. The predictor handles any Δt — the grid is just the evaluation points.
+
+**For PA-F1 comparability with MTS-JEPA**: use p(t, Δt=100) — this is the equivalent of MTS-JEPA's "is the next 100-step window anomalous?" Do NOT use p(t, Δt=1) for this comparison — that's a much harder question MTS-JEPA doesn't answer.
+
+### Evaluation horizons (all in STEPS)
+
+| Dataset | K | Horizons (Δt in steps) | Rationale |
+|---------|---|------------------------|-----------|
+| C-MAPSS FD001-003 | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 cycles | Log-spaced, same grid as anomaly |
+| SMAP / MSL | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Short + long range |
+| PSM / SMD | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Same |
 | MBA | 10 | 1, 2, 3, 5, 10, 15, 20, 30, 50, 100 steps | Same |
+
+Same grid for all datasets → consistent surface shape → comparable AUPRC.
+During finetuning, sample Δt uniformly from [1, 100] (dense), not just the eval grid.
 
 ### Metrics (computed for EVERY experiment)
 
