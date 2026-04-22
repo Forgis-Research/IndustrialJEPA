@@ -216,9 +216,16 @@ In the IndustrialJEPA v11 C-MAPSS work, an RMSE of 13.80 ("first SSL to beat AE-
 
 For any claim of "A beats B":
 - **Minimum**: 3 seeds, report mean ± std
-- **For key results**: 10 seeds, paired t-test, report p-value
+- **For key results**: 5+ seeds, paired t-test, report p-value
 - **For publication**: Effect size (Cohen's d), confidence intervals
 - **Never**: Single seed, no variance reported, p-hacking
+
+### Speed Rules (v21+)
+
+- **Pretraining: 50 epochs max.** Loss plateaus at 10-20ep across all datasets (verified on FD001, PSM, SMD, MBA). Extra epochs are wasted compute.
+- **3 seeds default** for benchmark table entries. Expand to 5+ only for specific significance claims.
+- **Store probability surfaces** (.npz) so metrics can be recomputed without re-running inference.
+- **Commit + push after every phase.** VM can crash. Unpushed work is lost.
 
 ### Reporting Format (NON-NEGOTIABLE)
 
@@ -234,20 +241,41 @@ X.XX ± Y.YY (N seeds, 95% CI [lo, hi])
 - When comparing two methods, report the **paired test p-value** inline
 - For JSON outputs, always include fields: `mean`, `std`, `n_seeds`, `ci_95_lo`, `ci_95_hi`, `per_seed`
 
-**SOTA-matched metrics.** For every dataset, compute the metric that published SOTA uses so results are directly comparable:
+**Primary metric: AUPRC** pooled over probability surface p(t, Δt). Use `evaluation.surface_metrics.evaluate_probability_surface()`.
+**Secondary metric: AUROC** pooled over same cells.
+**Legacy metrics** (for head-to-head SOTA comparison):
 
-| Dataset | Primary metric (SOTA convention) | Also compute |
-|---------|----------------------------------|-------------|
-| C-MAPSS FD001-004 | **RMSE** (cycles) + **NASA-S** (asymmetric) | F1@k for k ∈ {10, 20, 30, 50} |
-| SMAP | **PA-F1** (segment-adjusted) + **non-PA F1** (point-level) | Precision, Recall, AUROC, AUPRC |
-| MSL | **PA-F1** + **non-PA F1** | Precision, Recall, AUROC, AUPRC |
-| SWaT | **PA-F1** + **non-PA F1** | Precision, Recall |
+| Dataset | Legacy metric | Also compute |
+|---------|--------------|-------------|
+| C-MAPSS FD001-004 | **RMSE** (from surface → predicted RUL) | NASA-S |
+| SMAP / MSL | **PA-F1** (from surface → anomaly scores) | non-PA F1, P, R |
+| PSM / SMD | **PA-F1** | non-PA F1, P, R |
+| MBA | **PA-F1** | non-PA F1, P, R |
 
-Report PA-F1 for comparability with literature but always pair it with non-PA F1 (the honest metric). Decompose F1 into Precision and Recall so reviewers can see the tradeoff.
+Legacy metrics are ALWAYS derived from the stored probability surface (.npz), never computed independently.
 
 When a SOTA paper reports a single number without seeds (e.g., STAR 10.61), note this explicitly: `STAR: 10.61 (paper, 1 run, no CI)`.
 
-**Update agents on the VM** to follow these same reporting conventions (add this section to the VM's `.claude/agents/ml-researcher.md` at the start of every overnight session).
+### Quarto Notebook Requirements (NON-NEGOTIABLE)
+
+Every overnight session MUST produce a Quarto notebook (`notebooks/NN_vNN_analysis.qmd`) that serves as the **expressive diagnostic dashboard**. This is not a summary — it is the primary tool for catching method errors and understanding model behavior.
+
+**Required sections:**
+1. **Surface heatmaps**: plot p(t, Δt) as a 2D heatmap for 2-3 representative test samples per dataset. Annotate ground-truth event onset. This immediately reveals if the model is predicting anything useful.
+2. **Per-horizon AUPRC curves**: AUPRC(Δt) for each dataset. Shows where the model has discrimination power and where it's guessing.
+3. **Reliability diagrams**: predicted probability vs observed frequency in bins. Shows if probabilities are calibrated.
+4. **Inter-horizon cosine similarity**: mean cosine between ĥ_{Δt=1} and ĥ_{Δt=K} across test samples. If >0.95, the predictor is ignoring the horizon input — flag as critical issue.
+5. **Failure case gallery**: 3-5 worst predictions per dataset (highest loss samples). Show the raw time series, the p-surface, and the ground truth. This catches systematic errors.
+6. **Per-seed breakdown table**: full metrics per seed, not just aggregates. Catches seed-specific anomalies.
+7. **Training curves**: loss vs epoch for both pretraining and finetuning. Confirms convergence.
+
+**Design principles:**
+- Use consistent color palettes across all figures (colorblind-safe: viridis for heatmaps, tab10 for lines)
+- Every figure must have a 1-sentence caption explaining what to look for
+- Tables use the standard reporting format: `mean ± std (Ns, 95% CI [lo, hi])`
+- Render to HTML: `quarto render notebooks/NN_vNN_analysis.qmd`
+
+**Why this matters:** In v11, a flat prediction trajectory (model outputting constant ~92 cycles) coexisted with "good" RMSE for a full session without anyone noticing. The heatmap visualization would have caught this instantly. Never trust aggregate metrics alone.
 
 ---
 
