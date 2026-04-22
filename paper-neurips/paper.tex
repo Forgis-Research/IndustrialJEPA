@@ -67,7 +67,7 @@ Predicting rare events in multivariate time series - loss of a turbine blade, an
 
 A turbine blade cracks after 12{,}000 flight hours. A satellite sensor drifts silently for 48 hours. A patient's ECG shifts six hours before cardiac arrest. These events are rare in operational data, yet they follow partially predictable precursor dynamics~\citep{taleb2007blackswan,scheffer2009earlywarning}. Current methods treat each event type as a separate supervised problem: RUL models~\citep{fan2024star} never see anomaly benchmarks; anomaly detectors~\citep{xu2022anomalytransformer,mtsjepa2026} never predict time-to-failure.
 
-Yet every event prediction task has the same structure: given observations up to time $t$, estimate $P(\text{event at horizon } k)$ for future windows $k = 1, \ldots, K$. The model that produces this probability surface does not need to know what kind of event it is predicting. It needs to learn the dynamics of normality; the deviation from that normality defines the event.
+Yet every event prediction task has the same structure: given observations up to time $t$, estimate $P(\text{event at horizon } k)$ for $k = 1, \ldots, K$. The model that produces this probability surface does not need to know what kind of event it is predicting. It needs to learn the dynamics of normality; the deviation from that normality defines the event.
 
 \paragraph{FAM.} We pretrain a causal Transformer encoder to predict future sensor representations in latent space via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa}. The horizon-conditioned predictor $\predictor$ maps the encoder's summary of the past, $\h_\text{past}$, to a predicted future representation $\hat{\h}_\text{fut}$ at variable horizon $k$, forcing the encoder to internalise dynamics at multiple timescales. Pretraining uses standard components - patches~\citep{nie2023patchtst}, instance normalisation, causal attention, EMA target~\citep{assran2023ijepa}, L1 loss - and is self-supervised.
 
@@ -195,7 +195,7 @@ The model's complete output is a probability surface
   p(t, k) \;=\; P\!\bigl(\text{event in window } t{+}k \;\bigm|\; \x_{1:t}\bigr),
   \label{eq:prob_surface}
 \end{equation}
-indexed by observation time $t$ (how much history is available) and prediction horizon $k$ (how far ahead). Every metric in this paper - and every metric in the prior literature - is a projection of this surface.
+indexed by observation time $t$ (how much history is available) and prediction horizon $k$ (how far ahead). In principle $t$ and $k$ are continuous; in practice the model operates on discrete tokens, so $k \in \{1, \ldots, K\}$ indexes patch-sized steps and the integrals below become sums. Every metric in this paper - and every metric in the prior literature - is a projection of this surface.
 
 \subsection{Horizon-Dependent AUROC}
 
