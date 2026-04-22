@@ -420,7 +420,7 @@ Render to HTML: `quarto render notebooks/21_v21_analysis.qmd`
 4. **Reporting**: `mean ± std (Ns, 95% CI [lo, hi])`. Decompose F1 → P + R. Include AUROC.
 5. **No ad-hoc metrics.** Use `evaluation.surface_metrics.evaluate_probability_surface()`.
 6a. **Monotonicity sanity check for every run.** Use `evaluation.surface_metrics.monotonicity_violation_rate(p_surface)`. The surface must be non-decreasing along Δt (if event within 5 steps, then within 10). Report violation rate. If >5%, flag as critical — the predictor is not respecting horizon semantics.
-6. **Commit after every phase.** Push results so they survive crashes.
+6. **Commit + push at least once per hour.** Also after every phase. VM can crash; unpushed work is lost.
 7. **Update RESULTS.md** after every phase with new numbers.
 8. **Budget**: ~10 hours. Phase 0-3 are critical (~5h). Phase 4-6 use the remaining ~5h.
 9. **Anomaly datasets FIRST.** They are the highest-risk, highest-value targets.
