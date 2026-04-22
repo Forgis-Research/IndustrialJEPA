@@ -109,7 +109,7 @@ PatchTST~\citep{nie2023patchtst} showed channel-independent processing often win
 
 We follow standard practice for multi-domain time series~\citep{nie2023patchtst,ansari2024chronos,goswami2024moment}: patch tokenisation with per-window instance normalisation.
 
-\textbf{Patches.} $P$ consecutive raw samples form one token. $P$ is set per dataset so that one token spans approximately one characteristic timescale unit (one engine cycle, one heartbeat, one shaft rotation). The context window is $T{=}64$ tokens for all domains. \Cref{tab:tokenization} lists per-dataset values.
+\textbf{Patches.} $P$ consecutive raw samples form one token. $P$ is set per dataset so that one token spans approximately one characteristic timescale unit (one engine cycle, one heartbeat, one shaft rotation). \Cref{tab:tokenization} lists per-dataset values. The encoder is a causal Transformer with sinusoidal positional encodings, so the context length $T$ is variable at both training and inference: for prognostic datasets with a clear lifecycle start (C-MAPSS), we feed the full history; for continuous monitoring streams (SMAP, PSM), we use a sliding window. No architectural change is needed - only the input length differs.
 
 \textbf{Instance normalisation.} Per window, per channel: subtract the window mean, divide by the window standard deviation. This removes distribution shift across machines and operating conditions without requiring training-set statistics at inference.
 
@@ -122,14 +122,12 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
 \small
 \begin{tabular}{@{}lrrrl@{}}
 \toprule
-Dataset & Sensors & Rate & Patch $P$ & Window ($T{=}64$) \\
+Dataset & Sensors & Rate & Patch $P$ & Typical context $T$ \\
 \midrule
-C-MAPSS FD001-004 & 14 & 1/cycle & 1 & 64 cycles \\
-SMAP / MSL & 25 / 55 & 1 Hz & 16 & ${\sim}17$ min \\
-PSM & 25 & 1 Hz & 16 & ${\sim}17$ min \\
-MBA (ECG) & 1 & 360 Hz & 16 & ${\sim}2.8$ s \\
-Paderborn & 7 & 8 kHz$^\dagger$ & 16 & 128 ms \\
-SMD & 38 & native & 16 & varies \\
+C-MAPSS FD001-004 & 14 & 1/cycle & 1 & full history (128-362 cycles) \\
+SMAP / MSL & 25 / 55 & 1 Hz & 16 & sliding (1024 steps $\approx$ 17 min) \\
+PSM & 25 & 1 Hz & 16 & sliding (1024 steps $\approx$ 17 min) \\
+MBA (ECG) & 1 & 360 Hz & 16 & sliding (1024 steps $\approx$ 2.8 s) \\
 \bottomrule
 \end{tabular}
 {\footnotesize\par $\dagger$ Downsampled $8\times$ from 64~kHz.}
@@ -447,6 +445,7 @@ The default FAM architecture is the V17 configuration ($d{=}256$, 2 layers, 4 he
   \item SMD results are weak; we report them honestly.
   \item Pred-FT requires supervised training pairs $(x, y)$. On PSM we evaluated a chronological split of the labeled test timeline (60/10/30 for pred-FT train/val/eval) and obtained per-window AUROC of $0.55$ (probe\_h), $0.53$ (frozen\_multi), $0.46$ (pred\_ft) - all near chance, with individual seeds scattered from $0.47$ to $0.63$. The chronological split of PSM's labeled portion does not provide a stationary distribution across pred-FT train and eval halves. Unsupervised Mahalanobis scoring from the same pretrained encoder does not share this limitation (\cref{tab:benchmark}, PSM). This is an honest obstacle to a \emph{single} pipeline across all domains: pred-FT is the paper's preferred recipe when labels are available and stationary across the FT-train/eval split; Mahalanobis is the fallback when neither holds. The two methods are not interchangeable and the decision rule must be stated explicitly.
   \item Chronos-T5-tiny outperforms FAM's frozen probe at the same parameter-matched task despite being the same order of magnitude in size; a cross-domain FAM pretrained at comparable scale (not done here) is the natural comparison.
+  \item \textbf{Context length.} For prognostic datasets with a clear lifecycle start (C-MAPSS), feeding the full history from cycle 1 may improve failure prediction by exposing cumulative wear patterns invisible in a short sliding window. Our current experiments use full engine histories for C-MAPSS but sliding windows for streaming datasets. A controlled ablation of context length vs.\ prediction quality - especially on degradation datasets where early-life information may be predictive of late-life failure - is future work.
 \end{itemize}
 
 % ============================================================
