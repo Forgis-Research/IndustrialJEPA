@@ -195,24 +195,32 @@ Compare PA-F1 to v18's 0.793 — should be in the same ballpark (different downs
 
 ---
 
-## Phase 1: Anomaly Datasets — SMAP, MSL, PSM, SMD, MBA (~3 hours, est. 180 min)
+## Phase 1: Anomaly Datasets — SMAP, MSL, PSM, SMD, MBA (~1.5 hours, est. 90 min)
 
 **START HERE.** These datasets have existing pretrained checkpoints from v17-v19. The new work is: (a) add per-horizon sigmoid + BCE finetuning on labeled data, (b) compute AUPRC from stored surfaces.
 
+### Speed optimizations (IMPORTANT)
+
+**Pretraining loss plateaus at epoch 10-20 across ALL datasets.** Evidence from v17/v19:
+- FD001: loss 0.033→0.006 by epoch 10, then oscillates 0.008-0.01 for 190 more epochs
+- PSM/SMD/MBA: same pattern, plateau by epoch 15-20
+
+**If re-pretraining is needed, use 50 epochs max** (not 150). The extra epochs are wasted compute.
+
+**3 seeds for the benchmark table.** Reserve 5+ seeds only for significance tests (pred-FT vs E2E at 10% labels). 3 seeds gives mean ± std + CI, which is sufficient for Tab 1.
+
 ### Time estimate per dataset
 
-| Dataset | Pretrain | Checkpoint exists? | Pred-FT (3 seeds) | Mahalanobis (3 seeds) | Total est. |
-|---------|----------|--------------------|--------------------|-----------------------|------------|
-| SMAP | — | ✓ v17 (150ep) | ~20 min | ~10 min | ~30 min |
-| MSL | — | ✓ v17 (150ep) | ~20 min | ~10 min | ~30 min |
-| PSM | — | ✓ v19 (50ep) | SKIP (dist mismatch) | ~10 min | ~15 min |
-| SMD | — | ✓ v19 (50ep) | ~20 min | ~10 min | ~30 min |
-| MBA | — | ✓ v19 (50ep) | ~15 min | ~10 min | ~25 min |
-| **Total** | | | | | **~130 min** |
+| Dataset | Checkpoint exists? | Pred-FT (3 seeds) | Mahalanobis (3 seeds) | Total est. |
+|---------|--------------------|--------------------|----------------------|------------|
+| SMAP | ✓ v17 | ~15 min | ~5 min | ~20 min |
+| MSL | ✓ v17 | ~15 min | ~5 min | ~20 min |
+| PSM | ✓ v19 | SKIP (dist mismatch) | ~5 min | ~10 min |
+| SMD | ✓ v19 | ~15 min | ~5 min | ~20 min |
+| MBA | ✓ v19 | ~10 min | ~5 min | ~15 min |
+| **Total** | | | | **~85 min** |
 
-If checkpoints are NOT on the VM (were they pushed?), re-pretrain:
-- SMAP/MSL: 150 epochs ~45 min each
-- PSM/SMD/MBA: 50 epochs ~20 min each
+If checkpoints are NOT on the VM, re-pretrain with **50 epochs** (~15 min each, not 150).
 
 ### 1a. For each dataset: Mahalanobis baseline (unsupervised)
 
@@ -241,7 +249,7 @@ For each dataset: AUPRC (primary), AUROC, PA-F1 (legacy), non-PA F1, P, R.
 
 ---
 
-## Phase 2: C-MAPSS Breakthrough Table (~2.5 hours, est. 150 min)
+## Phase 2: C-MAPSS Breakthrough Table (~1.5 hours, est. 80 min)
 
 C-MAPSS is proven. The new work: replace MSE→BCE, compute AUPRC.
 
@@ -249,30 +257,28 @@ C-MAPSS is proven. The new work: replace MSE→BCE, compute AUPRC.
 
 | Task | Seeds | Est. time |
 |------|-------|-----------|
-| FD001 pred-FT 100% | 5 | ~25 min |
-| FD001 pred-FT 5% | 5 | ~25 min |
-| FD001 e2e 100% | 5 | ~25 min |
-| FD001 e2e 5% | 5 | ~25 min |
-| FD002 pred-FT (100%+5%) | 3 | ~30 min |
-| FD003 pred-FT (100%+5%) | 3 | ~30 min |
-| **Total** | | **~160 min** |
+| FD001 pred-FT + e2e (100%+5%) | 3 | ~30 min |
+| FD001 probe_h + scratch (100%) | 3 | ~15 min |
+| FD002 pred-FT (100%+5%) | 3 | ~15 min |
+| FD003 pred-FT (100%+5%) | 3 | ~15 min |
+| **Total** | | **~75 min** |
 
-### 2a. FD001 full sweep (5 seeds)
+### 2a. FD001 (3 seeds — expand to 5 later if needed for sig tests)
 
 Using V17 checkpoint (or SIGReg-pred if available):
 
 | Mode | What | Seeds |
 |------|------|-------|
-| probe_h | Linear on h_past, BCE | 5 |
-| pred_ft | Freeze enc, finetune pred + head, BCE | 5 |
-| e2e | Full finetune, BCE | 5 |
-| scratch | Random init, BCE | 5 |
+| probe_h | Linear on h_past, BCE | 3 |
+| pred_ft | Freeze enc, finetune pred + head, BCE | 3 |
+| e2e | Full finetune, BCE | 3 |
+| scratch | Random init, BCE | 3 |
 
 At 100% and 5% labels. Store ALL surfaces. Compute: AUPRC (primary), AUROC, RMSE (legacy).
 
 ### 2b. FD002 + FD003 (3 seeds each)
 
-Same modes but 3 seeds for time efficiency. Only 100% and 5% labels.
+pred-FT only (proven to be the interesting mode). 100% and 5% labels.
 
 **Save**: `v21/phase2_cmapss.json`, `v21/surfaces/cmapss_*.npz`
 
@@ -366,15 +372,21 @@ Render to HTML: `quarto render notebooks/21_v21_analysis.qmd`
 | Phase | Est. time | Cumulative | Priority |
 |-------|-----------|------------|----------|
 | Setup | 15 min | 0:15 | Required |
-| Phase 0: Infrastructure | 90 min | 1:45 | Required |
-| Phase 1: Anomaly datasets | 130-180 min | 4:45 | **CRITICAL** |
-| Phase 2: C-MAPSS | 150 min | 7:15 | **CRITICAL** |
-| Phase 3: Fill paper | 60 min | 8:15 | **CRITICAL** |
-| Phase 4: Label efficiency | 90 min | 9:45 | Important |
-| Phase 5: Chronos | 45 min | 10:30 | Important |
-| Phase 6: Appendix + Quarto | 60 min | 11:30 | Nice-to-have |
+| Phase 0: Infrastructure | 60 min | 1:15 | Required |
+| Phase 1: Anomaly datasets | 90 min | 2:45 | **CRITICAL** |
+| Phase 2: C-MAPSS | 80 min | 4:05 | **CRITICAL** |
+| Phase 3: Fill paper | 45 min | 4:50 | **CRITICAL** |
+| Phase 4: Label efficiency | 60 min | 5:50 | Important |
+| Phase 5: Chronos | 30 min | 6:20 | Important |
+| Phase 6: Appendix + Quarto | 60 min | 7:20 | Important |
+| **Buffer / extra seeds** | ~120 min | 9:20 | Use for 5-seed sig tests |
 
-**If time is short**: Phase 0 → Phase 1 → Phase 2 → Phase 3 delivers the full paper table.
+**~5 hours for the critical path** (paper table filled). Remaining ~5 hours for label efficiency, Chronos, appendix, and expanding to 5 seeds where statistical tests need it.
+
+### Speed rules
+- **Pretraining: 50 epochs max** (loss plateaus at 10-20 across all datasets)
+- **3 seeds default** (expand to 5 only for significance claims)
+- **Monitor per-horizon cosine similarity** during finetuning — if >0.95, horizon conditioning is dead
 
 ---
 
@@ -387,8 +399,10 @@ Render to HTML: `quarto render notebooks/21_v21_analysis.qmd`
 5. **No ad-hoc metrics.** Use `evaluation.surface_metrics.evaluate_probability_surface()`.
 6. **Commit after every phase.** Push results so they survive crashes.
 7. **Update RESULTS.md** after every phase with new numbers.
-8. **Budget**: ~10-12 hours. Phase 0-3 are critical (8h). Phase 4-6 are stretch (3h).
+8. **Budget**: ~10 hours. Phase 0-3 are critical (~5h). Phase 4-6 use the remaining ~5h.
 9. **Anomaly datasets FIRST.** They are the highest-risk, highest-value targets.
+10. **50 epochs max for pretraining.** Loss plateaus at 10-20ep. Don't waste GPU time.
+11. **3 seeds default.** Expand to 5 only for statistical significance claims (pred-FT vs E2E at 10% labels).
 
 ---
 
