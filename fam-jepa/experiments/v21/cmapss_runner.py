@@ -71,19 +71,29 @@ CFG = {
 
 
 def _load_v17_ckpt(subset: str, seed: int) -> TrajectoryJEPA:
-    """Load the pretrained JEPA (V17 for FD001, v20 phase 10 for FD003)."""
+    """Load the pretrained JEPA.
+
+    FD001: v17 has three seeds (42, 123, 456).
+    FD002/FD003: only seed 42 is pretrained on this VM. We reuse that
+    checkpoint for all FT seeds; variance comes from head init + FT noise
+    (the encoder is frozen in pred_ft mode anyway).
+    """
     if subset == 'FD001':
         ckpt = CKPT_OLD / 'v17' / 'ckpts' / f'v17_seed{seed}_best.pt'
     elif subset == 'FD002':
-        # v20 phase 11 FD002 checkpoint if exists
-        ckpt = CKPT_OLD / 'v20' / 'ckpts' / f'fd002_seed{seed}_ep150.pt'
-        if not ckpt.exists():
-            # fall back to v11
-            ckpt = V11 / 'best_pretrain_fd002.pt'
+        # Only seed 42 pretrained — reused for all FT seeds.
+        candidates = [
+            CKPT_OLD / 'v20' / 'ckpts_fd002' / 'v20_fd002_seed42_ep150.pt',
+            CKPT_OLD / 'v11' / 'best_pretrain_fd002.pt',
+        ]
+        ckpt = next((p for p in candidates if p.exists()), candidates[-1])
     elif subset == 'FD003':
-        ckpt = CKPT_OLD / 'v20' / 'ckpts' / f'fd003_200ep_seed{seed}_best.pt'
-        if not ckpt.exists():
-            ckpt = V11 / 'best_pretrain_fd003_v2.pt'
+        candidates = [
+            CKPT_OLD / 'v20' / 'ckpts_fd003' / 'v20_fd003_seed42_ep200.pt',
+            CKPT_OLD / 'v20' / 'ckpts_fd003' / 'v20_fd003_seed42_ep100.pt',
+            CKPT_OLD / 'v11' / 'best_pretrain_fd003_v2.pt',
+        ]
+        ckpt = next((p for p in candidates if p.exists()), candidates[-1])
     else:
         raise ValueError(subset)
 

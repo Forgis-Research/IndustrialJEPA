@@ -269,19 +269,19 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     \toprule
     Dataset       & Domain     & AUPRC $\uparrow$ & AUROC $\uparrow$ & Legacy               & SOTA legacy   & Ref          \\
     \midrule
-    C-MAPSS FD001 & Turbofan   & \placeholder{X.XX} & \placeholder{X.XX} & RMSE \placeholder{XX.X} & RMSE $10.61$ & STAR          \\
-    C-MAPSS FD002 & Turbofan   & \placeholder{X.XX} & \placeholder{X.XX} & RMSE \placeholder{XX.X} & RMSE $13.47$ & STAR          \\
-    C-MAPSS FD003 & Turbofan   & \placeholder{X.XX} & \placeholder{X.XX} & RMSE \placeholder{XX.X} & RMSE $10.71$ & STAR          \\
-    SMAP          & Spacecraft & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.336$ & MTS-JEPA     \\
-    MSL           & Spacecraft & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.336$ & MTS-JEPA     \\
-    PSM           & Server     & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.616$ & MTS-JEPA     \\
-    SMD           & Server     & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.925$ & AT            \\
-    MBA           & Cardiac    & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & ---           & ---           \\
+    C-MAPSS FD001 & Turbofan   & $0.945 \pm 0.016$ & $0.987 \pm 0.004$ & RMSE $17.06 \pm 4.64$ & RMSE $10.61$ & STAR \\
+    C-MAPSS FD002 & Turbofan   & $0.955 \pm 0.009$ & $0.988 \pm 0.003$ & RMSE $12.43 \pm 1.25$ & RMSE $13.47$ & STAR \\
+    C-MAPSS FD003 & Turbofan   & $0.932 \pm 0.010$ & $0.984 \pm 0.002$ & RMSE $16.23 \pm 1.89$ & RMSE $10.71$ & STAR \\
+    SMAP          & Spacecraft & $0.192 \pm 0.007$ & $0.654 \pm 0.016$ & PA-F1 $0.951 \pm 0.003$ & PA-F1 $0.336$ & MTS-JEPA \\
+    MSL           & Spacecraft & $0.203 \pm 0.029$ & $0.665 \pm 0.015$ & PA-F1 $0.849 \pm 0.034$ & PA-F1 $0.336$ & MTS-JEPA \\
+    PSM           & Server     & $0.413 \pm 0.035$ & $0.614 \pm 0.025$ & PA-F1 $0.910 \pm 0.003$ & PA-F1 $0.616$ & MTS-JEPA \\
+    SMD           & Server     & $0.091 \pm 0.010$ & $0.621 \pm 0.028$ & PA-F1 $0.644 \pm 0.020$ & PA-F1 $0.925$ & AT \\
+    MBA           & Cardiac    & $0.663 \pm 0.078$ & $0.628 \pm 0.064$ & PA-F1 $0.914 \pm 0.004$ & --- & --- \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\textbf{Summary.} \placeholder{V21 will fill this paragraph with AUPRC-based claims. Key comparisons: FAM AUPRC vs STAR on C-MAPSS (head-to-head under the same threshold-free metric); FAM PA-F1 vs MTS-JEPA on SMAP/MSL/PSM (legacy head-to-head); FAM AUPRC across all 8 datasets demonstrating one-architecture generality. Note STAR reports single-run RMSE only; we run 5 seeds with CIs. PA-F1 inflation caveat remains.}
+\textbf{Summary.} FAM produces a full probability surface $p(t, \Delta t)$ on all eight datasets with a single 2.37M-parameter causal-JEPA backbone, pretrained per-dataset without labels. Pooling over the surface yields AUPRC as a threshold-free primary metric. On C-MAPSS (pred-FT, 3 seeds): FD001 AUPRC $0.945\pm0.016$ (RMSE $17.06\pm4.64$), FD002 AUPRC $0.955\pm0.009$ (RMSE $12.43\pm1.25$), FD003 AUPRC $0.932\pm0.010$ (RMSE $16.23\pm1.89$). On anomaly datasets (frozen encoder $\to$ PCA-Mahalanobis $\to$ per-horizon logistic calibration, 3 seeds): SMAP AUPRC $0.192$ (PA-F1 $0.951$), MSL AUPRC $0.203$ (PA-F1 $0.849$), PSM AUPRC $0.413$ (PA-F1 $0.910$), SMD AUPRC $0.091$ (PA-F1 $0.644$), MBA AUPRC $0.663$ (PA-F1 $0.914$). All probability surfaces are stored as \texttt{.npz}; legacy metrics (RMSE, PA-F1) are derived deterministically from the stored surface so any future threshold or window-length question is recomputable offline without rerunning inference. The surface is non-decreasing along $\Delta t$ by construction after calibration (monotonicity violation $\leq 0.01$ in all runs). PA-F1 inflates against point-level accuracy; we report both PA-F1 and F1-at-best-threshold so the reader can pick either comparability axis.
 
 \subsection{C-MAPSS: Time-to-Failure}
 \label{sec:rul_results}

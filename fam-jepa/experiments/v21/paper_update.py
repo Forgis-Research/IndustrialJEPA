@@ -99,22 +99,38 @@ def load_phase2():
 
 
 def update_benchmark_table(txt: str, p1: dict, p2: dict) -> str:
-    """Replace placeholders in the tab:benchmark table."""
+    """Replace placeholders in the tab:benchmark table only.
+
+    Scope the replacement to the region bounded by \\label{tab:benchmark}
+    and \\end{tabular} so that other tables with C-MAPSS/SMAP labels are
+    not clobbered.
+    """
     cmapss_pref = 'pred_ft@1.0'
 
-    lines = txt.splitlines(keepends=True)
-    out = []
-    for line in lines:
+    # Find tab:benchmark region
+    start_marker = r'\label{tab:benchmark}'
+    end_marker = r'\end{tabular}'
+    i0 = txt.find(start_marker)
+    if i0 < 0:
+        return txt
+    i1 = txt.find(end_marker, i0)
+    if i1 < 0:
+        return txt
+
+    prefix = txt[:i0]
+    region = txt[i0:i1]
+    suffix = txt[i1:]
+
+    def fmt_row(subset_label, domain, auprc_val, auroc_val,
+                legacy_metric, legacy_val, sota, ref):
+        return f'    {subset_label:<13} & {domain:<10} & ' + \
+               f'{auprc_val} & {auroc_val} & {legacy_metric} {legacy_val} & ' + \
+               f'{sota} & {ref} \\\\\n'
+
+    new_lines = []
+    for line in region.splitlines(keepends=True):
         stripped = line.strip()
-        new = line
-
-        def fmt_row(subset_label, auprc_val, auroc_val, legacy_metric, legacy_val,
-                    sota, ref):
-            return f'    {subset_label} & ' + \
-                   f'{auprc_val} & {auroc_val} & {legacy_metric} {legacy_val} & ' + \
-                   f'{sota} & {ref} \\\\\n'
-
-        # C-MAPSS rows (start with 'C-MAPSS FD00')
+        replaced = False
         for ss in ['FD001', 'FD002', 'FD003']:
             if stripped.startswith(f'C-MAPSS {ss}') and '\\placeholder' in line:
                 r = p2.get(ss, {}).get(cmapss_pref, {})
@@ -122,30 +138,36 @@ def update_benchmark_table(txt: str, p1: dict, p2: dict) -> str:
                 auroc = fmt_mean_std(*r.get('auroc', (float('nan'), float('nan'))), '{:.3f}')
                 rmse_v = fmt_rmse(*r.get('rmse_expected', (float('nan'), float('nan'))))
                 sota = {'FD001': '10.61', 'FD002': '13.47', 'FD003': '10.71'}[ss]
-                new = fmt_row(f'C-MAPSS {ss}', auprc, auroc, 'RMSE', rmse_v,
-                              f'RMSE ${sota}$', 'STAR')
+                new_lines.append(fmt_row(f'C-MAPSS {ss}', 'Turbofan', auprc, auroc,
+                                         'RMSE', rmse_v, f'RMSE ${sota}$', 'STAR'))
+                replaced = True
                 break
-        else:
-            # Anomaly rows
-            for name, sota, ref in [
-                ('SMAP',  'PA-F1 $0.336$', 'MTS-JEPA'),
-                ('MSL',   'PA-F1 $0.336$', 'MTS-JEPA'),
-                ('PSM',   'PA-F1 $0.616$', 'MTS-JEPA'),
-                ('SMD',   'PA-F1 $0.925$', 'AT'),
-                ('MBA',   '---',           '---'),
-            ]:
-                if stripped.startswith(name + ' ') and '\\placeholder' in line:
-                    r = p1.get(name, {})
-                    auprc = fmt_mean_std(*r.get('auprc', (float('nan'), float('nan'))), '{:.3f}')
-                    auroc = fmt_mean_std(*r.get('auroc', (float('nan'), float('nan'))), '{:.3f}')
-                    paf1_v = fmt_mean_std(*r.get('pa_f1', (float('nan'), float('nan'))), '{:.3f}')
-                    domain = {'SMAP': 'Spacecraft', 'MSL': 'Spacecraft',
-                              'PSM': 'Server', 'SMD': 'Server',
-                              'MBA': 'Cardiac'}[name]
-                    new = f'    {name:<13} & {domain:<10} & {auprc} & {auroc} & PA-F1 {paf1_v} & {sota} & {ref} \\\\\n'
-                    break
-        out.append(new)
-    return ''.join(out)
+        if replaced:
+            continue
+
+        for name, sota, ref in [
+            ('SMAP',  'PA-F1 $0.336$', 'MTS-JEPA'),
+            ('MSL',   'PA-F1 $0.336$', 'MTS-JEPA'),
+            ('PSM',   'PA-F1 $0.616$', 'MTS-JEPA'),
+            ('SMD',   'PA-F1 $0.925$', 'AT'),
+            ('MBA',   '---',           '---'),
+        ]:
+            if stripped.startswith(name + ' ') and '\\placeholder' in line:
+                r = p1.get(name, {})
+                auprc = fmt_mean_std(*r.get('auprc', (float('nan'), float('nan'))), '{:.3f}')
+                auroc = fmt_mean_std(*r.get('auroc', (float('nan'), float('nan'))), '{:.3f}')
+                paf1_v = fmt_mean_std(*r.get('pa_f1', (float('nan'), float('nan'))), '{:.3f}')
+                domain = {'SMAP': 'Spacecraft', 'MSL': 'Spacecraft',
+                          'PSM': 'Server', 'SMD': 'Server',
+                          'MBA': 'Cardiac'}[name]
+                new_lines.append(f'    {name:<13} & {domain:<10} & {auprc} & {auroc} & PA-F1 {paf1_v} & {sota} & {ref} \\\\\n')
+                replaced = True
+                break
+        if replaced:
+            continue
+        new_lines.append(line)
+
+    return prefix + ''.join(new_lines) + suffix
 
 
 def build_summary_paragraph(p1: dict, p2: dict) -> str:

@@ -20,18 +20,18 @@ Every number that enters the paper must have an entry here with provenance.
 
 ## Main Benchmark Table (Paper Tab 1)
 
-**Target: fill all AUPRC/AUROC cells in v21.**
+**Target: fill all AUPRC/AUROC cells in v21 (DONE).**
 
-| Dataset | Domain | AUPRC ↑ | AUROC ↑ | Legacy metric | SOTA legacy | SOTA ref | Source |
-|---------|--------|---------|---------|---------------|-------------|----------|--------|
-| C-MAPSS FD001 | Turbofan | **TBD (v21)** | **TBD** | RMSE 16.90±1.71 | RMSE 10.61 | STAR | v20 phase 0 |
-| C-MAPSS FD002 | Turbofan | **TBD (v21)** | **TBD** | RMSE TBD | RMSE 13.47 | STAR | — |
-| C-MAPSS FD003 | Turbofan | **TBD (v21)** | **TBD** | RMSE TBD | RMSE 10.71 | STAR | — |
-| SMAP | Spacecraft | **TBD (v21)** | **TBD** | PA-F1 0.793±0.014 | PA-F1 0.336 | MTS-JEPA | v18 phase 4 |
-| MSL | Spacecraft | **TBD (v21)** | **TBD** | PA-F1 0.707±0.050 | PA-F1 0.336 | MTS-JEPA | v18 phase 4 |
-| PSM | Server | **TBD (v21)** | **TBD** | PA-F1 0.813±0.048 | PA-F1 0.616 | MTS-JEPA | v19 |
-| SMD | Server | **TBD (v21)** | **TBD** | PA-F1 0.252±0.017 | PA-F1 0.925 | AT | v19 |
-| MBA | Cardiac | **TBD (v21)** | **TBD** | PA-F1 0.551±0.054 | — | — | v19 |
+| Dataset | Domain | AUPRC ↑ | AUROC ↑ | PA-F1 (legacy) | F1-best | SOTA legacy | Source |
+|---------|--------|---------|---------|-----------------|---------|-------------|--------|
+| C-MAPSS FD001 | Turbofan | 0.945±0.016 | 0.987±0.004 | RMSE 17.061±4.638 | 0.872±0.016 | RMSE 10.61 (STAR) | v21 phase 2 |
+| C-MAPSS FD002 | Turbofan | 0.955±0.009 | 0.988±0.003 | RMSE 12.432±1.250 | 0.895±0.009 | RMSE 13.47 (STAR) | v21 phase 2 |
+| C-MAPSS FD003 | Turbofan | 0.932±0.010 | 0.984±0.002 | RMSE 16.226±1.890 | 0.872±0.007 | RMSE 10.71 (STAR) | v21 phase 2 |
+| SMAP | Spacecraft | 0.192±0.007 | 0.654±0.016 | PA-F1 0.951±0.003 | 0.307±0.009 | PA-F1 0.336 (MTS-JEPA) | v21 phase 1 |
+| MSL | Spacecraft | 0.203±0.029 | 0.665±0.015 | PA-F1 0.849±0.034 | 0.286±0.008 | PA-F1 0.336 (MTS-JEPA) | v21 phase 1 |
+| PSM | Server | 0.413±0.035 | 0.614±0.025 | PA-F1 0.910±0.003 | 0.491±0.028 | PA-F1 0.616 (MTS-JEPA) | v21 phase 1 |
+| SMD | Server | 0.091±0.010 | 0.621±0.028 | PA-F1 0.644±0.020 | 0.138±0.024 | PA-F1 0.925 (AT) | v21 phase 1 |
+| MBA | Cardiac | 0.663±0.078 | 0.628±0.064 | PA-F1 0.914±0.004 | 0.710±0.008 | — | v21 phase 1 |
 
 ---
 
