@@ -6,6 +6,11 @@ eBay server machine dataset used in MTS-JEPA, Anomaly Transformer, etc.
   - ~132K train / ~87K test timesteps
   - ~27% anomaly rate in test
 
+NOTE: PSM is a genuinely single continuous stream (one server pool).
+There are no independent entities to split by.  For predictor finetuning,
+use a chronological split of the test stream with a gap of >=window_size
+timesteps between train/val/test to prevent temporal leakage.
+
 Data source: RANSynCoders repo (eBay/RANSynCoders).
 Download: run `paper-replications/mts-jepa/download_datasets.py` first,
   or place train.npy/test.npy/test_labels.npy in PSM_DATA_DIR.

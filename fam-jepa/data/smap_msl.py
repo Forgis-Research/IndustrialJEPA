@@ -1,30 +1,35 @@
 """
-SMAP / MSL Anomaly Detection Dataset Adapter (V15).
+SMAP / MSL Anomaly Detection Dataset Adapter.
 
 SMAP (Soil Moisture Active Passive): NASA spacecraft anomaly dataset.
-  - 25 channels (telemetry + command features)
-  - 135K train / 428K test timesteps
-  - 12.8% anomaly rate in test
+  - 25 features per entity (telemetry + command)
+  - 55 independent telemetry entities, each with own train/test/labels
+  - Concatenated: 135K train / 428K test timesteps, 12.8% anomaly rate
 
 MSL (Mars Science Laboratory): NASA spacecraft anomaly dataset.
-  - 55 channels
-  - 58K train / 74K test timesteps
-  - 10.5% anomaly rate in test
+  - 55 features per entity
+  - 27 independent telemetry entities
+  - Concatenated: 58K train / 74K test timesteps, 10.5% anomaly rate
 
-Data is preprocessed NASA telemetry; already in normalized float32 arrays.
-Source: OmniAnomaly / MTS-JEPA replication data.
+IMPORTANT: the concatenated train.npy / test.npy files glue independent
+entities end-to-end along the time axis.  Any chronological split of the
+concatenated array crosses entity boundaries → distribution shift.
 
-Standard window size: 100 timesteps.
-Anomaly score: prediction reconstruction error from JEPA predictor.
-Threshold: 95th percentile of validation scores on normal data.
-Primary metric: non-PA F1 (honest); also report PA F1 for comparison.
+For predictor finetuning, use split_smap_entities() / split_msl_entities().
+These perform an INTRA-entity chronological split: for each entity, the
+first 60% of its test stream goes to ft_train, next 10% to ft_val, last
+30% to ft_test.  Every entity appears in all three splits, so the predictor
+sees all channels during training.  A gap of `window_size` timesteps is
+inserted at each boundary to prevent temporal leakage.
+
+Source: telemanom repo (NASA), OmniAnomaly / MTS-JEPA replication data.
 """
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 try:
     from .config import SMAP_DIR, MSL_DIR
@@ -39,8 +44,173 @@ STRIDE = 1  # overlap for test evaluation
 TRAIN_STRIDE = 10  # sparse sampling for training (memory efficiency)
 
 
+# ---------------------------------------------------------------------------
+# Per-entity loaders (correct for predictor finetuning splits)
+# ---------------------------------------------------------------------------
+
+def _load_entities(data_dir: Path, normalize: bool = True) -> List[Dict]:
+    """Load per-entity data from the channels/ subdirectory.
+
+    Each entity is an independent telemetry channel with its own train/test
+    arrays and anomaly labels.  Returns a list of dicts, one per entity.
+    """
+    channels_dir = data_dir / 'channels'
+    if not channels_dir.exists():
+        raise FileNotFoundError(
+            f"Per-entity data not found at {channels_dir}. "
+            f"Re-run paper-replications/mts-jepa/download_datasets.py "
+            f"(it saves per-channel files under channels/)."
+        )
+
+    # Load channel name list if available, else discover from directory
+    names_file = data_dir / 'channel_names.npy'
+    if names_file.exists():
+        channel_names = list(np.load(names_file, allow_pickle=True))
+    else:
+        channel_names = sorted([d.name for d in channels_dir.iterdir() if d.is_dir()])
+
+    # Compute global normalization stats from concatenated train
+    if normalize:
+        all_train = []
+        for name in channel_names:
+            ch_dir = channels_dir / name
+            all_train.append(np.load(ch_dir / 'train.npy').astype(np.float32))
+        concat_train = np.concatenate(all_train, axis=0)
+        mu = concat_train.mean(axis=0, keepdims=True)
+        std = concat_train.std(axis=0, keepdims=True) + 1e-6
+        del concat_train, all_train
+    else:
+        mu, std = None, None
+
+    entities = []
+    for name in channel_names:
+        ch_dir = channels_dir / name
+        train = np.load(ch_dir / 'train.npy').astype(np.float32)
+        test = np.load(ch_dir / 'test.npy').astype(np.float32)
+        labels = np.load(ch_dir / 'test_labels.npy').astype(np.int32)
+
+        if normalize:
+            train = (train - mu) / std
+            test = (test - mu) / std
+
+        entities.append({
+            'entity_id': name,
+            'train': train,
+            'test': test,
+            'labels': labels,
+            'has_anomaly': bool(labels.any()),
+        })
+
+    return entities
+
+
+def _intra_entity_split(entities: List[Dict],
+                        ratios: Tuple[float, float, float] = (0.6, 0.1, 0.3),
+                        window_size: int = WINDOW_SIZE,
+                        ) -> Dict[str, List[Dict]]:
+    """Intra-entity chronological split for predictor finetuning.
+
+    For EACH entity, splits its test stream chronologically:
+      - first  ratios[0] of timesteps → ft_train
+      - next   ratios[1] of timesteps → ft_val
+      - last   ratios[2] of timesteps → ft_test
+
+    A gap of `window_size` timesteps is discarded at each split boundary
+    so that no training window can peek into val/test time ranges.
+
+    Every entity appears in all three splits, so the predictor sees all
+    channels during training.  Entities whose test segment is too short
+    to produce at least one window per split are skipped with a warning.
+    """
+    ft_train, ft_val, ft_test = [], [], []
+
+    for e in entities:
+        test = e['test']
+        labels = e['labels']
+        T = len(test)
+
+        # Compute split boundaries
+        t1 = int(ratios[0] * T)
+        t2 = int((ratios[0] + ratios[1]) * T)
+
+        # Apply gap: discard window_size timesteps after each boundary
+        # so no window in split A can include timesteps from split B.
+        #   ft_train: [0, t1)
+        #   gap:      [t1, t1 + gap)
+        #   ft_val:   [t1 + gap, t2)
+        #   gap:      [t2, t2 + gap)
+        #   ft_test:  [t2 + gap, T)
+        gap = window_size
+        val_start = t1 + gap
+        test_start = t2 + gap
+
+        # Check each split has enough room for at least one window
+        min_len = window_size + 1  # need at least 1 window
+        if t1 < min_len or (t2 - val_start) < min_len or (T - test_start) < min_len:
+            print(f"  WARNING: entity {e['entity_id']} too short (T={T}), skipping")
+            continue
+
+        # Train portion also uses each entity's normal train data
+        ft_train.append({
+            'entity_id': e['entity_id'],
+            'pretrain_normal': e['train'],       # normal-only (for context)
+            'test': test[:t1],
+            'labels': labels[:t1],
+        })
+        ft_val.append({
+            'entity_id': e['entity_id'],
+            'test': test[val_start:t2],
+            'labels': labels[val_start:t2],
+        })
+        ft_test.append({
+            'entity_id': e['entity_id'],
+            'test': test[test_start:],
+            'labels': labels[test_start:],
+        })
+
+    return {'ft_train': ft_train, 'ft_val': ft_val, 'ft_test': ft_test}
+
+
+def load_smap_entities(normalize: bool = True) -> List[Dict]:
+    """Load SMAP as a list of independent entities."""
+    return _load_entities(SMAP_DATA_DIR, normalize=normalize)
+
+
+def load_msl_entities(normalize: bool = True) -> List[Dict]:
+    """Load MSL as a list of independent entities."""
+    return _load_entities(MSL_DATA_DIR, normalize=normalize)
+
+
+def split_smap_entities(ratios: Tuple[float, float, float] = (0.6, 0.1, 0.3),
+                        normalize: bool = True) -> Dict[str, List[Dict]]:
+    """Load SMAP entities and split intra-entity for pred-FT.
+
+    Every entity appears in all three splits (ft_train / ft_val / ft_test).
+    Split is chronological within each entity's test stream, with a gap of
+    WINDOW_SIZE timesteps at each boundary to prevent temporal leakage.
+    """
+    entities = load_smap_entities(normalize=normalize)
+    return _intra_entity_split(entities, ratios)
+
+
+def split_msl_entities(ratios: Tuple[float, float, float] = (0.6, 0.1, 0.3),
+                       normalize: bool = True) -> Dict[str, List[Dict]]:
+    """Load MSL entities and split intra-entity for pred-FT."""
+    entities = load_msl_entities(normalize=normalize)
+    return _intra_entity_split(entities, ratios)
+
+
+# ---------------------------------------------------------------------------
+# Concatenated loaders (for pretraining and Mahalanobis baseline)
+# ---------------------------------------------------------------------------
+
 def load_smap(normalize: bool = True) -> dict:
-    """Load SMAP dataset. Returns dict with train/test arrays and labels."""
+    """Load SMAP as concatenated arrays (for pretraining / Mahalanobis).
+
+    WARNING: the returned test array concatenates 55 independent entities.
+    Do NOT use a chronological split of this array for finetuning — use
+    split_smap_entities() instead.
+    """
     train = np.load(SMAP_DATA_DIR / 'train.npy').astype(np.float32)
     test = np.load(SMAP_DATA_DIR / 'test.npy').astype(np.float32)
     labels = np.load(SMAP_DATA_DIR / 'test_labels.npy').astype(np.int32)
@@ -65,7 +235,12 @@ def load_smap(normalize: bool = True) -> dict:
 
 
 def load_msl(normalize: bool = True) -> dict:
-    """Load MSL dataset."""
+    """Load MSL as concatenated arrays (for pretraining / Mahalanobis).
+
+    WARNING: the returned test array concatenates 27 independent entities.
+    Do NOT use a chronological split of this array for finetuning — use
+    split_msl_entities() instead.
+    """
     train = np.load(MSL_DATA_DIR / 'train.npy').astype(np.float32)
     test = np.load(MSL_DATA_DIR / 'test.npy').astype(np.float32)
     labels = np.load(MSL_DATA_DIR / 'test_labels.npy').astype(np.int32)

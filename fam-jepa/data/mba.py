@@ -6,6 +6,12 @@ MBA (MIT-BIH Arrhythmia) Dataset Adapter.
   - ~7680 train / ~7680 test timesteps
   - Arrhythmia labels expanded to +-20 sample windows (TranAD protocol)
 
+NOTE: MBA is a genuinely single continuous ECG recording (one patient).
+There are no independent entities to split by.  For predictor finetuning,
+use a chronological split of the test stream with a gap of >=window_size
+timesteps between train/val/test to prevent temporal leakage.
+Very small dataset — label efficiency may be limited.
+
 Data source: TranAD repo (https://github.com/imperial-qore/TranAD).
 Place train.xlsx, test.xlsx, labels.xlsx in MBA_DATA_DIR.
 
