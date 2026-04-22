@@ -183,34 +183,50 @@ The predictor is run at multiple horizons $k_1, \ldots, k_W$ corresponding to th
 % ============================================================
 % 4. EVALUATION
 % ============================================================
+% 4. EVALUATION
+% ============================================================
 \section{Evaluation}
 \label{sec:metrics}
 
-The model's complete output is a probability surface $P(\text{event} \mid t, k)$: for each observation time $t$ and prediction horizon $k$, the linear head produces the probability that an event will be active in the window beginning at $t{+}k$. Rather than selecting a single domain-specific metric, we evaluate this distribution directly. We adopt the horizon-dependent AUROC framework from survival analysis~\citep{heagerty2005survival,antolini2005time}, which defines discrimination quality as a function of prediction horizon. Every metric reported in this paper is a projection of the same underlying probability surface.
+The model's complete output is a probability surface
+\begin{equation}
+  p(t, k) \;=\; P\!\bigl(\text{event in window } t{+}k \;\bigm|\; \x_{1:t}\bigr),
+  \label{eq:prob_surface}
+\end{equation}
+indexed by observation time $t$ (how much history is available) and prediction horizon $k$ (how far ahead). Every metric in this paper - and every metric in the prior literature - is a projection of this surface.
 
-\subsection{Metrics}
+\subsection{Horizon-Dependent AUROC}
 
-\paragraph{AUROC($k$).} At each horizon $k$, we compute AUROC across all test positions $t$. This measures whether the model can rank which samples will experience events at horizon $k$, without committing to a decision threshold. Horizon-dependent AUC is the standard discrimination measure in survival analysis~\citep{heagerty2005survival}; \citet{schmidl2022tsadeval} independently recommend AUROC as the primary metric in their 71-algorithm time-series anomaly benchmark for the same reason: it avoids the threshold-selection confound.
+Let $y(t,k) = \mathbb{1}[\text{event in window } t{+}k]$. For a concordant pair $(i, j)$ with $y(t_i, k) = 1$ and $y(t_j, k) = 0$, define
+\begin{equation}
+  A(t, k) \;=\; P\!\bigl(p(t_i, k) > p(t_j, k)\bigr),
+  \label{eq:auroc_tk}
+\end{equation}
+the probability that the model ranks event-positive above event-negative at observation depth $t$ and horizon $k$~\citep{heagerty2005survival}. This is threshold-free, as advocated by~\citet{schmidl2022tsadeval}.
 
-\paragraph{Integrated AUC (iAUC).} The mean of AUROC($k$) over $k = 1, \ldots, K$. This yields a single scalar summarizing prediction quality across all horizons, analogous to the integrated concordance index of \citet{antolini2005time}. Practical estimation follows \citet{blanche2013estimating}.
+Both axes affect difficulty: small $t$ means less history (harder); large $k$ means predicting further ahead (harder). For lifecycle datasets (C-MAPSS), $A(t,k)$ varies meaningfully with $t$: an engine observed for 20 cycles is harder to assess than one observed for 180. For streaming datasets (SMAP, PSM) with sliding-window context, $A(t,k) \approx A(k)$.
 
-\paragraph{Per-horizon F1($k$).} We threshold $P(\text{event} \mid t, k)$ using a cutoff optimized on the validation split (chronological 6:2:2, matching MTS-JEPA~\citep{mtsjepa2026}). We report precision, recall, and F1 at each $k$. At $k{=}1$ this is directly comparable to MTS-JEPA's next-window evaluation.
+\subsection{Integrated AUC (iAUC)}
 
-\paragraph{Derived event time.} Converting $P(\text{event} \mid k)$ to a point estimate (e.g., the expected event time under the predicted distribution) yields a predicted RUL. RMSE on this quantity is therefore a calibration metric on the same underlying distribution, not an independent evaluation.
+A single scalar integrating over both axes:
+\begin{equation}
+  \text{iAUC} \;=\; \frac{1}{|\mathcal{T}| \cdot K} \sum_{t \in \mathcal{T}} \sum_{k=1}^{K} A(t, k),
+  \label{eq:iauc}
+\end{equation}
+a discrete analogue of the integrated concordance index~\citep{antolini2005time}, extended over observation depth. For streaming datasets where $A(t,k) \approx A(k)$, this reduces to $\text{iAUC} = \frac{1}{K}\sum_k A(k)$.
 
-\subsection{Derivation of Legacy Metrics}
+\subsection{Derived Metrics}
 
-All domain-specific metrics in prior work are projections of $P(\text{event} \mid t, k)$:
+Every domain-specific metric is a projection of $p(t,k)$:
 \begin{itemize}[nosep,leftmargin=*]
-  \item \textbf{F1, PA-F1:} AUROC($k$) $\to$ sweep threshold $\to$ F1($k$) $\to$ apply point-adjustment $\to$ PA-F1.
-  \item \textbf{RMSE, NASA-S:} $P(\text{event} \mid k)$ $\to$ expected event time $\to$ RMSE, scoring function.
-  \item \textbf{Next-window evaluation:} AUROC($k{=}1$) recovers MTS-JEPA's single-step setting.
+  \item \textbf{F1($k$):} threshold $p(t,k)$ at a val-split-optimised cutoff (6:2:2 chronological, matching~\citet{mtsjepa2026}). $\text{F1}(k{=}1)$ recovers MTS-JEPA's next-window evaluation.
+  \item \textbf{PA-F1:} apply segment-level point-adjustment to F1. Deprecated as primary: \citet{kim2022rigorous} show random scores beat published detectors under PA-F1; we confirm $+$55\,pp inflation on SMAP. PA-F1 is a detection ($k{=}0$) metric; in prediction ($k \geq 1$) its credit-sharing is not meaningful. Reported for legacy cross-reference only.
+  \item \textbf{RMSE:} $\hat{\tau} = \sum_k k \cdot P(\text{first event at } k \mid t)$ yields a predicted event time; RMSE measures calibration of the same underlying distribution.
 \end{itemize}
-We deprecate PA-F1 as a primary metric. Point-adjustment~\citep{hundman2018smapmsl} credits every point in an anomaly segment once any single point is flagged. \citet{kim2022rigorous} show that a random score can outperform published deep-learning detectors under PA-F1; we confirm a $+$55\,pp inflation on SMAP in our own experiments. PA-F1 was designed for detection ($k{=}0$), where flagging an ongoing anomaly anywhere within its span may be operationally useful. In the prediction setting ($k \geq 1$), this credit-sharing mechanism is not meaningful. We report PA-F1 only as a legacy metric for cross-reference~\citep{mtsjepa2026,xu2022anomalytransformer}.
 
 \subsection{What We Report}
 
-\textbf{Primary:} iAUC (threshold-free, horizon-integrated). \textbf{Comparable:} AUROC($k{=}1$) for direct comparison with next-window methods. \textbf{Legacy:} RMSE + NASA-S for C-MAPSS~\citep{fan2024star}; PA-F1 for SMAP/MSL/PSM~\citep{mtsjepa2026}. \textbf{Visualization:} AUROC($k$) curves in~\cref{sec:experiments}. All results: mean $\pm$ std over $N$ seeds with 95\% confidence intervals ($t$-distribution). Key claims: paired $t$-tests, Wilcoxon signed-rank tests, Cohen's $d$. Published baselines reporting single numbers are noted as such and excluded from paired tests.
+\textbf{Primary:} iAUC. \textbf{Curve:} $A(k)$ vs.\ $k$ in experiment figures. \textbf{Comparable:} $A(k{=}1)$ and F1($k{=}1$) for direct comparison with next-window methods. \textbf{Legacy:} RMSE for C-MAPSS, PA-F1 for SMAP/MSL/PSM. All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
 
 % ============================================================
 % 5. EXPERIMENTS
