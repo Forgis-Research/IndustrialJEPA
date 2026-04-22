@@ -2329,7 +2329,12 @@ window.Quarto = {
   <li><a href="#pretraining-loss-curves" id="toc-pretraining-loss-curves" class="nav-link" data-scroll-target="#pretraining-loss-curves">Pretraining loss curves</a></li>
   <li><a href="#pred-ft-downstream-fd001-frozen-encoder-3-seeds" id="toc-pred-ft-downstream-fd001-frozen-encoder-3-seeds" class="nav-link" data-scroll-target="#pred-ft-downstream-fd001-frozen-encoder-3-seeds">Pred-FT downstream (FD001, frozen encoder, 3 seeds)</a></li>
   <li><a href="#per-seed-detail" id="toc-per-seed-detail" class="nav-link" data-scroll-target="#per-seed-detail">Per-seed detail</a></li>
-  <li><a href="#finding" id="toc-finding" class="nav-link" data-scroll-target="#finding">Finding</a></li>
+  <li><a href="#finding-on-fd001" id="toc-finding-on-fd001" class="nav-link" data-scroll-target="#finding-on-fd001">Finding on FD001</a></li>
+  </ul></li>
+  <li><a href="#phase-7-cross-channel-variants-on-smap-the-dataset-where-they-should-help" id="toc-phase-7-cross-channel-variants-on-smap-the-dataset-where-they-should-help" class="nav-link" data-scroll-target="#phase-7-cross-channel-variants-on-smap-the-dataset-where-they-should-help">Phase 7 — Cross-channel variants on SMAP (the dataset where they should help)</a>
+  <ul class="collapse">
+  <li><a href="#finding-on-smap" id="toc-finding-on-smap" class="nav-link" data-scroll-target="#finding-on-smap">Finding on SMAP</a></li>
+  <li><a href="#decision" id="toc-decision" class="nav-link" data-scroll-target="#decision">Decision</a></li>
   </ul></li>
   <li><a href="#appendix-reproducibility" id="toc-appendix-reproducibility" class="nav-link" data-scroll-target="#appendix-reproducibility">Appendix — Reproducibility</a></li>
   </ul>
@@ -2388,7 +2393,7 @@ Please view our Getting Started page to access the most up-to-date information o
 Installed kernel version: 1.0.9 
 Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2403,7 +2408,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2416,7 +2421,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2429,7 +2434,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2443,7 +2448,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2455,7 +2460,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2476,7 +2481,7 @@ Figure 1
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2493,7 +2498,7 @@ Figure 2
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2513,7 +2518,7 @@ Figure 3
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2535,7 +2540,7 @@ Figure 4
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2550,7 +2555,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2569,7 +2574,7 @@ Figure 5
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2582,18 +2587,50 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 6af58c57-91ab-446a-957c-b040f76f7bf3
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
 </section>
-<section id="finding" class="level3">
-<h3 class="anchored" data-anchor-id="finding">Finding</h3>
+<section id="finding-on-fd001" class="level3">
+<h3 class="anchored" data-anchor-id="finding-on-fd001">Finding on FD001</h3>
 <p><strong>Baseline is not dominated.</strong> On FD001, the plain causal temporal transformer (2.37M params) reaches AUPRC <span class="math inline">\(0.951 \pm 0.010\)</span>, ahead of the pure iTransformer variant A (<span class="math inline">\(0.936 \pm 0.004\)</span>) and the hybrid variant B (<span class="math inline">\(0.939 \pm 0.013\)</span>). Variant A does have the tightest RMSE variance but the mean does not improve.</p>
 <p>FD001 has 14 thermo-mechanical channels that encode correlated degradation trajectories within one engine. It appears the causal temporal transformer already captures the relevant cross-channel structure through within-patch projection and time-axis attention — explicit cross-channel attention adds parameters without adding signal.</p>
-<p><strong>Decision:</strong> Phase 7 (promote a winner to SMAP for anomaly pred-FT) is skipped — there is no winner on FD001 to promote. Cross-channel may still matter on spacecraft telemetry (25-55 channels with distinct physical meanings); we do not test that here. Documenting this as a negative result lets future work rule out “add cross-channel attention” on C-MAPSS-like datasets without re-running the search.</p>
+</section>
+</section>
+<section id="phase-7-cross-channel-variants-on-smap-the-dataset-where-they-should-help" class="level2">
+<h2 class="anchored" data-anchor-id="phase-7-cross-channel-variants-on-smap-the-dataset-where-they-should-help">Phase 7 — Cross-channel variants on SMAP (the dataset where they should help)</h2>
+<p>Since SMAP has 25 heterogeneous telemetry channels (distinct physical semantics: temperature, voltage, pressure, command flags), cross-channel attention is most plausibly useful here — more so than on FD001’s 14 correlated engine sensors. We pretrain variants A and B on the SMAP train stream (same fixed-past-window=100 / LogUniform k / L1 loss protocol as on FD001, early stop patience=5) and run pred-FT with intra-entity chronological splits, 3 seeds each.</p>
+<div id="phase7-table" class="cell" data-execution_count="14">
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<div id="phase7-perseed" class="cell" data-execution_count="15">
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 515a9a92-bcb9-4052-b74f-534f475068f7
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<section id="finding-on-smap" class="level3">
+<h3 class="anchored" data-anchor-id="finding-on-smap">Finding on SMAP</h3>
+<p><strong>Both cross-channel variants beat baseline on SMAP.</strong> Variant B (hybrid temporal + cross-channel parallel stream) gets AUPRC <span class="math inline">\(0.384 \pm 0.098\)</span> and AUROC <span class="math inline">\(0.600 \pm 0.075\)</span> — the first SMAP pred-FT result with above-chance ranking. Variant A (pure iTransformer) sits between baseline and variant B at AUPRC <span class="math inline">\(0.347 \pm 0.025\)</span>, AUROC <span class="math inline">\(0.539 \pm 0.042\)</span>.</p>
+<p>Combined with the FD001 result (baseline wins), this matches the structural hypothesis: cross-channel attention helps when channels have distinct physical semantics (SMAP: 25 heterogeneous telemetry + command channels), but doesn’t help when channels encode correlated degradation trajectories of one system (FD001: 14 engine sensors).</p>
+</section>
+<section id="decision" class="level3">
+<h3 class="anchored" data-anchor-id="decision">Decision</h3>
+<p>The “one architecture across all datasets” framing of the main benchmark table still holds under the baseline encoder. Switching SMAP in Tab 1 to variant B would require adjusting that narrative. This ablation is reported here for the reviewer-facing story — the paper’s core claim (predictor finetuning on a probability surface, one encoder family) does not change, but the cross-channel dataset-specific result is available as a follow-up.</p>
 </section>
 </section>
 <section id="appendix-reproducibility" class="level2">

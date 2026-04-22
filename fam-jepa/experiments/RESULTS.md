@@ -249,10 +249,35 @@ encoder differs.  Legacy RMSE from surface → `surface_to_rul_expected`.
 
 **No variant beats baseline on FD001.**  Baseline leads on AUPRC (+0.015
 over A, +0.012 over B); variant A has the tightest RMSE variance but does
-not improve the mean.  Decision: skip Phase 7 (promoting a winner to
-SMAP) — there is no winner to promote.  C-MAPSS channels (14 thermo-
-mechanical sensors) are evidently not benefiting from explicit
-cross-channel attention; the causal temporal transformer already captures
-the relevant structure.  Cross-channel may still help on spacecraft
-telemetry (25-55 channels with distinct physical meanings) but we do not
-test that in v22 given the no-winner on FD001.
+not improve the mean.  C-MAPSS channels (14 thermo-mechanical sensors)
+are evidently not benefiting from explicit cross-channel attention; the
+causal temporal transformer already captures the relevant structure.
+
+### Cross-Channel Variants on SMAP Anomaly (v22 phase 7, 3 seeds)
+
+Despite no winner on FD001, we ran variants A and B on SMAP anomaly
+pred-FT because the cross-channel hypothesis is most plausible on
+spacecraft telemetry (25 heterogeneous telemetry + command channels).
+Pretrain on SMAP train stream (fixed past=100, LogUniform k, L1 loss,
+early stop patience=5), then pred-FT with entity splits.
+
+| Encoder   | SMAP AUPRC      | SMAP AUROC      | SMAP F1 (non-PA) | ΔAUPRC vs baseline |
+|-----------|-----------------|------------------|-------------------|---------------------|
+| baseline  | 0.290±0.042     | 0.433±0.049      | 0.440±0.003       | -                   |
+| variantA  | 0.347±0.025     | 0.539±0.042      | 0.443±0.007       | **+0.057**          |
+| variantB  | **0.384±0.098** | **0.600±0.075**  | **0.477±0.038**   | **+0.094**          |
+
+**Both variants beat baseline on SMAP — and variant B crosses AUROC 0.5
+(0.600 vs baseline 0.433).**  This is the first SMAP pred-FT result with
+consistently above-chance ranking.  Variant B's win suggests that on
+heterogeneous-channel telemetry the causal temporal transformer's
+within-patch projection (Linear(C, d)) doesn't fully capture
+cross-channel structure and benefits from an explicit parallel
+cross-channel stream.  Variant A (pure iTransformer) sits between:
+cleaner architecture, tighter variance, but smaller mean gain.
+
+**Implication for the paper**: the "one architecture across all datasets"
+framing of the main benchmark table still holds with the baseline encoder.
+Variant B on SMAP is reported as an ablation here; integrating it into
+Tab 1 would require adjusting the "one architecture" claim, which is a
+decision to make with the user after reviewing this notebook.

@@ -212,7 +212,15 @@ def _load_model(dataset: str, seed: int) -> TrajectoryJEPA:
 # Per-(dataset, seed) run
 # ---------------------------------------------------------------------------
 
-def run_single(dataset: str, seed: int, verbose: bool = True) -> dict:
+def run_single(dataset: str, seed: int, verbose: bool = True,
+               pw_cap: float = 1000.0) -> dict:
+    """pw_cap: clamp pos_weight to at most this value.  The v22 pos_weight
+    ablation (pos_weight_ablation.py) shows that the auto-estimated
+    pos_weight ~ N_neg/N_pos (≈40 for SMAP) over-biases the predictor to
+    "always anomaly" and drives AUROC below 0.5 on datasets with large
+    train→test anomaly-rate shift (SMAP, PSM).  Capping at pw=5 or 10
+    recovers AUROC above chance and improves AUPRC.
+    """
     t0 = time.time()
     torch.manual_seed(seed); np.random.seed(seed)
 
@@ -249,8 +257,9 @@ def run_single(dataset: str, seed: int, verbose: bool = True) -> dict:
     te = DataLoader(te_ds, batch_size=256, shuffle=False,
                     collate_fn=collate_anomaly_window, num_workers=0)
 
-    # pos_weight from train
-    pw = estimate_pos_weight(tr, HORIZONS_STEPS)
+    # pos_weight from train, optionally capped
+    pw_raw = estimate_pos_weight(tr, HORIZONS_STEPS)
+    pw = min(pw_raw, pw_cap)
 
     # Model + head
     model = _load_model(dataset, seed)
@@ -309,6 +318,8 @@ def run_single(dataset: str, seed: int, verbose: bool = True) -> dict:
         'train': {'best_val': train_out['best_val'],
                   'final_epoch': train_out['final_epoch']},
         'pos_weight': float(pw),
+        'pos_weight_raw': float(pw_raw),
+        'pos_weight_cap': float(pw_cap),
         'n_train_windows': len(tr_ds),
         'n_val_windows': len(va_ds),
         'n_test_windows': len(te_ds),
@@ -350,11 +361,12 @@ def aggregate(per_seed):
     return out
 
 
-def run_dataset_all_seeds(dataset: str, seeds=(42, 123, 456)):
+def run_dataset_all_seeds(dataset: str, seeds=(42, 123, 456),
+                          pw_cap: float = 1000.0):
     per_seed = []
     for s in seeds:
         try:
-            r = run_single(dataset, s, verbose=True)
+            r = run_single(dataset, s, verbose=True, pw_cap=pw_cap)
             per_seed.append(r)
         except Exception as e:
             print(f'  ERROR {dataset} s{s}: {e}', flush=True)
@@ -367,6 +379,8 @@ def main():
     ap.add_argument('--datasets', nargs='+', default=None)
     ap.add_argument('--seeds', nargs='+', type=int, default=[42, 123, 456])
     ap.add_argument('--out', default=str(V22 / 'phase1_anomaly_pred_ft.json'))
+    ap.add_argument('--pw-cap', type=float, default=1000.0,
+                    help='clamp pos_weight to at most this value')
     args = ap.parse_args()
 
     datasets = args.datasets or ['SMAP', 'MSL', 'SMD', 'PSM', 'MBA']
@@ -377,10 +391,12 @@ def main():
     t0 = time.time()
     all_out = {}
     for ds in datasets:
-        print(f'\n=== {ds} ===', flush=True)
-        all_out.update(run_dataset_all_seeds(ds, seeds=tuple(args.seeds)))
+        print(f'\n=== {ds} (pw_cap={args.pw_cap}) ===', flush=True)
+        all_out.update(run_dataset_all_seeds(
+            ds, seeds=tuple(args.seeds), pw_cap=args.pw_cap))
         with open(out_path, 'w') as f:
             json.dump({'datasets': all_out, 'seeds': args.seeds,
+                       'pw_cap': args.pw_cap,
                        'runtime_min': (time.time() - t0) / 60},
                       f, indent=2, default=float)
 

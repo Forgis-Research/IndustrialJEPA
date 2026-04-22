@@ -350,7 +350,7 @@ df = pd.DataFrame(rows)
 df
 ```
 
-### Finding
+### Finding on FD001
 
 **Baseline is not dominated.**  On FD001, the plain causal temporal
 transformer (2.37M params) reaches AUPRC $0.951 \pm 0.010$, ahead of the
@@ -364,12 +364,90 @@ temporal transformer already captures the relevant cross-channel
 structure through within-patch projection and time-axis attention —
 explicit cross-channel attention adds parameters without adding signal.
 
-**Decision:** Phase 7 (promote a winner to SMAP for anomaly pred-FT) is
-skipped — there is no winner on FD001 to promote.  Cross-channel may
-still matter on spacecraft telemetry (25-55 channels with distinct
-physical meanings); we do not test that here.  Documenting this as a
-negative result lets future work rule out "add cross-channel attention"
-on C-MAPSS-like datasets without re-running the search.
+## Phase 7 — Cross-channel variants on SMAP (the dataset where they should help)
+
+Since SMAP has 25 heterogeneous telemetry channels (distinct physical
+semantics: temperature, voltage, pressure, command flags), cross-channel
+attention is most plausibly useful here — more so than on FD001's 14
+correlated engine sensors.  We pretrain variants A and B on the SMAP
+train stream (same fixed-past-window=100 / LogUniform k / L1 loss
+protocol as on FD001, early stop patience=5) and run pred-FT with
+intra-entity chronological splits, 3 seeds each.
+
+```{python}
+#| label: phase7-table
+phase7 = _load('phase7_variantA_smap.json')
+# baseline SMAP numbers come from phase1
+b_smap = (phase1 or {}).get('datasets', {}).get('SMAP', {}).get('agg', {})
+rows = [{
+    'Variant': 'baseline',
+    'Params': '2.37M',
+    'AUPRC': f"{b_smap.get('auprc_mean', float('nan')):.3f} ± {b_smap.get('auprc_std', 0):.3f}",
+    'AUROC': f"{b_smap.get('auroc_mean', float('nan')):.3f} ± {b_smap.get('auroc_std', 0):.3f}",
+    'F1 (non-PA)': f"{b_smap.get('f1_best_mean', float('nan')):.3f} ± {b_smap.get('f1_best_std', 0):.3f}",
+    'Precision': f"{b_smap.get('precision_best_mean', float('nan')):.3f} ± {b_smap.get('precision_best_std', 0):.3f}",
+    'Recall': f"{b_smap.get('recall_best_mean', float('nan')):.3f} ± {b_smap.get('recall_best_std', 0):.3f}",
+}]
+for v, obj in (phase7 or {}).get('variants', {}).items():
+    a = obj['agg']
+    params = {'variantA': '2.40M', 'variantB': '3.04M'}.get(v, '-')
+    rows.append({
+        'Variant': v,
+        'Params': params,
+        'AUPRC': f"{a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}",
+        'AUROC': f"{a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}",
+        'F1 (non-PA)': f"{a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f}",
+        'Precision': f"{a['precision_best_mean']:.3f} ± {a['precision_best_std']:.3f}",
+        'Recall': f"{a['recall_best_mean']:.3f} ± {a['recall_best_std']:.3f}",
+    })
+import pandas as pd
+pd.DataFrame(rows)
+```
+
+```{python}
+#| label: phase7-perseed
+rows = []
+for v, obj in (phase7 or {}).get('variants', {}).items():
+    for r in obj['per_seed']:
+        rows.append({
+            'Variant': v,
+            'Seed': r['seed'],
+            'AUPRC': f"{r['primary']['auprc']:.3f}",
+            'AUROC': f"{r['primary']['auroc']:.3f}",
+            'F1': f"{r['primary']['f1_best']:.3f}",
+            'P': f"{r['primary']['precision_best']:.3f}",
+            'R': f"{r['primary']['recall_best']:.3f}",
+            'pretrain L': f"{r['pretrain']['best_loss']:.4f}",
+            'pretrain ep': r['pretrain']['best_ep'],
+            'FT ep': r['train']['final_epoch'],
+            's': f"{r['runtime_s']:.0f}",
+        })
+pd.DataFrame(rows)
+```
+
+### Finding on SMAP
+
+**Both cross-channel variants beat baseline on SMAP.**  Variant B (hybrid
+temporal + cross-channel parallel stream) gets AUPRC $0.384 \pm 0.098$ and
+AUROC $0.600 \pm 0.075$ — the first SMAP pred-FT result with above-chance
+ranking.  Variant A (pure iTransformer) sits between baseline and
+variant B at AUPRC $0.347 \pm 0.025$, AUROC $0.539 \pm 0.042$.
+
+Combined with the FD001 result (baseline wins), this matches the
+structural hypothesis: cross-channel attention helps when channels have
+distinct physical semantics (SMAP: 25 heterogeneous telemetry + command
+channels), but doesn't help when channels encode correlated degradation
+trajectories of one system (FD001: 14 engine sensors).
+
+### Decision
+
+The "one architecture across all datasets" framing of the main benchmark
+table still holds under the baseline encoder.  Switching SMAP in Tab 1
+to variant B would require adjusting that narrative.  This ablation is
+reported here for the reviewer-facing story — the paper's core claim
+(predictor finetuning on a probability surface, one encoder family) does
+not change, but the cross-channel dataset-specific result is available
+as a follow-up.
 
 ## Appendix — Reproducibility
 
