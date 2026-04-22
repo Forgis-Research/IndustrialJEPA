@@ -215,18 +215,42 @@ A single scalar integrating over both axes:
 \end{equation}
 a discrete analogue of the integrated concordance index~\citep{antolini2005time}, extended over observation depth. For streaming datasets where $A(t,k) \approx A(k)$, this reduces to $\text{iAUC} = \frac{1}{K}\sum_k A(k)$.
 
-\subsection{Derived Metrics}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_evaluation_framework.pdf}
+  \caption{\textbf{Evaluation framework.} (a)~The model outputs $p(t,k)$ - event probability at observation time~$t$ and horizon~$k$. AUROC is computed at each $(t,k)$ cell; the surface captures both history-dependence ($t$) and horizon-dependence ($k$). Existing metrics evaluate at single points (annotated). (b)~Averaging over~$t$ yields AUROC($k$); iAUC (shaded) integrates over horizons. Illustrative data.}
+  \label{fig:auroc_curve}
+\end{figure}
 
-Every domain-specific metric is a projection of $p(t,k)$:
-\begin{itemize}[nosep,leftmargin=*]
-  \item \textbf{F1($k$):} threshold $p(t,k)$ at a val-split-optimised cutoff (6:2:2 chronological, matching~\citet{mtsjepa2026}). $\text{F1}(k{=}1)$ recovers MTS-JEPA's next-window evaluation.
-  \item \textbf{PA-F1:} apply segment-level point-adjustment to F1. Deprecated as primary: \citet{kim2022rigorous} show random scores beat published detectors under PA-F1; we confirm $+$55\,pp inflation on SMAP. PA-F1 is a detection ($k{=}0$) metric; in prediction ($k \geq 1$) its credit-sharing is not meaningful. Reported for legacy cross-reference only.
-  \item \textbf{RMSE:} $\hat{\tau} = \sum_k k \cdot P(\text{first event at } k \mid t)$ yields a predicted event time; RMSE measures calibration of the same underlying distribution.
-\end{itemize}
+\subsection{Existing Metrics as Projections}
+
+Every domain-specific metric is a lossy projection of $p(t,k)$. \Cref{tab:metric_projections} summarises the three most common, their derivation, and their limitations.
+
+\begin{table}[h]
+\centering
+\caption{Common metrics in the event prediction literature and how they relate to $p(t,k)$.}
+\label{tab:metric_projections}
+\small
+\begin{tabular}{@{}p{1.6cm}p{3.8cm}p{4.2cm}p{2.8cm}@{}}
+\toprule
+Metric & Derivation from $p(t,k)$ & Limitation & Used by \\
+\midrule
+PA-F1 & Threshold $p$ at $k{=}0$; credit entire segment if any point detected & Random scores beat DL detectors~\citep{kim2022rigorous}; $+$55\,pp inflation on SMAP in our experiments & AT~\citep{xu2022anomalytransformer}, DCdet.~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad} \\
+\addlinespace
+RMSE & $\hat{\tau} = \sum_k k \cdot P(\text{event at } k)$; compute $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Measures calibration only; ignores discrimination (a constant prediction can score well) & STAR~\citep{fan2024star}, AE-LSTM~\citep{lecam2025aelstm} \\
+\addlinespace
+F1($k{=}1$) & Threshold $p(t, 1)$ at val-optimised cutoff & Single horizon; threshold-dependent; no credit for predicting further ahead & MTS-JEPA~\citep{mtsjepa2026} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In our experiments, we report all three legacy metrics for direct comparability with domain-specific baselines. Our primary metric remains iAUC, which avoids all three limitations: it is threshold-free (unlike F1 and PA-F1), horizon-integrated (unlike F1($k{=}1$)), and measures discrimination (unlike RMSE).
+
+\paragraph{Note on difficulty-weighted iAUC.} The uniform average in \cref{eq:iauc} treats all $(t,k)$ cells equally. In practice, small $t$ (less history) and large $k$ (further ahead) are harder. A natural extension weights by difficulty, e.g., $w(t,k) \propto 1/t \cdot k$, rewarding models that predict well under adverse conditions. We leave the choice of weighting to the application domain; the unweighted iAUC is the simplest default and is what we report throughout.
 
 \subsection{What We Report}
 
-\textbf{Primary:} iAUC. \textbf{Curve:} $A(k)$ vs.\ $k$ in experiment figures. \textbf{Comparable:} $A(k{=}1)$ and F1($k{=}1$) for direct comparison with next-window methods. \textbf{Legacy:} RMSE for C-MAPSS, PA-F1 for SMAP/MSL/PSM. All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
+\textbf{Primary:} iAUC (\cref{eq:iauc}). \textbf{Curve:} $A(k)$ vs.\ horizon $k$ (\cref{fig:auroc_curve}). \textbf{Comparable:} $A(k{=}1)$ and F1($k{=}1$) for next-window methods. \textbf{Legacy:} RMSE for C-MAPSS, PA-F1 for SMAP/MSL/PSM (see \cref{tab:metric_projections}). All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
 
 % ============================================================
 % 5. EXPERIMENTS
