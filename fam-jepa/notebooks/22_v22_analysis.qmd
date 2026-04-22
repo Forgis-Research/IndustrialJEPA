@@ -1,0 +1,387 @@
+---
+title: "V22 Session Summary"
+subtitle: "Anomaly pred-FT with entity splits + cross-channel encoder variants"
+author: "IndustrialJEPA"
+date: "2026-04-22"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+---
+
+## What v22 delivers
+
+**Two things**, both motivated by the v21 results table.
+
+First, v21 anomaly rows were computed with PCA-Mahalanobis and per-horizon
+logistic calibration, not with the predictor finetuning that is the
+paper's core contribution.  The reason: a naive chronological split of
+the concatenated `test.npy` files crossed entity boundaries (SMAP glues 55
+independent telemetry channels end-to-end, MSL 27, SMD 28), so the
+"train" portion was entities 1-33 and the "test" portion entities 39-55.
+Pred-FT under that split produced AUROC $\approx 0.38$ (anti-correlated)
+on SMAP.  v22 replaces that with an **intra-entity chronological split**:
+every entity's test stream is split 60/10/30 with a gap of window size
+(100 timesteps) between them, so the predictor sees all channels at
+train time.  PSM and MBA are single-stream; they get the same 60/10/30
+chronological split with gap.
+
+Second, we test two cross-channel encoder variants against the baseline
+causal transformer on FD001:
+
+- **Variant A (pure iTransformer).**  Transpose $(B, T, C) \to (B, C, T)$,
+  shared `Linear(T, d)` per channel, fixed sinusoidal $\text{PE}(c)$, two
+  layers of non-causal self-attention across the $C$ channel tokens,
+  mean-pool.
+- **Variant B (hybrid).**  Keep the baseline causal temporal transformer;
+  extract a parallel cross-channel summary from the last $W{=}10$
+  timesteps (shared `Linear(W, d_{ch})` + sinusoidal channel PE + one
+  MHA layer + mean-pool); fuse with the temporal representation via
+  `Linear([h_{\text{temporal}}; h_{\text{channel}}], d)`.
+
+**Hard rule (respected):** no learnable per-channel embeddings.  Channel
+identity is only fixed sinusoidal PE on the channel index.  This avoids
+the V15 failure mode where per-sensor embeddings memorised univariate
+dynamics and collapsed pretraining.
+
+```{python}
+#| label: setup
+import json, os
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+V22 = Path('../experiments/v22')
+
+def _load(p):
+    p = V22 / p
+    if not p.exists():
+        return None
+    return json.loads(p.read_text())
+
+phase1 = _load('phase1_anomaly_pred_ft.json')
+phase6 = _load('phase6_variant_cmp.json')
+pretrain = _load('pretrain_variants.json')
+```
+
+## Phase 1+2 — Anomaly Pred-FT with Entity Splits
+
+### Headline table
+
+```{python}
+#| label: headline
+rows = []
+for ds, obj in (phase1 or {}).get('datasets', {}).items():
+    a = obj['agg']
+    rows.append({
+        'Dataset':          ds,
+        'N seeds':          a['n_seeds'],
+        'AUPRC (mean±std)': f"{a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}",
+        'AUROC (mean±std)': f"{a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}",
+        'F1 (non-PA)':      f"{a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f}",
+        'Precision':        f"{a['precision_best_mean']:.3f} ± {a['precision_best_std']:.3f}",
+        'Recall':           f"{a['recall_best_mean']:.3f} ± {a['recall_best_std']:.3f}",
+        'mono violation':   f"{a['mono_violation_mean']:.4f}",
+    })
+df = pd.DataFrame(rows)
+df
+```
+
+### Per-seed breakdown
+
+```{python}
+#| label: perseed
+rows = []
+for ds, obj in (phase1 or {}).get('datasets', {}).items():
+    for r in obj['per_seed']:
+        rows.append({
+            'Dataset': ds, 'Seed': r['seed'],
+            'AUPRC':   f"{r['primary']['auprc']:.3f}",
+            'AUROC':   f"{r['primary']['auroc']:.3f}",
+            'F1':      f"{r['primary']['f1_best']:.3f}",
+            'P':       f"{r['primary']['precision_best']:.3f}",
+            'R':       f"{r['primary']['recall_best']:.3f}",
+            'N test':  r['n_test_windows'],
+            'N ent':   r['n_entities'],
+            'pw':      f"{r['pos_weight']:.1f}",
+            'ep':      r['train']['final_epoch'],
+            's':       f"{r['runtime_s']:.0f}",
+        })
+df = pd.DataFrame(rows)
+df
+```
+
+### What went right, what didn't
+
+```{python}
+#| label: headline-context
+rows = []
+v21_auprc = {'SMAP': 0.192, 'MSL': 0.203, 'PSM': 0.413, 'SMD': 0.091, 'MBA': 0.663}
+for ds, obj in (phase1 or {}).get('datasets', {}).items():
+    a = obj['agg']
+    v21 = v21_auprc.get(ds, None)
+    rows.append({
+        'Dataset':     ds,
+        'v22 pred-FT AUPRC':    f"{a['auprc_mean']:.3f}",
+        'v21 Mahal AUPRC':      f"{v21:.3f}" if v21 is not None else '-',
+        'Δ AUPRC':              f"{a['auprc_mean'] - v21:+.3f}" if v21 is not None else '-',
+        'AUROC':                f"{a['auroc_mean']:.3f}",
+        'Comment':              (
+            'at chance — distribution shift'
+            if a['auroc_mean'] < 0.55 else
+            'clear signal'
+        ),
+    })
+df = pd.DataFrame(rows)
+df
+```
+
+Pred-FT improves AUPRC over the v21 Mahalanobis calibration on every
+dataset.  AUROC is strong on SMD (0.66) and MBA (0.75), close to chance
+on SMAP / MSL / PSM.  The root cause is a train/test anomaly-rate shift
+baked into the public benchmarks: anomaly segments are concentrated in
+the late portion of each entity's test stream, so a chronological 60/10/30
+split still produces a predictor trained on ~2% positives evaluated on
+~28% positives (SMAP).  With `pos_weight ≈ 40`, BCE over-weights false
+negatives at train time and the model learns a ranking that does not
+generalise to the anomaly-dense tail.
+
+### Anomaly distribution per split
+
+```{python}
+#| label: distshift
+shift = {
+    'SMAP':  {'ft_train': 0.021, 'ft_val': 0.331, 'ft_test': 0.282, 'n_ent': 55},
+    'MSL':   {'ft_train': 0.063, 'ft_val': 0.152, 'ft_test': 0.177, 'n_ent': 24},
+    'SMD':   {'ft_train': 0.028, 'ft_val': 0.066, 'ft_test': 0.061, 'n_ent': 28},
+}
+pd.DataFrame.from_dict(shift, orient='index').rename_axis('Dataset')
+```
+
+```{python}
+#| label: fig-distshift
+#| fig-cap: "Anomaly rate per split.  The intra-entity chronological split still inherits the benchmark-level non-stationarity of anomaly segments within each entity."
+fig, ax = plt.subplots(figsize=(6, 3.2))
+ds_list = list(shift.keys())
+x = np.arange(len(ds_list))
+w = 0.26
+for i, sp in enumerate(['ft_train', 'ft_val', 'ft_test']):
+    rates = [shift[d][sp] for d in ds_list]
+    ax.bar(x + (i - 1) * w, rates, w, label=sp)
+ax.set_xticks(x)
+ax.set_xticklabels(ds_list)
+ax.set_ylabel('Anomaly rate')
+ax.set_title('Anomaly rate per split (entity datasets)')
+ax.legend()
+plt.tight_layout()
+```
+
+### Surface heatmaps
+
+Load a stored surface and visualise the probability landscape
+$p(t, \Delta t)$.
+
+```{python}
+#| label: fig-surface-mba
+#| fig-cap: "MBA pred-FT probability surface $p(t, \\Delta t)$ (seed 42).  Rows = observation time, cols = horizon $\\Delta t$.  Each row is a window; hot cells mean high predicted event probability within that horizon.  Ground truth $y(t, \\Delta t)$ is overlaid in the bottom panel."
+path = V22 / 'surfaces' / 'mba_pred_ft_seed42.npz'
+if path.exists():
+    d = np.load(path, allow_pickle=True)
+    p, y = d['p_surface'], d['y_surface']
+    horizons = d['horizons']
+    fig, axs = plt.subplots(2, 1, figsize=(9, 5.5), sharex=True)
+    axs[0].imshow(p.T, aspect='auto', cmap='viridis', origin='lower',
+                  extent=[0, len(p), horizons[0] - 0.5, horizons[-1] + 0.5])
+    axs[0].set_ylabel('horizon (steps)')
+    axs[0].set_title(f'MBA p(t, Δt)  —  {len(p)} windows × {len(horizons)} horizons')
+    axs[1].imshow(y.T, aspect='auto', cmap='Reds', origin='lower',
+                  extent=[0, len(y), horizons[0] - 0.5, horizons[-1] + 0.5])
+    axs[1].set_ylabel('horizon')
+    axs[1].set_xlabel('test window index (time)')
+    axs[1].set_title('MBA y(t, Δt)  (ground truth)')
+    plt.tight_layout()
+else:
+    print(f'Surface file not found: {path}')
+```
+
+```{python}
+#| label: fig-surface-smd
+#| fig-cap: "SMD pred-FT probability surface (seed 42) — the entity-split dataset that got the clearest pred-FT signal (AUROC 0.65).  The surface shows horizon-dependent event probability across 52K ft_test windows aggregated across 28 machines."
+path = V22 / 'surfaces' / 'smd_pred_ft_seed42.npz'
+if path.exists():
+    d = np.load(path, allow_pickle=True)
+    p, y = d['p_surface'], d['y_surface']
+    horizons = d['horizons']
+    fig, axs = plt.subplots(2, 1, figsize=(9, 5.5), sharex=True)
+    axs[0].imshow(p.T, aspect='auto', cmap='viridis', origin='lower',
+                  extent=[0, len(p), horizons[0] - 0.5, horizons[-1] + 0.5])
+    axs[0].set_ylabel('horizon (steps)')
+    axs[0].set_title(f'SMD p(t, Δt)  —  {len(p)} windows × {len(horizons)} horizons')
+    axs[1].imshow(y.T, aspect='auto', cmap='Reds', origin='lower',
+                  extent=[0, len(y), horizons[0] - 0.5, horizons[-1] + 0.5])
+    axs[1].set_ylabel('horizon')
+    axs[1].set_xlabel('test window index (time)')
+    axs[1].set_title('SMD y(t, Δt)  (ground truth)')
+    plt.tight_layout()
+else:
+    print(f'Surface file not found: {path}')
+```
+
+### AUPRC per horizon
+
+```{python}
+#| label: fig-auprc-per-horizon
+#| fig-cap: "AUPRC($\\Delta t$) per dataset, averaged across seeds.  Shorter horizons (smaller $\\Delta t$) are harder because the event must fall within fewer timesteps — fewer positives per window, higher class imbalance.  AUPRC typically rises with $\\Delta t$ until the event-in-window probability saturates.  MBA's AUPRC stays high across all horizons because the 35% anomaly rate means most windows have at least one nearby event."
+rows_plot = {}
+for ds, obj in (phase1 or {}).get('datasets', {}).items():
+    K = len(obj['per_seed'][0]['per_horizon']['auprc'])
+    all_auprc = np.array([r['per_horizon']['auprc'] for r in obj['per_seed']])
+    horizons = obj['per_seed'][0]['per_horizon']['horizons']
+    rows_plot[ds] = (horizons, all_auprc.mean(axis=0), all_auprc.std(axis=0))
+
+fig, ax = plt.subplots(figsize=(7.5, 4))
+for ds, (h, m, s) in rows_plot.items():
+    h_arr = np.asarray(h)
+    ax.plot(h_arr, m, marker='o', label=ds)
+    ax.fill_between(h_arr, m - s, m + s, alpha=0.15)
+ax.set_xscale('log')
+ax.set_xlabel('horizon Δt (steps)')
+ax.set_ylabel('AUPRC')
+ax.set_title('AUPRC per horizon — anomaly pred-FT')
+ax.legend()
+ax.grid(alpha=0.3)
+plt.tight_layout()
+```
+
+## Phase 4-6 — Cross-Channel Encoder Variants on FD001
+
+### Pretraining
+
+All three encoders pretrained under an identical protocol on FD001
+(fixed past=100, LogUniform k ∈ [1, 150], L1 loss on L2-normalized
+predictions, variance reg $\lambda=0.04$, batch 64, AdamW lr=3e-4 with
+cosine schedule, early stop patience=5, max 50 epochs).
+
+```{python}
+#| label: pretrain-table
+rows = []
+for v, entries in (pretrain or {}).get('log', {}).items():
+    for e in entries:
+        rows.append({
+            'Variant':   v,
+            'Seed':      e['seed'],
+            'Params':    f"{e['params']:,}",
+            'Best L':    f"{e['best_loss']:.4f}",
+            'Best ep':   e['best_ep'],
+            'Final ep':  e['final_ep'],
+            'Runtime':   f"{e['runtime_min']:.2f} min",
+        })
+df = pd.DataFrame(rows)
+df
+```
+
+### Pretraining loss curves
+
+```{python}
+#| label: fig-pretrain-curves
+#| fig-cap: "Pretraining L1 loss curve per (variant, seed).  Variant A converges lower than baseline and B; variant B lands at the same plateau as baseline.  Losses are reported per-epoch mean over all batches."
+fig, axs = plt.subplots(1, 3, figsize=(12, 3.4), sharey=True)
+for ax, (v, entries) in zip(axs, (pretrain or {}).get('log', {}).items()):
+    for e in entries:
+        ax.plot(np.arange(1, len(e['losses']) + 1), e['losses'],
+                marker='o', ms=3, label=f"seed {e['seed']}")
+    ax.set_title(v)
+    ax.set_xlabel('epoch')
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+axs[0].set_ylabel('L1 loss (+ var reg)')
+plt.tight_layout()
+```
+
+### Pred-FT downstream (FD001, frozen encoder, 3 seeds)
+
+Same `EventHead` and training budget for every variant — only the frozen
+encoder differs.
+
+```{python}
+#| label: variant-table
+rows = []
+for v, obj in (phase6 or {}).get('variants', {}).items():
+    a = obj['agg']
+    rows.append({
+        'Variant':           v,
+        'AUPRC':             f"{a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}",
+        'AUROC':             f"{a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}",
+        'RMSE (expected)':   f"{a['rmse_expected_mean']:.2f} ± {a['rmse_expected_std']:.2f}",
+        'RMSE (threshold)':  f"{a['rmse_cross_mean']:.2f} ± {a['rmse_cross_std']:.2f}",
+        'F1 best':           f"{a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f}",
+        'Mono violation':    f"{a['mono_violation_mean']:.4f}",
+    })
+df = pd.DataFrame(rows)
+df
+```
+
+### Per-seed detail
+
+```{python}
+#| label: variant-perseed
+rows = []
+for v, obj in (phase6 or {}).get('variants', {}).items():
+    for r in obj['per_seed']:
+        rows.append({
+            'Variant':   v,
+            'Seed':      r['seed'],
+            'AUPRC':     f"{r['primary']['auprc']:.3f}",
+            'AUROC':     f"{r['primary']['auroc']:.3f}",
+            'RMSE_exp':  f"{r['legacy']['rmse_expected']:.2f}",
+            'pw':        f"{r['pos_weight']:.1f}",
+            'ep':        r['train']['final_epoch'],
+            'Params':    f"{r['params']:,}",
+            's':         f"{r['runtime_s']:.0f}",
+        })
+df = pd.DataFrame(rows)
+df
+```
+
+### Finding
+
+**Baseline is not dominated.**  On FD001, the plain causal temporal
+transformer (2.37M params) reaches AUPRC $0.951 \pm 0.010$, ahead of the
+pure iTransformer variant A ($0.936 \pm 0.004$) and the hybrid variant B
+($0.939 \pm 0.013$).  Variant A does have the tightest RMSE variance but
+the mean does not improve.
+
+FD001 has 14 thermo-mechanical channels that encode correlated
+degradation trajectories within one engine.  It appears the causal
+temporal transformer already captures the relevant cross-channel
+structure through within-patch projection and time-axis attention —
+explicit cross-channel attention adds parameters without adding signal.
+
+**Decision:** Phase 7 (promote a winner to SMAP for anomaly pred-FT) is
+skipped — there is no winner on FD001 to promote.  Cross-channel may
+still matter on spacecraft telemetry (25-55 channels with distinct
+physical meanings); we do not test that here.  Documenting this as a
+negative result lets future work rule out "add cross-channel attention"
+on C-MAPSS-like datasets without re-running the search.
+
+## Appendix — Reproducibility
+
+- All stored surfaces are at `fam-jepa/experiments/v22/surfaces/`.
+- Pretrained variant checkpoints at `fam-jepa/experiments/v22/ckpts/`.
+- Result JSONs: `phase1_anomaly_pred_ft.json`, `pretrain_variants.json`,
+  `phase6_variant_cmp.json`.
+- Runners:
+  - `fam-jepa/experiments/v22/anomaly_pred_ft_runner.py`
+  - `fam-jepa/experiments/v22/pretrain_variants.py`
+  - `fam-jepa/experiments/v22/cmapss_cmp_runner.py`
+- Model variant definitions: `fam-jepa/experiments/v22/models_variants.py`.
+- Entity splits: `fam-jepa/data/smap_msl.py::split_smap_entities`,
+  `split_msl_entities`, `fam-jepa/data/smd.py::split_smd_entities`.
+  Tested via `fam-jepa/data/test_entity_splits.py`.
