@@ -1,0 +1,4834 @@
+{
+  "subset": "FD001",
+  "budgets": [
+    1.0,
+    0.5,
+    0.2,
+    0.1,
+    0.05
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "modes": [
+    "pred_ft",
+    "e2e"
+  ],
+  "results": {
+    "pred_ft@1.0": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 1.0,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.9473940672481803,
+            "auroc": 0.9888676749150606,
+            "f1_best": 0.8738461538461538,
+            "precision_best": 0.8502994011976048,
+            "recall_best": 0.8987341772151899,
+            "threshold_best": 0.9028806090354919,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7972789115646257,
+              0.9123595848595848,
+              0.9091664238539239,
+              0.9562661626030452,
+              0.9762746761550588,
+              0.9613033373941335
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9911111111111112,
+              0.9761904761904763,
+              0.9861333333333333,
+              0.986883763003166,
+              0.9199457259158752
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 14.242542266845703,
+            "rmse_expected": 19.20499610900879,
+            "rmse_uncapped": 28.649375915527344,
+            "nasa_score": 421.47198486328125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2112378044128418,
+            "final_epoch": 19
+          },
+          "pos_weight": 6.071547420965058,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b100_seed0.npz",
+          "runtime_s": 4.684699773788452
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 1.0,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.9373721843414846,
+            "auroc": 0.9865299618148471,
+            "f1_best": 0.8588235294117648,
+            "precision_best": 0.8021978021978022,
+            "recall_best": 0.9240506329113924,
+            "threshold_best": 0.8506479859352112,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8210884353741494,
+              0.8787484737484738,
+              0.8471613455988456,
+              0.9524229702833823,
+              0.9755797117426998,
+              0.9571885849884132
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9866666666666667,
+              0.9687500000000001,
+              0.9829333333333333,
+              0.9859791949344189,
+              0.9145183175033921
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 17.815162658691406,
+            "rmse_expected": 20.525957107543945,
+            "rmse_uncapped": 29.073556900024414,
+            "nasa_score": 603.2160034179688,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.23779150644938152,
+            "final_epoch": 37
+          },
+          "pos_weight": 6.713248638838476,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b100_seed1.npz",
+          "runtime_s": 5.623044490814209
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 1.0,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.9565531785167791,
+            "auroc": 0.990288343004901,
+            "f1_best": 0.8909090909090909,
+            "precision_best": 0.8546511627906976,
+            "recall_best": 0.930379746835443,
+            "threshold_best": 0.8722075819969177,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9240362811791383,
+              0.9272546897546897,
+              0.9199009324009324,
+              0.971794472688468,
+              0.9848437532261061,
+              0.96927691534001
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9938556067588326,
+              0.9922222222222222,
+              0.9776785714285714,
+              0.9909333333333333,
+              0.9914066033469019,
+              0.9339665309814563
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 12.310970306396484,
+            "rmse_expected": 18.197284698486328,
+            "rmse_uncapped": 26.973356246948242,
+            "nasa_score": 358.04132080078125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.23828305244445802,
+            "final_epoch": 39
+          },
+          "pos_weight": 6.94392523364486,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b100_seed2.npz",
+          "runtime_s": 5.992227792739868
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 1.0,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9274092692750165,
+            "auroc": 0.9846131874079196,
+            "f1_best": 0.8553846153846154,
+            "precision_best": 0.8323353293413174,
+            "recall_best": 0.879746835443038,
+            "threshold_best": 0.9490038156509399,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8690476190476191,
+              0.8447943722943722,
+              0.8924787307599807,
+              0.9523151393039939,
+              0.9670068941659768,
+              0.9521036731955359
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.989247311827957,
+              0.9855555555555556,
+              0.9739583333333334,
+              0.9834666666666667,
+              0.9796472184531886,
+              0.9045680687471732
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 21.073442459106445,
+            "rmse_expected": 25.123798370361328,
+            "rmse_uncapped": 32.995052337646484,
+            "nasa_score": 1053.742919921875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2761637427012126,
+            "final_epoch": 18
+          },
+          "pos_weight": 7.551307847082495,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b100_seed3.npz",
+          "runtime_s": 2.8760948181152344
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 1.0,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9322758112372325,
+            "auroc": 0.9849664752397848,
+            "f1_best": 0.86404833836858,
+            "precision_best": 0.8265895953757225,
+            "recall_best": 0.9050632911392406,
+            "threshold_best": 0.855518102645874,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8329931972789115,
+              0.8227960927960928,
+              0.8237753259382818,
+              0.955236746792811,
+              0.9753939911834648,
+              0.9579688630285831
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9861751152073733,
+              0.9822222222222222,
+              0.9635416666666666,
+              0.9829333333333333,
+              0.9864314789687924,
+              0.9158751696065129
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 13.654669761657715,
+            "rmse_expected": 17.505739212036133,
+            "rmse_uncapped": 27.119693756103516,
+            "nasa_score": 345.2658996582031,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.23343368275960286,
+            "final_epoch": 43
+          },
+          "pos_weight": 6.059800664451827,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b100_seed4.npz",
+          "runtime_s": 6.569347620010376
+        }
+      ],
+      "auprc_mean": 0.9402009021237386,
+      "auprc_std": 0.011764067626988152,
+      "auprc_ci95_lo": 0.925593882878873,
+      "auprc_ci95_hi": 0.9548079213686043,
+      "auroc_mean": 0.9870531284765025,
+      "auroc_std": 0.0024667959647472967,
+      "auroc_ci95_lo": 0.9839901967361615,
+      "auroc_ci95_hi": 0.9901160602168435,
+      "f1_best_mean": 0.8686023455840409,
+      "f1_best_std": 0.014284266092110637,
+      "f1_best_ci95_lo": 0.8508660866367044,
+      "f1_best_ci95_hi": 0.8863386045313775,
+      "precision_best_mean": 0.8332146581806288,
+      "precision_best_std": 0.02096498393327321,
+      "precision_best_ci95_lo": 0.807183192407763,
+      "precision_best_ci95_hi": 0.8592461239534945,
+      "recall_best_mean": 0.9075949367088608,
+      "recall_best_std": 0.020312413336558484,
+      "recall_best_ci95_lo": 0.8823737443522222,
+      "recall_best_ci95_hi": 0.9328161290654995,
+      "rmse_expected_mean": 20.111555099487305,
+      "rmse_expected_std": 3.023692628284252,
+      "rmse_expected_ci95_lo": 16.357144821312627,
+      "rmse_expected_ci95_hi": 23.865965377661983,
+      "rmse_cross_mean": 15.81935749053955,
+      "rmse_cross_std": 3.573151514183447,
+      "rmse_cross_ci95_lo": 11.382703895250689,
+      "rmse_cross_ci95_hi": 20.256011085828412,
+      "nasa_mean": 556.3476257324219,
+      "nasa_std": 296.5092948233923,
+      "nasa_ci95_lo": 188.18270921742925,
+      "nasa_ci95_hi": 924.5125422474146,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "pred_ft@0.5": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.5,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.9269955486030531,
+            "auroc": 0.9850190925764454,
+            "f1_best": 0.8571428571428571,
+            "precision_best": 0.7945945945945946,
+            "recall_best": 0.930379746835443,
+            "threshold_best": 0.790971577167511,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7881880024737167,
+              0.8361979686979686,
+              0.8860113090412003,
+              0.9354237551980671,
+              0.9605305654904804,
+              0.9556784806035514
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9831029185867896,
+              0.9844444444444445,
+              0.9709821428571429,
+              0.9781333333333333,
+              0.9760289461781999,
+              0.9104477611940298
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 19.442222595214844,
+            "rmse_expected": 23.582416534423828,
+            "rmse_uncapped": 32.334869384765625,
+            "nasa_score": 760.4378662109375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.20377705446879069,
+            "final_epoch": 17
+          },
+          "pos_weight": 5.752411575562701,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b50_seed0.npz",
+          "runtime_s": 1.8142142295837402
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.5,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.903340821800455,
+            "auroc": 0.9835382903875644,
+            "f1_best": 0.8562874251497007,
+            "precision_best": 0.8125,
+            "recall_best": 0.9050632911392406,
+            "threshold_best": 0.9027020335197449,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6568027210884353,
+              0.7062809412809413,
+              0.7659948405352817,
+              0.9637169593907986,
+              0.9791746387141124,
+              0.9636854248647932
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9800307219662059,
+              0.9788888888888889,
+              0.9642857142857143,
+              0.9877333333333332,
+              0.9886928991406603,
+              0.9235639981908639
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 14.585609436035156,
+            "rmse_expected": 18.2133846282959,
+            "rmse_uncapped": 27.126943588256836,
+            "nasa_score": 395.1788635253906,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2806034049987793,
+            "final_epoch": 32
+          },
+          "pos_weight": 6.954545454545454,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b50_seed1.npz",
+          "runtime_s": 3.1384198665618896
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.5,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.9318687722777154,
+            "auroc": 0.9859511711115788,
+            "f1_best": 0.8588588588588589,
+            "precision_best": 0.8171428571428572,
+            "recall_best": 0.9050632911392406,
+            "threshold_best": 0.951522171497345,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7726190476190475,
+              0.8298523698523699,
+              0.8756898483460984,
+              0.9615190529277486,
+              0.9695480755902041,
+              0.9543496776915039
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9815668202764978,
+              0.9844444444444445,
+              0.9717261904761905,
+              0.9866666666666667,
+              0.9819086386250565,
+              0.9086386250565355
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 20.949939727783203,
+            "rmse_expected": 25.897140502929688,
+            "rmse_uncapped": 34.42265701293945,
+            "nasa_score": 1072.4608154296875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.24174119822184245,
+            "final_epoch": 45
+          },
+          "pos_weight": 7.076923076923077,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b50_seed2.npz",
+          "runtime_s": 4.331973075866699
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.5,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9255794453701235,
+            "auroc": 0.9840193631798911,
+            "f1_best": 0.8562091503267973,
+            "precision_best": 0.8851351351351351,
+            "recall_best": 0.8291139240506329,
+            "threshold_best": 0.9322401285171509,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8163265306122449,
+              0.9051373626373626,
+              0.888833286811228,
+              0.9265123637612482,
+              0.9567892125725098,
+              0.9536652690315045
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9861751152073733,
+              0.9888888888888889,
+              0.9717261904761905,
+              0.9754666666666667,
+              0.9751243781094527,
+              0.9072817729534147
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 16.68832015991211,
+            "rmse_expected": 20.629898071289062,
+            "rmse_uncapped": 29.618860244750977,
+            "nasa_score": 564.4395751953125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.31579523722330727,
+            "final_epoch": 15
+          },
+          "pos_weight": 7.366533864541832,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b50_seed3.npz",
+          "runtime_s": 1.5879356861114502
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.5,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9303275726869695,
+            "auroc": 0.9838915782194294,
+            "f1_best": 0.8496732026143792,
+            "precision_best": 0.8783783783783784,
+            "recall_best": 0.8227848101265823,
+            "threshold_best": 0.9145247340202332,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.859750566893424,
+              0.9373737373737373,
+              0.8939035461664773,
+              0.9255241639625625,
+              0.9673728357938882,
+              0.954481745238211
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9907834101382489,
+              0.991111111111111,
+              0.9702380952380952,
+              0.9754666666666666,
+              0.9814563545906829,
+              0.906829488919041
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 18.882001876831055,
+            "rmse_expected": 22.597742080688477,
+            "rmse_uncapped": 31.625808715820312,
+            "nasa_score": 671.5731811523438,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.24304811795552572,
+            "final_epoch": 25
+          },
+          "pos_weight": 6.11864406779661,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b50_seed4.npz",
+          "runtime_s": 2.496854305267334
+        }
+      ],
+      "auprc_mean": 0.9236224321476634,
+      "auprc_std": 0.01161370493041352,
+      "auprc_ci95_lo": 0.9092021128498073,
+      "auprc_ci95_hi": 0.9380427514455194,
+      "auroc_mean": 0.9844838990949818,
+      "auroc_std": 0.000987437681180153,
+      "auroc_ci95_lo": 0.9832578332757906,
+      "auroc_ci95_hi": 0.985709964914173,
+      "f1_best_mean": 0.8556342988185186,
+      "f1_best_std": 0.0034987580613608377,
+      "f1_best_ci95_lo": 0.8512900168953016,
+      "f1_best_ci95_hi": 0.8599785807417356,
+      "precision_best_mean": 0.837550193050193,
+      "precision_best_std": 0.041292924332702964,
+      "precision_best_ci95_lo": 0.7862782555257234,
+      "precision_best_ci95_hi": 0.8888221305746625,
+      "recall_best_mean": 0.8784810126582279,
+      "recall_best_std": 0.04910674618043246,
+      "recall_best_ci95_lo": 0.8175069338570545,
+      "recall_best_ci95_hi": 0.9394550914594012,
+      "rmse_expected_mean": 22.18411636352539,
+      "rmse_expected_std": 2.919554027360725,
+      "rmse_expected_ci95_lo": 18.559011236940766,
+      "rmse_expected_ci95_hi": 25.809221490110016,
+      "rmse_cross_mean": 18.109618759155275,
+      "rmse_cross_std": 2.4939207729410144,
+      "rmse_cross_ci95_lo": 15.013007121021907,
+      "rmse_cross_ci95_hi": 21.206230397288643,
+      "nasa_mean": 692.8180603027344,
+      "nasa_std": 252.10242534449185,
+      "nasa_ci95_lo": 379.7915548926261,
+      "nasa_ci95_hi": 1005.8445657128426,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "pred_ft@0.2": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.2,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.9181654486606015,
+            "auroc": 0.9807646050693045,
+            "f1_best": 0.8545454545454545,
+            "precision_best": 0.8197674418604651,
+            "recall_best": 0.8924050632911392,
+            "threshold_best": 0.846751868724823,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7825757575757575,
+              0.886024531024531,
+              0.8755095598845598,
+              0.9422339743234884,
+              0.9676129820146047,
+              0.9453103414178115
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9815668202764978,
+              0.9866666666666667,
+              0.9702380952380952,
+              0.9792,
+              0.9819086386250566,
+              0.885119855269109
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 18.252944946289062,
+            "rmse_expected": 19.554792404174805,
+            "rmse_uncapped": 29.234619140625,
+            "nasa_score": 433.7605895996094,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.28397744957605997,
+            "final_epoch": 21
+          },
+          "pos_weight": 7.252427184466019,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b20_seed0.npz",
+          "runtime_s": 1.41011643409729
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.2,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.8964284155952995,
+            "auroc": 0.9776639405875103,
+            "f1_best": 0.8164556962025317,
+            "precision_best": 0.8164556962025317,
+            "recall_best": 0.8164556962025317,
+            "threshold_best": 0.8342761993408203,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8044217687074828,
+              0.8111294261294261,
+              0.8864583333333333,
+              0.9300489140489142,
+              0.9535968718764417,
+              0.9461563211338262
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9822222222222222,
+              0.9672619047619048,
+              0.9754666666666667,
+              0.9706015377657169,
+              0.8909995477159656
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 20.211383819580078,
+            "rmse_expected": 22.056949615478516,
+            "rmse_uncapped": 30.15081024169922,
+            "nasa_score": 882.01123046875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3495619939168294,
+            "final_epoch": 18
+          },
+          "pos_weight": 6.522123893805309,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b20_seed1.npz",
+          "runtime_s": 1.2324469089508057
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.2,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.914686092526748,
+            "auroc": 0.9807796385940647,
+            "f1_best": 0.8402366863905325,
+            "precision_best": 0.7888888888888889,
+            "recall_best": 0.8987341772151899,
+            "threshold_best": 0.9035887718200684,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7083900226757369,
+              0.7291197691197691,
+              0.8928346361770274,
+              0.9327700546325335,
+              0.9564289245661795,
+              0.9505371600069961
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9800000000000001,
+              0.9702380952380952,
+              0.976,
+              0.9724106739032112,
+              0.900497512437811
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 19.42163848876953,
+            "rmse_expected": 22.550424575805664,
+            "rmse_uncapped": 30.168001174926758,
+            "nasa_score": 851.944091796875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3346789576212565,
+            "final_epoch": 29
+          },
+          "pos_weight": 6.798165137614679,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b20_seed2.npz",
+          "runtime_s": 1.932356595993042
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.2,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9177805549098199,
+            "auroc": 0.9821476893472443,
+            "f1_best": 0.8509316770186336,
+            "precision_best": 0.8353658536585366,
+            "recall_best": 0.8670886075949367,
+            "threshold_best": 0.9040018320083618,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7881880024737167,
+              0.8502888777888777,
+              0.892245059725382,
+              0.9372009693973802,
+              0.9559938712519497,
+              0.9478246673923789
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9831029185867896,
+              0.9866666666666667,
+              0.9717261904761905,
+              0.9775999999999999,
+              0.9733152419719584,
+              0.8923563998190863
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 20.696619033813477,
+            "rmse_expected": 23.401199340820312,
+            "rmse_uncapped": 31.740692138671875,
+            "nasa_score": 842.1217651367188,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.34984208552042645,
+            "final_epoch": 18
+          },
+          "pos_weight": 8.770114942528735,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b20_seed3.npz",
+          "runtime_s": 1.2325408458709717
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.2,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9109966603818742,
+            "auroc": 0.9781111879491265,
+            "f1_best": 0.8198757763975155,
+            "precision_best": 0.8048780487804879,
+            "recall_best": 0.8354430379746836,
+            "threshold_best": 0.8868290185928345,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6329931972789116,
+              0.8502888777888777,
+              0.9012734514804615,
+              0.9324397084017537,
+              0.95368149256449,
+              0.9459416124263592
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.978494623655914,
+              0.9866666666666667,
+              0.9724702380952381,
+              0.9765333333333334,
+              0.9696969696969697,
+              0.8909995477159656
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 17.645112991333008,
+            "rmse_expected": 19.725419998168945,
+            "rmse_uncapped": 29.0797119140625,
+            "nasa_score": 487.06329345703125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2543904781341553,
+            "final_epoch": 21
+          },
+          "pos_weight": 5.204379562043796,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b20_seed4.npz",
+          "runtime_s": 1.4295740127563477
+        }
+      ],
+      "auprc_mean": 0.9116114344148686,
+      "auprc_std": 0.008963379392094213,
+      "auprc_ci95_lo": 0.9004819289214636,
+      "auprc_ci95_hi": 0.9227409399082735,
+      "auroc_mean": 0.97989341230945,
+      "auroc_std": 0.0019217834584670747,
+      "auroc_ci95_lo": 0.977507202976728,
+      "auroc_ci95_hi": 0.9822796216421721,
+      "f1_best_mean": 0.8364090581109336,
+      "f1_best_std": 0.017506942404929556,
+      "f1_best_ci95_lo": 0.8146713180081057,
+      "f1_best_ci95_hi": 0.8581467982137615,
+      "precision_best_mean": 0.8130711858781821,
+      "precision_best_std": 0.017358412578143915,
+      "precision_best_ci95_lo": 0.7915178699139334,
+      "precision_best_ci95_hi": 0.8346245018424308,
+      "recall_best_mean": 0.8620253164556961,
+      "recall_best_std": 0.03563465382344112,
+      "recall_best_ci95_lo": 0.8177790497146751,
+      "recall_best_ci95_hi": 0.9062715831967172,
+      "rmse_expected_mean": 21.457757186889648,
+      "rmse_expected_std": 1.7285968366446187,
+      "rmse_expected_ci95_lo": 19.311420727419108,
+      "rmse_expected_ci95_hi": 23.604093646360187,
+      "rmse_cross_mean": 19.24553985595703,
+      "rmse_cross_std": 1.286089700862958,
+      "rmse_cross_ci95_lo": 17.648648575934843,
+      "rmse_cross_ci95_hi": 20.84243113597922,
+      "nasa_mean": 699.3801940917969,
+      "nasa_std": 219.45229266357475,
+      "nasa_ci95_lo": 426.8941829681595,
+      "nasa_ci95_hi": 971.8662052154342,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "pred_ft@0.1": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.1,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.8735096038081638,
+            "auroc": 0.9748864968880604,
+            "f1_best": 0.8045977011494253,
+            "precision_best": 0.7368421052631579,
+            "recall_best": 0.8860759493670886,
+            "threshold_best": 0.8852414488792419,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7667594310451453,
+              0.8307034632034631,
+              0.8829831586784911,
+              0.9267998611608739,
+              0.9490801430399138,
+              0.9362209616085972
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9815668202764978,
+              0.9833333333333334,
+              0.9702380952380953,
+              0.9754666666666667,
+              0.966078697421981,
+              0.8661239258254183
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 28.19485855102539,
+            "rmse_expected": 30.163145065307617,
+            "rmse_uncapped": 39.078311920166016,
+            "nasa_score": 1879.2911376953125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.4244831123352051,
+            "final_epoch": 16
+          },
+          "pos_weight": 8.30232558139535,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b10_seed0.npz",
+          "runtime_s": 0.9101347923278809
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.1,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.8974709451444203,
+            "auroc": 0.9780322619441353,
+            "f1_best": 0.8306709265175719,
+            "precision_best": 0.8387096774193549,
+            "recall_best": 0.8227848101265823,
+            "threshold_best": 0.9352914094924927,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.5019068233353947,
+              0.6793578643578644,
+              0.9096796013126658,
+              0.9450970658161577,
+              0.9488513575530586,
+              0.9406855751460779
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9631336405529954,
+              0.9777777777777777,
+              0.9717261904761905,
+              0.9770666666666666,
+              0.9665309814563545,
+              0.8778833107191316
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 22.190088272094727,
+            "rmse_expected": 24.406557083129883,
+            "rmse_uncapped": 32.105995178222656,
+            "nasa_score": 1120.197998046875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3820385487874349,
+            "final_epoch": 23
+          },
+          "pos_weight": 7.51063829787234,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b10_seed1.npz",
+          "runtime_s": 1.2516400814056396
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.1,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.9050247225574667,
+            "auroc": 0.9796972248113293,
+            "f1_best": 0.8313953488372092,
+            "precision_best": 0.7688172043010753,
+            "recall_best": 0.9050632911392406,
+            "threshold_best": 0.9008903503417969,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6923992673992674,
+              0.8369580419580419,
+              0.8487382409257409,
+              0.9180549732008192,
+              0.9464835021718645,
+              0.9441676226654792
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9738863287250384,
+              0.98,
+              0.9635416666666667,
+              0.9733333333333333,
+              0.9660786974219809,
+              0.8824061510628675
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 20.04020881652832,
+            "rmse_expected": 25.250314712524414,
+            "rmse_uncapped": 34.08977127075195,
+            "nasa_score": 1019.624755859375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.34184099451700845,
+            "final_epoch": 31
+          },
+          "pos_weight": 7.0,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b10_seed2.npz",
+          "runtime_s": 1.6642658710479736
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.1,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9046789546050131,
+            "auroc": 0.9807495715445445,
+            "f1_best": 0.8260869565217391,
+            "precision_best": 0.8109756097560976,
+            "recall_best": 0.8417721518987342,
+            "threshold_best": 0.8297502994537354,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7282312925170067,
+              0.7973701298701298,
+              0.8819444846618759,
+              0.9205231282405197,
+              0.9511547732986403,
+              0.9499381053106374
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9815668202764977,
+              0.9822222222222223,
+              0.96875,
+              0.9733333333333334,
+              0.9696969696969697,
+              0.9009497964721845
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 17.895530700683594,
+            "rmse_expected": 22.409835815429688,
+            "rmse_uncapped": 31.660303115844727,
+            "nasa_score": 742.2194213867188,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.4973478037516276,
+            "final_epoch": 14
+          },
+          "pos_weight": 11.5,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b10_seed3.npz",
+          "runtime_s": 0.8245034217834473
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.1,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9035349980112025,
+            "auroc": 0.9772881024685047,
+            "f1_best": 0.7940298507462686,
+            "precision_best": 0.751412429378531,
+            "recall_best": 0.8417721518987342,
+            "threshold_best": 0.6682368516921997,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6329931972789116,
+              0.778531746031746,
+              0.9093811105360019,
+              0.9413450501528305,
+              0.9575450307370232,
+              0.938652790686586
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.978494623655914,
+              0.9855555555555556,
+              0.9754464285714286,
+              0.9786666666666666,
+              0.9719583898688378,
+              0.8742650384441429
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 18.860010147094727,
+            "rmse_expected": 16.562198638916016,
+            "rmse_uncapped": 25.36689567565918,
+            "nasa_score": 355.9128723144531,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.25121484247843423,
+            "final_epoch": 19
+          },
+          "pos_weight": 4.063291139240507,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b10_seed4.npz",
+          "runtime_s": 1.080596923828125
+        }
+      ],
+      "auprc_mean": 0.8968438448252533,
+      "auprc_std": 0.013397455871751115,
+      "auprc_ci95_lo": 0.8802087062017763,
+      "auprc_ci95_hi": 0.9134789834487302,
+      "auroc_mean": 0.9781307315313148,
+      "auroc_std": 0.0022669915432576423,
+      "auroc_ci95_lo": 0.9753158897478194,
+      "auroc_ci95_hi": 0.9809455733148102,
+      "f1_best_mean": 0.8173561567544428,
+      "f1_best_std": 0.017011052393743564,
+      "f1_best_ci95_lo": 0.7962341454255735,
+      "f1_best_ci95_hi": 0.8384781680833122,
+      "precision_best_mean": 0.7813514052236433,
+      "precision_best_std": 0.042432567486106756,
+      "precision_best_ci95_lo": 0.7286644138247929,
+      "precision_best_ci95_hi": 0.8340383966224938,
+      "recall_best_mean": 0.8594936708860761,
+      "recall_best_std": 0.034492219223895455,
+      "recall_best_ci95_lo": 0.8166659240576133,
+      "recall_best_ci95_hi": 0.9023214177145389,
+      "rmse_expected_mean": 23.758410263061524,
+      "rmse_expected_std": 4.931293335781361,
+      "rmse_expected_ci95_lo": 17.63540086343965,
+      "rmse_expected_ci95_hi": 29.8814196626834,
+      "rmse_cross_mean": 21.43613929748535,
+      "rmse_cross_std": 4.103952288568641,
+      "rmse_cross_ci95_lo": 16.340409490423717,
+      "rmse_cross_ci95_hi": 26.531869104546985,
+      "nasa_mean": 1023.4492370605469,
+      "nasa_std": 562.7022560318513,
+      "nasa_ci95_lo": 324.76210403775895,
+      "nasa_ci95_hi": 1722.136370083335,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "pred_ft@0.05": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.05,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.8303123542300935,
+            "auroc": 0.9723683814907244,
+            "f1_best": 0.8045977011494253,
+            "precision_best": 0.7368421052631579,
+            "recall_best": 0.8860759493670886,
+            "threshold_best": 0.7865000367164612,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8599567099567098,
+              0.8818389943389943,
+              0.8548012233685023,
+              0.9082209416562353,
+              0.9510555006584038,
+              0.8986709821632767
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9877112135176652,
+              0.9844444444444445,
+              0.9657738095238095,
+              0.9717333333333333,
+              0.969244685662596,
+              0.8552691090004523
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 24.11016273498535,
+            "rmse_expected": 27.69776153564453,
+            "rmse_uncapped": 35.509521484375,
+            "nasa_score": 1585.081787109375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.37402597935994464,
+            "final_epoch": 17
+          },
+          "pos_weight": 6.407407407407407,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b5_seed0.npz",
+          "runtime_s": 0.9159834384918213
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.05,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.8693438306706103,
+            "auroc": 0.9716843561141344,
+            "f1_best": 0.7884057971014493,
+            "precision_best": 0.7272727272727273,
+            "recall_best": 0.8607594936708861,
+            "threshold_best": 0.8403143882751465,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8072356215213357,
+              0.886600899100899,
+              0.8657568847138947,
+              0.9146149626588247,
+              0.9429647828145677,
+              0.9457630534451622
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9855555555555556,
+              0.9672619047619048,
+              0.9738666666666667,
+              0.9665309814563546,
+              0.8860244233378561
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 29.341949462890625,
+            "rmse_expected": 32.30580520629883,
+            "rmse_uncapped": 39.690250396728516,
+            "nasa_score": 2587.5830078125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.5930387980143229,
+            "final_epoch": 19
+          },
+          "pos_weight": 10.11111111111111,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b5_seed1.npz",
+          "runtime_s": 1.0057401657104492
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.05,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.8929450238019969,
+            "auroc": 0.9770362909287711,
+            "f1_best": 0.8106508875739644,
+            "precision_best": 0.7611111111111111,
+            "recall_best": 0.8670886075949367,
+            "threshold_best": 0.8639780282974243,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6568027210884353,
+              0.8522222222222221,
+              0.860306685599508,
+              0.9048004395776688,
+              0.9449045718734181,
+              0.936006559606575
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9800307219662059,
+              0.9822222222222222,
+              0.9650297619047619,
+              0.9696,
+              0.9656264133876075,
+              0.8683853459972863
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 26.178998947143555,
+            "rmse_expected": 28.573301315307617,
+            "rmse_uncapped": 36.64472961425781,
+            "nasa_score": 1814.06640625,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3621143493652344,
+            "final_epoch": 17
+          },
+          "pos_weight": 6.407407407407407,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b5_seed2.npz",
+          "runtime_s": 0.95650315284729
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.05,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.8545533787188639,
+            "auroc": 0.975356294536817,
+            "f1_best": 0.804953560371517,
+            "precision_best": 0.7878787878787878,
+            "recall_best": 0.8227848101265823,
+            "threshold_best": 0.9595309495925903,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.827437641723356,
+              0.853683261183261,
+              0.8847124076903489,
+              0.9457499639568607,
+              0.8596755787190349,
+              0.9494659003581845
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9877112135176651,
+              0.9866666666666667,
+              0.9709821428571429,
+              0.9797333333333333,
+              0.9461781999095432,
+              0.8986883763003166
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 26.996295928955078,
+            "rmse_expected": 31.421627044677734,
+            "rmse_uncapped": 39.134456634521484,
+            "nasa_score": 2557.766845703125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.46567391459147134,
+            "final_epoch": 19
+          },
+          "pos_weight": 13.285714285714286,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b5_seed3.npz",
+          "runtime_s": 0.9905450344085693
+        },
+        {
+          "subset": "FD001",
+          "mode": "pred_ft",
+          "budget": 0.05,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9051330272885616,
+            "auroc": 0.9784795093057519,
+            "f1_best": 0.8258064516129032,
+            "precision_best": 0.8421052631578947,
+            "recall_best": 0.810126582278481,
+            "threshold_best": 0.893463671207428,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6094465058750773,
+              0.7212809412809413,
+              0.8992028231888289,
+              0.9264067999753005,
+              0.949544572371679,
+              0.9464238657898194
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9738863287250384,
+              0.98,
+              0.9702380952380952,
+              0.9706666666666666,
+              0.9687924016282226,
+              0.8941655359565807
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 18.73766326904297,
+            "rmse_expected": 20.35328483581543,
+            "rmse_uncapped": 29.998512268066406,
+            "nasa_score": 514.3440551757812,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2722076861063639,
+            "final_epoch": 30
+          },
+          "pos_weight": 4.882352941176471,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_pred_ft_b5_seed4.npz",
+          "runtime_s": 1.471555233001709
+        }
+      ],
+      "auprc_mean": 0.8704575229420252,
+      "auprc_std": 0.02989103118608437,
+      "auprc_ci95_lo": 0.8333429056490782,
+      "auprc_ci95_hi": 0.9075721402349721,
+      "auroc_mean": 0.9749849664752397,
+      "auroc_std": 0.002928232908866783,
+      "auroc_ci95_lo": 0.9713490850939444,
+      "auroc_ci95_hi": 0.978620847856535,
+      "f1_best_mean": 0.8068828795618519,
+      "f1_best_std": 0.01344104118654882,
+      "f1_best_ci95_lo": 0.7901936226221402,
+      "f1_best_ci95_hi": 0.8235721365015636,
+      "precision_best_mean": 0.7710419989367358,
+      "precision_best_std": 0.04614506849581113,
+      "precision_best_ci95_lo": 0.7137453286908402,
+      "precision_best_ci95_hi": 0.8283386691826313,
+      "recall_best_mean": 0.8493670886075948,
+      "recall_best_std": 0.031771899741800315,
+      "recall_best_ci95_lo": 0.8099170645436619,
+      "recall_best_ci95_hi": 0.8888171126715277,
+      "rmse_expected_mean": 28.07035598754883,
+      "rmse_expected_std": 4.720037488521145,
+      "rmse_expected_ci95_lo": 22.20965536788,
+      "rmse_expected_ci95_hi": 33.931056607217656,
+      "rmse_cross_mean": 25.073014068603516,
+      "rmse_cross_std": 4.00655018409406,
+      "rmse_cross_ci95_lo": 20.098224948017247,
+      "rmse_cross_ci95_hi": 30.047803189189786,
+      "nasa_mean": 1811.7684204101563,
+      "nasa_std": 850.4563508090586,
+      "nasa_ci95_lo": 755.7873875667956,
+      "nasa_ci95_hi": 2867.749453253517,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "e2e@1.0": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 1.0,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.9668437769684112,
+            "auroc": 0.9932123635707628,
+            "f1_best": 0.9012345679012346,
+            "precision_best": 0.8795180722891566,
+            "recall_best": 0.9240506329113924,
+            "threshold_best": 0.899141788482666,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9682539682539681,
+              0.9622222222222222,
+              0.9426300125313283,
+              0.9757162724723366,
+              0.9896265066719612,
+              0.9641389093074918
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9969278033794163,
+              0.9955555555555555,
+              0.9858630952380952,
+              0.9925333333333334,
+              0.994572591587517,
+              0.9240162822252375
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 11.476061820983887,
+            "rmse_expected": 15.261162757873535,
+            "rmse_uncapped": 25.35486602783203,
+            "nasa_score": 234.78704833984375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.15969960753122966,
+            "final_epoch": 15
+          },
+          "pos_weight": 6.071547420965058,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b100_seed0.npz",
+          "runtime_s": 4.023000001907349
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 1.0,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.9508876238130135,
+            "auroc": 0.9894163985688084,
+            "f1_best": 0.8742138364779874,
+            "precision_best": 0.86875,
+            "recall_best": 0.879746835443038,
+            "threshold_best": 0.8977727293968201,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9240362811791383,
+              0.9351301476301476,
+              0.8973523004773005,
+              0.963451011807076,
+              0.9857213827502451,
+              0.961623476074415
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9938556067588326,
+              0.9922222222222222,
+              0.9761904761904763,
+              0.9877333333333334,
+              0.9923111714156491,
+              0.9208502939846224
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 11.885705947875977,
+            "rmse_expected": 15.893446922302246,
+            "rmse_uncapped": 25.9199161529541,
+            "nasa_score": 260.8183898925781,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.20690899403889973,
+            "final_epoch": 14
+          },
+          "pos_weight": 6.713248638838476,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b100_seed1.npz",
+          "runtime_s": 3.6748008728027344
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 1.0,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.9600428107173995,
+            "auroc": 0.9915060585104783,
+            "f1_best": 0.8982035928143712,
+            "precision_best": 0.8522727272727273,
+            "recall_best": 0.9493670886075949,
+            "threshold_best": 0.7501649260520935,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9325396825396823,
+              0.9263455988455987,
+              0.9497389306599833,
+              0.9757162724723366,
+              0.9849541799302564,
+              0.9675968622484246
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9938556067588326,
+              0.9933333333333334,
+              0.9888392857142857,
+              0.9925333333333334,
+              0.9918588873812755,
+              0.9317051108095884
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 11.517377853393555,
+            "rmse_expected": 13.457954406738281,
+            "rmse_uncapped": 22.92934226989746,
+            "nasa_score": 187.20404052734375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.25034537887573244,
+            "final_epoch": 17
+          },
+          "pos_weight": 6.94392523364486,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b100_seed2.npz",
+          "runtime_s": 4.450209856033325
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 1.0,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9355488940794146,
+            "auroc": 0.98743949006284,
+            "f1_best": 0.8605341246290801,
+            "precision_best": 0.8100558659217877,
+            "recall_best": 0.9177215189873418,
+            "threshold_best": 0.8682959675788879,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7738095238095237,
+              0.8340262515262514,
+              0.9411828234638338,
+              0.9686222093695779,
+              0.982645854597074,
+              0.9627488196665106
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9877777777777778,
+              0.9866071428571428,
+              0.9898666666666667,
+              0.9895974672094076,
+              0.9217548620533695
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 13.047222137451172,
+            "rmse_expected": 15.463703155517578,
+            "rmse_uncapped": 24.72919273376465,
+            "nasa_score": 260.0784606933594,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.24300592549641928,
+            "final_epoch": 15
+          },
+          "pos_weight": 7.551307847082495,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b100_seed3.npz",
+          "runtime_s": 3.90205454826355
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 1.0,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9464587809985026,
+            "auroc": 0.9898373372620946,
+            "f1_best": 0.8794788273615636,
+            "precision_best": 0.9060402684563759,
+            "recall_best": 0.8544303797468354,
+            "threshold_best": 0.9498308897018433,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9379251700680271,
+              0.8952888777888778,
+              0.8969916470376029,
+              0.9811034165456956,
+              0.9880780196182672,
+              0.9656837439681671
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9953917050691244,
+              0.9888888888888889,
+              0.9821428571428571,
+              0.9930666666666667,
+              0.9936680235187698,
+              0.9253731343283582
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 12.31624984741211,
+            "rmse_expected": 15.285604476928711,
+            "rmse_uncapped": 25.65203094482422,
+            "nasa_score": 233.2793426513672,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.1748280111948649,
+            "final_epoch": 22
+          },
+          "pos_weight": 6.059800664451827,
+          "n_train_items": 425,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b100_seed4.npz",
+          "runtime_s": 5.624441623687744
+        }
+      ],
+      "auprc_mean": 0.9519563773153482,
+      "auprc_std": 0.012120193676722143,
+      "auprc_ci95_lo": 0.9369071691757054,
+      "auprc_ci95_hi": 0.967005585454991,
+      "auroc_mean": 0.9902823295949968,
+      "auroc_std": 0.002185875275592116,
+      "auroc_ci95_lo": 0.9875682069607303,
+      "auroc_ci95_hi": 0.9929964522292634,
+      "f1_best_mean": 0.8827329898368473,
+      "f1_best_std": 0.017011783498804032,
+      "f1_best_ci95_lo": 0.8616100707211455,
+      "f1_best_ci95_hi": 0.9038559089525492,
+      "precision_best_mean": 0.8633273867880096,
+      "precision_best_std": 0.0356230042383391,
+      "precision_best_ci95_lo": 0.8190955849174038,
+      "precision_best_ci95_hi": 0.9075591886586154,
+      "recall_best_mean": 0.9050632911392406,
+      "recall_best_std": 0.037710048379155,
+      "recall_best_ci95_lo": 0.8582400816963215,
+      "recall_best_ci95_hi": 0.9518865005821596,
+      "rmse_expected_mean": 15.07237434387207,
+      "rmse_expected_std": 0.937384433702826,
+      "rmse_expected_ci95_lo": 13.908457840066646,
+      "rmse_expected_ci95_hi": 16.236290847677495,
+      "rmse_cross_mean": 12.04852352142334,
+      "rmse_cross_std": 0.6529575010435289,
+      "rmse_cross_ci95_lo": 11.237769700020491,
+      "rmse_cross_ci95_hi": 12.859277342826188,
+      "nasa_mean": 235.23345642089845,
+      "nasa_std": 29.927853623021583,
+      "nasa_ci95_lo": 198.0731180336804,
+      "nasa_ci95_hi": 272.3937948081165,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "e2e@0.5": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.5,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.9470959852984405,
+            "auroc": 0.9893186806578671,
+            "f1_best": 0.8840125391849529,
+            "precision_best": 0.8757763975155279,
+            "recall_best": 0.8924050632911392,
+            "threshold_best": 0.930517852306366,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.982142857142857,
+              0.9587412587412588,
+              0.9187153991841491,
+              0.9779496093392568,
+              0.9823832235596941,
+              0.9640715850969885
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9984639016897081,
+              0.9944444444444445,
+              0.9791666666666666,
+              0.9930666666666667,
+              0.9900497512437811,
+              0.9203980099502488
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 10.224969863891602,
+            "rmse_expected": 17.231687545776367,
+            "rmse_uncapped": 26.560184478759766,
+            "nasa_score": 305.3940124511719,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.18224466307957968,
+            "final_epoch": 17
+          },
+          "pos_weight": 5.752411575562701,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b50_seed0.npz",
+          "runtime_s": 2.602105140686035
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.5,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.9274372169795512,
+            "auroc": 0.9858835202501579,
+            "f1_best": 0.8614457831325303,
+            "precision_best": 0.8218390804597702,
+            "recall_best": 0.9050632911392406,
+            "threshold_best": 0.9069284200668335,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7687074829931972,
+              0.7846142746142746,
+              0.81583383417265,
+              0.9608053946053947,
+              0.9820743991942497,
+              0.9567620232038798
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9822222222222222,
+              0.9709821428571429,
+              0.9872,
+              0.9900497512437811,
+              0.9104477611940298
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 17.332916259765625,
+            "rmse_expected": 21.550106048583984,
+            "rmse_uncapped": 29.980398178100586,
+            "nasa_score": 623.0609741210938,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2684024823506673,
+            "final_epoch": 14
+          },
+          "pos_weight": 6.954545454545454,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b50_seed1.npz",
+          "runtime_s": 2.0938220024108887
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.5,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.922951952456611,
+            "auroc": 0.9846207041702998,
+            "f1_best": 0.8433734939759037,
+            "precision_best": 0.8045977011494253,
+            "recall_best": 0.8860759493670886,
+            "threshold_best": 0.9052140712738037,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8444444444444443,
+              0.9433119658119659,
+              0.9208199444772335,
+              0.953756339502051,
+              0.9736370292839008,
+              0.957095552756811
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.989247311827957,
+              0.9933333333333333,
+              0.9799107142857142,
+              0.9850666666666666,
+              0.983717774762551,
+              0.911352329262777
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 15.609932899475098,
+            "rmse_expected": 18.70893669128418,
+            "rmse_uncapped": 27.875797271728516,
+            "nasa_score": 436.0574645996094,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.23691613960266114,
+            "final_epoch": 16
+          },
+          "pos_weight": 7.076923076923077,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b50_seed2.npz",
+          "runtime_s": 2.314586877822876
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.5,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9495936145063896,
+            "auroc": 0.9894614991430892,
+            "f1_best": 0.8780487804878048,
+            "precision_best": 0.8470588235294118,
+            "recall_best": 0.9113924050632911,
+            "threshold_best": 0.8291314244270325,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9682539682539681,
+              0.9587412587412588,
+              0.9266665539543577,
+              0.963220910019253,
+              0.9795166113347931,
+              0.9579196002684633
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9969278033794163,
+              0.9944444444444445,
+              0.9813988095238095,
+              0.9877333333333334,
+              0.9877883310719131,
+              0.9122568973315242
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 12.59166431427002,
+            "rmse_expected": 17.05226707458496,
+            "rmse_uncapped": 25.59032440185547,
+            "nasa_score": 333.8564453125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3499133129119873,
+            "final_epoch": 17
+          },
+          "pos_weight": 7.366533864541832,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b50_seed3.npz",
+          "runtime_s": 2.5144429206848145
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.5,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9414653796687907,
+            "auroc": 0.9861841907453621,
+            "f1_best": 0.8632218844984803,
+            "precision_best": 0.8304093567251462,
+            "recall_best": 0.8987341772151899,
+            "threshold_best": 0.7968022227287292,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9093537414965986,
+              0.9651515151515152,
+              0.9092013888888888,
+              0.9495297299535691,
+              0.9740635430653272,
+              0.9565423061848548
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9938556067588326,
+              0.9955555555555555,
+              0.9739583333333334,
+              0.9824,
+              0.9846223428312981,
+              0.9104477611940298
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 17.90363121032715,
+            "rmse_expected": 18.6678409576416,
+            "rmse_uncapped": 27.263341903686523,
+            "nasa_score": 412.582763671875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.26765164311726886,
+            "final_epoch": 14
+          },
+          "pos_weight": 6.11864406779661,
+          "n_train_items": 210,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b50_seed4.npz",
+          "runtime_s": 2.1448376178741455
+        }
+      ],
+      "auprc_mean": 0.9377088297819567,
+      "auprc_std": 0.011903255034305553,
+      "auprc_ci95_lo": 0.9229289865444218,
+      "auprc_ci95_hi": 0.9524886730194916,
+      "auroc_mean": 0.9870937189933553,
+      "auroc_std": 0.0021774102847768218,
+      "auroc_ci95_lo": 0.9843901070334293,
+      "auroc_ci95_hi": 0.9897973309532813,
+      "f1_best_mean": 0.8660204962559342,
+      "f1_best_std": 0.01589056457874004,
+      "f1_best_ci95_lo": 0.8462897543073807,
+      "f1_best_ci95_hi": 0.8857512382044878,
+      "precision_best_mean": 0.8359362718758563,
+      "precision_best_std": 0.027029291418529965,
+      "precision_best_ci95_lo": 0.8023749738245096,
+      "precision_best_ci95_hi": 0.869497569927203,
+      "recall_best_mean": 0.8987341772151899,
+      "recall_best_std": 0.010007207785342991,
+      "recall_best_ci95_lo": 0.8863085875855851,
+      "recall_best_ci95_hi": 0.9111597668447947,
+      "rmse_expected_mean": 18.64216766357422,
+      "rmse_expected_std": 1.8012815519564285,
+      "rmse_expected_ci95_lo": 16.405581209881316,
+      "rmse_expected_ci95_hi": 20.878754117267125,
+      "rmse_cross_mean": 14.7326229095459,
+      "rmse_cross_std": 3.25918439398311,
+      "rmse_cross_ci95_lo": 10.685810984029512,
+      "rmse_cross_ci95_hi": 18.779434835062286,
+      "nasa_mean": 422.19033203125,
+      "nasa_std": 124.57715821863907,
+      "nasa_ci95_lo": 267.5073596726314,
+      "nasa_ci95_hi": 576.8733043898686,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "e2e@0.2": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.2,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.8937592968195557,
+            "auroc": 0.979193601731862,
+            "f1_best": 0.8333333333333334,
+            "precision_best": 0.8132530120481928,
+            "recall_best": 0.8544303797468354,
+            "threshold_best": 0.835872232913971,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8687074829931971,
+              0.9159848484848484,
+              0.9208963590757069,
+              0.9559641788496362,
+              0.972591635445106,
+              0.9528588745796109
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9877112135176651,
+              0.9888888888888888,
+              0.980654761904762,
+              0.9845333333333333,
+              0.9846223428312981,
+              0.9027589326096789
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 14.060938835144043,
+            "rmse_expected": 15.425457954406738,
+            "rmse_uncapped": 24.02692985534668,
+            "nasa_score": 267.3521728515625,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.36378128131230675,
+            "final_epoch": 18
+          },
+          "pos_weight": 7.252427184466019,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b20_seed0.npz",
+          "runtime_s": 1.5092077255249023
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.2,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.9252692109585786,
+            "auroc": 0.9833503713280615,
+            "f1_best": 0.853731343283582,
+            "precision_best": 0.807909604519774,
+            "recall_best": 0.9050632911392406,
+            "threshold_best": 0.7027853727340698,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7766233766233765,
+              0.7636435786435787,
+              0.9040550595238095,
+              0.9524562655782727,
+              0.9618886322187187,
+              0.9516578996275299
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9844444444444445,
+              0.9702380952380952,
+              0.9802666666666667,
+              0.9782903663500678,
+              0.903663500678426
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 17.0821533203125,
+            "rmse_expected": 20.77898406982422,
+            "rmse_uncapped": 28.841934204101562,
+            "nasa_score": 641.1600341796875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3146782684326172,
+            "final_epoch": 16
+          },
+          "pos_weight": 6.522123893805309,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b20_seed1.npz",
+          "runtime_s": 1.3738560676574707
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.2,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.9241825229124006,
+            "auroc": 0.9830421840704772,
+            "f1_best": 0.8452380952380952,
+            "precision_best": 0.797752808988764,
+            "recall_best": 0.8987341772151899,
+            "threshold_best": 0.7952048778533936,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.982142857142857,
+              0.9353174603174602,
+              0.9022860478183369,
+              0.9422301635144146,
+              0.9657022581522396,
+              0.9455724701788015
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9984639016897081,
+              0.9911111111111112,
+              0.9761904761904762,
+              0.9824,
+              0.9769335142469471,
+              0.8900949796472184
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 15.713051795959473,
+            "rmse_expected": 16.733407974243164,
+            "rmse_uncapped": 25.411865234375,
+            "nasa_score": 314.8421936035156,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3156442438761393,
+            "final_epoch": 18
+          },
+          "pos_weight": 6.798165137614679,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b20_seed2.npz",
+          "runtime_s": 1.5644290447235107
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.2,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.9219254622956571,
+            "auroc": 0.9795919901380078,
+            "f1_best": 0.8451612903225806,
+            "precision_best": 0.8618421052631579,
+            "recall_best": 0.8291139240506329,
+            "threshold_best": 0.8836113214492798,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9480519480519478,
+              0.9119555444555444,
+              0.9017523500395552,
+              0.9424687856003647,
+              0.9512432601789584,
+              0.9482799175049773
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9938556067588326,
+              0.99,
+              0.9665178571428572,
+              0.9717333333333333,
+              0.9710538218000905,
+              0.8955223880597014
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 25.788951873779297,
+            "rmse_expected": 29.08020782470703,
+            "rmse_uncapped": 36.79689025878906,
+            "nasa_score": 1718.5572509765625,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3977688191731771,
+            "final_epoch": 14
+          },
+          "pos_weight": 8.770114942528735,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b20_seed3.npz",
+          "runtime_s": 1.201263427734375
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.2,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9182463233702031,
+            "auroc": 0.9811479599506902,
+            "f1_best": 0.8454258675078865,
+            "precision_best": 0.8427672955974843,
+            "recall_best": 0.8481012658227848,
+            "threshold_best": 0.9046299457550049,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.859750566893424,
+              0.9733333333333333,
+              0.9160196833320957,
+              0.95234658597474,
+              0.9610096811984357,
+              0.9499343439080098
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9907834101382489,
+              0.9966666666666666,
+              0.9754464285714286,
+              0.9824,
+              0.9746720940750793,
+              0.8986883763003166
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 16.386274337768555,
+            "rmse_expected": 17.71575164794922,
+            "rmse_uncapped": 27.618751525878906,
+            "nasa_score": 340.18829345703125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.27553577359517417,
+            "final_epoch": 20
+          },
+          "pos_weight": 5.204379562043796,
+          "n_train_items": 85,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b20_seed4.npz",
+          "runtime_s": 1.6991126537322998
+        }
+      ],
+      "auprc_mean": 0.916676563271279,
+      "auprc_std": 0.013089969573759285,
+      "auprc_ci95_lo": 0.9004232193139594,
+      "auprc_ci95_hi": 0.9329299072285986,
+      "auroc_mean": 0.9812652214438197,
+      "auroc_std": 0.0019111846920027513,
+      "auroc_ci95_lo": 0.9788921722178417,
+      "auroc_ci95_hi": 0.9836382706697976,
+      "f1_best_mean": 0.8445779859370954,
+      "f1_best_std": 0.007275318796198088,
+      "f1_best_ci95_lo": 0.8355444845124012,
+      "f1_best_ci95_hi": 0.8536114873617897,
+      "precision_best_mean": 0.8247049652834747,
+      "precision_best_std": 0.026669575583721922,
+      "precision_best_ci95_lo": 0.7915903134337929,
+      "precision_best_ci95_hi": 0.8578196171331565,
+      "recall_best_mean": 0.8670886075949367,
+      "recall_best_std": 0.03319015342310609,
+      "recall_best_ci95_lo": 0.8258775889946063,
+      "recall_best_ci95_hi": 0.908299626195267,
+      "rmse_expected_mean": 19.946761894226075,
+      "rmse_expected_std": 5.473976337290475,
+      "rmse_expected_ci95_lo": 13.149922549193175,
+      "rmse_expected_ci95_hi": 26.743601239258975,
+      "rmse_cross_mean": 17.806274032592775,
+      "rmse_cross_std": 4.600896937788569,
+      "rmse_cross_ci95_lo": 12.093505945494755,
+      "rmse_cross_ci95_hi": 23.519042119690795,
+      "nasa_mean": 656.4199890136719,
+      "nasa_std": 611.6412491478571,
+      "nasa_ci95_lo": -103.03292986960253,
+      "nasa_ci95_hi": 1415.8729078969463,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "e2e@0.1": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.1,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.8100283299213615,
+            "auroc": 0.9698577828557683,
+            "f1_best": 0.810344827586207,
+            "precision_best": 0.7421052631578947,
+            "recall_best": 0.8924050632911392,
+            "threshold_best": 0.8983801007270813,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.759065934065934,
+              0.5822069597069597,
+              0.6608055586886232,
+              0.8490454717928806,
+              0.9504676723672622,
+              0.9259750933407078
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9769585253456222,
+              0.9633333333333333,
+              0.9479166666666666,
+              0.9717333333333333,
+              0.9606512890094979,
+              0.8417005879692446
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 18.032470703125,
+            "rmse_expected": 21.51963996887207,
+            "rmse_uncapped": 30.724956512451172,
+            "nasa_score": 595.406982421875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.43847999000549315,
+            "final_epoch": 25
+          },
+          "pos_weight": 8.30232558139535,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b10_seed0.npz",
+          "runtime_s": 1.4784517288208008
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.1,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.889174250575931,
+            "auroc": 0.974510658769055,
+            "f1_best": 0.8201892744479495,
+            "precision_best": 0.8176100628930818,
+            "recall_best": 0.8227848101265823,
+            "threshold_best": 0.9325917959213257,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.5845547309833024,
+              0.7822546897546897,
+              0.9170100732600732,
+              0.9510608224538031,
+              0.9555340615022363,
+              0.9428312057277779
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9692780337941629,
+              0.9866666666666666,
+              0.9739583333333333,
+              0.9797333333333333,
+              0.9710538218000904,
+              0.8805970149253731
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 18.174156188964844,
+            "rmse_expected": 19.19609832763672,
+            "rmse_uncapped": 26.59531021118164,
+            "nasa_score": 546.8941040039062,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.39430919647216794,
+            "final_epoch": 27
+          },
+          "pos_weight": 7.51063829787234,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b10_seed1.npz",
+          "runtime_s": 1.5574944019317627
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.1,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.9103826538679505,
+            "auroc": 0.9795919901380077,
+            "f1_best": 0.845679012345679,
+            "precision_best": 0.8253012048192772,
+            "recall_best": 0.8670886075949367,
+            "threshold_best": 0.8699177503585815,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8273809523809523,
+              0.8812626262626263,
+              0.8927624581011863,
+              0.9254482816281849,
+              0.9486707782576433,
+              0.9440877585740621
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9846390168970814,
+              0.9855555555555555,
+              0.9732142857142857,
+              0.9781333333333333,
+              0.9669832654907282,
+              0.8765264586160108
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 15.301959991455078,
+            "rmse_expected": 18.730941772460938,
+            "rmse_uncapped": 27.76567840576172,
+            "nasa_score": 429.326171875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.33438337707519533,
+            "final_epoch": 24
+          },
+          "pos_weight": 7.0,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b10_seed2.npz",
+          "runtime_s": 1.3995776176452637
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.1,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.8225400639652173,
+            "auroc": 0.9611834390691242,
+            "f1_best": 0.8143712574850299,
+            "precision_best": 0.7727272727272727,
+            "recall_best": 0.8607594936708861,
+            "threshold_best": 0.6595356464385986,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.5191326530612245,
+              0.8379365079365079,
+              0.8532675327967592,
+              0.9157882958900871,
+              0.9056596902449763,
+              0.8848072903852402
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9585253456221198,
+              0.9833333333333334,
+              0.9516369047619048,
+              0.9568,
+              0.945273631840796,
+              0.85119855269109
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 22.998912811279297,
+            "rmse_expected": 23.78739356994629,
+            "rmse_uncapped": 30.05475425720215,
+            "nasa_score": 1500.618896484375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.8261765060424805,
+            "final_epoch": 21
+          },
+          "pos_weight": 11.5,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b10_seed3.npz",
+          "runtime_s": 1.2422876358032227
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.1,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.9209972179445537,
+            "auroc": 0.980103129979855,
+            "f1_best": 0.8622754491017964,
+            "precision_best": 0.8181818181818182,
+            "recall_best": 0.9113924050632911,
+            "threshold_best": 0.8249698877334595,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7023809523809523,
+              0.778531746031746,
+              0.9174846525600836,
+              0.9602265422491378,
+              0.9669617206739063,
+              0.9533334416640507
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9831029185867896,
+              0.9855555555555556,
+              0.9761904761904762,
+              0.9856,
+              0.9810040705563093,
+              0.903663500678426
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 14.939209938049316,
+            "rmse_expected": 16.93659782409668,
+            "rmse_uncapped": 25.075191497802734,
+            "nasa_score": 337.35357666015625,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.2841592165629069,
+            "final_epoch": 23
+          },
+          "pos_weight": 4.063291139240507,
+          "n_train_items": 40,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b10_seed4.npz",
+          "runtime_s": 1.3814749717712402
+        }
+      ],
+      "auprc_mean": 0.8706245032550027,
+      "auprc_std": 0.051103384368162884,
+      "auprc_ci95_lo": 0.8071712706986858,
+      "auprc_ci95_hi": 0.9340777358113197,
+      "auroc_mean": 0.9730494001623621,
+      "auroc_std": 0.007837144223842418,
+      "auroc_ci95_lo": 0.9633183003308864,
+      "auroc_ci95_hi": 0.9827804999938378,
+      "f1_best_mean": 0.8305719641933325,
+      "f1_best_std": 0.022431752376593065,
+      "f1_best_ci95_lo": 0.8027192648506951,
+      "f1_best_ci95_hi": 0.8584246635359698,
+      "precision_best_mean": 0.795185124355869,
+      "precision_best_std": 0.03626475859001738,
+      "precision_best_ci95_lo": 0.7501564792110936,
+      "precision_best_ci95_hi": 0.8402137695006443,
+      "recall_best_mean": 0.8708860759493671,
+      "recall_best_std": 0.03366945842600094,
+      "recall_best_ci95_lo": 0.8290799215827832,
+      "recall_best_ci95_hi": 0.9126922303159509,
+      "rmse_expected_mean": 20.034134292602538,
+      "rmse_expected_std": 2.659371613466652,
+      "rmse_expected_ci95_lo": 16.732088302315933,
+      "rmse_expected_ci95_hi": 23.336180282889142,
+      "rmse_cross_mean": 17.88934192657471,
+      "rmse_cross_std": 3.2251799819724263,
+      "rmse_cross_ci95_lo": 13.884752055232074,
+      "rmse_cross_ci95_hi": 21.893931797917343,
+      "nasa_mean": 681.9199462890625,
+      "nasa_std": 468.64539899715066,
+      "nasa_ci95_lo": 100.01982643046097,
+      "nasa_ci95_hi": 1263.820066147664,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    },
+    "e2e@0.05": {
+      "n_seeds": 5,
+      "per_seed": [
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.05,
+          "seed": 0,
+          "primary": {
+            "auprc": 0.8278156220245277,
+            "auroc": 0.9601611593854296,
+            "f1_best": 0.84375,
+            "precision_best": 0.8333333333333334,
+            "recall_best": 0.8544303797468354,
+            "threshold_best": 0.8148317933082581,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7798185941043083,
+              0.9208444333444333,
+              0.9300415231221868,
+              0.9485254438373718,
+              0.9492195170748091,
+              0.8576606866764154
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9861751152073733,
+              0.9911111111111112,
+              0.9821428571428572,
+              0.9829333333333333,
+              0.9669832654907282,
+              0.8371777476255088
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 20.12386703491211,
+            "rmse_expected": 20.201162338256836,
+            "rmse_uncapped": 26.719802856445312,
+            "nasa_score": 740.675537109375,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.544455581665039,
+            "final_epoch": 29
+          },
+          "pos_weight": 6.407407407407407,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b5_seed0.npz",
+          "runtime_s": 1.449617624282837
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.05,
+          "seed": 1,
+          "primary": {
+            "auprc": 0.891976276193104,
+            "auroc": 0.9586164647163173,
+            "f1_best": 0.8544891640866873,
+            "precision_best": 0.8363636363636363,
+            "recall_best": 0.8734177215189873,
+            "threshold_best": 0.7594960331916809,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8631519274376416,
+              0.9235317460317459,
+              0.9257625100815638,
+              0.9301289605668575,
+              0.9497420591618306,
+              0.948071285419503
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.989247311827957,
+              0.9911111111111112,
+              0.9776785714285715,
+              0.9765333333333334,
+              0.969244685662596,
+              0.8946178199909542
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 23.63662338256836,
+            "rmse_expected": 25.314395904541016,
+            "rmse_uncapped": 32.04890823364258,
+            "nasa_score": 1373.3341064453125,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.5722403259277343,
+            "final_epoch": 29
+          },
+          "pos_weight": 10.11111111111111,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b5_seed1.npz",
+          "runtime_s": 1.5023949146270752
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.05,
+          "seed": 2,
+          "primary": {
+            "auprc": 0.8434390443496137,
+            "auroc": 0.9689106707958748,
+            "f1_best": 0.7937500000000001,
+            "precision_best": 0.7839506172839507,
+            "recall_best": 0.8037974683544303,
+            "threshold_best": 0.9738097190856934,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.6806122448979591,
+              0.7951315789473683,
+              0.8440423733613647,
+              0.8118927896342467,
+              0.9475329092129523,
+              0.952137186129895
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9800307219662059,
+              0.9744444444444444,
+              0.9620535714285714,
+              0.9626666666666667,
+              0.968340117593849,
+              0.903663500678426
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 16.909761428833008,
+            "rmse_expected": 17.835342407226562,
+            "rmse_uncapped": 25.926111221313477,
+            "nasa_score": 421.1741638183594,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.38786636288960774,
+            "final_epoch": 31
+          },
+          "pos_weight": 6.407407407407407,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b5_seed2.npz",
+          "runtime_s": 1.5577614307403564
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.05,
+          "seed": 3,
+          "primary": {
+            "auprc": 0.8147667390154993,
+            "auroc": 0.9688054361225533,
+            "f1_best": 0.8021390374331551,
+            "precision_best": 0.6944444444444444,
+            "recall_best": 0.9493670886075949,
+            "threshold_best": 0.695118248462677,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8520408163265305,
+              0.886600899100899,
+              0.8854744892788371,
+              0.9272400736593092,
+              0.8808048216466349,
+              0.8466947577364953
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9877112135176651,
+              0.9855555555555556,
+              0.9702380952380952,
+              0.9706666666666668,
+              0.9511533242876526,
+              0.8141112618724559
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 25.316200256347656,
+            "rmse_expected": 27.5128116607666,
+            "rmse_uncapped": 34.73667526245117,
+            "nasa_score": 1651.06591796875,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.6516570790608724,
+            "final_epoch": 29
+          },
+          "pos_weight": 13.285714285714286,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b5_seed3.npz",
+          "runtime_s": 1.4910757541656494
+        },
+        {
+          "subset": "FD001",
+          "mode": "e2e",
+          "budget": 0.05,
+          "seed": 4,
+          "primary": {
+            "auprc": 0.8965490064065555,
+            "auroc": 0.9768784389187889,
+            "f1_best": 0.8297213622291021,
+            "precision_best": 0.8121212121212121,
+            "recall_best": 0.8481012658227848,
+            "threshold_best": 0.7870873808860779,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8631519274376416,
+              0.7571031746031746,
+              0.8781707875457875,
+              0.8968239129963269,
+              0.9391050838152906,
+              0.9478636654837107
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.989247311827957,
+              0.9788888888888888,
+              0.9680059523809524,
+              0.9674666666666667,
+              0.9611035730438715,
+              0.8873812754409769
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 20.224985122680664,
+            "rmse_expected": 18.471172332763672,
+            "rmse_uncapped": 27.713077545166016,
+            "nasa_score": 408.3562927246094,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.27009299596150715,
+            "final_epoch": 32
+          },
+          "pos_weight": 4.882352941176471,
+          "n_train_items": 20,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21/surfaces/fd001_e2e_b5_seed4.npz",
+          "runtime_s": 1.6163814067840576
+        }
+      ],
+      "auprc_mean": 0.85490933759786,
+      "auprc_std": 0.03736604483697526,
+      "auprc_ci95_lo": 0.8085132649685202,
+      "auprc_ci95_hi": 0.9013054102271999,
+      "auroc_mean": 0.9666744339877928,
+      "auroc_std": 0.0074333245694271945,
+      "auroc_ci95_lo": 0.9574447424829716,
+      "auroc_ci95_hi": 0.9759041254926141,
+      "f1_best_mean": 0.8247699127497891,
+      "f1_best_std": 0.026183897573695422,
+      "f1_best_ci95_lo": 0.7922583097998765,
+      "f1_best_ci95_hi": 0.8572815156997016,
+      "precision_best_mean": 0.7920426487093153,
+      "precision_best_std": 0.058445080503787286,
+      "precision_best_ci95_lo": 0.7194734963756417,
+      "precision_best_ci95_hi": 0.8646118010429888,
+      "recall_best_mean": 0.8658227848101265,
+      "recall_best_std": 0.05321727344196939,
+      "recall_best_ci95_lo": 0.7997448122946678,
+      "recall_best_ci95_hi": 0.9319007573255853,
+      "rmse_expected_mean": 21.866976928710937,
+      "rmse_expected_std": 4.310471303554005,
+      "rmse_expected_ci95_lo": 16.51481989579747,
+      "rmse_expected_ci95_hi": 27.219133961624404,
+      "rmse_cross_mean": 21.24228744506836,
+      "rmse_cross_std": 3.2934085718999104,
+      "rmse_cross_ci95_lo": 17.15298058996456,
+      "rmse_cross_ci95_hi": 25.33159430017216,
+      "nasa_mean": 918.9212036132812,
+      "nasa_std": 566.2877207086674,
+      "nasa_ci95_lo": 215.78212818445945,
+      "nasa_ci95_hi": 1622.060279042103,
+      "mono_violation_mean": 0.0,
+      "mono_violation_std": 0.0,
+      "mono_violation_ci95_lo": 0.0,
+      "mono_violation_ci95_hi": 0.0
+    }
+  },
+  "runtime_min": 1.907550323009491
+}

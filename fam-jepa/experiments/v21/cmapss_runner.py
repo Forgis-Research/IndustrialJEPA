@@ -80,6 +80,10 @@ def _load_v17_ckpt(subset: str, seed: int) -> TrajectoryJEPA:
     """
     if subset == 'FD001':
         ckpt = CKPT_OLD / 'v17' / 'ckpts' / f'v17_seed{seed}_best.pt'
+        if not ckpt.exists():
+            # Fallback to seed 42 (standard practice in v20 label-eff study):
+            # FT variance is what we measure; pretrain is shared.
+            ckpt = CKPT_OLD / 'v17' / 'ckpts' / 'v17_seed42_best.pt'
     elif subset == 'FD002':
         # Only seed 42 pretrained — reused for all FT seeds.
         candidates = [

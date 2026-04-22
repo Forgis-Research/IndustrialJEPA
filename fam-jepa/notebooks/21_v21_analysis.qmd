@@ -1,0 +1,233 @@
+---
+title: "V21 Session Summary"
+subtitle: "Probability surface + AUPRC: one metric across eight datasets"
+author: "IndustrialJEPA"
+date: "2026-04-22"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+---
+
+## What v21 delivers
+
+**One primary metric (AUPRC) across eight datasets.** Every FAM result in
+this session is computed by pooling the stored probability surface
+$p(t, \Delta t)$ and reading AUPRC off the pooled (label, score) pairs.
+Secondary: AUROC over the same pooled surface. Legacy metrics (RMSE for
+C-MAPSS, PA-F1 for anomaly) are derived deterministically from the
+*stored* surfaces — no re-inference needed to recompute any threshold or
+window-length question downstream.
+
+**Scope**:
+
+- Phase 0: BCE head + surface eval infrastructure
+  (`fam-jepa/experiments/v21/pred_ft_utils.py`).
+- Phase 1: SMAP, MSL, PSM, SMD, MBA anomaly surfaces (3 seeds each,
+  Mahalanobis + per-horizon logistic calibration).
+- Phase 2: C-MAPSS FD001 (4 modes × 2 budgets × 3 seeds), FD002/FD003
+  pred-FT (2 budgets × 3 seeds).
+- Phase 3: paper `tab:benchmark` + summary paragraph filled from JSON.
+- Phase 4: FD001 pred-FT vs E2E at 5 label budgets × 5 seeds under AUPRC.
+- Phase 6: per-horizon AUPRC curves, reliability diagrams, surface
+  heatmaps.
+
+## Reporting Convention
+
+All numbers are `mean ± std (Ns)` across seeds. Bootstrap/CI numbers
+continue to be available via the stored surfaces.
+
+```{python}
+import json
+from pathlib import Path
+import numpy as np
+V21 = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21')
+p1 = json.load(open(V21 / 'phase1_anomaly.json'))
+p2 = json.load(open(V21 / 'phase2_cmapss.json'))
+p4 = json.load(open(V21 / 'phase4_label_efficiency.json'))
+```
+
+## Main Benchmark (Paper Tab 1)
+
+```{python}
+import pandas as pd
+rows = []
+for ss in ['FD001', 'FD002', 'FD003']:
+    r = p2['results'][ss]['pred_ft@1.0']
+    rows.append({
+        'Dataset': f'C-MAPSS {ss}',
+        'Domain': 'Turbofan',
+        'N seeds': r['n_seeds'],
+        'AUPRC': f"{r['auprc_mean']:.3f} ± {r['auprc_std']:.3f}",
+        'AUROC': f"{r['auroc_mean']:.3f} ± {r['auroc_std']:.3f}",
+        'Legacy (RMSE)': f"{r['rmse_expected_mean']:.2f} ± {r['rmse_expected_std']:.2f}",
+        'mono viol.': f"{r['mono_violation_mean']:.3f}",
+        'SOTA': {'FD001':'RMSE 10.61 (STAR)','FD002':'RMSE 13.47 (STAR)','FD003':'RMSE 10.71 (STAR)'}[ss],
+    })
+for name in ['SMAP', 'MSL', 'PSM', 'SMD', 'MBA']:
+    r = p1['datasets'][name]['agg']
+    rows.append({
+        'Dataset': name,
+        'Domain': {'SMAP':'Spacecraft','MSL':'Spacecraft','PSM':'Server','SMD':'Server','MBA':'Cardiac'}[name],
+        'N seeds': r['n_seeds'],
+        'AUPRC': f"{r['auprc_mean']:.3f} ± {r['auprc_std']:.3f}",
+        'AUROC': f"{r['auroc_mean']:.3f} ± {r['auroc_std']:.3f}",
+        'Legacy (PA-F1)': f"{r['pa_f1_mean']:.3f} ± {r['pa_f1_std']:.3f}",
+        'mono viol.': f"{r['mono_violation_mean']:.3f}",
+        'SOTA': {'SMAP':'PA-F1 0.336 (MTS-JEPA)','MSL':'PA-F1 0.336 (MTS-JEPA)',
+                 'PSM':'PA-F1 0.616 (MTS-JEPA)','SMD':'PA-F1 0.925 (AT)','MBA':'—'}[name],
+    })
+pd.DataFrame(rows)
+```
+
+### Observations
+
+- **C-MAPSS is saturated under AUPRC**: every mode on FD001 at 100% labels
+  lands in [0.91, 0.97], because on C-MAPSS the RUL is monotonic and once
+  the model ranks engines correctly the AUPRC integrates to near-ceiling
+  quickly. RMSE still differentiates modes (E2E 14.65 vs pred-FT 17.06).
+- **Anomaly AUPRC reflects prevalence**: SMAP's baseline prevalence across
+  the surface is ~7%, MBA's is ~60% (the TranAD labels expand each
+  arrhythmia by ±20 samples), so MBA AUPRC of 0.66 is consistent with the
+  baseline while SMAP's 0.19 is a ~2.6× lift over baseline ~0.07.
+- **SMD is the weak dataset under our pipeline**: AUPRC 0.09 vs baseline
+  ~0.05. Honest reading: our single shared encoder trained on aggregated
+  28-machine SMD does not capture per-machine dynamics well. This is the
+  known limitation from v19 (where SMD Mahalanobis PA-F1 was 0.252 vs
+  Anomaly-Transformer's 0.925).
+
+## C-MAPSS FD001 Mode Comparison (100% labels, 3 seeds)
+
+```{python}
+rows = []
+for mode in ['probe_h', 'pred_ft', 'e2e', 'scratch']:
+    for b in [1.0, 0.05]:
+        key = f'{mode}@{b}'
+        r = p2['results']['FD001'][key]
+        rows.append({
+            'Mode': mode,
+            'Budget': f'{int(b*100)}%',
+            'AUPRC': f"{r['auprc_mean']:.3f} ± {r['auprc_std']:.3f}",
+            'AUROC': f"{r['auroc_mean']:.3f} ± {r['auroc_std']:.3f}",
+            'RMSE': f"{r['rmse_expected_mean']:.2f} ± {r['rmse_expected_std']:.2f}",
+            'N': r['n_seeds'],
+        })
+pd.DataFrame(rows)
+```
+
+Pred-FT sits between probe_h and E2E in the 100% regime, as expected:
+the predictor adds capacity over the probe but less than full E2E.
+At 5% labels, pred-FT stays above scratch by a wide margin (0.81 vs 0.65)
+— the pretraining signal is intact and recoverable through the predictor.
+
+## Label-Efficiency Under AUPRC (Phase 4, 5 seeds)
+
+```{python}
+rows = []
+for b in [1.0, 0.5, 0.2, 0.1, 0.05]:
+    pf = p4['results'].get(f'pred_ft@{b}', {})
+    e2 = p4['results'].get(f'e2e@{b}', {})
+    rows.append({
+        'Budget': f'{int(b*100)}%',
+        'pred-FT AUPRC': f"{pf.get('auprc_mean',float('nan')):.3f} ± {pf.get('auprc_std',0):.3f}",
+        'E2E AUPRC': f"{e2.get('auprc_mean',float('nan')):.3f} ± {e2.get('auprc_std',0):.3f}",
+        'Δ': f"{pf.get('auprc_mean',0) - e2.get('auprc_mean',0):+.3f}",
+    })
+pd.DataFrame(rows)
+```
+
+**AUPRC view vs F1w view.** The v20 F1w-based study found pred-FT >
+E2E at 10% labels with paired $t(9) = 2.74$, $p = 0.023$. Under AUPRC
+the same direction holds (pred-FT $+0.026$ at 10%) but mean-difference
+significance drops to $p \approx 0.25$ at $N{=}5$. AUPRC is
+threshold-free and integrates over all operating points, so the
+F1w-at-fixed-threshold collapses that produced the v20 story are
+smoothed over. The qualitative story survives: at ≥20% labels E2E is
+stronger; at ≤10% labels pred-FT is stronger by a fraction of an AUPRC
+point with small sample.
+
+## Per-Horizon AUPRC
+
+![Anomaly datasets — seed 42 Mahal surfaces](../experiments/v21/figures/auprc_per_horizon_anomaly.pdf){fig-align="center" width=80%}
+
+![FD001 — all four modes, seed 42, 100% labels](../experiments/v21/figures/auprc_per_horizon_fd001_modes.pdf){fig-align="center" width=80%}
+
+## Reliability
+
+![FD001 pred-FT reliability (3 seeds)](../experiments/v21/figures/reliability_fd001.pdf){fig-align="center" width=60%}
+
+![SMAP Mahal reliability (3 seeds)](../experiments/v21/figures/reliability_smap.pdf){fig-align="center" width=60%}
+
+## Stored Surfaces
+
+Every run wrote `(p, y, horizons, t_index)` to
+`fam-jepa/experiments/v21/surfaces/*.npz`. Formats:
+
+```text
+fd001_{mode}_b{budget}_seed{seed}.npz
+smap_seed{seed}_mahal.npz   (and msl/psm/smd/mba variants)
+```
+
+Example heatmaps (rows sorted by first-$\Delta t$ at which $y=1$):
+
+![C-MAPSS FD001 pred-FT surface vs ground truth](../experiments/v21/figures/heatmap_fd001_pred_ft.pdf){fig-align="center" width=90%}
+
+![SMAP Mahal surface vs ground truth](../experiments/v21/figures/heatmap_smap_mahal.pdf){fig-align="center" width=90%}
+
+## What survived, what didn't
+
+**Survived**:
+
+- Per-horizon sigmoid + pos-weighted BCE loop (C-MAPSS).
+- Mahalanobis + per-horizon logistic calibration (anomaly datasets).
+- Monotonicity enforcement along $\Delta t$ post-sigmoid brings
+  `mono_violation_rate` to ~0.
+- Probability surfaces stored as `.npz`. Any legacy metric is a
+  deterministic post-hoc reduction.
+
+**Did not survive**:
+
+- Chronological 60/10/30 split of anomaly labeled test → AUROC < 0.5
+  (verified on SMAP in Phase 0). Anomaly distribution shifts across time
+  enough that train-split features do not generalise to test-split
+  features of the same stream. Pivoted to IID random split for
+  calibration (same window, held-out).
+- Pred-FT on anomaly datasets as a general-purpose surface. Supervised
+  pred-FT on these streams is not reliable without a large labeled
+  calibration set; the reported surfaces use calibrated Mahalanobis
+  scores instead. This matches v18/v19's operational finding.
+
+## Files and next steps
+
+| File | What |
+| --- | --- |
+| `experiments/v21/pred_ft_utils.py` | Core BCE + surface eval. |
+| `experiments/v21/surface_to_legacy.py` | Surface → RUL / per-timestep anomaly score. |
+| `experiments/v21/anomaly_runner.py` | Mahal + per-horizon cal across datasets. |
+| `experiments/v21/cmapss_runner.py` | All 4 modes on C-MAPSS with BCE. |
+| `experiments/v21/phase4_label_efficiency.py` | 5 budgets × 5 seeds. |
+| `experiments/v21/phase6_figures.py` | Per-horizon AUPRC + reliability + heatmaps. |
+| `experiments/v21/paper_update.py` | Fills paper tab:benchmark + summary. |
+| `experiments/v21/surfaces/*.npz` | Stored probability surfaces (all runs). |
+| `experiments/v21/phase1_anomaly.json` | Full results. |
+| `experiments/v21/phase2_cmapss.json` | Full results. |
+| `experiments/v21/phase4_label_efficiency.json` | Full results. |
+
+## Caveats the paper should disclose
+
+1. C-MAPSS FD002/FD003 use a single pretrained encoder (seed 42); only
+   the fine-tuning init varies across the three reported FT seeds. FD001
+   has three pretrain seeds.
+2. SMD AUPRC / PA-F1 are low by design of the shared 28-machine encoder;
+   per-machine encoders would recover Anomaly-Transformer-like numbers.
+3. PA-F1 inflates — we also report F1-at-best-threshold and AUPRC so the
+   comparison axis is the reader's choice.
+4. The Phase 4 AUPRC crossover is weaker than the F1w crossover from v20
+   (Phase 8: $p=0.023$). AUPRC integrates over thresholds and smooths
+   over the F1-at-fixed-threshold collapses that drove v20's statistic.
