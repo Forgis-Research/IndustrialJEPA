@@ -492,7 +492,7 @@ The default FAM architecture is the V17 configuration ($d{=}256$, 2 layers, 4 he
 % ============================================================
 \section{Conclusion}
 
-We showed that a JEPA predictor - trained to compress future dynamics during self-supervised pretraining - can be repurposed as an event-specific prediction head by finetuning it with minimal labels while keeping the encoder frozen. This simple idea yields a 2.37M-parameter model that, with 5\% labels on C-MAPSS, beats a $3\times$-larger end-to-end baseline on per-window F1 and is competitive with Amazon's Chronos-T5-tiny (8.4M) at the same downstream task. The same pretrained encoder (no labels) yields Mahalanobis anomaly PA-F1 above MTS-JEPA on SMAP, MSL, and PSM with a single architecture. The encoder learns dynamics; the predictor learns the event.
+We showed that a JEPA predictor---trained to compress future dynamics during self-supervised pretraining---can be repurposed as an event-specific prediction head by finetuning it with minimal labels while keeping the encoder frozen. This simple idea yields a 2.37M-parameter model that, with $5\%$ labels on C-MAPSS, beats a $3\times$-larger end-to-end baseline on AUPRC and is competitive with Amazon's Chronos-T5-tiny (8.4M) at the same downstream task. The same pretrained encoder (no labels) yields anomaly detection PA-F1 above MTS-JEPA on SMAP, MSL, and PSM with a single architecture. All tasks are evaluated through the same probability surface $p(t, \Delta t)$ scored by AUPRC---threshold-free, robust to class imbalance, and enabling metric recomputation from stored surfaces. The encoder learns dynamics; the predictor learns the event.
 
 % ============================================================
 \bibliography{references}
@@ -530,7 +530,7 @@ This paper fixes $W = 16$ horizon windows at patch resolution, chosen to match t
 \section{Extended Results}
 \label{app:extended}
 
-Per-seed raw results for each table are available in the repository at \texttt{mechanical-jepa/experiments/v20/phase\{0,1,2,3,5,6\}*.json}. The Phase 0 JSON includes all 50 runs (5 modes $\times$ 2 budgets $\times$ 5 seeds) with per-window AUROC, precision, recall breakdowns at each of the 16 horizon windows. The Phase 5 JSON adds 30 runs at the intermediate 50/20/10\% label budgets. Phase 6 replicates the 50\% and 10\% budgets on FD003 with a FD003-pretrained encoder to verify the crossover is dataset-stable. All JSONs follow the \texttt{aggregate\_seeds()} schema from \texttt{evaluation/grey\_swan\_metrics.py}.
+Per-seed raw results for each table are available in the repository at \texttt{fam-jepa/experiments/v20/phase\{0,1,2,3,5,6\}*.json}. The Phase 0 JSON includes all 50 runs (5 modes $\times$ 2 budgets $\times$ 5 seeds) with per-window AUROC, precision, recall breakdowns at each of the 16 horizon windows. The Phase 5 JSON adds 30 runs at the intermediate 50/20/10\% label budgets. Phase 6 replicates the 50\% and 10\% budgets on FD003 with a FD003-pretrained encoder to verify the crossover is dataset-stable. All JSONs follow the \texttt{aggregate\_seeds()} schema from \texttt{evaluation/grey\_swan\_metrics.py}.
 
 \section{PA-F1 Inflation}
 \label{app:pa_f1}

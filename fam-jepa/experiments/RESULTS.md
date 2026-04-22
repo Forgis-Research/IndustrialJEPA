@@ -1,204 +1,134 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v20 (2026-04-21). Update after every session.
+**Last updated**: v21 (2026-04-22). Update after every session.
 
 This file is the single source of truth for all experimental results.
 Every number that enters the paper must have an entry here with provenance.
-The autoresearch agent reads this at the start of every session.
 
 ---
 
 ## How to read this table
 
-- All results use the **honest probe protocol** (AdamW, WD=1e-2, val n_cuts=10) unless marked `(old)`.
+- **Primary metric**: AUPRC pooled over probability surface p(t, Δt). One number per dataset.
+- **Secondary metric**: AUROC pooled over same surface.
+- **Legacy metrics**: RMSE (C-MAPSS), PA-F1 (anomaly datasets) — for literature comparability only.
 - Format: `mean ± std (Ns, 95% CI [lo, hi])` where Ns = number of seeds.
-- Legacy metrics (RMSE, NASA-S, PA-F1) shown for literature comparability.
-- Primary metrics are **Stage 1 F1** (event detection) and **Stage 2 macro-F1** (event timing).
-- Window size for Stage 2: Δ=30 cycles for C-MAPSS, Δ=100 steps for SMAP/MSL (appendix studies sensitivity).
+- v20 results use per-window F1w (old primary). v21+ results use AUPRC (new primary).
+- Probability surfaces stored as `.npz` for v21+ runs — any metric recomputable.
 
 ---
 
-## C-MAPSS FD001 — RUL (Time-to-Failure)
+## Main Benchmark Table (Paper Tab 1)
 
-| Method | RMSE | NASA-S | F1@30 | Seeds | Source |
-|--------|------|--------|-------|-------|--------|
-| STAR (paper) | 10.61 | 169 | — | 1 | Fan et al. 2024 |
-| STAR (our replic.) | 12.19 ± 0.55 | — | — | 5 | v18 phase 11 |
-| AE-LSTM (paper) | 13.99 | — | — | 1 | Hamzaoui & LeCam 2026 |
-| Chronos-T5-large (frozen) | 16.00 ± 0.15 | — | 0.905 | 3 | v18 phase 8 |
-| Chronos-2 (frozen) | 16.21 ± 0.43 | — | 0.892 | 3 | v18 phase 8b |
-| FAM scratch (E2E) | 22.99 ± 2.3 | — | — | 5 | v18 |
-| **FAM V2 frozen (honest)** | **15.73 ± 0.14** | — | — | 5 | v18 phase 0 |
-| **FAM V17 frozen (honest)** | **15.53 ± 1.68** | — | 0.919 | 3 | v18 phase 1a |
-| **FAM V17 E2E 100% (honest)** | **15.08 ± 0.10** | 402 ± 109 | — | 5 | v18 phase 1b |
-| **FAM V17 E2E 5% (honest)** | **21.55 ± 1.52** | 1042 ± 200 | — | 5 | v18 phase 1b |
-| FAM V14 cross-sensor (frozen) | 15.38 ± 0.33 | — | — | 3 | v18 phase 6d |
-| FAM V14 full-seq (frozen) | 15.54 ± 0.04 | — | — | 3 | v18 phase 6b |
-| V2 frozen (old protocol) | 17.81 ± 1.7 | — | — | 5 | v11 (superseded) |
-| V11 E2E (old protocol) | 13.80 | — | — | 1 | v11 (superseded, protocol-confounded) |
+**Target: fill all AUPRC/AUROC cells in v21.**
 
-### Missing cells (v20 priority)
-- [ ] V2 E2E honest (isolates protocol vs architecture effect)
-- [ ] Stage 1/2 F1 for all rows (unified eval recomputation)
+| Dataset | Domain | AUPRC ↑ | AUROC ↑ | Legacy metric | SOTA legacy | SOTA ref | Source |
+|---------|--------|---------|---------|---------------|-------------|----------|--------|
+| C-MAPSS FD001 | Turbofan | **TBD (v21)** | **TBD** | RMSE 16.90±1.71 | RMSE 10.61 | STAR | v20 phase 0 |
+| C-MAPSS FD002 | Turbofan | **TBD (v21)** | **TBD** | RMSE TBD | RMSE 13.47 | STAR | — |
+| C-MAPSS FD003 | Turbofan | **TBD (v21)** | **TBD** | RMSE TBD | RMSE 10.71 | STAR | — |
+| SMAP | Spacecraft | **TBD (v21)** | **TBD** | PA-F1 0.793±0.014 | PA-F1 0.336 | MTS-JEPA | v18 phase 4 |
+| MSL | Spacecraft | **TBD (v21)** | **TBD** | PA-F1 0.707±0.050 | PA-F1 0.336 | MTS-JEPA | v18 phase 4 |
+| PSM | Server | **TBD (v21)** | **TBD** | PA-F1 0.813±0.048 | PA-F1 0.616 | MTS-JEPA | v19 |
+| SMD | Server | **TBD (v21)** | **TBD** | PA-F1 0.252±0.017 | PA-F1 0.925 | AT | v19 |
+| MBA | Cardiac | **TBD (v21)** | **TBD** | PA-F1 0.551±0.054 | — | — | v19 |
 
 ---
 
-## C-MAPSS FD001 — Label Efficiency
+## C-MAPSS FD001 — Finetuning Mode (v20, F1w metric)
 
-| Method | 100% | 50% | 20% | 10% | 5% |
-|--------|------|-----|-----|-----|-----|
-| STAR (replic.) | 12.19 ± 0.6 | 13.26 ± 0.7 | 17.74 ± 3.6 | 18.72 ± 2.8 | 24.55 ± 6.4 |
-| FAM Frozen | 15.53 ± 1.7 | 17.58 ± 0.5 | 19.53 ± 0.7 | 20.71 ± 0.9 | 21.47 ± 0.9 |
-| FAM E2E | 15.08 ± 0.1 | 15.85 ± 0.6 | 17.85 ± 0.6 | 19.62 ± 1.4 | 21.55 ± 1.5 |
+These use the v20 per-window F1w metric. v21 will rerun with AUPRC.
 
----
+| Mode | Params | 100% F1w | 100% RMSE | 5% F1w | 5% RMSE | Seeds | Source |
+|------|--------|----------|-----------|--------|---------|-------|--------|
+| probe_h | 257 | 0.299±0.061 | 15.997±1.481 | 0.061±0.101 | 20.359±1.215 | 5 | v20 phase 0 |
+| frozen_multi | 4K | 0.148±0.030 | 19.009±0.122 | 0.181±0.142 | 24.385±4.851 | 5 | v20 phase 0 |
+| **pred_ft** | **790K** | **0.391±0.085** | 16.903±1.711 | **0.261±0.165** | 24.334±6.835 | 5 | v20 phase 0 |
+| e2e | 2.37M | 0.408±0.120 | 14.956±1.157 | 0.177±0.242 | 20.085±1.885 | 5 | v20 phase 0 |
+| scratch | 2.37M | 0.397±0.084 | 14.483±0.656 | 0.035±0.049 | 32.922±1.987 | 5 | v20 phase 0 |
 
-## C-MAPSS Cross-Subset Transfer
-
-| Subset | FAM E2E 100% | FAM E2E 5% | STAR (paper) | Source |
-|--------|-------------|-----------|-------------|--------|
-| FD001 | 15.08 ± 0.10 | 21.55 ± 1.52 | 10.61 | v18 |
-| FD002 | — | — | 13.47 | — |
-| FD003 | 15.38 ± 1.20 | 31.27 ± 2.86 | 10.71 | v18 phase 10 |
-| FD004 | 26.32 ± 0.58 | 40.42 ± 1.63 | 15.87 | v18 phase 10 |
-
-### Missing cells (v20 priority)
-- [ ] FD001-pretrained frozen probe on FD002/003/004 (transfer test)
-- [ ] FD002 E2E
+**Headline**: pred_ft beats e2e (+0.084) and scratch (+0.226) on F1w at 5% labels.
 
 ---
 
-## SMAP/MSL — Anomaly Detection
+## C-MAPSS — Label Efficiency (v20, F1w metric)
+
+| Subset | Budget | N | Pred-FT F1w | E2E F1w | paired p | collapses p/e | Source |
+|--------|--------|---|-------------|---------|----------|---------------|--------|
+| FD001 | 100% | 5 | 0.391±0.085 | 0.408±0.119 | 0.84 | 0/0 | v20 phase 0 |
+| FD001 | 50% | 5 | 0.391±0.083 | 0.356±0.074 | 0.27 | 0/0 | v20 phase 5 |
+| FD001 | 20% | 10 | 0.276±0.184 | 0.312±0.102 | 0.57 | 2/0 | v20 phase 9 |
+| **FD001** | **10%** | **10** | **0.291±0.120** | 0.133±0.164 | **0.023** | 0/4 | v20 phase 8 |
+| FD001 | 5% | 10 | 0.229±0.141 | 0.124±0.201 | 0.114 | 1/7 | v20 phase 7 |
+| FD002 | 100% | 5 | 0.315±0.097 | **0.426±0.046** | 0.038 | 0/0 | v20 phase 11 |
+| FD002 | 10% | 5 | 0.258±0.059 | 0.259±0.048 | 0.98 | 0/0 | v20 phase 11 |
+| FD002 | 5% | 5 | 0.289±0.120 | 0.216±0.133 | 0.070 | 0/0 | v20 phase 11 |
+| FD003 (200ep) | 100% | 5 | **0.270±0.059** | 0.123±0.166 | 0.043 | 0/2 | v20 phase 10 |
+| FD003 (200ep) | 5% | 5 | 0.062±0.082 | 0.009±0.021 | 0.25 | 1/4 | v20 phase 10 |
+| FD003 (100ep) | 100% | 5 | 0.146±0.089 | 0.246±0.124 | 0.13 | 0/0 | v20 phase 6 |
+| FD003 (100ep) | 5% | 5 | 0.115±0.160 | 0.016±0.025 | 0.26 | 1/4 | v20 phase 6 |
+
+---
+
+## Pretraining Ablation: EMA vs SIGReg (v20, FD001, pred-FT)
+
+| Pretraining | 100% F1w | 100% RMSE | 5% F1w | 5% RMSE | Seeds | Source |
+|-------------|----------|-----------|--------|---------|-------|--------|
+| EMA (default) | 0.391±0.085 | 16.90±1.71 | 0.261±0.165 | 24.33±6.83 | 5 | v20 phase 3 |
+| SIGReg-enc | 0.401±0.070 | 14.08±0.98 | 0.252±0.156 | 17.52±1.34 | 5 | v20 phase 3 |
+| **SIGReg-pred** | **0.451±0.064** | **13.71±0.34** | 0.243±0.165 | **17.30±3.55** | 5 | v20 phase 3 |
+
+---
+
+## Chronos Comparison (v20, FD001)
+
+| Model | Params | F1w | RMSE | Seeds | Source |
+|-------|--------|-----|------|-------|--------|
+| Chronos-T5-tiny | 8.4M | 0.419±0.028 | 16.80±1.54 | 3 | v20 phase 2 |
+| FAM pred_ft | 2.37M | 0.391±0.085 | 16.90±1.71 | 5 | v20 phase 0 |
+
+---
+
+## SMAP/MSL — Anomaly (v18/v19, Mahalanobis)
 
 | Method | SMAP PA-F1 | SMAP non-PA F1 | MSL PA-F1 | MSL non-PA F1 | Source |
 |--------|-----------|---------------|----------|--------------|--------|
 | MTS-JEPA (paper) | 0.336 | — | 0.336 | — | He et al. 2026 |
-| TS2Vec (paper) | 0.281 | — | — | — | Yue et al. 2022 |
-| PatchTST (paper) | 0.286 | — | — | — | Nie et al. 2023 |
-| Random-init + Mahal (k=100) | 0.604 ± 0.007 | 0.061 | 0.623 ± 0.033 | — | v18 phase 12 |
-| **FAM + Mahal (k=100)** | **0.793 ± 0.014** | 0.038 | **0.707 ± 0.050** | — | v18 phase 4 |
-| FAM pred-error | 0.219 | 0.038 | — | — | v17 |
-| JEPA pretraining delta | +0.189 | — | +0.084 | — | v18 phase 4k |
-
-### Missing cells (v20 priority)
-- [ ] P, R, AUROC, AUPRC for all rows
-- [ ] Linear probe (logistic regression) on frozen h_past
-- [ ] Stage 1/2 F1 (unified eval)
+| Random-init + Mahal (k=100) | 0.604±0.007 | 0.061 | 0.623±0.033 | — | v18 phase 12 |
+| **FAM + Mahal (k=100)** | **0.793±0.014** | 0.038 | **0.707±0.050** | — | v18 phase 4 |
 
 ---
 
-## Architecture Ablations (v20)
+## PSM/SMD/MBA — Anomaly (v19, Mahalanobis)
 
-| Decision | Chosen | Alternatives | FD001 frozen RMSE | Evidence |
-|----------|--------|-------------|-------------------|----------|
-| Attention mask | Causal | Bidirectional | TBD | v20 phase 3 |
-| Horizon sampling | LogU[1,150] | U[5,30], fixed | TBD | v20 phase 3 |
-| Target window | Fixed-w | Sliding | TBD | v20 phase 3 |
-| EMA momentum | 0.99 | 0.996, 0.999, none | TBD | v20 phase 3 |
-| Encoder depth | L=2 | L=1, L=4 | TBD | v20 phase 3 |
-| d_model | 256 | 128, 64 | TBD | v20 phase 3 |
-| Loss | L1 | MSE, smooth-L1 | TBD | v20 phase 3 |
+| Dataset | PA-F1 | non-PA F1 | Seeds | Source |
+|---------|-------|-----------|-------|--------|
+| PSM | 0.813±0.048 | 0.085 | 3 | v19 |
+| SMD | 0.252±0.017 | 0.144 | 3 | v19 |
+| MBA | 0.551±0.054 | 0.251 | 3 | v19 |
 
 ---
 
-## Experiment Ideas / Backlog
+## STAR Comparison (v18 replication)
 
-| Idea | Priority | Status | Notes |
-|------|----------|--------|-------|
-| V2 E2E honest | **BLOCKING** | Not started | Isolates 13.80 mystery |
-| PSM dataset | High | Loader ready | MTS-JEPA reports on this |
-| SWaT dataset | Medium | Blocked (registration) | — |
-| TS2Vec/PatchTST on FD001 | Medium | Not started | Reviewer requested |
-| Supervised LSTM at 5% labels | Low | Not started | — |
-| SIGReg-pretrained vs EMA-pretrained E2E | Medium | Not started | — |
+| Subset | STAR (paper) | STAR (our replic.) | FAM E2E 100% | Source |
+|--------|-------------|-------------------|-------------|--------|
+| FD001 | 10.61 | 12.19±0.55 (5s) | 15.08±0.10 | v18 |
+| FD003 | 10.71 | — | 15.38±1.20 | v18 phase 10 |
+| FD004 | 15.87 | — | 26.32±0.58 | v18 phase 10 |
 
 ---
 
-## V20 Results (predictor finetuning + per-window F1)
+## v21 Targets
 
-### Phase 0b: Finetuning mode sweep on FD001 (5 seeds, W=16 horizon F1)
+v21 re-evaluates everything with:
+1. **Per-horizon sigmoid + pos-weighted BCE** (replaces MSE)
+2. **AUPRC pooled over p(t,Δt)** (replaces F1w)
+3. **Stored probability surfaces** (.npz) for metric recomputation
 
-| Mode | Params | 100% F1w | 100% RMSE | 5% F1w | 5% RMSE |
-|------|--------|----------|-----------|--------|---------|
-| probe_h      | 257    | 0.299 ± 0.061 | 15.997 ± 1.481 | 0.061 ± 0.101 | 20.359 ± 1.215 |
-| frozen_multi | 4K     | 0.148 ± 0.030 | 19.009 ± 0.122 | 0.181 ± 0.142 | 24.385 ± 4.851 |
-| **pred_ft**  | **790K** | **0.391 ± 0.085** | 16.903 ± 1.711 | **0.261 ± 0.165** | 24.334 ± 6.835 |
-| e2e          | 2.37M  | 0.408 ± 0.120 | 14.956 ± 1.157 | 0.177 ± 0.242 | 20.085 ± 1.885 |
-| scratch      | 2.37M  | 0.397 ± 0.084 | 14.483 ± 0.656 | 0.035 ± 0.049 | 32.922 ± 1.987 |
-
-Headline: **pred_ft beats e2e (+0.084) and scratch (+0.226) on F1w at 5% labels**.
-Runtime: 8.5 min total. Checkpoint: v17_seed42_best.pt. Source: `v20/phase0_pred_ft.json`.
-
-### Phase 3b: EMA vs SIGReg pretraining on FD001 (5 seeds, pred-FT downstream)
-
-| Pretraining | 100% F1w | 100% RMSE | 5% F1w | 5% RMSE |
-|-------------|----------|-----------|--------|---------|
-| EMA          | 0.391 ± 0.085 | 16.90 ± 1.71 | 0.261 ± 0.165 | 24.33 ± 6.83 |
-| SIGReg-enc   | 0.401 ± 0.070 | 14.08 ± 0.98 | 0.252 ± 0.156 | 17.52 ± 1.34 |
-| **SIGReg-pred** | **0.451 ± 0.064** | **13.71 ± 0.34** | 0.243 ± 0.165 | **17.30 ± 3.55** |
-
-SIGReg-pred wins at 100% (F1w +0.060, RMSE -3.19); all tied within CI at 5% on F1w,
-but SIGReg-pred is much more stable (RMSE std 3.55 vs 6.83). Source:
-`v20/phase3_sigreg.json`.
-
-### Phase 1b: PSM pred-FT (NEGATIVE RESULT)
-
-Using v19 PSM ckpts (seed 42/123/456), chronological 60/10/30 split of labeled test:
-
-| Mode | F1w | AUROCw (range) | global F1 |
-|------|-----|---------------|-----------|
-| probe_h      | 0.411 ± 0.054 | 0.548 (0.47-0.63) | 0.411 |
-| frozen_multi | 0.401 ± 0.106 | 0.531 (0.49-0.58) | 0.401 |
-| pred_ft      | 0.326 ± 0.014 | 0.460 (0.39-0.52) | 0.326 |
-
-AUROCw mean ~0.55 (probe_h/frozen_multi) or ~0.46 (pred_ft) - not uniformly random
-but close to chance. Distribution shift in PSM test timeline defeats supervised FT
-for this dataset. Keep Mahalanobis for PSM primary (0.813 PA-F1 from v19).
-
-### Phase 5: Label-efficiency curve (pred_ft vs e2e, FD001, 5 seeds)
-
-Full paired-t p-values on F1w:
-
-| Budget | pred_ft F1w | e2e F1w | Δ(pred-e2e) | paired p |
-|--------|-------------|---------|-------------|----------|
-| 100%   | 0.391 ± 0.085 | 0.408 ± 0.119 | -0.017 | 0.84 |
-|  50%   | 0.391 ± 0.083 | 0.356 ± 0.074 | +0.035 | 0.27 |
-|  20%   | 0.212 ± 0.201 | 0.295 ± 0.113 | -0.083 | 0.28 |
-| **10%**| **0.258 ± 0.116** | 0.081 ± 0.153 | **+0.177** | 0.15 |
-|   5%   | 0.260 ± 0.165 | 0.177 ± 0.242 | +0.083 | 0.50 |
-
-Statistically significant (p<0.05) findings from Phase 0b:
-- pred_ft vs scratch @ 5%: paired t=3.03, p=0.039, Cohen d=1.35 (solid pretraining-delta claim)
-- pred_ft vs e2e @ 5%: not significant (p=0.50)
-- pred_ft has ZERO seed collapses to F1w=0 at any budget; e2e collapses on 3/5 seeds at both 5% and 10%
-
-Source: `v20/phase5_label_efficiency.json`.
-
-### Phase 6: FD003 replication (pretrain + label efficiency)
-
-Pretrained V17 arch on FD003 (seed 42, 100 epochs, 3.4 min, final pretrain L=0.0076).
-Then pred-FT and E2E sweep at 5 budgets × 5 seeds.
-
-| Budget | pred-FT F1w | E2E F1w | Δ(pred-e2e) | paired p |
-|--------|-------------|---------|-------------|----------|
-| 100%   | 0.146 ± 0.089 | 0.246 ± 0.124 | -0.100 | 0.13 |
-|  50%   | 0.222 ± 0.147 | 0.174 ± 0.102 | +0.048 | 0.69 |
-|  20%   | 0.094 ± 0.055 | 0.082 ± 0.047 | +0.012 | 0.67 |
-|  10%   | 0.136 ± 0.150 | 0.089 ± 0.069 | +0.047 | 0.48 |
-| **5%** | **0.115 ± 0.160** | 0.016 ± 0.025 | **+0.099** | 0.26 |
-
-FD003 numbers are absolutely lower than FD001 (F1w 0.146 vs 0.391 at 100%)
-because the FD003 pretraining is undertrained (100 vs v17's 200 epochs).
-But direction matches: pred-FT wins at 5-10%, E2E wins at 100%. Cross-subset
-replication validates the crossover shape. Source: `v20/phase6_fd003.json`,
-ckpt: `v20/ckpts_fd003/v20_fd003_seed42_ep100.pt`.
-
-### Phase 2: Chronos-T5-tiny baseline (FD001, 3 seeds)
-
-| Model | Params | F1w | RMSE | Protocol |
-|-------|--------|-----|------|----------|
-| Chronos-T5-tiny | 8.4M | 0.419 ± 0.028 | 16.80 ± 1.54 | frozen + linear probe |
-| FAM pred_ft (ref)| 2.37M | 0.391 ± 0.085 | 16.90 ± 1.71 | frozen enc + pred-FT |
-
-FAM matches Chronos within CI at 3.5x fewer params. Source:
-`v20/phase2_chronos_perwindow.json`.
+| Priority | What | Fills |
+|----------|------|-------|
+| Phase 1 | C-MAPSS FD001/002/003 pred-FT + E2E (5 seeds) | Tab 1 rows 1-3 |
+| Phase 2 | SMAP/MSL/PSM/SMD/MBA (3 seeds) | Tab 1 rows 4-8 |
+| Phase 4 | Label efficiency with AUPRC | Paper Tab label_efficiency |
+| Phase 5 | Chronos with AUPRC | Paper Tab chronos |

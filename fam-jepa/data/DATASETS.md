@@ -26,7 +26,7 @@ Notes on shapes marked "per docstring": shapes are asserted in code comments, no
 
 ### 2.1 C-MAPSS FD001–FD004
 
-**Loader:** `mechanical-jepa/experiments/v11/data_utils.py`
+**Loader:** `fam-jepa/experiments/v11/data_utils.py`
 
 #### A. Data shape
 
@@ -108,7 +108,7 @@ The FAM pipeline should call `evaluate_rul_run(pred, target, horizons=(10, 20, 3
 
 ### 2.2 SMAP
 
-**Loader:** `mechanical-jepa/data/smap_msl.py::load_smap()`
+**Loader:** `fam-jepa/data/smap_msl.py::load_smap()`
 
 #### A. Data shape
 
@@ -166,14 +166,14 @@ The `evaluate_anomaly_detection()` function in `smap_msl.py` computes per-timest
 - `if __name__ == '__main__'` block present. Prints shapes and anomaly rate. Tests DataLoader batch shape. PASSES for infrastructure verification.
 - **HARDCODED PATH:** `SMAP_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/SMAP')`. Same SageMaker path issue as C-MAPSS.
 - No TODO or placeholder code.
-- `evaluate_anomaly_detection()` has a **hardcoded sys.path insert** (`sys.path.insert(0, '/home/sagemaker-user/IndustrialJEPA/mechanical-jepa')`) — this is an absolute SageMaker path and will break on other machines. The import of `anomaly_metrics` should use a proper relative import or package install.
+- `evaluate_anomaly_detection()` has a **hardcoded sys.path insert** (`sys.path.insert(0, '/home/sagemaker-user/IndustrialJEPA/fam-jepa')`) — this is an absolute SageMaker path and will break on other machines. The import of `anomaly_metrics` should use a proper relative import or package install.
 - Mask convention in `collate_anomaly_pretrain`: `True = valid` (opposite of C-MAPSS convention where `True = padding`). This inconsistency must be handled carefully when mixing datasets in a unified pipeline.
 
 ---
 
 ### 2.3 MSL
 
-**Loader:** `mechanical-jepa/data/smap_msl.py::load_msl()`
+**Loader:** `fam-jepa/data/smap_msl.py::load_msl()`
 
 #### A. Data shape
 
@@ -204,7 +204,7 @@ Same file as SMAP, same issues. Both HARDCODED PATH (`MSL_DATA_DIR`) and `sys.pa
 
 ### 2.4 PSM
 
-**Loader:** `mechanical-jepa/data/psm.py::load_psm()`
+**Loader:** `fam-jepa/data/psm.py::load_psm()`
 
 #### A. Data shape
 
@@ -256,9 +256,9 @@ Same as SMAP/MSL: per-timestep binary from `test_labels.npy`. Same BCE window la
 
 ### 2.5 MBA (MIT-BIH Arrhythmia ECG)
 
-**Loader:** `mechanical-jepa/experiments/v19/phase2_mba.py::load_mba()`
+**Loader:** `fam-jepa/experiments/v19/phase2_mba.py::load_mba()`
 
-**There is no standalone loader in `mechanical-jepa/data/`.** The loading code is embedded in the experiment script.
+**There is no standalone loader in `fam-jepa/data/`.** The loading code is embedded in the experiment script.
 
 #### A. Data shape
 
@@ -323,7 +323,7 @@ Per-timestep binary labels after ±20 expansion, identical format to SMAP/MSL/PS
 
 ## 3. SMD (not in paper scope — audited for completeness)
 
-**Loader:** `mechanical-jepa/data/smd.py::load_smd()`
+**Loader:** `fam-jepa/data/smd.py::load_smd()`
 
 SMD was in v19 experiments (`phase4_smd.py`) but is not in the five paper datasets. The loader is well-structured, supports both combined `.npy` and per-machine directory layouts, has `check_smd_available()`, and a `__main__` block. Same hardcoded SageMaker path issue. The loader could be promoted to a paper dataset if needed — no structural blockers.
 
@@ -363,7 +363,7 @@ SMD was in v19 experiments (`phase4_smd.py`) but is not in the five paper datase
 
 ### Fix 1: Central path configuration
 
-Create `mechanical-jepa/data/config.py`:
+Create `fam-jepa/data/config.py`:
 ```python
 import os
 from pathlib import Path
@@ -383,7 +383,7 @@ Replace all hardcoded paths with imports from this file.
 
 ### Fix 2: Standalone MBA loader
 
-Create `mechanical-jepa/data/mba.py` by extracting `load_mba()` from `phase2_mba.py`, adding Z-score normalization (to match SMAP/MSL/PSM), verifying the 7680-row shape, and adding a `__main__` test block.
+Create `fam-jepa/data/mba.py` by extracting `load_mba()` from `phase2_mba.py`, adding Z-score normalization (to match SMAP/MSL/PSM), verifying the 7680-row shape, and adding a `__main__` test block.
 
 ### Fix 3: Standardize mask convention
 
@@ -393,14 +393,14 @@ In `collate_anomaly_pretrain` (smap_msl.py), change mask to `True = padding` to 
 
 Replace:
 ```python
-sys.path.insert(0, '/home/sagemaker-user/IndustrialJEPA/mechanical-jepa')
+sys.path.insert(0, '/home/sagemaker-user/IndustrialJEPA/fam-jepa')
 from evaluation.grey_swan_metrics import anomaly_metrics
 ```
 with:
 ```python
 from ..evaluation.grey_swan_metrics import anomaly_metrics
 ```
-(assuming `mechanical-jepa` is installed as a package, or adjust import depth as needed).
+(assuming `fam-jepa` is installed as a package, or adjust import depth as needed).
 
 ### Fix 5: Populate data/__init__.py
 
