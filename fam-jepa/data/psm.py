@@ -3,7 +3,7 @@ PSM (Pooled Server Metrics) Dataset Adapter.
 
 eBay server machine dataset used in MTS-JEPA, Anomaly Transformer, etc.
   - 25 channels (after dropping near-constant + timestamp)
-  - 87K train / 87K test timesteps
+  - ~132K train / ~87K test timesteps
   - ~27% anomaly rate in test
 
 Data source: RANSynCoders repo (eBay/RANSynCoders).
@@ -19,7 +19,11 @@ from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 from typing import Optional, Tuple
 
-PSM_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/PSM')
+try:
+    from .config import PSM_DIR
+    PSM_DATA_DIR = PSM_DIR
+except ImportError:
+    PSM_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/PSM')
 
 WINDOW_SIZE = 100
 STRIDE = 1

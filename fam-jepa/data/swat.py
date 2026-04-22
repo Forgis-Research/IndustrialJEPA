@@ -71,6 +71,7 @@ def load_swat(normalize: bool = True) -> Optional[dict]:
     test = attack_df[sensor_cols].values.astype(np.float32)
     labels = (attack_df[' Normal/Attack'].str.strip() == 'Attack').astype(np.int32).values
 
+    mu, std = None, None
     if normalize:
         mu = train.mean(axis=0, keepdims=True)
         std = train.std(axis=0, keepdims=True) + 1e-6
@@ -83,6 +84,8 @@ def load_swat(normalize: bool = True) -> Optional[dict]:
         'labels': labels,
         'n_channels': train.shape[1],
         'name': 'SWaT',
+        'mu': mu,
+        'std': std,
         'anomaly_rate': float(labels.mean()),
     }
 

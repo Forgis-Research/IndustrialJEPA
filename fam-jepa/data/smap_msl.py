@@ -26,8 +26,13 @@ from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 from typing import Optional, Tuple
 
-SMAP_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/SMAP')
-MSL_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/MSL')
+try:
+    from .config import SMAP_DIR, MSL_DIR
+    SMAP_DATA_DIR = SMAP_DIR
+    MSL_DATA_DIR = MSL_DIR
+except ImportError:
+    SMAP_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/SMAP')
+    MSL_DATA_DIR = Path('/home/sagemaker-user/IndustrialJEPA/paper-replications/mts-jepa/data/MSL')
 
 WINDOW_SIZE = 100
 STRIDE = 1  # overlap for test evaluation
@@ -40,6 +45,7 @@ def load_smap(normalize: bool = True) -> dict:
     test = np.load(SMAP_DATA_DIR / 'test.npy').astype(np.float32)
     labels = np.load(SMAP_DATA_DIR / 'test_labels.npy').astype(np.int32)
 
+    mu, std = None, None
     if normalize:
         mu = train.mean(axis=0, keepdims=True)
         std = train.std(axis=0, keepdims=True) + 1e-6
@@ -64,6 +70,7 @@ def load_msl(normalize: bool = True) -> dict:
     test = np.load(MSL_DATA_DIR / 'test.npy').astype(np.float32)
     labels = np.load(MSL_DATA_DIR / 'test_labels.npy').astype(np.int32)
 
+    mu, std = None, None
     if normalize:
         mu = train.mean(axis=0, keepdims=True)
         std = train.std(axis=0, keepdims=True) + 1e-6

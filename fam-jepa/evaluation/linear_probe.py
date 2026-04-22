@@ -48,7 +48,7 @@ def fit_anomaly_probe(X_train: np.ndarray, y_train: np.ndarray,
     y_prob = clf.predict_proba(X_test_s)[:, 1]
 
     # Use evaluate_anomaly_run for consistent metrics
-    from evaluation.grey_swan_metrics import evaluate_anomaly_run
+    from .grey_swan_metrics import evaluate_anomaly_run
 
     # evaluate_anomaly_run expects: scores (higher=more anomalous), y_true, threshold
     # For logistic regression, y_prob IS the score and threshold=0.5 matches clf.predict()

@@ -838,9 +838,10 @@ def evaluate_event_prediction(time_to_event: np.ndarray,
                               n_windows: int,
                               legacy_rul_cap: Optional[float] = None) -> dict:
     """
-    UNIFIED ENTRY POINT: Run both stages + optional legacy metrics.
+    Legacy two-stage evaluation (TTE regression framework).
 
-    This is the ONE function every experiment script should call.
+    For the new probability surface framework, use
+    evaluation.surface_metrics.evaluate_probability_surface() instead.
 
     Args:
         time_to_event:      (N,) ground-truth time-to-event
