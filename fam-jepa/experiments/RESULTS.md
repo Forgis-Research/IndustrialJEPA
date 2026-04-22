@@ -78,11 +78,21 @@ Pred-FT vs E2E at 5 budgets under the v21 AUPRC protocol. Paired t-test
 | 10%  | **0.897±0.013** | 0.871±0.051  | +0.026 | +1.33 | 0.253    | 0.438 |
 | 5%   | **0.870±0.030** | 0.855±0.037  | +0.016 | +1.19 | 0.300    | 0.312 |
 
-**Observation.** The v20 F1w-at-fixed-threshold crossover at 10% labels
-($p=0.023$) softens to a non-significant $p=0.25$ under pooled AUPRC
-because the latter is threshold-free and integrates over all operating
-points. Direction is preserved; mean-difference significance is weaker
-with the same 5 seeds.
+**10-seed follow-up (v21 phase 4b/4c) on the two low-label cells:**
+
+| Budget | N | Pred-FT AUPRC | E2E AUPRC | Δ | paired t(9) | paired p | Wilcoxon p |
+|--------|----|---------------|-----------|-----|-------------|----------|-------------|
+| 10% | 10 | 0.897±0.011 | 0.863±0.051 | +0.035 | +2.22 | **0.054** | 0.131 |
+| 5%  | 10 | 0.881±0.024 | 0.855±0.034 | +0.025 | +2.10 | **0.065** | 0.084 |
+
+**Observation.** At $N{=}10$ under AUPRC the crossover is marginally
+significant at both 10\% and 5\% labels (p $\approx 0.05$--0.07). The
+v20 F1w-at-fixed-threshold crossover at 10\% labels ($p=0.023$) is
+clearer because F1w at a fixed threshold drops to 0 on seeds where E2E
+hasn't calibrated scale, whereas AUPRC is threshold-free and integrates
+over all operating points so E2E's ranking remains recoverable. The
+direction and magnitude of pred-FT's low-label advantage is preserved;
+the F1w-to-AUPRC change moves p from 0.02 to 0.05.
 
 ---
 
