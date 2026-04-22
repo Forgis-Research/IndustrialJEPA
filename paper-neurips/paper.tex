@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-  Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \Delta t)$ - event probability as a function of observation depth $t$ and prediction horizon $\Delta t$ - scored by the Brier score, a proper scoring rule from which every existing metric (PA-F1, RMSE, next-window F1) is derivable as a special case. Across \placeholder{N} datasets in \placeholder{M} domains, FAM achieves Brier scores of \placeholder{X.XX} (turbofan), \placeholder{X.XX} (spacecraft), \placeholder{X.XX} (server), and \placeholder{X.XX} (cardiac), matching or exceeding domain-specific supervised models under both the Brier score and their own legacy metrics. Code and evaluation suite at \placeholder{URL}.
+  Predicting rare events in multivariate time series---loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia---demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type---the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \Delta t)$---event probability as a function of observation time $t$ and prediction horizon $\Delta t$---scored by AUPRC pooled over all $(t, \Delta t)$ cells. AUPRC is threshold-free and robust to the severe class imbalance inherent in rare-event prediction, unlike the Brier score or per-point F1 which are dominated by the majority class. Across \placeholder{8} datasets in \placeholder{4} domains, FAM achieves AUPRC of \placeholder{X.XX} (turbofan), \placeholder{X.XX} (spacecraft), \placeholder{X.XX} (server), and \placeholder{X.XX} (cardiac), matching or exceeding domain-specific supervised models under both AUPRC and their own legacy metrics (RMSE, PA-F1). Code and evaluation suite at \placeholder{URL}.
 \end{abstract}
 
 % ============================================================
@@ -77,7 +77,7 @@ Yet every event prediction task has the same structure: given observations up to
 \begin{enumerate}[nosep]
   \item \textbf{Predictor finetuning.} We show that freezing a JEPA encoder and finetuning only the predictor (33\% of parameters) for each event type is more label-efficient than end-to-end finetuning: at $\leq 10\%$ labels, pred-FT significantly outperforms E2E ($p = 0.023$, $N{=}10$) while E2E collapses on 40\% of seeds (\cref{sec:downstream,sec:finetune_ablation}).
 
-  \item \textbf{Multi-domain validation under a unified metric.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, and MBA. All tasks are evaluated through the same probability surface $p(t, \Delta t)$ scored by the Brier score; legacy metrics (PA-F1, RMSE) are derived as projections for direct comparability (\cref{sec:metrics,sec:experiments}).
+  \item \textbf{Multi-domain validation under a unified metric.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, SMD, and MBA. All tasks are evaluated through the same probability surface $p(t, \Delta t)$ scored by AUPRC pooled over all cells---threshold-free and robust to class imbalance. Legacy metrics (PA-F1, RMSE) are derived from the stored surface for direct comparability (\cref{sec:metrics,sec:experiments}).
 \end{enumerate}
 
 % ============================================================
@@ -93,7 +93,7 @@ Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}
 Chronos~\citep{ansari2024chronos}, TimesFM~\citep{das2024timesfm}, and MOMENT~\citep{goswami2024moment} pretrain on large-scale corpora for generic forecasting. FAM is complementary: a mid-scale encoder (2.37M) specialised for event prediction, not forecasting. We benchmark against Chronos as the strongest available foundation model (\cref{sec:foundation_baselines}).
 
 \paragraph{Prognostics and anomaly prediction.}
-C-MAPSS~\citep{saxena2008cmapss} is the standard RUL benchmark; supervised SOTA: STAR~\citep{fan2024star} (RMSE 10.61). Anomaly prediction methods (Anomaly Transformer~\citep{xu2022anomalytransformer}, DCdetector~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad}) report point-adjusted F1 (PA-F1), which inflates scores by crediting entire segments from a single detection~\citep{schmidl2022tsadeval}. We replace these incomparable metrics with horizon-dependent AUROC (\cref{sec:metrics}).
+C-MAPSS~\citep{saxena2008cmapss} is the standard RUL benchmark; supervised SOTA: STAR~\citep{fan2024star} (RMSE 10.61). Anomaly prediction methods (Anomaly Transformer~\citep{xu2022anomalytransformer}, DCdetector~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad}) report point-adjusted F1 (PA-F1), which inflates scores by crediting entire segments from a single detection~\citep{schmidl2022tsadeval}. We replace these incomparable metrics with AUPRC pooled over the probability surface (\cref{sec:metrics}).
 
 \paragraph{Channel strategies.}
 PatchTST~\citep{nie2023patchtst} showed channel-independent processing often wins; iTransformer~\citep{liu2024itransformer} showed variate-as-token wins on high-correlation data. Our default is channel-fusion (linear projection); we ablate against sensor-as-token (\cref{sec:ablations}).
@@ -203,21 +203,23 @@ where $y(t, \Delta t) = \mathbb{1}[\text{event at time } t{+}\Delta t]$. BCE enc
 
 The model outputs $p(t, \Delta t)$ (\cref{eq:event_prob}) for each observation time $t$ and prediction horizon $\Delta t$. This probability surface is the complete prediction; every metric is a readout of it.
 
-\subsection{Primary Metric: Brier Score}
+\subsection{Primary Metric: AUPRC}
 
-We compare predicted surfaces to ground truth with the Brier score~\citep{gneiting2007scoring}, a proper scoring rule:
+Events are rare: turbine failure happens once per engine lifecycle; anomaly segments cover ${\sim}1{-}13\%$ of test data. In the probability surface $p(t, \Delta t)$, the vast majority of cells are $y{=}0$. A trivial model predicting $p{=}0$ everywhere achieves excellent Brier scores and low cross-entropy---both are dominated by the majority class. We therefore use \textbf{AUPRC} (area under the precision-recall curve), which focuses entirely on the positive class and is threshold-free:
+
 \begin{equation}
-  \text{BS} \;=\; \frac{1}{|\mathcal{T}| \cdot |\mathcal{H}|} \sum_{t \in \mathcal{T}} \sum_{\Delta t \in \mathcal{H}} \bigl(p(t, \Delta t) - y(t, \Delta t)\bigr)^2.
-  \label{eq:brier}
+  \text{AUPRC} \;=\; \int_0^1 \text{Precision}(r) \, dr
+  \label{eq:auprc}
 \end{equation}
-One number. Lower is better. Measures both discrimination (can the model separate event from non-event?) and calibration (are the probabilities correct?). Cannot be gamed - it is minimised if and only if $p(t, \Delta t)$ matches the true conditional probability~\citep{gneiting2007scoring}.
 
-Both axes affect difficulty: small $t$ means less history (harder); large $\Delta t$ means predicting further ahead (harder). The Brier score averages over both, giving equal weight to all $(t, \Delta t)$ cells.
+computed over all $(t, \Delta t)$ cells pooled into a single ranked list. One number per dataset. Higher is better. A random classifier achieves AUPRC equal to the prevalence (e.g., $0.01$ for $1\%$ event rate), so improvements above the base rate are meaningful.
+
+As a secondary metric, we report \textbf{AUROC} pooled over the same cells---threshold-free discrimination that is more familiar but less sensitive to class imbalance~\citep{davis2006auprc}.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_evaluation_framework.pdf}
-  \caption{\textbf{Evaluation framework.} (a)~$p(t, \Delta t)$ is a surface over observation time $t$ and horizon $\Delta t$. Existing metrics evaluate at single points (annotated). The Brier score averages over the entire surface. (b)~AUROC($\Delta t$) curve: discrimination quality vs.\ horizon. Illustrative data.}
+  \caption{\textbf{Evaluation framework.} (a)~$p(t, \Delta t)$ is a surface over observation time $t$ and horizon $\Delta t$. Existing metrics evaluate at single points or slices (annotated). AUPRC pools over the entire surface. (b)~AUPRC($\Delta t$) curve: per-horizon discrimination quality. Illustrative data.}
   \label{fig:auroc_curve}
 \end{figure}
 
@@ -243,11 +245,11 @@ Every domain-specific metric is a lossy projection of $p(t, \Delta t)$. \Cref{ta
   \end{tabular}
 \end{table}
 
-We report all three for direct comparability. Additionally, we report AUROC at selected horizons $\Delta t$ (threshold-free discrimination, complementary to the Brier score's joint discrimination + calibration measure).
+We report all three for direct comparability with domain-specific literature.
 
 \subsection{What We Report}
 
-\textbf{Primary:} Brier score (\cref{eq:brier}). \textbf{Secondary:} AUROC($\Delta t$) at selected horizons (\cref{fig:auroc_curve}). \textbf{Legacy:} RMSE for C-MAPSS, F1($\Delta t{=}1$) and PA-F1 for SMAP/MSL/PSM. All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$.
+\textbf{Primary:} AUPRC pooled over the full $(t, \Delta t)$ surface (\cref{eq:auprc}). \textbf{Secondary:} AUROC pooled over the same cells. \textbf{Legacy:} RMSE for C-MAPSS, PA-F1 for SMAP/MSL/PSM/SMD/MBA---derived from the stored probability surface, not computed independently. \textbf{Appendix:} AUPRC($\Delta t$) per-horizon breakdown and reliability diagrams (calibration). All results: mean $\pm$ std ($N$ seeds, 95\% CI). Claims use paired $t$-tests, Wilcoxon, Cohen's $d$. The probability surface is stored as \texttt{.npz} for every run, enabling recomputation of any metric without re-running inference.
 
 % ============================================================
 % 5. EXPERIMENTS
@@ -262,26 +264,26 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Event prediction across five domains with one architecture.} Every FAM row uses an identical 2.37M-parameter V17 causal-JEPA backbone pretrained per-dataset with no labels. FAM primary = per-window F1 (pred-FT) where the head was finetuned; otherwise the most-reported literature metric (PA-F1 for anomaly, macro-F1 for classification). Legacy column is the literature convention for that domain. Baseline references: STAR~\citep{fan2024star} (supervised RUL), MTS-JEPA~\citep{mtsjepa2026} (JEPA for anomaly), Anomaly Transformer~\citep{xu2022anomalytransformer}. PA-F1 is known to inflate versus non-PA~\citep{schmidl2022tsadeval}; we report both where available.}
+  \caption{\textbf{Event prediction across four domains with one architecture.} Every FAM row uses an identical 2.37M-parameter causal-JEPA backbone pretrained per-dataset with no labels. AUPRC is pooled over all $(t, \Delta t)$ cells of the probability surface (primary, threshold-free). Legacy column reports the domain-standard metric for head-to-head comparison with published SOTA. Baselines: STAR~\citep{fan2024star} (supervised RUL), MTS-JEPA~\citep{mtsjepa2026} (JEPA anomaly), Anomaly Transformer~\citep{xu2022anomalytransformer}. PA-F1 inflates versus non-PA~\citep{schmidl2022tsadeval}; we report both.}
   \label{tab:benchmark}
   \small
-  \begin{tabular}{lllcccl}
+  \begin{tabular}{llccccl}
     \toprule
-    Dataset             & Domain         & Event         & FAM primary                & FAM legacy            & SOTA          & SOTA ref          \\
+    Dataset       & Domain     & AUPRC $\uparrow$ & AUROC $\uparrow$ & Legacy               & SOTA legacy   & Ref          \\
     \midrule
-    C-MAPSS FD001       & Turbofan       & Failure (RUL) & F1w $0.391{\pm}0.085$      & RMSE $16.90{\pm}1.71$ & RMSE $10.61$  & STAR              \\
-    C-MAPSS FD001 (5\%) & Turbofan       & Failure (RUL) & F1w $0.261{\pm}0.165$      & RMSE $24.33{\pm}6.83$ & --            & --                \\
-    SMAP                & Spacecraft     & Anomaly       & PA-F1 $0.793{\pm}0.014$    & non-PA F1 $0.038$     & PA-F1 $0.336$ & MTS-JEPA          \\
-    MSL                 & Spacecraft     & Anomaly       & PA-F1 $0.707{\pm}0.050$    & --                    & PA-F1 $0.336$ & MTS-JEPA          \\
-    PSM                 & Server metrics & Anomaly       & PA-F1 $0.813{\pm}0.048$    & non-PA F1 $0.085$     & PA-F1 $0.616$ & MTS-JEPA          \\
-    SMD                 & Server machine & Anomaly       & PA-F1 $0.252{\pm}0.017$    & non-PA F1 $0.144$     & PA-F1 $0.925$ & AT (inflated PA)  \\
-    MBA ECG             & Cardiac        & Arrhythmia    & PA-F1 $0.551{\pm}0.054$    & non-PA F1 $0.251$     & --            & (no SSL baseline) \\
-    Paderborn           & Bearing        & Fault class   & macro-F1 $0.781{\pm}0.035$ & acc $0.783$           & --            & (no SSL baseline) \\
+    C-MAPSS FD001 & Turbofan   & \placeholder{X.XX} & \placeholder{X.XX} & RMSE \placeholder{XX.X} & RMSE $10.61$ & STAR          \\
+    C-MAPSS FD002 & Turbofan   & \placeholder{X.XX} & \placeholder{X.XX} & RMSE \placeholder{XX.X} & RMSE $13.47$ & STAR          \\
+    C-MAPSS FD003 & Turbofan   & \placeholder{X.XX} & \placeholder{X.XX} & RMSE \placeholder{XX.X} & RMSE $10.71$ & STAR          \\
+    SMAP          & Spacecraft & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.336$ & MTS-JEPA     \\
+    MSL           & Spacecraft & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.336$ & MTS-JEPA     \\
+    PSM           & Server     & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.616$ & MTS-JEPA     \\
+    SMD           & Server     & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & PA-F1 $0.925$ & AT            \\
+    MBA           & Cardiac    & \placeholder{X.XX} & \placeholder{X.XX} & PA-F1 \placeholder{X.XX} & ---           & ---           \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\textbf{Summary.} FAM beats MTS-JEPA's reported PA-F1 on SMAP ($+0.46$), MSL ($+0.37$), and PSM ($+0.20$) with a single architecture. It trails the supervised STAR on C-MAPSS RMSE ($10.61$ vs.\ our $16.9$) but supplies a per-window F1 (and an AUROC $>0.99$, \cref{tab:finetune_ablation}) that STAR does not, while running 5 seeds with CIs where STAR reports one. On the segment-inflating PA-F1 protocol, Anomaly Transformer's $0.925$ on SMD reflects the metric, not the capability - our non-PA F1 is honest and within a factor of a specialist approach. We pretrain 45 min per dataset, no labels, same code path; the spread from $0.25$ (SMD) to $0.81$ (PSM) reflects anomaly granularity and label density, not pipeline changes.
+\textbf{Summary.} \placeholder{V21 will fill this paragraph with AUPRC-based claims. Key comparisons: FAM AUPRC vs STAR on C-MAPSS (head-to-head under the same threshold-free metric); FAM PA-F1 vs MTS-JEPA on SMAP/MSL/PSM (legacy head-to-head); FAM AUPRC across all 8 datasets demonstrating one-architecture generality. Note STAR reports single-run RMSE only; we run 5 seeds with CIs. PA-F1 inflation caveat remains.}
 
 \subsection{C-MAPSS: Time-to-Failure}
 \label{sec:rul_results}
