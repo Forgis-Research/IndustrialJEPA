@@ -85,14 +85,16 @@ def _load_v17_ckpt(subset: str, seed: int) -> TrajectoryJEPA:
             # FT variance is what we measure; pretrain is shared.
             ckpt = CKPT_OLD / 'v17' / 'ckpts' / 'v17_seed42_best.pt'
     elif subset == 'FD002':
-        # Only seed 42 pretrained — reused for all FT seeds.
+        # v21 pretrained seeds 123+456; seed 42 is the v20 phase11 ckpt.
         candidates = [
+            CKPT_OLD / 'v20' / 'ckpts_fd002' / f'v21_fd002_seed{seed}_best.pt',
             CKPT_OLD / 'v20' / 'ckpts_fd002' / 'v20_fd002_seed42_ep150.pt',
             CKPT_OLD / 'v11' / 'best_pretrain_fd002.pt',
         ]
         ckpt = next((p for p in candidates if p.exists()), candidates[-1])
     elif subset == 'FD003':
         candidates = [
+            CKPT_OLD / 'v20' / 'ckpts_fd003' / f'v21_fd003_seed{seed}_best.pt',
             CKPT_OLD / 'v20' / 'ckpts_fd003' / 'v20_fd003_seed42_ep200.pt',
             CKPT_OLD / 'v20' / 'ckpts_fd003' / 'v20_fd003_seed42_ep100.pt',
             CKPT_OLD / 'v11' / 'best_pretrain_fd003_v2.pt',

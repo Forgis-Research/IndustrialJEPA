@@ -1,0 +1,45 @@
+{
+  "log": {
+    "FD002": {
+      "123": {
+        "best_loss": 0.006053301422445168,
+        "final_ep": 8,
+        "ckpt": "/home/sagemaker-user/IndustrialJEPA/mechanical-jepa/experiments/v20/ckpts_fd002/v21_fd002_seed123_best.pt",
+        "runtime_min": 0.4732474486033122
+      },
+      "456": {
+        "best_loss": 0.005427906840342922,
+        "final_ep": 8,
+        "ckpt": "/home/sagemaker-user/IndustrialJEPA/mechanical-jepa/experiments/v20/ckpts_fd002/v21_fd002_seed456_best.pt",
+        "runtime_min": 0.4479644536972046
+      }
+    },
+    "FD003": {
+      "123": {
+        "best_loss": 0.005496055965549221,
+        "final_ep": 14,
+        "ckpt": "/home/sagemaker-user/IndustrialJEPA/mechanical-jepa/experiments/v20/ckpts_fd003/v21_fd003_seed123_best.pt",
+        "runtime_min": 0.47663328647613523
+      },
+      "456": {
+        "best_loss": 0.0073821024574777655,
+        "final_ep": 10,
+        "ckpt": "/home/sagemaker-user/IndustrialJEPA/mechanical-jepa/experiments/v20/ckpts_fd003/v21_fd003_seed456_best.pt",
+        "runtime_min": 0.3458300034205119
+      }
+    }
+  },
+  "runtime_min": 1.8671088258425395,
+  "config": {
+    "subsets": [
+      "FD002",
+      "FD003"
+    ],
+    "seeds": [
+      123,
+      456
+    ],
+    "max_epochs": 50,
+    "patience": 5
+  }
+}

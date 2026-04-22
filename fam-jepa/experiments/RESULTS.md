@@ -25,8 +25,8 @@ Every number that enters the paper must have an entry here with provenance.
 | Dataset | Domain | AUPRC ↑ | AUROC ↑ | PA-F1 (legacy) | F1-best | SOTA legacy | Source |
 |---------|--------|---------|---------|-----------------|---------|-------------|--------|
 | C-MAPSS FD001 | Turbofan | 0.945±0.016 | 0.987±0.004 | RMSE 17.061±4.638 | 0.872±0.016 | RMSE 10.61 (STAR) | v21 phase 2 |
-| C-MAPSS FD002 | Turbofan | 0.955±0.009 | 0.988±0.003 | RMSE 12.432±1.250 | 0.895±0.009 | RMSE 13.47 (STAR) | v21 phase 2 |
-| C-MAPSS FD003 | Turbofan | 0.932±0.010 | 0.984±0.002 | RMSE 16.226±1.890 | 0.872±0.007 | RMSE 10.71 (STAR) | v21 phase 2 |
+| C-MAPSS FD002 | Turbofan | 0.947±0.026 | 0.987±0.006 | RMSE 15.991±4.763 | 0.870±0.038 | RMSE 13.47 (STAR) | v21 phase 2 |
+| C-MAPSS FD003 | Turbofan | 0.903±0.041 | 0.978±0.009 | RMSE 22.919±5.626 | 0.828±0.041 | RMSE 10.71 (STAR) | v21 phase 2 |
 | SMAP | Spacecraft | 0.192±0.007 | 0.654±0.016 | PA-F1 0.951±0.003 | 0.307±0.009 | PA-F1 0.336 (MTS-JEPA) | v21 phase 1 |
 | MSL | Spacecraft | 0.203±0.029 | 0.665±0.015 | PA-F1 0.849±0.034 | 0.286±0.008 | PA-F1 0.336 (MTS-JEPA) | v21 phase 1 |
 | PSM | Server | 0.413±0.035 | 0.614±0.025 | PA-F1 0.910±0.003 | 0.491±0.028 | PA-F1 0.616 (MTS-JEPA) | v21 phase 1 |

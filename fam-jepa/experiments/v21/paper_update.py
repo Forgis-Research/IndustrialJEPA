@@ -212,12 +212,20 @@ def build_summary_paragraph(p1: dict, p2: dict) -> str:
 
 
 def update_summary(txt: str, summary: str) -> str:
-    """Replace the placeholder \textbf{Summary.} paragraph."""
+    """Replace the \textbf{Summary.} paragraph (placeholder or regenerated)."""
     import re
-    # Match: \textbf{Summary.} \placeholder{ ... }
-    pat = re.compile(r'\\textbf\{Summary\.\}\s*\\placeholder\{[^}]*\}',
-                     re.DOTALL)
-    return pat.sub(lambda m: summary, txt)
+    # First try: placeholder form (\textbf{Summary.} \placeholder{...})
+    pat_ph = re.compile(r'\\textbf\{Summary\.\}\s*\\placeholder\{[^}]*\}',
+                        re.DOTALL)
+    new = pat_ph.sub(lambda m: summary, txt)
+    if new != txt:
+        return new
+    # Second try: previously-generated form — replace from \textbf{Summary.}
+    # up to the next blank line or \subsection.
+    pat_gen = re.compile(
+        r'\\textbf\{Summary\.\}.*?(?=\n\n|\n\\subsection)',
+        re.DOTALL)
+    return pat_gen.sub(lambda m: summary, txt)
 
 
 def update_results_md(p1: dict, p2: dict):
