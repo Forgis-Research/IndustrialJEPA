@@ -47,7 +47,7 @@ continue to be available via the stored surfaces.
 import json
 from pathlib import Path
 import numpy as np
-V21 = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v21')
+V21 = Path('../experiments/v21').resolve()
 p1 = json.load(open(V21 / 'phase1_anomaly.json'))
 p2 = json.load(open(V21 / 'phase2_cmapss.json'))
 p4 = json.load(open(V21 / 'phase4_label_efficiency.json'))
