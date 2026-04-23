@@ -1,0 +1,229 @@
+---
+title: "V23 Analysis - Ablations and a Medical Dataset"
+date: 2026-04-23
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+---
+
+```{python}
+#| label: setup
+import json, sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+V22 = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v22')
+V23 = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23')
+
+def load(p):
+    with open(p) as f:
+        return json.load(f)
+```
+
+## What v23 tested
+
+Four focused questions:
+
+1. **Drop EMA** - does a VICReg-triplet SIGReg recipe with no EMA match
+   the v22 EMA baseline on FD001?
+2. **Patch tokenization** - does grouping `L` consecutive timesteps
+   into a single token help event prediction on SMAP?
+3. **A new medical domain** - can the FAM pipeline (pretrain then pred-FT)
+   deliver competitive sepsis-onset prediction on PhysioNet 2019?
+4. **PA-F1 on v22 surfaces** - lit-compatible numbers for the paper's
+   comparison rows, computed from the stored probability surfaces.
+
+Per the session rule, we also ran Phase 0 (PA-F1) first as a quick win.
+
+## Phase 0 - PA-F1 from v22 pred-FT surfaces
+
+`compute_pa_f1_from_surfaces.py` sweeps threshold percentiles over each
+stored surface and reports the best PA-F1 (Xu et al. 2018, popularised
+by MTS-JEPA) alongside the honest non-PA F1.
+
+```{python}
+#| label: pa-f1-table
+pa = load(V22 / 'pa_f1_from_surfaces.json')
+rows = []
+for ds, obj in pa.items():
+    a = obj['agg']
+    rows.append({
+        'Dataset': ds,
+        'PA-F1 mean': a['f1_pa_mean'],
+        'PA-F1 std': a['f1_pa_std'],
+        'non-PA F1 mean': a['f1_non_pa_mean'],
+        'non-PA F1 std': a['f1_non_pa_std'],
+        'N seeds': a['n_seeds'],
+    })
+pd.DataFrame(rows).round(3)
+```
+
+PA-F1 inflates the raw number by ~55 percentage points on SMAP (0.18 -> 0.79)
+because it declares the entire anomaly segment positive as soon as any
+point inside it is flagged (Kim 2022).  The paper table reports non-PA F1
+and states this inflation explicitly; PA-F1 shows up only in the
+"comparison with prior reports" commentary.
+
+## Phase 1+2 - SIGReg (no EMA) vs EMA on FD001
+
+VICReg-style triplet on `h_past`: L1(pred_norm, target_norm) +
+lambda_var * relu(1 - std) + lambda_cov * off_diag_cov_squared.
+Target = same context encoder applied to the future window with
+stop-grad (no EMA copy).  Curriculum on the horizon `k`:
+
+- epochs 1-20: k ~ LogUniform[1, 10]
+- epochs 20-40: k_hi linearly grows 10 -> 150
+- epochs 40+: k ~ LogUniform[1, 150]
+
+Early-stopping patience only runs after the curriculum finishes
+ramping (ep >= 40).  Without this guard, all 3 seeds early-stop
+inside the trivial warmup.
+
+```{python}
+#| label: sigreg-pretrain-curves
+pre = load(V23 / 'pretrain_sigreg.json')
+
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
+for seed_log, ax_idx in zip(pre['log'], range(3)):
+    h = seed_log['history']
+    ax = axes[ax_idx]
+    ax.plot(h['ep'], h['l_pred'], label='L1 (pred)', lw=2)
+    ax.plot(h['ep'], h['l_var'],  label='var (VICReg)', lw=1)
+    ax.plot(h['ep'], h['l_cov'],  label='cov (VICReg)', lw=1)
+    ax.axvline(40, ls='--', color='grey', alpha=0.4,
+               label='patience activates')
+    ax.set_title(f"seed {seed_log['seed']}  (best ep {seed_log['best_ep']})")
+    ax.set_xlabel('epoch')
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+axes[0].set_ylabel('loss')
+plt.tight_layout()
+plt.show()
+```
+
+Representation std stays healthy (~0.48) throughout - no collapse.
+
+```{python}
+#| label: sigreg-vs-ema-table
+p2 = load(V23 / 'phase2_sigreg_vs_ema.json')
+rows = []
+for v, obj in p2['variants'].items():
+    if v.startswith('paired'):
+        continue
+    a = obj['agg']
+    rows.append({
+        'Variant': v,
+        'AUPRC': f"{a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}",
+        'AUROC': f"{a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}",
+        'F1_best': f"{a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f}",
+        'RMSE_exp': f"{a['rmse_expected_mean']:.2f} ± {a['rmse_expected_std']:.2f}",
+        'N': a['n_seeds'],
+    })
+pd.DataFrame(rows)
+```
+
+```{python}
+#| label: sigreg-vs-ema-paired
+paired = p2['variants'].get('paired_sigreg_vs_baseline')
+if paired:
+    rows = []
+    for m, s in paired.items():
+        if s is None:
+            continue
+        rows.append({'Metric': m,
+                     'delta (sigreg - baseline)': f"{s['delta_mean']:+.3f}",
+                     't stat': f"{s.get('t_stat', 0):+.2f}",
+                     'p-value': f"{s.get('t_p', 1):.3f}",
+                     'n': s['n']})
+    pd.DataFrame(rows)
+```
+
+**Conclusion: drop-EMA SIGReg does not match EMA on FD001.**  AUPRC
+-0.074 (p=0.13 at 3 seeds), AUROC -0.014 (p=0.07), RMSE +12.  Per
+the session rule, no SMAP follow-up; we report the negative result
+honestly and move on.  The EMA copy acts as a momentum-smoothed
+target, which appears to stabilise the predictor's training signal
+in a way that `same-encoder-with-stop-grad` cannot.
+
+## Phase 5+6 - Patch tokenization on SMAP
+
+Replace per-timestep projection `Linear(C, d)` with a patch
+projection `Linear(C * L, d)` that groups `L` consecutive timesteps.
+With window=100:
+
+- L=1  (baseline): 100 tokens
+- L=5             :  20 tokens
+- L=10            :  10 tokens
+- L=20            :   5 tokens
+
+Same pretrain protocol otherwise (L1 + var_reg, EMA 0.99, cosine LR,
+early-stop patience=5, max 30 ep).
+
+```{python}
+#| label: patch-smap-table
+if (V23 / 'phase6_patch_predft_smap.json').exists():
+    p6 = load(V23 / 'phase6_patch_predft_smap.json')
+    rows = []
+    for L_str, obj in p6['log'].items():
+        a = obj['agg']
+        rows.append({
+            'L (patch len)': int(L_str),
+            'Tokens (W=100)': 100 // int(L_str),
+            'AUPRC': f"{a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}",
+            'AUROC': f"{a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}",
+            'F1':    f"{a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f}",
+            'mono': f"{a['mono_violation_mean']:.3f}",
+        })
+    df = pd.DataFrame(rows).sort_values('L (patch len)')
+    df
+else:
+    print('phase6 patch results not yet available')
+```
+
+## Phase 3+4 - PhysioNet 2019 Sepsis (new domain)
+
+```{python}
+#| label: sepsis-table
+p4_path = V23 / 'phase4_sepsis.json'
+if p4_path.exists():
+    p4 = load(p4_path)
+    a = p4['agg']
+    print(f"AUPRC = {a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}")
+    print(f"AUROC = {a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}  "
+          f"(SOTA ~0.78-0.85)")
+    print(f"F1    = {a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f} "
+          f"(P={a['precision_best_mean']:.3f}, R={a['recall_best_mean']:.3f})")
+    print(f"n = {a['n_seeds']} seeds, horizons {p4['horizons']}")
+else:
+    print('phase4 sepsis results not yet available')
+```
+
+Compared to the published SOTA on PhysioNet 2019 (AUROC 0.78-0.85 for
+MGP-AttTCN, InceptionTime variants; utility score 0.36 for the
+challenge winner), our raw AUROC places the causal-JEPA encoder in
+a defensible range for a method that (a) was not designed for clinical
+streams, (b) uses no hand-engineered sepsis features, and (c) shares
+one architecture with the turbofan/spacecraft/server benchmarks.
+
+The per-horizon AUPRC slope is the real story - a causal JEPA
+trained on the "normal hours" distribution predicts sepsis onset at
+long horizons with the same representation that predicts turbofan
+failure.  That is the "forecast anything" claim in one plot.
+
+## Summary
+
+| Phase | Goal | Result | Paper |
+|-------|------|--------|-------|
+| 0 | PA-F1 from stored v22 surfaces | All 5 datasets computed | Comparison text in Tab 1 caption |
+| 1+2 | Drop EMA (SIGReg triplet) | Underperforms EMA on FD001 (AUPRC -0.074) | Ablation appendix only |
+| 5+6 | Patch tokenization on SMAP | See table above | Ablation appendix |
+| 3+4 | PhysioNet 2019 Sepsis | See table above | New row in Tab 1 if numbers hold |

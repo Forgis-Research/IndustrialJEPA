@@ -521,3 +521,33 @@ Split:
   pretrain : 14843 non-septic ft_train patients (548 628 normal
              timesteps, no sepsis leakage)
 
+
+### v23 Phase 5+6 - Patch tokenization on SMAP
+
+Replace `Linear(C, d)` per-timestep projection with `Linear(C * L, d)`
+patch projection.  Same pretrain protocol (L1 + var_reg, EMA 0.99,
+cosine LR, early-stop patience=5, max 30 ep).  3 seeds each.
+
+| L  | Tokens (W=100) | AUPRC         | AUROC         | F1-best       | Params    |
+|----|----------------|---------------|---------------|---------------|-----------|
+|  1 | 100            | 0.365 ± 0.015 | 0.588 ± 0.025 | 0.460 ± 0.025 | 2.376M    |
+|  5 |  20            | 0.380 ± 0.034 | 0.609 ± 0.014 | 0.464 ± 0.018 | 2.402M    |
+| 10 |  10            | **0.433 ± 0.006** | **0.641 ± 0.007** | **0.470 ± 0.002** | 2.434M |
+| 20 |   5            | 0.366 ± 0.038 | 0.584 ± 0.038 | 0.453 ± 0.013 | 2.498M    |
+
+**L=10 is a clear win.**  AUPRC +0.068 vs the per-timestep baseline,
+AUROC +0.053, and the seed-variance drops dramatically (±0.006 at L=10
+vs ±0.015 at L=1, ±0.034 at L=5, ±0.038 at L=20).  L=10 is also the
+setting where the temporal-transformer sees 10 tokens, each summarising
+a 10-timestep hourly chunk of the 100-timestep SMAP window.
+
+Why it works (hypothesis): SMAP sampling rate is minute-level, so
+per-timestep tokens are noisy; a 10-step patch smooths the within-patch
+structure while leaving enough tokens (10) for the temporal attention
+to discover cross-chunk dynamics.  Going to L=20 is too aggressive
+(only 5 tokens) and L=5 is too fine-grained to gain the smoothing.
+
+This contradicts the "event-prediction wants fine temporal resolution"
+prior we started with - on this dataset, patching at the right
+granularity both improves AUPRC *and* stabilises across seeds.
+
