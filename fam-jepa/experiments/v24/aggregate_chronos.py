@@ -16,7 +16,10 @@ for ds in DATASETS:
     for seed in SEEDS:
         p = RES / f'baseline_chronos2_{ds}_s{seed}.json'
         if p.exists():
-            per_seed.append(json.loads(p.read_text()))
+            obj = json.loads(p.read_text())
+            if obj.get('skipped'):
+                continue  # placeholder to skip the sweep
+            per_seed.append(obj)
         else:
             # default path (no seed suffix if seed=42 run without out specified)
             p0 = RES / f'baseline_chronos2_{ds}.json'
