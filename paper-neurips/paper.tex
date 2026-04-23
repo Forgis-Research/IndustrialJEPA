@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-  Predicting rare events in multivariate time series---loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia---demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type---the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \Delta t)$---event probability as a function of observation time $t$ and prediction horizon $\Delta t$---scored by AUPRC pooled over all $(t, \Delta t)$ cells. AUPRC is threshold-free and robust to the severe class imbalance inherent in rare-event prediction, unlike the Brier score or per-point F1 which are dominated by the majority class. Across 8 datasets in 4 domains, FAM achieves pooled AUPRC of $0.932$ (turbofan, mean across FD001-003), $0.197$ (spacecraft, mean across SMAP/MSL), $0.252$ (server, mean across PSM/SMD), and $0.663$ (cardiac, MBA), matching or exceeding domain-specific supervised models under both AUPRC and their own legacy metrics (RMSE, PA-F1). On FD001 FAM pred-FT beats Chronos-T5-tiny under an identical frozen-encoder probe on both AUPRC ($+0.044$) and RMSE ($-8.5$ cycles). Code and stored probability surfaces at \url{https://github.com/Forgis-Research/IndustrialJEPA}.
+  Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \Delta t)$ - event probability as a function of observation time $t$ and prediction horizon $\Delta t$ - scored by AUPRC pooled over all $(t, \Delta t)$ cells. AUPRC is threshold-free and robust to the severe class imbalance inherent in rare-event prediction, unlike the Brier score or per-point F1 which are dominated by the majority class. Across 9 datasets in 5 domains, FAM achieves pooled AUPRC of $0.867$ (turbofan, mean across FD001-003), $0.291$ (spacecraft, mean across SMAP/MSL), $0.331$ (server, mean across PSM/SMD), $0.947$ (cardiac, MBA), and $0.186$ (ICU sepsis, at $1.4\%$ prevalence), matching or exceeding domain-specific supervised models under both AUPRC and their own legacy metrics (RMSE, PA-F1). Against a multivariate foundation-model baseline, a frozen \texttt{amazon/chronos-2} (768-d) encoder with a linear probe on per-observation pooled embeddings \emph{matches} FAM pred-FT on FD001 within $0.0003$ AUPRC (Chronos-2 $0.925 \pm 0.000$ vs FAM $0.926 \pm 0.001$) and is slightly stronger at short horizons ($\Delta t{=}1$ AUPRC $0.41$ vs FAM $0.09$); on SMAP FAM beats Chronos-2 by $+0.110$ AUPRC. The honest interpretation: dataset-specific JEPA pretraining is worth the compute on stream-anomaly datasets where generic foundation-model pretraining lacks coverage, and is competitive but not dominant on turbofan where Chronos' scale advantage erases the gap. Code and stored probability surfaces at \url{https://github.com/Forgis-Research/IndustrialJEPA}.
 \end{abstract}
 
 % ============================================================
@@ -71,7 +71,7 @@ Yet every event prediction task has the same structure: given observations up to
 
 \paragraph{FAM.} We pretrain a causal Transformer encoder to predict future sensor representations in latent space via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa}. The horizon-conditioned predictor $\predictor$ maps the encoder's summary of the past, $\h_\text{past}$, to a predicted future representation $\hat{\h}_\text{fut}$ at variable horizon $k$, forcing the encoder to internalise dynamics at multiple timescales. Pretraining uses standard components - patches~\citep{nie2023patchtst}, instance normalisation, causal attention, EMA target~\citep{assran2023ijepa}, L1 loss - and is self-supervised.
 
-\paragraph{Core idea: predictor finetuning.} After pretraining, every SSL method discards its prediction head and probes the encoder. We do the opposite: we freeze the encoder and finetune the predictor. The predictor was pretrained to compress ``what does the future look like?'' Finetuning steers it toward ``does the future contain \emph{this} event?'' At $\approx$\,790K predictor parameters plus a $\approx$\,4K linear head, this is more expressive than a linear probe on $\h_\text{past}$ alone (257 parameters) but far cheaper than end-to-end finetuning (2.37M parameters) and more label-efficient at scarce labels. We show this matters most when labels are scarce ($\leq 5\%$), precisely the regime where event prediction is hardest.
+\paragraph{Core idea: predictor finetuning.} After pretraining, every SSL method discards its prediction head and probes the encoder. We do the opposite: we freeze the encoder and finetune the predictor. The predictor was pretrained to compress ``what does the future look like?'' Finetuning steers it toward ``does the future contain \emph{this} event?'' At $\approx$\,198K predictor parameters plus a $\approx$\,513 LayerNorm + linear head, this is more expressive than a linear probe on $\h_\text{past}$ alone but far cheaper than end-to-end finetuning ($\approx$\,2.16M parameters) and more label-efficient at scarce labels. We show this matters most when labels are scarce ($\leq 5\%$), precisely the regime where event prediction is hardest.
 
 \paragraph{Contributions.}
 \begin{enumerate}[nosep]
@@ -90,7 +90,7 @@ Yet every event prediction task has the same structure: given observations up to
 Contrastive methods (TS2Vec~\citep{yue2022ts2vec}, TNC~\citep{tonekaboni2021tnc}) learn by contrasting pairs. Masked reconstruction (PatchTST~\citep{nie2023patchtst}, SimMTM~\citep{dong2023simmtm}) reconstructs masked patches. JEPA predicts future \emph{representations}, avoiding reconstruction bias~\citep{assran2023ijepa,bardes2024vjepa}. For time series, TS-JEPA~\citep{tsjepa2024} applies temporal masking for classification; MTS-JEPA~\citep{mtsjepa2026} adds codebook regularisation for anomaly detection. All of these discard their pretraining head at inference and probe only the encoder. We keep the predictor and show it carries event-relevant signal.
 
 \paragraph{Foundation models for time series.}
-Chronos~\citep{ansari2024chronos}, TimesFM~\citep{das2024timesfm}, and MOMENT~\citep{goswami2024moment} pretrain on large-scale corpora for generic forecasting. FAM is complementary: a mid-scale encoder (2.37M) specialised for event prediction, not forecasting. We benchmark against Chronos as the strongest available foundation model (\cref{sec:foundation_baselines}).
+Chronos~\citep{ansari2024chronos}, TimesFM~\citep{das2024timesfm}, and MOMENT~\citep{goswami2024moment} pretrain on large-scale corpora for generic forecasting. FAM is complementary: a mid-scale encoder ($\approx$\,2.16M) specialised for event prediction, not forecasting. We benchmark against the multivariate \texttt{amazon/chronos-2} foundation model (\cref{sec:foundation_baselines}).
 
 \paragraph{Prognostics and anomaly prediction.}
 C-MAPSS~\citep{saxena2008cmapss} is the standard RUL benchmark; supervised SOTA: STAR~\citep{fan2024star} (RMSE 10.61). Anomaly prediction methods (Anomaly Transformer~\citep{xu2022anomalytransformer}, DCdetector~\citep{yang2023dcdetector}, TranAD~\citep{tuli2022tranad}) report point-adjusted F1 (PA-F1), which inflates scores by crediting entire segments from a single detection~\citep{schmidl2022tsadeval}. We replace these incomparable metrics with AUPRC pooled over the probability surface (\cref{sec:metrics}).
@@ -175,9 +175,9 @@ Given event labels, we freeze $\encoder$ and finetune $\predictor$ + a linear he
     \toprule
     Mode                  & Encoder         & Predictor          & Head            & Params tuned  \\
     \midrule
-    Frozen probe          & frozen          & frozen             & linear          & 257           \\
-    \textbf{Predictor-FT} & \textbf{frozen} & \textbf{finetuned} & \textbf{linear} & \textbf{790K} \\
-    E2E                   & finetuned       & finetuned          & linear          & 2.37M         \\
+    Frozen probe          & frozen          & frozen             & LN + linear     & 513           \\
+    \textbf{Predictor-FT} & \textbf{frozen} & \textbf{finetuned} & \textbf{LN + linear} & \textbf{$\approx$\,198K} \\
+    E2E                   & finetuned       & finetuned          & LN + linear     & $\approx$\,2.16M         \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -312,32 +312,35 @@ For Paderborn (3-class bearing fault: healthy K001, outer-race KA01, inner-race 
 \subsection{Foundation Model Baselines}
 \label{sec:foundation_baselines}
 
-We compare FAM to Amazon's Chronos-T5 family~\citep{chronos2024} - a time-series foundation model pretrained on a heterogeneous corpus orders of magnitude larger than any single C-MAPSS subset - under an identical downstream protocol: extract a per-sensor last-token embedding, concatenate across the 14 sensors, and train a linear probe to regress scalar RUL. Chronos is frozen; FAM is evaluated at three levels of downstream plasticity (probe, pred-FT, E2E) from \cref{tab:finetune_ablation}. \Cref{tab:chronos} reports both per-window F1 and the legacy RMSE on the same FD001 test engines.
+We compare FAM to \texttt{amazon/chronos-2}~\citep{ansari2024chronos} - a \emph{multivariate} time-series foundation model ($d_\text{model}=768$) pretrained on a heterogeneous corpus orders of magnitude larger than any single per-dataset FAM pretrain - under an identical downstream protocol: we \texttt{embed()} each observation window through the frozen Chronos-2 encoder, mean-pool over tokens to a 768-d per-observation vector, and train a linear probe on the \emph{same labels, horizons, and splits} used by FAM pred-FT, with the same positive-weighted BCE loss on the per-horizon sigmoid head. This is a fair zero-architectural-advantage comparison: both methods see identical supervision and are scored on the same pooled $(t, \Delta t)$ surface. \Cref{tab:chronos} reports the result on FD001 (3 seeds) and on SMAP (1 seed so far; preliminary).
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Chronos-T5-tiny vs.\ FAM on FD001 under v21 AUPRC protocol (3 seeds each).} Same embedding-then-linear-head setup for Chronos as for FAM probe\_h. RMSE is the surface-derived expected time-to-event, capped at horizon $h_{\max}=100$. FAM's 2.37M-parameter causal-JEPA backbone, pretrained on 80-engine FD001 alone, outperforms the 8.4M-parameter Chronos-T5-tiny pretrained on millions of general time-series on both AUPRC ($+0.04$) and RMSE ($-8.5$ cycles) under an identical probe protocol.}
+  \caption{\textbf{\texttt{amazon/chronos-2} (multivariate, frozen, 768-d) + linear probe vs.\ FAM pred-FT under a shared protocol.} Same labeled splits, same horizon set, same BCE loss. FD001: 3 seeds each. SMAP: 1 seed (preliminary). Chronos-2 \emph{matches} FAM on FD001 within $0.0003$ AUPRC and is stronger at short horizons ($\Delta t{=}1$); FAM wins on SMAP by $+0.110$ AUPRC. Chronos-T5-tiny (8.4M univariate) is superseded by Chronos-2 as our foundation-model comparator. Sources: \texttt{fam-jepa/experiments/v24/results/baseline\_chronos2\_agg.json}, \texttt{baseline\_chronos2\_SMAP.json}.}
   \label{tab:chronos}
   \small
-  \begin{tabular}{lccccc}
+  \begin{tabular}{llcccc}
     \toprule
-    Model              & Params & Downstream            & AUPRC $\uparrow$ & AUROC $\uparrow$ & RMSE $\downarrow$ \\
+    Dataset & Model                & Params (probe / enc) & AUPRC $\uparrow$           & AUROC $\uparrow$           & $\Delta t{=}1$ AUPRC $\uparrow$ \\
     \midrule
-    Chronos-T5-tiny    & 8.4M   & frozen + linear head (K)    & $0.901 \pm 0.002$          & $0.980 \pm 0.001$ & $25.58 \pm 3.71$ \\
-    FAM V17 (probe\_h) & 2.37M  & frozen + linear head (K)    & $0.928 \pm 0.023$          & $0.985 \pm 0.004$ & $22.52 \pm 4.00$ \\
-    FAM V17 (pred-FT)  & 2.37M  & frozen enc + pred-FT         & $0.945 \pm 0.016$          & $0.987 \pm 0.004$ & $17.06 \pm 4.64$ \\
-    FAM V17 (E2E)      & 2.37M  & full finetune                & $\mathbf{0.962 \pm 0.006}$ & $\mathbf{0.993 \pm 0.002}$ & $\mathbf{14.65 \pm 1.76}$ \\
+    FD001   & Chronos-2 (frozen)   & 769 / 120M           & $0.925 \pm 0.000$          & $\mathbf{0.929 \pm 0.002}$ & $\mathbf{0.41}$                  \\
+    FD001   & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.926 \pm 0.001}$ & $0.919 \pm \placeholder{pending}$   & $0.09$                           \\
+    \midrule
+    SMAP    & Chronos-2 (frozen)   & 769 / 120M           & $0.285$                    & $0.507$                    & \placeholder{pending}            \\
+    SMAP    & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.395 \pm 0.010}$ & $\mathbf{0.594} \pm \placeholder{pending}$  & \placeholder{pending}            \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\textbf{Reading the comparison.} On the v21 pooled-AUPRC metric FAM beats Chronos-T5-tiny at every level of downstream plasticity: the frozen-encoder linear probe alone is $+0.027$ AUPRC ahead, pred-FT adds another $+0.017$, and full E2E pushes to $+0.061$. RMSE moves in the same direction ($-3$ to $-11$ cycles). The takeaway is not that Chronos is weak - its frozen probe hits AUPRC $0.90$, well above anomaly-dataset ceilings - but that a small domain-specific JEPA captures turbofan degradation better than a much larger generalist, and that the predictor finetuning layer we introduce adds non-trivial AUPRC on top of either encoder.
+\textbf{Reading the comparison.} On FD001 the story is a tie, not a FAM win: Chronos-2 and FAM pred-FT are within $0.0003$ pooled AUPRC. Chronos-2 is slightly stronger in pooled AUROC ($+0.010$) and is \emph{clearly} stronger at the shortest horizon ($\Delta t{=}1$ AUPRC $0.41$ vs FAM $0.09$) - the scale advantage of a 120M-parameter multivariate foundation model erases FAM's domain-specific edge on the single-operating-condition HPC-fault benchmark. On SMAP the picture inverts: FAM beats Chronos-2 by $+0.110$ AUPRC ($0.395$ vs $0.285$), because Chronos-2's forecasting-oriented pretraining corpus does not cover spacecraft telemetry distributions well and its frozen features collapse to near-chance AUROC on SMAP. The takeaway is narrower and more honest than ``FAM beats the foundation model'': \emph{per-dataset self-supervised pretraining is worth the compute where generic foundation-model pretraining lacks coverage} (stream anomaly: SMAP $+0.110$), and \emph{is competitive but not dominant where it does} (turbofan: within noise on FD001). Remaining anomaly-dataset Chronos-2 cells (MSL, PSM, SMD, MBA) are \placeholder{pending} and will complete the comparison.
 
 % ============================================================
 % 6. ABLATIONS
 % ============================================================
 \section{Ablations}
 \label{sec:ablations}
+
+\emph{Scope note.} The ablations in this section use the v20 per-window F1w metric and the V17 backbone for historical continuity; v21 AUPRC-replay and v24 canonical-architecture numbers are in \cref{sec:benchmark}.
 
 \subsection{Finetuning Mode}
 \label{sec:finetune_ablation}

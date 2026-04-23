@@ -45,6 +45,19 @@ FD003 -0.166, SMAP +0.105, MSL -0.050, PSM +0.008, SMD +0.040, MBA +0.163.
 Variance uniformly 1–30× tighter across datasets. Canonical architecture
 improves 4/5 anomaly datasets while underperforming v21 on FD003 (multi-fault).
 
+## New Domains (v24 Phase 11): GECCO, BATADAL, PhysioNet 2012
+
+Fresh domains added to expand beyond turbofan/spacecraft/server/cardiac/ICU-sepsis.
+All three: open-license, direct download, validated loaders in `fam-jepa/data/`.
+
+| Dataset | Domain | AUPRC (v24 FAM) | AUROC (v24 FAM) | F1-best | SOTA legacy | Source |
+|---------|--------|-----------------|-----------------|---------|-------------|--------|
+| GECCO 2018 | Env/Water-IoT | **0.110±0.053** | 0.762±0.057 | 0.180±0.075 | F1 ~0.71 (Muharemi+19) / AUROC ~0.88 (TAB '25) | v24 phase 11 |
+| BATADAL | ICS/Water-Cyber | **0.196±0.013** | 0.731±0.025 | 0.323±0.024 | AUC 0.972 (Nguyen+24) | v24 phase 11 |
+| PhysioNet 2012 | Healthcare/ICU-Mortality | (pending) | (pending) | (pending) | AUROC 0.868 (Chen+19), STraTS TKDD '22 | v24 phase 11 |
+
+**Reading these**: BATADAL and GECCO AUROC are decent (0.73, 0.76) but AUPRC is low compared to published detection SOTA. Reasons: (1) GECCO events are brief (~18-25 min) so cumulative-target over 150-200 min dilutes signal; per-horizon AUPRC is strongest at dt=5-10 and decays. (2) BATADAL has only ~8K pretrain hours, below FAM's effective capacity. (3) Literature mostly reports F1/AUC-at-detection-time rather than pred-at-horizon AUPRC, so direct comparison is indirect.
+
 ## Foundation-Model Baseline: Chronos-2 + Linear Probe
 
 **Fair comparison**: frozen `amazon/chronos-2` (768-d multivariate encoder)
@@ -52,24 +65,23 @@ with per-observation mean-pooled embedding → 768-d linear probe trained on
 the **exact same labeled data** used by FAM pred-FT (same splits, same labels,
 same horizons, same pos-weighted BCE). Chronos-2 has never seen our datasets.
 
-| Dataset | FAM AUPRC | Chronos-2+probe AUPRC | Δ | FAM AUROC | Chronos-2+probe AUROC | Δ | Source |
-|---------|-----------|-----------------------|-----|-----------|-----------------------|-----|--------|
-| FD001   | 0.926±0.001 | **0.925±0.000** | -0.000 | 0.919±0.001 | **0.929±0.002** | +0.010 | v24 chronos2 |
-| SMAP    | 0.395±0.010 | (pending)              |  -  | 0.594±0.005 | (pending)              |  -  | v24 chronos2 |
-| MSL     | 0.187±0.007 | (pending)              |  -  | 0.472±0.015 | (pending)              |  -  | v24 chronos2 |
-| PSM     | 0.425±0.006 | (pending)              |  -  | 0.566±0.009 | (pending)              |  -  | v24 chronos2 |
-| SMD     | 0.236±0.015 | (pending)              |  -  | 0.680±0.017 | (pending)              |  -  | v24 chronos2 |
-| MBA     | 0.947±0.001 | (pending)              |  -  | 0.896±0.003 | (pending)              |  -  | v24 chronos2 |
+| Dataset | FAM AUPRC | Chronos-2+probe AUPRC | Δ AUPRC | FAM AUROC | Chronos-2+probe AUROC | Δ AUROC | Source |
+|---------|-----------|-----------------------|---------|-----------|-----------------------|---------|--------|
+| FD001   | 0.926±0.001 | 0.925±0.000   | -0.000 | 0.919±0.001 | **0.929±0.002** | +0.010 | v24 chronos2 (3 seeds) |
+| FD002   | 0.908±0.002 | **0.916±0.000** | +0.008 | 0.915±0.001 | **0.928±0.000** | +0.013 | v24 chronos2 (1 seed so far) |
+| FD003   | 0.766±0.009 | **0.794±0.003** | +0.028 | 0.876±0.007 | **0.895±0.001** | +0.019 | v24 chronos2 (2 seeds so far) |
+| SMAP    | **0.395±0.010** | 0.285±0.000 | -0.110 | **0.594±0.005** | 0.507±0.000 | -0.087 | v24 chronos2 (1 seed so far) |
+| MSL     | 0.187±0.007 | (pending)   | -  | 0.472±0.015 | (pending)          |  -  | v24 chronos2 |
+| PSM     | 0.425±0.006 | (pending)   | -  | 0.566±0.009 | (pending)          |  -  | v24 chronos2 |
+| SMD     | 0.236±0.015 | (pending)   | -  | 0.680±0.017 | (pending)          |  -  | v24 chronos2 |
+| MBA     | **0.947±0.001** | 0.918±0.002 | -0.029 | **0.896±0.003** | 0.832±0.003 | -0.064 | v24 chronos2 (3 seeds) |
 
-**FD001 headline**: zero-shot Chronos-2 + linear probe matches our
-architecture within 0.03% AUPRC. Chronos-2 is better at short horizons
-(dt=1 AUPRC 0.41 vs 0.09) and marginally better on AUROC. This challenges
-the premise that per-dataset self-supervised pretraining is necessary for
-event prediction — a generic multivariate foundation model handles
-FD001 competitively.
+**Emerging pattern (partial sweep)**:
+ - **C-MAPSS turbofan**: Chronos-2 ties or beats FAM. FD001 tie; FD002 +0.008; FD003 +0.028 (Chronos better). The canonical FAM backbone with a 198K-parameter predictor finetune appears capacity-limited on multi-fault degradation (FD003 is the hardest case), whereas Chronos-2's 768-d generic embeddings carry enough temporal structure that a linear probe suffices.
+ - **Spacecraft / cardiac**: FAM wins. SMAP -0.110 (FAM +0.11 AUPRC), MBA -0.029. Per-dataset pretraining matters when the domain is outside the Chronos pretraining distribution (NASA telemetry, ECG arrhythmia).
+ - **Feature extraction cost**: ~0.8 s/obs on A10G (SMAP's 193K obs took ~40 min). Sepsis at 582K test obs is infeasible on this hardware; skipped.
 
-Feature extraction is ~0.8s/obs on A10G (SMAP has 193K obs → ~40 min).
-Full-sweep Chronos numbers will populate as runs complete.
+This is not a story of FAM uniformly beating foundation models. It's a story of **when per-dataset JEPA pretraining carries its weight** (spacecraft anomalies, cardiac) **and when a generic pretrained encoder + a 513-parameter head is enough** (turbofan). The 198K predictor finetune is doing most of the work on the latter - and even Chronos-2 gives only marginal gains over frozen Chronos-2 features.
 
 ## Main Benchmark Table (Paper Tab 1) — v22 legacy (for comparison)
 
