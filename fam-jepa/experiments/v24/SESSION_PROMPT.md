@@ -54,9 +54,36 @@ Architecture defined in: `model.py` (components) and `train.py` (loops).
 
 ---
 
+## Minimum context length
+
+**128 timesteps minimum** (8 tokens at P=16). Below this the transformer
+degenerates. Enforce in data loading:
+- C-MAPSS: shortest engines are ~128 cycles — right at the boundary. Pad
+  if shorter.
+- Anomaly datasets: sliding context of 512, always above minimum.
+- Sepsis: **use P=1** (hourly data, most stays < 128 hours). This is the
+  one exception to P=16. The paper says "P=16 for all datasets with
+  sufficient temporal resolution."
+
+---
+
+## Phase 0: Read the dataset reference (5 min)
+
+Read `experiments/v24/DATASETS.md` — comprehensive characterization of all
+9 datasets including: scale, event types, label definitions, SOTA methods
+and metrics, potential problems, and data loader notes.
+
+Key things to check in Phase 0:
+- All data loaders must pass `normalize=False` (RevIN handles normalization)
+- SMAP/MSL/SMD use intra-entity splits; PSM/MBA use chronological with gap
+- Sepsis uses P=1 (exception), all others P=16
+- C-MAPSS shortest engines (128 cycles) = 8 tokens at P=16 — right at minimum
+
+---
+
 ## Phase plan
 
-### Phase 0: Sanity check (30 min)
+### Phase 1: Sanity check (30 min)
 
 Verify `model.py` and `train.py` work on the VM:
 ```python
@@ -119,15 +146,14 @@ Entity splits for MSL/SMD, chronological for PSM/MBA.
 ### Phase 5: Sepsis (1 h)
 
 Use the data loader from v23 (`data/sepsis.py`).
-- n_channels=40, P=16 (3 tokens per 48h stay — very short sequences!)
+- n_channels=40, **P=1** (exception: hourly data, most stays < 128 hours)
+- This means: build a separate FAM with `patch_size=1` for Sepsis only
+- Variable-length context (full stay, up to ~336 tokens)
 - Pretrain on set A training split
 - Pred-FT with patient-level splits, 3 seeds
 - Horizons: {1, 2, 3, 6, 12, 24, 48} hours
 - Report AUPRC and AUROC (for literature comparison)
-
-**Note**: with P=16 and stays of ~40 hours, context is only 2–3 tokens.
-If this is too few for the transformer, document it honestly. This is a
-genuine test of whether P=16 works universally.
+- Exclude stays shorter than 8 timesteps (8 hours — minimum for transformer)
 
 ### Phase 6: PA-F1 from surfaces (15 min)
 
@@ -156,17 +182,18 @@ protocol.
 
 | Phase | What | Est. | Priority |
 |-------|------|------|----------|
-| 0 | Sanity check on VM | 30 min | BLOCKING |
-| 1 | FD001 pretrain + pred-FT | 1.5 h | Critical |
-| 2 | FD002, FD003 | 1 h | Critical |
-| 3 | SMAP | 1.5 h | Critical |
-| 4 | MSL, PSM, SMD, MBA | 2 h | Important |
-| 5 | Sepsis | 1 h | Important |
-| 6 | PA-F1 from surfaces | 15 min | Easy |
-| 7 | RESULTS.md + notebook | 30 min | Always |
-| 8 | Label efficiency | 1 h | If time |
+| 0 | Dataset analysis table | 30 min | Do first |
+| 1 | Sanity check on VM | 30 min | BLOCKING |
+| 2 | FD001 pretrain + pred-FT | 1.5 h | Critical |
+| 3 | FD002, FD003 | 1 h | Critical |
+| 4 | SMAP | 1.5 h | Critical |
+| 5 | MSL, PSM, SMD, MBA | 2 h | Important |
+| 6 | Sepsis (P=1 exception) | 1 h | Important |
+| 7 | PA-F1 from surfaces | 15 min | Easy |
+| 8 | RESULTS.md + notebook | 30 min | Always |
+| 9 | Label efficiency | 1 h | If time |
 
-**Total**: ~9h. Fits an overnight session.
+**Total**: ~9.5h. Fits an overnight session.
 
 ---
 
@@ -176,7 +203,7 @@ protocol.
    into experiment scripts. Write thin wrappers that load data and call
    `pretrain()`, `finetune()`, `evaluate()`.
 2. **Cumulative target**: target = x(t : t+Δt]. No gap. No fixed w.
-3. **P=16 everywhere**. No exceptions.
+3. **P=16 everywhere except Sepsis** (P=1, hourly data below resolution floor).
 4. **RevIN in the encoder** (already built into `CausalEncoder` and
    `TargetEncoder`). Do NOT also apply global normalization in data loaders.
    Pass `normalize=False` to all data loaders.

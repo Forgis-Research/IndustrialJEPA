@@ -109,7 +109,7 @@ PatchTST~\citep{nie2023patchtst} showed channel-independent processing often win
 
 We follow standard practice for multi-domain time series~\citep{nie2023patchtst,ansari2024chronos,goswami2024moment}: patch tokenisation with per-window instance normalisation.
 
-\textbf{Patches.} $P{=}16$ consecutive raw samples form one token. This is fixed globally across all datasets --- there are zero dataset-specific hyperparameters. \Cref{tab:tokenization} lists the resulting token counts. The encoder is a causal Transformer with sinusoidal positional encodings, so the context length is variable at both training and inference: for prognostic datasets with a clear lifecycle start (C-MAPSS, Sepsis), we feed the full history; for continuous monitoring streams (SMAP, PSM), we use a sliding window of 512 steps. No architectural change is needed --- only the input length differs.
+\textbf{Patches.} $P{=}16$ consecutive raw samples form one token. This is fixed for all datasets with sufficient temporal resolution (sample rate $\geq$ 1/min); for coarsely sampled data (Sepsis at 1/hour), we use $P{=}1$ so that the causal transformer receives enough tokens. \Cref{tab:tokenization} lists the resulting token counts. The encoder requires a minimum context of ${\sim}128$ timesteps (${\sim}8$ tokens) for self-attention to be effective. The context length is variable at both training and inference: for prognostic datasets with a clear lifecycle start (C-MAPSS, Sepsis), we feed the full history; for continuous monitoring streams (SMAP, PSM), we use a sliding window of 512 steps.
 
 \textbf{Instance normalisation.} Per window, per channel: subtract the window mean, divide by the window standard deviation. This removes distribution shift across machines and operating conditions without requiring training-set statistics at inference.
 
@@ -117,7 +117,7 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
 
 \begin{table}[h]
   \centering
-  \caption{Dataset overview. $P{=}16$ is fixed globally --- there are zero dataset-specific hyperparameters.}
+  \caption{Dataset overview. $P{=}16$ for all datasets sampled at $\geq$\,1/min; $P{=}1$ for hourly data (Sepsis).}
   \label{tab:tokenization}
   \small
   \begin{tabular}{@{}lrrrl@{}}
@@ -129,7 +129,7 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
     PSM               & 25      & 1/min   & 16        & sliding 512 steps (32 tokens)          \\
     SMD               & 38      & 1/min   & 16        & sliding 512 steps (32 tokens)          \\
     MBA (ECG)         & 2       & 275 Hz  & 16        & sliding 512 steps (32 tokens)          \\
-    Sepsis (ICU)      & 40      & 1/hour  & 16        & full stay (2--21 tokens)               \\
+    Sepsis (ICU)      & 40      & 1/hour  & 1         & full stay (6--336 tokens)              \\
     \bottomrule
   \end{tabular}
 \end{table}

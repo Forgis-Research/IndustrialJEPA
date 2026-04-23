@@ -197,6 +197,32 @@ Variable-length context is handled by:
 - Padding mask for batching
 - Sinusoidal PE (generalizes to any length)
 
+### Minimum and maximum context
+
+**Minimum**: 128 timesteps (8 tokens at P=16). Below this the transformer
+degenerates — self-attention with <8 tokens learns nothing an MLP couldn't.
+Sequences shorter than 128 steps should be padded to 128 or excluded.
+
+**Maximum sliding context**: 512 timesteps (32 tokens) for continuous
+monitoring datasets. This is a compute/memory choice, not architectural.
+
+**Operating bandwidth**: the architecture targets data sampled between
+~1/minute and ~1 kHz. Datasets outside this range (e.g. bearings at
+20+ kHz) should be downsampled before tokenization. Datasets at very
+low rates (e.g. hourly) must have sequences of at least 128 steps to
+produce enough tokens.
+
+### Implication for Sepsis
+
+Sepsis at 1/hour with P=16 requires stays ≥ 128 hours (~5.3 days).
+Most ICU stays are shorter. Two options:
+1. Use P=1 for Sepsis (honest exception to P=16 global rule)
+2. Exclude stays < 128 hours (loses most of the dataset)
+
+Decision: **use P=1 for Sepsis.** The paper states "P=16 for all datasets
+with sufficient temporal resolution." Sepsis at 1/hour is below the
+resolution floor where P=16 is meaningful.
+
 ---
 
 ## 6. Model dimensions
