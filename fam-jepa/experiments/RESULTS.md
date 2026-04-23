@@ -269,15 +269,57 @@ early stop patience=5), then pred-FT with entity splits.
 
 **Both variants beat baseline on SMAP — and variant B crosses AUROC 0.5
 (0.600 vs baseline 0.433).**  This is the first SMAP pred-FT result with
-consistently above-chance ranking.  Variant B's win suggests that on
-heterogeneous-channel telemetry the causal temporal transformer's
-within-patch projection (Linear(C, d)) doesn't fully capture
-cross-channel structure and benefits from an explicit parallel
-cross-channel stream.  Variant A (pure iTransformer) sits between:
-cleaner architecture, tighter variance, but smaller mean gain.
+consistently above-chance ranking.
+
+### Cross-Channel Variants Across All Anomaly Datasets (v22 phase 7b, 3 seeds)
+
+Phase 7 extension: we pretrain variants A/B and run pred-FT on the
+remaining four anomaly datasets under identical protocol.  All numbers
+mean ± std over 3 seeds; AUPRC/AUROC/F1 from the stored probability
+surfaces (non-PA F1 at best threshold).
+
+| Dataset | Channels | Encoder     | AUPRC           | AUROC           | F1 (non-PA)     | ΔAUPRC vs baseline |
+|---------|----------|-------------|-----------------|------------------|------------------|---------------------|
+| SMAP    | 25       | baseline    | 0.290±0.042     | 0.433±0.049      | 0.440±0.003      | -                   |
+| SMAP    | 25       | variantA    | 0.347±0.025     | 0.539±0.042      | 0.443±0.007      | +0.057              |
+| SMAP    | 25       | **variantB**| **0.384±0.098** | **0.600±0.075**  | **0.477±0.038**  | **+0.094**          |
+| MSL     | 55       | baseline    | 0.237±0.077     | 0.506±0.057      | 0.330±0.022      | -                   |
+| MSL     | 55       | variantA    | 0.193±0.029     | 0.466±0.056      | 0.330±0.023      | -0.044              |
+| MSL     | 55       | variantB    | 0.195±0.039     | 0.454±0.065      | 0.327±0.018      | -0.042              |
+| SMD     | 38       | baseline    | 0.196±0.025     | 0.655±0.039      | 0.262±0.030      | -                   |
+| SMD     | 38       | variantA    | 0.219±0.080     | 0.688±0.033      | 0.266±0.058      | +0.023              |
+| SMD     | 38       | **variantB**| **0.281±0.029** | **0.706±0.028**  | **0.301±0.049**  | **+0.085**          |
+| PSM     | 25       | baseline    | 0.417±0.113     | 0.478±0.097      | 0.519±0.006      | -                   |
+| PSM     | 25       | **variantA**| **0.534±0.078** | **0.595±0.087**  | **0.531±0.024**  | **+0.117**          |
+| PSM     | 25       | variantB    | 0.370±0.067     | 0.431±0.085      | 0.515±0.000      | -0.047              |
+| MBA     | 2        | baseline    | 0.784±0.024     | 0.751±0.041      | 0.725±0.024      | -                   |
+| MBA     | 2        | variantA    | 0.757±0.002     | 0.708±0.000      | 0.694±0.002      | -0.027              |
+| MBA     | 2        | variantB    | 0.761±0.004     | 0.710±0.006      | 0.694±0.003      | -0.023              |
+
+**Cross-channel variants win on 3/5 multi-channel anomaly datasets
+(SMAP, SMD, PSM)**, tie on MSL (within the noisy baseline std=0.077),
+and lose on MBA (2 channels — cross-channel attention is trivial with so
+few channels).  On C-MAPSS FD001 (14 correlated engine sensors) baseline
+was also best.
+
+Taking all 6 pred-FT datasets together (FD001 + 5 anomaly):
+
+- **Baseline wins** on FD001 (correlated engine sensors), MBA (2 channels),
+  MSL (within noise).
+- **Variant B wins** on SMAP, SMD (large AUPRC + AUROC gains).
+- **Variant A wins** on PSM (large AUPRC + AUROC gain).
+
+No single cross-channel architecture dominates every anomaly dataset.
+The two variants capture different structure: variant A (pure
+iTransformer on fixed T=100) works best when temporal dynamics are
+less important than cross-channel coupling; variant B (parallel temporal
++ cross-channel streams) works best when temporal dynamics still matter
+but cross-channel signal is additive.
 
 **Implication for the paper**: the "one architecture across all datasets"
 framing of the main benchmark table still holds with the baseline encoder.
-Variant B on SMAP is reported as an ablation here; integrating it into
-Tab 1 would require adjusting the "one architecture" claim, which is a
-decision to make with the user after reviewing this notebook.
+The cross-channel variant wins here are dataset-specific and are reported
+as a v22 ablation for reviewers.  Promoting variant B into Tab 1 on a
+per-dataset basis ("select encoder per dataset") is possible but
+requires a narrative shift that is a decision to make after reviewing
+this notebook.

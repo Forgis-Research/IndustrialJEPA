@@ -439,15 +439,109 @@ distinct physical semantics (SMAP: 25 heterogeneous telemetry + command
 channels), but doesn't help when channels encode correlated degradation
 trajectories of one system (FD001: 14 engine sensors).
 
+### Phase 7b — Cross-channel variants on MSL, SMD, PSM, MBA
+
+After SMAP's positive result, we extended the study to the remaining
+four anomaly datasets under identical protocol (pretrain on train
+stream with fixed past=100, then pred-FT with the matching split
+strategy).
+
+```{python}
+#| label: phase7b-table
+phase7b = _load('phase7b_variants_anomaly.json')
+# baseline numbers from phase1
+def _base_row(ds, ch):
+    b = (phase1 or {}).get('datasets', {}).get(ds, {}).get('agg', {})
+    return {
+        'Dataset': ds, 'Channels': ch, 'Encoder': 'baseline',
+        'AUPRC': f"{b.get('auprc_mean', float('nan')):.3f} ± {b.get('auprc_std', 0):.3f}",
+        'AUROC': f"{b.get('auroc_mean', float('nan')):.3f} ± {b.get('auroc_std', 0):.3f}",
+        'F1':    f"{b.get('f1_best_mean', float('nan')):.3f} ± {b.get('f1_best_std', 0):.3f}",
+    }
+
+def _var_row(ds, ch, v, obj):
+    a = obj['agg']
+    return {
+        'Dataset': ds, 'Channels': ch, 'Encoder': v,
+        'AUPRC': f"{a['auprc_mean']:.3f} ± {a['auprc_std']:.3f}",
+        'AUROC': f"{a['auroc_mean']:.3f} ± {a['auroc_std']:.3f}",
+        'F1':    f"{a['f1_best_mean']:.3f} ± {a['f1_best_std']:.3f}",
+    }
+
+rows = []
+# SMAP first (from phase 7)
+rows.append(_base_row('SMAP', 25))
+for v, obj in (phase7 or {}).get('variants', {}).items():
+    rows.append(_var_row('SMAP', 25, v, obj))
+# Remaining datasets from phase 7b
+ch_map = {'MSL': 55, 'SMD': 38, 'PSM': 25, 'MBA': 2}
+for ds in ['MSL', 'SMD', 'PSM', 'MBA']:
+    rows.append(_base_row(ds, ch_map[ds]))
+    for v, obj in (phase7b or {}).get('results', {}).get(ds, {}).items():
+        rows.append(_var_row(ds, ch_map[ds], v, obj))
+import pandas as pd
+pd.DataFrame(rows)
+```
+
+```{python}
+#| label: fig-variant-sweep
+#| fig-cap: "Encoder variant comparison across all 5 anomaly datasets.  Bars show mean AUPRC with per-seed std.  Cross-channel variants win on SMAP / SMD / PSM (3/5), lose on MBA (only 2 channels, cross-channel attention is trivial), and are tied within noise on MSL.  No single architecture dominates every dataset."
+datasets = ['SMAP', 'MSL', 'SMD', 'PSM', 'MBA']
+encoders = ['baseline', 'variantA', 'variantB']
+
+data_matrix = np.full((len(datasets), len(encoders)), np.nan)
+err_matrix = np.full_like(data_matrix, np.nan)
+for i, ds in enumerate(datasets):
+    baseline_agg = (phase1 or {}).get('datasets', {}).get(ds, {}).get('agg', {})
+    data_matrix[i, 0] = baseline_agg.get('auprc_mean', np.nan)
+    err_matrix[i, 0]  = baseline_agg.get('auprc_std', 0)
+    if ds == 'SMAP':
+        vmap = (phase7 or {}).get('variants', {})
+    else:
+        vmap = (phase7b or {}).get('results', {}).get(ds, {})
+    for j, v in enumerate(['variantA', 'variantB']):
+        agg = vmap.get(v, {}).get('agg', {})
+        data_matrix[i, j + 1] = agg.get('auprc_mean', np.nan)
+        err_matrix[i, j + 1]  = agg.get('auprc_std', 0)
+
+fig, ax = plt.subplots(figsize=(8.5, 4))
+x = np.arange(len(datasets))
+w = 0.27
+for j, enc in enumerate(encoders):
+    ax.bar(x + (j - 1) * w, data_matrix[:, j], w,
+           yerr=err_matrix[:, j], capsize=3, label=enc)
+ax.set_xticks(x)
+ax.set_xticklabels(datasets)
+ax.set_ylabel('AUPRC')
+ax.set_title('Anomaly pred-FT: AUPRC by encoder (3 seeds each)')
+ax.legend()
+ax.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+```
+
 ### Decision
 
-The "one architecture across all datasets" framing of the main benchmark
-table still holds under the baseline encoder.  Switching SMAP in Tab 1
-to variant B would require adjusting that narrative.  This ablation is
-reported here for the reviewer-facing story — the paper's core claim
-(predictor finetuning on a probability surface, one encoder family) does
-not change, but the cross-channel dataset-specific result is available
-as a follow-up.
+Taking all 6 pred-FT datasets together (FD001 + 5 anomaly):
+
+- **Baseline wins** on FD001 (14 correlated engine sensors), MSL (within
+  noise), MBA (2 channels).
+- **Variant B wins** on SMAP (+0.094 AUPRC, +0.167 AUROC) and SMD
+  (+0.085 AUPRC, +0.051 AUROC).
+- **Variant A wins** on PSM (+0.117 AUPRC, +0.117 AUROC).
+
+No single cross-channel architecture dominates every dataset.  Variant A
+(pure iTransformer) works best when temporal dynamics matter less than
+cross-channel coupling; variant B (parallel temporal + cross-channel
+streams) works best when temporal dynamics still matter but
+cross-channel signal is additive.
+
+**Implication for the paper**: the "one architecture across all datasets"
+framing of the main benchmark table still holds under the baseline
+encoder.  The cross-channel variant wins here are dataset-specific and
+are reported as a v22 ablation for reviewers.  Switching SMAP / SMD / PSM
+to their respective winning variants in Tab 1 is possible but requires a
+narrative shift that is a decision to make with the user after reviewing
+this notebook.
 
 ## Appendix — Reproducibility
 
