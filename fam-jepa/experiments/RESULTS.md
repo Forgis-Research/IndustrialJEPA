@@ -551,3 +551,66 @@ This contradicts the "event-prediction wants fine temporal resolution"
 prior we started with - on this dataset, patching at the right
 granularity both improves AUPRC *and* stabilises across seeds.
 
+
+### v23 Phase 4 - PhysioNet 2019 Sepsis (new medical domain)
+
+One architecture, new domain.  34 clinical channels, window=24h, horizons
+up to 48h ahead.  Patient-level entity split.  3 seeds.
+
+**Pretrain (non-septic set-A patients, 14 843 stays):** all 3 seeds
+early-stop by ep 8 with best loss 0.016-0.017.  Training is fast
+because the window (24 hours) is much shorter than the stays
+(mean ~40 hours) - most sampled windows have long valid `k` horizons.
+
+**Pred-FT (patient-level, 3 seeds, freeze encoder):**
+
+| Seed | AUPRC | AUROC | F1 | Precision | Recall |
+|------|-------|-------|----|-----------|--------|
+| 42   | 0.100 | 0.723 | 0.176 | 0.111 | 0.433 |
+| 123  | 0.075 | 0.634 | 0.124 | 0.086 | 0.225 |
+| 456  | 0.113 | 0.737 | 0.197 | 0.130 | 0.406 |
+
+| Metric | FAM v23       | SOTA (domain-specific)             |
+|--------|---------------|-------------------------------------|
+| AUROC  | **0.698 ± 0.056** | 0.78-0.85 (MGP-AttTCN, InceptionTime) |
+| AUPRC  | 0.096 ± 0.019 | n/a (not reported in SOTA papers) |
+| F1     | 0.166 ± 0.030 | n/a |
+
+**Interpretation.**  AUROC 0.70 (+/-0.056 across 3 seeds) on sepsis with
+an architecture that was not designed for clinical streams, uses no
+hand-engineered features (APACHE / SOFA scores, drug history), and
+shares its 2.37M-parameter backbone with turbofan / spacecraft /
+server benchmarks.  This is below the domain-specific SOTA of 0.78-0.85
+but within the range that the "architecture-agnostic" framing makes
+useful: no tuning, no sepsis-specific priors, first-try out-of-box.
+
+**AUPRC is small in absolute terms** because the test-set timestep-
+level sepsis prevalence is 1.4% (compared to 2.2% in train - a mild
+shift that resembles SMAP's but less severe).  Pooled AUPRC of 0.096
+is ~7x the prevalence baseline, so the predictor is clearly picking
+up signal.  Recall at the best threshold is 0.4, meaning the model
+catches ~40% of sepsis-onset hours at the best operating point.
+
+**Paper decision.**  The session prompt allowed adding a sepsis row to
+Tab 1 "if numbers hold."  Numbers are plausible but below domain SOTA,
+so we add this as an ablation row in the appendix rather than the main
+Tab 1, and cite the "one architecture across 6 domains" framing rather
+than claiming competitive sepsis-specific results.
+
+### v23 summary
+
+| Phase | Question | Answer |
+|-------|----------|--------|
+| 0 | PA-F1 from v22 surfaces? | Computed; paper Tab 1 caveat is correct (PA inflates +55pp on SMAP). |
+| 1+2 | Drop EMA via SIGReg? | No: AUPRC -0.074 on FD001, no SMAP follow-up. |
+| 3 | Sepsis loader? | Built; data.sepsis.py, 316 MB via S3. |
+| 4 | Sepsis pred-FT? | AUROC 0.70 ± 0.06 (below SOTA 0.78-0.85 but non-trivial). |
+| 5+6 | Patch tokenization on SMAP? | **L=10 wins: AUPRC 0.433 vs baseline 0.365 (+0.068), variance 5x tighter.** |
+| 7 | SIGReg on SMAP? | Skipped (FD001 failed). |
+| 8 | RESULTS.md + notebook | This block + `notebooks/23_v23_analysis.qmd`. |
+
+**Single biggest v23 finding:** patch tokenization at `L=10` on SMAP
+turns a sub-chance AUROC (0.59, baseline) into a clearly positive one
+(0.64, +0.053) and slashes seed variance 5x (±0.006 vs ±0.025).  This
+is a cheap architectural change that we should test on MSL / PSM /
+SMD / MBA next session.
