@@ -623,10 +623,11 @@ pretrained from scratch with fixed-past-window=100, same budget):
 - **SMD**: variantB vs baseline AUPRC paired t(2) = 0.33, p = 0.770.
   **No cross-channel advantage.**  Phase-7b's +0.085 AUPRC also a
   protocol artifact.
-- **PSM**: **variantA vs baseline AUROC paired t(2) = 8.48, p = 0.014.**
-  AUPRC direction matches (+0.094) at under-powered p = 0.135.
-  PSM is the only dataset where cross-channel attention survives
-  matched-protocol scrutiny; worth 10-seed confirmation.
+- **PSM**: **10-seed variantA vs baseline-FS AUPRC paired t(9) = 2.99,
+  p = 0.015** (Wilcoxon p = 0.027).  AUROC Δ = +0.076, t(9) = 1.84,
+  p = 0.099 marginal.  PSM is the only dataset where cross-channel
+  attention (variantA) significantly beats baseline under matched-
+  protocol pred-FT.
 - **MSL**: both variants within noise of baseline.  Matched protocol
   actually HURTS MSL (AUPRC 0.237 -> 0.176), probably because MSL
   entities are short and fixed-past=100 under-exposes context variety.
@@ -638,9 +639,10 @@ pretrained from scratch with fixed-past-window=100, same budget):
 1. The v22 phase-7 claim that variantB wins on SMAP and SMD was wrong -
    those gains came from the pretraining protocol change, not
    cross-channel attention.
-2. Cross-channel attention (variantA) has a real AUROC advantage only
-   on PSM.  Everywhere else the matched-protocol baseline matches or
-   exceeds both variants.
+2. Cross-channel attention (variantA) has a real AUPRC advantage only
+   on PSM (paired t(9) = 2.99, p = 0.015 across 10 matched seeds).
+   Everywhere else the matched-protocol baseline matches or exceeds
+   both variants.
 3. The most actionable finding is **pretraining protocol matters**:
    matching pretrain context length to inference context length
    (fixed-past-window=100) improves SMAP AUPRC by +0.09 but can hurt

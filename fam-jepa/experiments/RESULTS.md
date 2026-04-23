@@ -370,17 +370,27 @@ matched seeds per dataset:
 -> **No cross-channel advantage on SMD under matched protocol.**  The
 phase 7b variantB win (+0.085 AUPRC) was also a protocol artifact.
 
-**PSM** (matched 3 seeds):
+**PSM** (matched 10 seeds, phase 7f extension):
 
-  variantA AUPRC: +0.094,  t(2) = 2.44, p = 0.135 (marginal)
-  variantA AUROC: +0.082,  t(2) = 8.48, p = 0.014 (SIGNIFICANT)
-  variantB AUPRC: -0.071,  t(2) = -1.19, p = 0.357 (not sig)
+  variantA AUPRC: +0.092 +/- 0.098,  t(9) = +2.99,  **p = 0.015**  (SIGNIFICANT)
+                                      Wilcoxon W = 6.0,  p = 0.027
+  variantA AUROC: +0.076 +/- 0.131,  t(9) = +1.84,  p = 0.099  (marginal)
+  variantB AUPRC: -0.071 +/- 0.160,  t(2) = -1.19, p = 0.357  (3 seeds, not sig)
 
--> **variantA has a real AUROC advantage on PSM.**  AUROC difference is
-significant even with 3 seeds (t(2) = 8.48, p = 0.014).  The AUPRC
-direction matches (+0.094) but is under-powered at 3 seeds.  This is
-the ONE dataset where cross-channel attention survives matched-protocol
-scrutiny; it would benefit from 10-seed expansion.
+-> **variantA is the ONE dataset where cross-channel attention
+significantly beats baseline under matched-protocol pred-FT.**  AUPRC
+advantage holds at 10 seeds with a paired t-test p=0.015 (Wilcoxon
+p=0.027).  AUROC direction matches (+0.076) but is marginal at 10 seeds
+(p=0.099), likely because PSM's per-seed AUROC variance is high for
+baseline (std=0.147) compared to variantA (std=0.079) - variantA
+produces tighter rankings.
+
+Variant A's architecture (pure iTransformer, fixed-past=100,
+per-channel tokens attending across channels) plausibly helps PSM
+because PSM's 25 server channels have distinct semantics (CPU, memory,
+network, disk) whose joint distribution shifts during anomalies;
+per-channel tokenization isolates each channel's signal cleanly before
+attention combines them.
 
 **MSL** (matched 3 seeds):
 
@@ -417,10 +427,10 @@ phase 6; AUPRC 0.951 is higher than the v21 RESULTS.md FD001 entry
    0.290 -> 0.382, +0.092) but hurts MSL (0.237 -> 0.176) and is
    mixed elsewhere.  The protocol change is more impactful than any
    architecture change we tested.
-2. **Cross-channel attention only helps on PSM** (variantA AUROC
-   significantly better, p=0.014; AUPRC direction matches at p=0.135
-   under-powered).  Everywhere else, variants are within noise of
-   the matched-protocol baseline.
+2. **Cross-channel attention only helps on PSM** (variantA AUPRC
+   +0.092, paired t(9)=2.99, p=0.015 across 10 matched seeds).  AUROC
+   direction matches (+0.076) but marginal (p=0.099).  Everywhere else,
+   variants are within noise of the matched-protocol baseline.
 3. **The v22 phase 7 claim that variantB wins on SMAP and SMD was
    wrong** - it was driven by the protocol change, not the
    architecture.  The matched-protocol comparison is the honest test
