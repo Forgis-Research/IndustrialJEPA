@@ -328,11 +328,18 @@ class FAM(nn.Module):
 
     @torch.no_grad()
     def update_ema(self):
-        """EMA update: target_encoder ← m * target + (1-m) * encoder."""
+        """EMA update: target_encoder ← m * target + (1-m) * encoder.
+
+        Only parameters with matching names (and shapes) are updated — the
+        target encoder has extra modules (pool_query, pool_attn) that are
+        frozen at init (target_encoder.requires_grad=False).
+        """
         m = self.ema_momentum
-        for p_enc, p_tgt in zip(self.encoder.parameters(),
-                                self.target_encoder.parameters()):
-            p_tgt.data.mul_(m).add_(p_enc.data, alpha=1 - m)
+        enc_params = dict(self.encoder.named_parameters())
+        for name, p_tgt in self.target_encoder.named_parameters():
+            p_enc = enc_params.get(name)
+            if p_enc is not None and p_tgt.shape == p_enc.shape:
+                p_tgt.data.mul_(m).add_(p_enc.data, alpha=1 - m)
 
     # --- Pretraining forward ---
 

@@ -349,7 +349,7 @@ def finetune(model: FAM, train_loader, val_loader,
             tte = tte.to(device)
 
             logits = model.finetune_forward(ctx, h_tensor, ctx_m, mode)  # (B, K)
-            y = build_label_surface(tte.unsqueeze(1), h_tensor.unsqueeze(0))  # (B, 1, K)
+            y = build_label_surface(tte.unsqueeze(1), h_tensor)  # (B, 1, K)
             y = y.squeeze(1)  # (B, K)
 
             loss = F.binary_cross_entropy_with_logits(
@@ -393,7 +393,7 @@ def _eval_ft_loss(model, loader, h_tensor, pw_tensor, mode, device):
         ctx, ctx_m = ctx.to(device), ctx_m.to(device)
         tte = tte.to(device)
         logits = model.finetune_forward(ctx, h_tensor, ctx_m, mode)
-        y = build_label_surface(tte.unsqueeze(1), h_tensor.unsqueeze(0)).squeeze(1)
+        y = build_label_surface(tte.unsqueeze(1), h_tensor).squeeze(1)
         loss = F.binary_cross_entropy_with_logits(
             logits, y, pos_weight=pw_tensor, reduction='mean')
         losses.append(loss.item())
@@ -403,7 +403,7 @@ def _eval_ft_loss(model, loader, h_tensor, pw_tensor, mode, device):
 def _estimate_pos_weight(loader, horizons, clamp_max=1000.0):
     n_pos, n_tot = 0, 0
     for ctx, ctx_m, tte, t_idx in loader:
-        y = build_label_surface(tte.unsqueeze(1), horizons.cpu().unsqueeze(0)).squeeze(1)
+        y = build_label_surface(tte.unsqueeze(1), horizons.cpu()).squeeze(1)
         n_pos += y.sum().item()
         n_tot += y.numel()
     n_neg = max(n_tot - n_pos, 0)
@@ -433,7 +433,7 @@ def evaluate(model: FAM, test_loader, horizons: List[int],
 
         logits = model.finetune_forward(ctx, h_tensor, ctx_m, mode)
         p = torch.sigmoid(logits)
-        y = build_label_surface(tte.unsqueeze(1), h_tensor.unsqueeze(0)).squeeze(1)
+        y = build_label_surface(tte.unsqueeze(1), h_tensor).squeeze(1)
 
         p_list.append(p.cpu().numpy())
         y_list.append(y.cpu().numpy())

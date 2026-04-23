@@ -1,0 +1,25 @@
+{
+  "phase": "v24_phase1_sanity",
+  "dataset": "FD001",
+  "device": "cuda",
+  "n_params": 2161153,
+  "n_trainable": 1048065,
+  "pretrain_epochs": 3,
+  "pretrain_first_loss": 0.05365635585729723,
+  "pretrain_last_loss": 0.02794370513961271,
+  "pretrain_last_hstd": 2.4105052947998047,
+  "ft_epochs": 3,
+  "ft_best_val": 0.2881668334205945,
+  "auprc_pooled": 0.822019315066299,
+  "auroc_pooled": 0.9148866232340755,
+  "monotonicity_violation_rate": 0.004226116625310174,
+  "per_horizon_auprc": {
+    "1": 0.05300629233672644,
+    "5": 0.2187814493318662,
+    "10": 0.345077800300684,
+    "20": 0.4331485436655125,
+    "50": 0.6457834106852112,
+    "100": 0.8739449238998149,
+    "150": 0.9666725621872613
+  }
+}
