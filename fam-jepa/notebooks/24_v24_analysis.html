@@ -2319,6 +2319,8 @@ window.Quarto = {
   <li><a href="#monotonicity-violation-rates" id="toc-monotonicity-violation-rates" class="nav-link" data-scroll-target="#monotonicity-violation-rates">Monotonicity violation rates</a></li>
   <li><a href="#pa-f1-for-literature-comparison" id="toc-pa-f1-for-literature-comparison" class="nav-link" data-scroll-target="#pa-f1-for-literature-comparison">PA-F1 for literature comparison</a></li>
   <li><a href="#surface-heatmaps" id="toc-surface-heatmaps" class="nav-link" data-scroll-target="#surface-heatmaps">Surface heatmaps</a></li>
+  <li><a href="#foundation-model-baseline-chronos-2" id="toc-foundation-model-baseline-chronos-2" class="nav-link" data-scroll-target="#foundation-model-baseline-chronos-2">Foundation-Model Baseline: Chronos-2</a></li>
+  <li><a href="#new-domain-rows-phase-11" id="toc-new-domain-rows-phase-11" class="nav-link" data-scroll-target="#new-domain-rows-phase-11">New-domain rows (Phase 11)</a></li>
   <li><a href="#key-takeaways" id="toc-key-takeaways" class="nav-link" data-scroll-target="#key-takeaways">Key takeaways</a></li>
   <li><a href="#provenance" id="toc-provenance" class="nav-link" data-scroll-target="#provenance">Provenance</a></li>
   </ul>
@@ -2377,7 +2379,7 @@ Please view our Getting Started page to access the most up-to-date information o
 Installed kernel version: 1.0.9 
 Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: c2509ee2-c17e-4f44-b3f7-3b6ef13814c8
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2390,7 +2392,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: c2509ee2-c17e-4f44-b3f7-3b6ef13814c8
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2405,7 +2407,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: c2509ee2-c17e-4f44-b3f7-3b6ef13814c8
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2419,7 +2421,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: c2509ee2-c17e-4f44-b3f7-3b6ef13814c8
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2433,7 +2435,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: c2509ee2-c17e-4f44-b3f7-3b6ef13814c8
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2448,21 +2450,52 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: c2509ee2-c17e-4f44-b3f7-3b6ef13814c8
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
 </section>
+<section id="foundation-model-baseline-chronos-2" class="level2">
+<h2 class="anchored" data-anchor-id="foundation-model-baseline-chronos-2">Foundation-Model Baseline: Chronos-2</h2>
+<p><code>amazon/chronos-2</code> (multivariate, 768-d, frozen) with a linear probe trained on the exact same labels / horizons / splits used by FAM pred-FT:</p>
+<div id="chronos-comparison" class="cell" data-execution_count="7">
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<p><strong>Reading this</strong>: a zero-shot pretrained multivariate foundation model with a linear probe MATCHES FAM on turbofan (FD001, FD002, FD003 - Chronos even wins FD003 by +0.03 AUPRC), and FAM wins on datasets whose distribution is farther from Chronos’ pretraining corpus (SMAP, MBA). The FAM advantage is not uniform - per-dataset JEPA pretraining carries weight only on domain-outlier streams.</p>
+</section>
+<section id="new-domain-rows-phase-11" class="level2">
+<h2 class="anchored" data-anchor-id="new-domain-rows-phase-11">New-domain rows (Phase 11)</h2>
+<p>Three datasets added for domain diversity: GECCO (environmental/water quality), BATADAL (ICS/water-cyber), PhysioNet 2012 (ICU mortality).</p>
+<div id="new-domain" class="cell" data-execution_count="8">
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 3791fc57-3ed2-4d83-b291-e18055ae7121
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<p>GECCO: literature F1 ~0.71, AUROC ~0.88. BATADAL: literature AUC 0.972. PhysioNet 2012: literature AUROC 0.868 (Chen&amp;Yang ’19, InceptionTime). FAM lands within 1 pp AUROC of published SOTA on PhysioNet 2012; below on GECCO/BATADAL because the cumulative-target recipe over long horizons dilutes the brief-event signal.</p>
+</section>
 <section id="key-takeaways" class="level2">
 <h2 class="anchored" data-anchor-id="key-takeaways">Key takeaways</h2>
 <ol type="1">
-<li><strong>Canonical architecture works end-to-end.</strong> One <code>model.py</code> + <code>train.py</code>, ~2.16M parameters, trained on 8 datasets across 4 domains with a single hyperparameter set.</li>
+<li><strong>Canonical architecture works end-to-end.</strong> One <code>model.py</code> + <code>train.py</code>, ~2.16M parameters, trained on 11 datasets across 6 domains with a single hyperparameter set (P=16 global; P=1 for hourly data: Sepsis, PhysioNet 2012).</li>
 <li><strong>Min-context floor matters.</strong> <code>EventDataset</code> now enforces the ARCHITECTURE.md rule: don’t emit predictions when the transformer has fewer than 8 tokens. Before the fix, FD001 AUPRC was 0.81 (regression); after, 0.93.</li>
 <li><strong>Anomaly datasets improve, variance tightens.</strong> SMAP +10 pp, MBA +16 pp, PSM matched, SMD +4 pp, MSL -5 pp. Cross-seed std is 1 - 30× tighter than v22 across the board.</li>
-<li><strong>FD003 regresses</strong> (0.77 vs v21’s 0.93). Multi-fault degradation does not fit the canonical predictor well - needs follow-up.</li>
+<li><strong>FD003 regresses</strong> (0.77 vs v21’s 0.93). Chronos-2 also does better on FD003 than FAM - multi-fault regime mismatches our 198K-predictor canonical recipe. Flagged for ablation.</li>
 <li><strong>PA-F1 inflation confirmed.</strong> SMAP 0.808 PA vs 0.21 non-PA; MBA 1.000 PA vs 0.33 non-PA. Paper must report both.</li>
+<li><strong>Foundation-model parity on turbofan.</strong> Chronos-2 zero-shot matches FAM on FD001 AUPRC and wins on FD003. The honest interpretation: per-dataset JEPA pretraining is worth the compute where generic foundation-model pretraining lacks coverage (SMAP, MBA), not uniformly.</li>
 </ol>
 </section>
 <section id="provenance" class="level2">

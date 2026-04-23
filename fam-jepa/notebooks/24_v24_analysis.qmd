@@ -60,10 +60,14 @@ files = {
     'SMD':    V24 / 'results/phase4_SMD.json',
     'MBA':    V24 / 'results/phase4_MBA.json',
     'sepsis': V24 / 'results/phase6_sepsis.json',
+    'GECCO':  V24 / 'results/phase11_GECCO.json',
+    'BATADAL': V24 / 'results/phase11_BATADAL.json',
+    'physionet2012': V24 / 'results/phase11_physionet2012.json',
 }
 data = {k: load_json(v) for k, v in files.items()}
 
 pa_f1 = load_json(V24 / 'results/phase7_pa_f1.json')
+chronos_agg = load_json(V24 / 'results/baseline_chronos2_agg.json')
 ```
 
 ## Headline — v24 vs v22
@@ -80,6 +84,9 @@ v22_baseline = {
     'SMD':    (0.196, 0.025),
     'MBA':    (0.784, 0.024),
     'sepsis': (0.096, 0.019),
+    'GECCO':  (None, None),        # new domain
+    'BATADAL': (None, None),
+    'physionet2012': (None, None),
 }
 
 rows = []
@@ -251,11 +258,71 @@ plt.savefig('plots/v24_surface_heatmaps.png', bbox_inches='tight', dpi=100)
 plt.show()
 ```
 
+## Foundation-Model Baseline: Chronos-2
+
+`amazon/chronos-2` (multivariate, 768-d, frozen) with a linear probe
+trained on the exact same labels / horizons / splits used by FAM pred-FT:
+
+```{python}
+#| label: chronos-comparison
+rows = []
+for ds, d in data.items():
+    if d is None or 'auprc_mean' not in d:
+        continue
+    c = (chronos_agg or {}).get(ds)
+    rows.append({
+        'Dataset': ds,
+        'FAM AUPRC': f"{d['auprc_mean']:.4f} ± {d['auprc_std']:.4f}",
+        'Chronos-2 AUPRC': (f"{c['auprc_mean']:.4f} ± {c['auprc_std']:.4f}"
+                            if c else '-'),
+        'Δ (FAM - Chronos)': (f"{d['auprc_mean'] - c['auprc_mean']:+.4f}"
+                               if c else '-'),
+        'FAM AUROC': f"{d['auroc_mean']:.4f} ± {d['auroc_std']:.4f}",
+        'Chronos-2 AUROC': (f"{c['auroc_mean']:.4f} ± {c['auroc_std']:.4f}"
+                            if c else '-'),
+    })
+pd.DataFrame(rows)
+```
+
+**Reading this**: a zero-shot pretrained multivariate foundation model
+with a linear probe MATCHES FAM on turbofan (FD001, FD002, FD003 -
+Chronos even wins FD003 by +0.03 AUPRC), and FAM wins on datasets whose
+distribution is farther from Chronos' pretraining corpus (SMAP, MBA).
+The FAM advantage is not uniform - per-dataset JEPA pretraining carries
+weight only on domain-outlier streams.
+
+## New-domain rows (Phase 11)
+
+Three datasets added for domain diversity: GECCO (environmental/water
+quality), BATADAL (ICS/water-cyber), PhysioNet 2012 (ICU mortality).
+
+```{python}
+#| label: new-domain
+rows = []
+for ds in ['GECCO', 'BATADAL', 'physionet2012']:
+    d = data.get(ds)
+    if d is None or 'auprc_mean' not in d:
+        continue
+    rows.append({
+        'Dataset': ds,
+        'n_seeds': d['n_seeds'],
+        'AUPRC': f"{d['auprc_mean']:.4f} ± {d['auprc_std']:.4f}",
+        'AUROC': f"{d['auroc_mean']:.4f} ± {d['auroc_std']:.4f}",
+        'F1-best': f"{d['f1_mean']:.4f} ± {d['f1_std']:.4f}",
+    })
+pd.DataFrame(rows)
+```
+
+GECCO: literature F1 ~0.71, AUROC ~0.88. BATADAL: literature AUC 0.972.
+PhysioNet 2012: literature AUROC 0.868 (Chen&Yang '19, InceptionTime).
+FAM lands within 1 pp AUROC of published SOTA on PhysioNet 2012; below on GECCO/BATADAL because the cumulative-target recipe over long horizons dilutes the brief-event signal.
+
 ## Key takeaways
 
 1. **Canonical architecture works end-to-end.** One `model.py` +
-   `train.py`, ~2.16M parameters, trained on 8 datasets across 4
-   domains with a single hyperparameter set.
+   `train.py`, ~2.16M parameters, trained on 11 datasets across 6
+   domains with a single hyperparameter set (P=16 global; P=1 for
+   hourly data: Sepsis, PhysioNet 2012).
 2. **Min-context floor matters.** `EventDataset` now enforces the
    ARCHITECTURE.md rule: don't emit predictions when the transformer
    has fewer than 8 tokens. Before the fix, FD001 AUPRC was 0.81
@@ -263,10 +330,16 @@ plt.show()
 3. **Anomaly datasets improve, variance tightens.** SMAP +10 pp, MBA
    +16 pp, PSM matched, SMD +4 pp, MSL -5 pp. Cross-seed std is 1 -
    30× tighter than v22 across the board.
-4. **FD003 regresses** (0.77 vs v21's 0.93). Multi-fault degradation
-   does not fit the canonical predictor well - needs follow-up.
+4. **FD003 regresses** (0.77 vs v21's 0.93). Chronos-2 also does
+   better on FD003 than FAM - multi-fault regime mismatches our
+   198K-predictor canonical recipe. Flagged for ablation.
 5. **PA-F1 inflation confirmed.** SMAP 0.808 PA vs 0.21 non-PA;
    MBA 1.000 PA vs 0.33 non-PA. Paper must report both.
+6. **Foundation-model parity on turbofan.** Chronos-2 zero-shot
+   matches FAM on FD001 AUPRC and wins on FD003. The honest
+   interpretation: per-dataset JEPA pretraining is worth the compute
+   where generic foundation-model pretraining lacks coverage (SMAP,
+   MBA), not uniformly.
 
 ## Provenance
 
