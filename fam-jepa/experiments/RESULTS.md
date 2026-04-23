@@ -323,3 +323,34 @@ as a v22 ablation for reviewers.  Promoting variant B into Tab 1 on a
 per-dataset basis ("select encoder per dataset") is possible but
 requires a narrative shift that is a decision to make after reviewing
 this notebook.
+
+### IMPORTANT: Phase 7 variant wins are a protocol artifact on SMAP (v22 phase 7d)
+
+Follow-up: we pretrained **baseline from scratch** on SMAP with the same
+fixed-past-window=100 protocol used for variantB, then ran pred-FT with
+10 matched seeds for both.  Result:
+
+| Encoder                           | SMAP AUPRC (10s) | SMAP AUROC (10s) | F1 (non-PA) |
+|-----------------------------------|--------------------|--------------------|--------------|
+| v17 baseline (variable-past)      | 0.290 ± 0.042 (3s) | 0.433 ± 0.049 (3s) | 0.440        |
+| **baseline (fixed-past pretrain)**| **0.382 ± 0.050**  | **0.615 ± 0.038**  | **0.487 ± 0.026** |
+| variantB (fixed-past pretrain)    | 0.373 ± 0.056      | 0.583 ± 0.052      | 0.462 ± 0.025 |
+
+**Paired t-test (N=10 seeds, variantB - baseline):**
+
+  AUPRC: Δ = -0.009 ± 0.079,  t(9) = -0.38,  p = 0.716  (not significant)
+  AUROC: Δ = -0.032 ± 0.078,  t(9) = -1.29,  p = 0.228  (not significant)
+
+**Under matched protocol, cross-channel attention (variantB) confers no
+advantage on SMAP.**  The apparent variantB advantage in phase 7 was
+entirely an artifact of the pretraining protocol change - specifically,
+switching from variable-length past (v17, min_past=10) to fixed
+past=100.  Fresh fixed-window pretraining lifts SMAP AUPRC from 0.290
+(v17) to 0.382 (+0.092) regardless of whether cross-channel attention
+is added.
+
+This is an important correction to the v22 phase 7 narrative.  The
+causal temporal transformer is sufficient for SMAP once pretraining
+exposes it to the inference-time context length.  See phase 7e below
+for SMD/PSM/MSL, which we rerun under matched protocol to check
+whether their variant wins also disappear.
