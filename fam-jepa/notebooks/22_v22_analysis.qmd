@@ -519,29 +519,138 @@ ax.grid(axis='y', alpha=0.3)
 plt.tight_layout()
 ```
 
-### Decision
+### Caveat: apparent variant wins are a protocol artifact for SMAP / SMD (phase 7d/7e)
 
-Taking all 6 pred-FT datasets together (FD001 + 5 anomaly):
+Variants A and B were pretrained on each anomaly dataset *from scratch*
+with a fixed-past-window=100 protocol.  The phase-1 baseline used the
+pre-existing v17 / v18 / v19 encoders, which were pretrained with a
+*variable-length* past (`min_past=10` up to the entity length).  So the
+phase-7 numbers bundle two changes: cross-channel attention AND a
+different pretraining protocol.
 
-- **Baseline wins** on FD001 (14 correlated engine sensors), MSL (within
-  noise), MBA (2 channels).
-- **Variant B wins** on SMAP (+0.094 AUPRC, +0.167 AUROC) and SMD
-  (+0.085 AUPRC, +0.051 AUROC).
-- **Variant A wins** on PSM (+0.117 AUPRC, +0.117 AUROC).
+To disentangle, we pretrained **baseline from scratch** on each anomaly
+dataset under the same fixed-window protocol (phase 7d on SMAP with 10
+seeds, phase 7e on SMD / PSM / MSL with 3 seeds each) and ran matched
+paired comparisons.
 
-No single cross-channel architecture dominates every dataset.  Variant A
-(pure iTransformer) works best when temporal dynamics matter less than
-cross-channel coupling; variant B (parallel temporal + cross-channel
-streams) works best when temporal dynamics still matter but
-cross-channel signal is additive.
+```{python}
+#| label: phase7d-table
+p7d = _load('phase7d_smap_baseline_matched.json')
+p7e = _load('phase7e_baseline_matched_other.json')
+phase7c = _load('phase7c_smap_extra_seeds_variantB.json')
 
-**Implication for the paper**: the "one architecture across all datasets"
-framing of the main benchmark table still holds under the baseline
-encoder.  The cross-channel variant wins here are dataset-specific and
-are reported as a v22 ablation for reviewers.  Switching SMAP / SMD / PSM
-to their respective winning variants in Tab 1 is possible but requires a
-narrative shift that is a decision to make with the user after reviewing
-this notebook.
+def _collect_seeds(per_seed, metric='auprc'):
+    return {r['seed']: r['primary'][metric] for r in per_seed}
+
+# SMAP: combine phase 7 (3 seeds) + phase 7c (7 seeds) for variantB,
+#       phase 7d (10 seeds) for baseline-matched
+vb_by_seed = {}
+if phase7:
+    for r in phase7['variants']['variantB']['per_seed']:
+        vb_by_seed[r['seed']] = r['primary']
+if phase7c:
+    for r in phase7c['results']['SMAP']['variantB']['per_seed']:
+        vb_by_seed[r['seed']] = r['primary']
+base_fs_smap = {r['seed']: r['primary']
+                for r in (p7d or {'results': {'SMAP': {'baseline': {'per_seed': []}}}})
+                ['results']['SMAP']['baseline']['per_seed']}
+
+from scipy.stats import ttest_rel
+def _paired(a_map, b_map, metric):
+    seeds = sorted(set(a_map) & set(b_map))
+    if len(seeds) < 2:
+        return None
+    a = np.array([a_map[s][metric] for s in seeds])
+    b = np.array([b_map[s][metric] for s in seeds])
+    t, p = ttest_rel(a, b)
+    return dict(n=len(seeds), mean_a=float(a.mean()), mean_b=float(b.mean()),
+                delta=float((a - b).mean()),
+                delta_std=float((a - b).std(ddof=1)) if len(seeds) > 1 else 0.0,
+                t=float(t), p=float(p))
+
+rows = [{
+    'Dataset': 'SMAP',
+    'Comparison (A vs B)': 'variantB vs matched baseline',
+    'Metric': 'AUPRC',
+    **(_paired(vb_by_seed, base_fs_smap, 'auprc') or {}),
+}, {
+    'Dataset': 'SMAP',
+    'Comparison (A vs B)': 'variantB vs matched baseline',
+    'Metric': 'AUROC',
+    **(_paired(vb_by_seed, base_fs_smap, 'auroc') or {}),
+}]
+
+for ds in ['SMD', 'PSM', 'MSL']:
+    base_ds = {r['seed']: r['primary']
+                for r in (p7e or {'results': {}}).get('results', {}).get(ds, {})
+                .get('baseline', {}).get('per_seed', [])}
+    for v in ['variantA', 'variantB']:
+        var_ds = {r['seed']: r['primary']
+                  for r in (phase7b or {'results': {}}).get('results', {})
+                  .get(ds, {}).get(v, {}).get('per_seed', [])}
+        for metric in ['auprc', 'auroc']:
+            stats = _paired(var_ds, base_ds, metric)
+            if stats is None:
+                continue
+            rows.append({
+                'Dataset': ds,
+                'Comparison (A vs B)': f'{v} vs matched baseline',
+                'Metric': metric.upper(),
+                **stats,
+            })
+
+df = pd.DataFrame(rows)
+# Format nicely
+for c in ['mean_a', 'mean_b', 'delta', 'delta_std']:
+    if c in df.columns:
+        df[c] = df[c].apply(lambda x: f'{x:+.3f}' if c == 'delta' else f'{x:.3f}')
+if 't' in df.columns:
+    df['t'] = df['t'].apply(lambda x: f'{x:+.2f}')
+if 'p' in df.columns:
+    df['p'] = df['p'].apply(lambda x: f'{x:.3f}')
+df
+```
+
+### Corrected Decision
+
+Under **matched pretraining protocol** (both baseline and variants
+pretrained from scratch with fixed-past-window=100, same budget):
+
+- **SMAP**: variantB vs baseline AUPRC paired t(9) = -0.38, p = 0.716.
+  **No cross-channel advantage.**  The phase-7 apparent win was
+  entirely a protocol artifact - fresh fixed-window pretraining alone
+  lifts SMAP baseline AUPRC from 0.290 to 0.382.
+- **SMD**: variantB vs baseline AUPRC paired t(2) = 0.33, p = 0.770.
+  **No cross-channel advantage.**  Phase-7b's +0.085 AUPRC also a
+  protocol artifact.
+- **PSM**: **variantA vs baseline AUROC paired t(2) = 8.48, p = 0.014.**
+  AUPRC direction matches (+0.094) at under-powered p = 0.135.
+  PSM is the only dataset where cross-channel attention survives
+  matched-protocol scrutiny; worth 10-seed confirmation.
+- **MSL**: both variants within noise of baseline.  Matched protocol
+  actually HURTS MSL (AUPRC 0.237 -> 0.176), probably because MSL
+  entities are short and fixed-past=100 under-exposes context variety.
+- **FD001**: baseline wins (phase 6).
+- **MBA**: 2 channels -> cross-channel attention trivial.
+
+**Revised overall finding:**
+
+1. The v22 phase-7 claim that variantB wins on SMAP and SMD was wrong -
+   those gains came from the pretraining protocol change, not
+   cross-channel attention.
+2. Cross-channel attention (variantA) has a real AUROC advantage only
+   on PSM.  Everywhere else the matched-protocol baseline matches or
+   exceeds both variants.
+3. The most actionable finding is **pretraining protocol matters**:
+   matching pretrain context length to inference context length
+   (fixed-past-window=100) improves SMAP AUPRC by +0.09 but can hurt
+   short-entity datasets like MSL.  This is a methodology result, not
+   an architecture result.
+
+**Paper Tab 1** therefore uses the v17-baseline pred-FT numbers (phase
+1) for all anomaly datasets.  This keeps the "one architecture, one
+pretraining recipe" framing clean.  The matched-protocol and variant
+comparisons are reported here as v22 ablations for reviewers.
 
 ## Appendix — Reproducibility
 

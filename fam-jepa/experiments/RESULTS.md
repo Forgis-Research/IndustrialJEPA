@@ -351,6 +351,81 @@ is added.
 
 This is an important correction to the v22 phase 7 narrative.  The
 causal temporal transformer is sufficient for SMAP once pretraining
-exposes it to the inference-time context length.  See phase 7e below
-for SMD/PSM/MSL, which we rerun under matched protocol to check
-whether their variant wins also disappear.
+exposes it to the inference-time context length.
+
+### Matched-protocol Rerun on SMD / PSM / MSL (v22 phase 7e, 3 seeds each)
+
+To check whether SMD's variantB win and PSM's variantA win are also
+protocol artifacts, we pretrained baseline-from-scratch on each dataset
+with the same fixed-past-window=100 protocol.  Paired t-tests across 3
+matched seeds per dataset:
+
+**SMD** (matched 3 seeds, variant - baseline):
+
+  variantA AUPRC: -0.034,  t(2) = -1.27, p = 0.332 (not sig)
+  variantA AUROC: -0.028,  t(2) = -4.76, p = 0.041 (variantA WORSE)
+  variantB AUPRC: +0.028,  t(2) =  0.33, p = 0.770 (not sig)
+  variantB AUROC: -0.010,  t(2) = -0.33, p = 0.776 (not sig)
+
+-> **No cross-channel advantage on SMD under matched protocol.**  The
+phase 7b variantB win (+0.085 AUPRC) was also a protocol artifact.
+
+**PSM** (matched 3 seeds):
+
+  variantA AUPRC: +0.094,  t(2) = 2.44, p = 0.135 (marginal)
+  variantA AUROC: +0.082,  t(2) = 8.48, p = 0.014 (SIGNIFICANT)
+  variantB AUPRC: -0.071,  t(2) = -1.19, p = 0.357 (not sig)
+
+-> **variantA has a real AUROC advantage on PSM.**  AUROC difference is
+significant even with 3 seeds (t(2) = 8.48, p = 0.014).  The AUPRC
+direction matches (+0.094) but is under-powered at 3 seeds.  This is
+the ONE dataset where cross-channel attention survives matched-protocol
+scrutiny; it would benefit from 10-seed expansion.
+
+**MSL** (matched 3 seeds):
+
+  variantA AUPRC: +0.017, t(2) = 1.00, p = 0.425 (not sig)
+  variantB AUPRC: +0.019, t(2) = 0.83, p = 0.492 (not sig)
+
+-> **No variant advantage on MSL.**  Interestingly, matched-protocol
+baseline-FS (AUPRC 0.176) is WORSE than the v17 variable-length
+baseline (0.237 in phase 1), probably because MSL entities are short
+(~2K timesteps) and fixed-past=100 under-exposes the encoder to context
+diversity during pretraining.
+
+### Corrected Cross-Channel Summary (all datasets)
+
+Revised single source of truth, using matched-protocol baselines where
+available:
+
+| Dataset | v17 baseline (phase 1) | matched baseline (7d/7e) | variantA matched (7b/7) | variantB matched (7b/7) | Winner under matched protocol |
+|---------|------------------------|---------------------------|-------------------------|-------------------------|-------------------------------|
+| FD001   | N/A (v21 protocol)     | 0.951±0.010 (3s)*         | 0.936±0.004             | 0.939±0.013             | baseline (phase 6)            |
+| SMAP    | 0.290±0.042 (3s)       | **0.382±0.050 (10s)**     | 0.347±0.025 (3s)        | 0.373±0.056 (10s)       | baseline=variantB (p=0.72)    |
+| MSL     | **0.237±0.077 (3s)**   | 0.176±0.005 (3s)          | 0.193±0.029 (3s)        | 0.195±0.039 (3s)        | ambiguous; v17 best           |
+| SMD     | 0.196±0.025 (3s)       | 0.253±0.116 (3s)          | 0.219±0.080 (3s)        | 0.281±0.029 (3s)        | baseline≈variantB (p=0.77)    |
+| PSM     | 0.417±0.113 (3s)       | 0.440±0.050 (3s)          | **0.534±0.078 (3s)**    | 0.370±0.067 (3s)        | **variantA** (AUROC p=0.014)  |
+| MBA     | **0.784±0.024 (3s)**   | (not rerun)               | 0.757±0.002 (3s)        | 0.761±0.004 (3s)        | baseline (phase 7b)           |
+
+*FD001 numbers are pred-FT with fresh fixed-window pretraining from
+phase 6; AUPRC 0.951 is higher than the v21 RESULTS.md FD001 entry
+(0.945) because of the different protocol, but both are pred-FT.
+
+**Honest conclusions:**
+
+1. **Fresh fixed-past-window=100 pretraining helps SMAP a lot** (AUPRC
+   0.290 -> 0.382, +0.092) but hurts MSL (0.237 -> 0.176) and is
+   mixed elsewhere.  The protocol change is more impactful than any
+   architecture change we tested.
+2. **Cross-channel attention only helps on PSM** (variantA AUROC
+   significantly better, p=0.014; AUPRC direction matches at p=0.135
+   under-powered).  Everywhere else, variants are within noise of
+   the matched-protocol baseline.
+3. **The v22 phase 7 claim that variantB wins on SMAP and SMD was
+   wrong** - it was driven by the protocol change, not the
+   architecture.  The matched-protocol comparison is the honest test
+   and it refutes the cross-channel hypothesis for those datasets.
+4. **Paper Tab 1 still uses v17-baseline pred-FT numbers** (phase 1)
+   for consistency with the paper's "one architecture" framing.  The
+   matched-protocol and variant comparisons are v22 ablations in
+   RESULTS.md and the Quarto notebook.
