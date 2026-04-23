@@ -89,16 +89,66 @@ def load_dataset(dataset: str):
     if dataset == 'SMAP':
         from data.smap_msl import split_smap_entities
         ft = split_smap_entities(normalize=False)
-        tr = _build_anomaly(ft['ft_train'], stride=4)
-        va = _build_anomaly(ft['ft_val'], stride=4)
-        te = _build_anomaly(ft['ft_test'], stride=1)
-        return tr, va, te, 25, get_horizons(dataset)
+        return (_build_anomaly(ft['ft_train'], 4),
+                _build_anomaly(ft['ft_val'], 4),
+                _build_anomaly(ft['ft_test'], 1), 25, get_horizons(dataset))
     if dataset == 'MSL':
         from data.smap_msl import split_msl_entities
         ft = split_msl_entities(normalize=False)
         return (_build_anomaly(ft['ft_train'], 4),
                 _build_anomaly(ft['ft_val'], 4),
                 _build_anomaly(ft['ft_test'], 1), 55, get_horizons(dataset))
+    if dataset == 'PSM':
+        from data.psm import load_psm
+        d = load_psm(normalize=False)
+        X = d['test'].astype(np.float32); y = d['labels'].astype(np.int32)
+        T = len(X); t1 = int(0.6 * T); t2 = int(0.7 * T); gap = 200
+        ft = {
+            'ft_train': [{'test': X[:t1], 'labels': y[:t1]}],
+            'ft_val':   [{'test': X[t1 + gap:t2], 'labels': y[t1 + gap:t2]}],
+            'ft_test':  [{'test': X[t2 + gap:], 'labels': y[t2 + gap:]}],
+        }
+        return (_build_anomaly(ft['ft_train'], 4),
+                _build_anomaly(ft['ft_val'], 4),
+                _build_anomaly(ft['ft_test'], 1),
+                int(X.shape[1]), get_horizons(dataset))
+    if dataset == 'SMD':
+        from data.smd import split_smd_entities
+        ft = split_smd_entities(normalize=False)
+        n_ch = ft['ft_train'][0]['test'].shape[1]
+        return (_build_anomaly(ft['ft_train'], 4),
+                _build_anomaly(ft['ft_val'], 4),
+                _build_anomaly(ft['ft_test'], 1), n_ch, get_horizons(dataset))
+    if dataset == 'MBA':
+        from data.mba import load_mba
+        d = load_mba(normalize=False)
+        if d is None:
+            raise FileNotFoundError('MBA unavailable')
+        X = d['test'].astype(np.float32); y = d['labels'].astype(np.int32)
+        T = len(X); t1 = int(0.6 * T); t2 = int(0.7 * T); gap = 200
+        ft = {
+            'ft_train': [{'test': X[:t1], 'labels': y[:t1]}],
+            'ft_val':   [{'test': X[t1 + gap:t2], 'labels': y[t1 + gap:t2]}],
+            'ft_test':  [{'test': X[t2 + gap:], 'labels': y[t2 + gap:]}],
+        }
+        return (_build_anomaly(ft['ft_train'], 4),
+                _build_anomaly(ft['ft_val'], 4),
+                _build_anomaly(ft['ft_test'], 1),
+                int(X.shape[1]), get_horizons(dataset))
+    if dataset == 'GECCO':
+        from data.gecco import load_gecco
+        d = load_gecco(normalize=False)
+        return (_build_anomaly(d['ft_train'], 4),
+                _build_anomaly(d['ft_val'], 4),
+                _build_anomaly(d['ft_test'], 1),
+                d['n_channels'], get_horizons(dataset))
+    if dataset == 'BATADAL':
+        from data.batadal import load_batadal
+        d = load_batadal(normalize=False)
+        return (_build_anomaly(d['ft_train'], 4),
+                _build_anomaly(d['ft_val'], 4),
+                _build_anomaly(d['ft_test'], 1),
+                d['n_channels'], get_horizons(dataset))
     raise ValueError(dataset)
 
 
