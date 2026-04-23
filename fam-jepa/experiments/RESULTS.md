@@ -54,7 +54,7 @@ All three: open-license, direct download, validated loaders in `fam-jepa/data/`.
 |---------|--------|-----------------|-----------------|---------|-------------|--------|
 | GECCO 2018 | Env/Water-IoT | **0.110±0.053** | 0.762±0.057 | 0.180±0.075 | F1 ~0.71 (Muharemi+19) / AUROC ~0.88 (TAB '25) | v24 phase 11 |
 | BATADAL | ICS/Water-Cyber | **0.196±0.013** | 0.731±0.025 | 0.323±0.024 | AUC 0.972 (Nguyen+24) | v24 phase 11 |
-| PhysioNet 2012 | Healthcare/ICU-Mortality | (pending) | (pending) | (pending) | AUROC 0.868 (Chen+19), STraTS TKDD '22 | v24 phase 11 |
+| PhysioNet 2012 | Healthcare/ICU-Mortality | **0.227±0.002** | **0.858±0.001** | 0.316±0.004 | AUROC 0.868 (Chen+19), STraTS TKDD '22 | v24 phase 11 |
 
 **Reading these**: BATADAL and GECCO AUROC are decent (0.73, 0.76) but AUPRC is low compared to published detection SOTA. Reasons: (1) GECCO events are brief (~18-25 min) so cumulative-target over 150-200 min dilutes signal; per-horizon AUPRC is strongest at dt=5-10 and decays. (2) BATADAL has only ~8K pretrain hours, below FAM's effective capacity. (3) Literature mostly reports F1/AUC-at-detection-time rather than pred-at-horizon AUPRC, so direct comparison is indirect.
 
