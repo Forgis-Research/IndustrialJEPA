@@ -45,6 +45,17 @@ FD003 -0.166, SMAP +0.105, MSL -0.050, PSM +0.008, SMD +0.040, MBA +0.163.
 Variance uniformly 1–30× tighter across datasets. Canonical architecture
 improves 4/5 anomaly datasets while underperforming v21 on FD003 (multi-fault).
 
+## Predictor Pretrain vs Random (v24 Phase 12 Ablation)
+
+Cleanest test of whether the JEPA-pretrained predictor weights carry downstream signal, or whether a random-init same-size MLP on top of the frozen pretrained encoder reaches the same AUPRC. Pretrained encoder is held fixed in both conditions.
+
+| Dataset | pretrained predictor (AUPRC) | random-init predictor (AUPRC) | Δ (paired) | t(2) | p |
+|---------|------------------------------|-------------------------------|------------|------|---|
+| FD001   | 0.9257 ± 0.0008              | 0.9235 ± 0.0027               | +0.0021    | 1.12 | 0.38 |
+| SMAP    | 0.3874 ± 0.0205              | 0.3950 ± 0.0286               | -0.0076    | -1.24 | 0.34 |
+
+Both deltas are within noise. On FD001 the pretrained version is +0.002 better (not significant); on SMAP the reset version is marginally better. The practical implication: pred-FT's value comes from (a) the pretrained encoder's representation and (b) the freeze-encoder + small-head + pos-weighted-BCE recipe, not from predictor pretraining specifically. Random-initialising the predictor and only doing pred-FT on top of a frozen encoder is an acceptable simplification. Source: `experiments/v24/results/phase12_predictor_ablation.json` and `phase12_smap_ablation.json`.
+
 ## New Domains (v24 Phase 11): GECCO, BATADAL, PhysioNet 2012
 
 Fresh domains added to expand beyond turbofan/spacecraft/server/cardiac/ICU-sepsis.
