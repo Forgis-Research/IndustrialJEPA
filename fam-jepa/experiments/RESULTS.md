@@ -1,6 +1,6 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v22 (2026-04-22). Update after every session.
+**Last updated**: v24 (2026-04-23). Update after every session.
 
 This file is the single source of truth for all experimental results.
 Every number that enters the paper must have an entry here with provenance.
@@ -18,7 +18,34 @@ Every number that enters the paper must have an entry here with provenance.
 
 ---
 
-## Main Benchmark Table (Paper Tab 1)
+## Main Benchmark Table (Paper Tab 1) — v24 canonical architecture
+
+**v24**: first run using the canonical `fam-jepa/model.py` + `fam-jepa/train.py`
+codebase. Single architecture across all datasets (P=16, d=256, L=2, ~2.16M
+params) except Sepsis (P=1, hourly floor). All rows: 3 seeds, pred-FT with
+frozen encoder. RevIN per-context normalization. Cumulative target
+x(t : t+Δt]. See `experiments/v24/SESSION_PROMPT.md` and
+`fam-jepa/ARCHITECTURE.md`. EventDataset enforces min_context=128 (the
+8-token transformer floor).
+
+| Dataset | Domain | AUPRC ↑ | AUROC ↑ | F1-best (non-PA) | PA-F1 | SOTA legacy | Source |
+|---------|--------|---------|---------|-------------------|-------|-------------|--------|
+| C-MAPSS FD001 | Turbofan | **0.926±0.001** | 0.919±0.001 | 0.840±0.000 | — | RMSE 10.61 (STAR) | v24 phase 2 |
+| C-MAPSS FD002 | Turbofan | **0.908±0.002** | 0.915±0.001 | 0.829±0.001 | — | RMSE 13.47 (STAR) | v24 phase 3 |
+| C-MAPSS FD003 | Turbofan | **0.766±0.009** | 0.876±0.007 | 0.747±0.006 | — | RMSE 10.71 (STAR) | v24 phase 3 |
+| SMAP | Spacecraft | **0.395±0.010** | 0.594±0.005 | 0.454±0.005 | 0.808±0.017 | PA-F1 0.336 (MTS-JEPA) | v24 phase 4 |
+| MSL | Spacecraft | **0.187±0.007** | 0.472±0.015 | 0.332±0.000 | 0.788±0.016 | PA-F1 0.336 (MTS-JEPA) | v24 phase 5 |
+| PSM | Server | **0.425±0.006** | 0.566±0.009 | 0.536±0.000 | 0.929±0.022 | PA-F1 0.616 (MTS-JEPA) | v24 phase 5 |
+| SMD | Server | **0.236±0.015** | 0.680±0.017 | 0.273±0.015 | 0.844±0.030 | PA-F1 0.925 (AT, diff split) | v24 phase 5 |
+| MBA | Cardiac | **0.947±0.001** | 0.896±0.003 | 0.860±0.003 | 1.000±0.000 | (no AUPRC benchmark) | v24 phase 5 |
+| Sepsis | ICU (P=1) | (pending) | (pending) | (pending) | — | AUROC 0.85 (InceptionTime) | v24 phase 6 |
+
+**v24 vs v22 delta (AUPRC)**: FD001 -0.019 (CI overlap), FD002 -0.047,
+FD003 -0.166, SMAP +0.105, MSL -0.050, PSM +0.008, SMD +0.040, MBA +0.163.
+Variance uniformly 1–30× tighter across datasets. Canonical architecture
+improves 4/5 anomaly datasets while underperforming v21 on FD003 (multi-fault).
+
+## Main Benchmark Table (Paper Tab 1) — v22 legacy (for comparison)
 
 **v22 update**: anomaly rows replaced with pred-FT numbers (frozen encoder,
 BCE on per-horizon logits) using intra-entity chronological splits for
@@ -30,11 +57,11 @@ C-MAPSS rows unchanged from v21. See v22 phase 1 for details.
 | C-MAPSS FD001 | Turbofan | 0.945±0.016 | 0.987±0.004 | 0.872±0.016 | RMSE 17.1±4.6 | RMSE 10.61 (STAR) | v21 phase 2 |
 | C-MAPSS FD002 | Turbofan | 0.955±0.009 | 0.988±0.003 | 0.870±0.038 | RMSE 12.4±1.3 | RMSE 13.47 (STAR) | v21 phase 2 |
 | C-MAPSS FD003 | Turbofan | 0.932±0.010 | 0.984±0.002 | 0.828±0.041 | RMSE 16.2±1.9 | RMSE 10.71 (STAR) | v21 phase 2 |
-| SMAP | Spacecraft | **0.290±0.042** | 0.433±0.049 | **0.440±0.003** | F1 0.440 | PA-F1 0.336 (MTS-JEPA) | v22 phase 1 |
-| MSL | Spacecraft | **0.237±0.077** | 0.506±0.057 | **0.330±0.022** | F1 0.330 | PA-F1 0.336 (MTS-JEPA) | v22 phase 1 |
-| PSM | Server | **0.417±0.113** | 0.478±0.097 | **0.519±0.006** | F1 0.519 | PA-F1 0.616 (MTS-JEPA) | v22 phase 1 |
-| SMD | Server | **0.196±0.025** | 0.655±0.039 | **0.262±0.030** | F1 0.262 | PA-F1 0.925 (AT) | v22 phase 1 |
-| MBA | Cardiac | **0.784±0.024** | 0.751±0.041 | **0.725±0.024** | F1 0.725 | — | v22 phase 1 |
+| SMAP | Spacecraft | 0.290±0.042 | 0.433±0.049 | 0.440±0.003 | F1 0.440 | PA-F1 0.336 (MTS-JEPA) | v22 phase 1 |
+| MSL | Spacecraft | 0.237±0.077 | 0.506±0.057 | 0.330±0.022 | F1 0.330 | PA-F1 0.336 (MTS-JEPA) | v22 phase 1 |
+| PSM | Server | 0.417±0.113 | 0.478±0.097 | 0.519±0.006 | F1 0.519 | PA-F1 0.616 (MTS-JEPA) | v22 phase 1 |
+| SMD | Server | 0.196±0.025 | 0.655±0.039 | 0.262±0.030 | F1 0.262 | PA-F1 0.925 (AT) | v22 phase 1 |
+| MBA | Cardiac | 0.784±0.024 | 0.751±0.041 | 0.725±0.024 | F1 0.725 | — | v22 phase 1 |
 
 ---
 
