@@ -1,5 +1,10 @@
 {
   "dataset": "sepsis",
+  "n_seeds": 3,
+  "auprc_mean": 0.18634691412641866,
+  "auprc_std": 0.003639313307298967,
+  "auroc_mean": 0.8020174035087456,
+  "auroc_std": 0.002813784585369586,
   "results": [
     {
       "dataset": "sepsis",
@@ -39,6 +44,84 @@
       "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/surfaces/sepsis_s42.npz",
       "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s42_pretrain.pt",
       "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s42_pred_ft.pt"
+    },
+    {
+      "dataset": "sepsis",
+      "seed": 123,
+      "n_channels": 34,
+      "patch_size": 1,
+      "pretrain_best_loss": 0.0026220331783406436,
+      "pretrain_time_s": 33.65487313270569,
+      "ft_best_val": 1.0101136594049391,
+      "ft_time_s": 133.38583159446716,
+      "eval_time_s": 32.2940559387207,
+      "auprc": 0.1914743833437349,
+      "auroc": 0.8045729719014153,
+      "f1_best": 0.2877636868337364,
+      "precision_best": 0.2531568506737807,
+      "recall_best": 0.3333303310876536,
+      "prevalence": 0.027243507558657534,
+      "monotonicity_violation_rate": 2.8627096004401702e-06,
+      "per_horizon_auprc": {
+        "1": 0.08027543242618876,
+        "2": 0.08643997407803455,
+        "3": 0.09232059591211819,
+        "6": 0.1089520452577824,
+        "12": 0.13987709368587967,
+        "24": 0.1933261838371571,
+        "48": 0.28001951345540066
+      },
+      "per_horizon_auroc": {
+        "1": 0.7782202404796389,
+        "2": 0.777069127347438,
+        "3": 0.7760711475542358,
+        "6": 0.7732224993774135,
+        "12": 0.7693588458189785,
+        "24": 0.7673630331974338,
+        "48": 0.7781980674809411
+      },
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/surfaces/sepsis_s123.npz",
+      "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s123_pretrain.pt",
+      "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s123_pred_ft.pt"
+    },
+    {
+      "dataset": "sepsis",
+      "seed": 456,
+      "n_channels": 34,
+      "patch_size": 1,
+      "pretrain_best_loss": 0.002259950037114322,
+      "pretrain_time_s": 49.70422148704529,
+      "ft_best_val": 1.0444281290217143,
+      "ft_time_s": 197.06169295310974,
+      "eval_time_s": 32.455899238586426,
+      "auprc": 0.18416879148869833,
+      "auroc": 0.8033811866846512,
+      "f1_best": 0.28633485008310333,
+      "precision_best": 0.2521301608845566,
+      "recall_best": 0.3312767950426919,
+      "prevalence": 0.027243507558657534,
+      "monotonicity_violation_rate": 1.717625760264102e-06,
+      "per_horizon_auprc": {
+        "1": 0.08017472759299256,
+        "2": 0.08613833626318318,
+        "3": 0.09170496092971862,
+        "6": 0.10696635743868022,
+        "12": 0.13570682236969062,
+        "24": 0.18819474424193575,
+        "48": 0.2599485290095347
+      },
+      "per_horizon_auroc": {
+        "1": 0.7716494407816161,
+        "2": 0.7699572735568252,
+        "3": 0.7687219510268626,
+        "6": 0.7656709980458885,
+        "12": 0.7641161463656518,
+        "24": 0.7688982140273836,
+        "48": 0.7835915982095305
+      },
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/surfaces/sepsis_s456.npz",
+      "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s456_pretrain.pt",
+      "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s456_pred_ft.pt"
     }
   ]
 }

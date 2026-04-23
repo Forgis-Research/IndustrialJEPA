@@ -38,7 +38,7 @@ x(t : t+Δt]. See `experiments/v24/SESSION_PROMPT.md` and
 | PSM | Server | **0.425±0.006** | 0.566±0.009 | 0.536±0.000 | 0.929±0.022 | PA-F1 0.616 (MTS-JEPA) | v24 phase 5 |
 | SMD | Server | **0.236±0.015** | 0.680±0.017 | 0.273±0.015 | 0.844±0.030 | PA-F1 0.925 (AT, diff split) | v24 phase 5 |
 | MBA | Cardiac | **0.947±0.001** | 0.896±0.003 | 0.860±0.003 | 1.000±0.000 | (no AUPRC benchmark) | v24 phase 5 |
-| Sepsis | ICU (P=1) | (pending) | (pending) | (pending) | — | AUROC 0.85 (InceptionTime) | v24 phase 6 |
+| Sepsis | ICU (P=1) | **0.186±0.004** | **0.802±0.003** | 0.287±0.001 | — | AUROC 0.85 (InceptionTime) | v24 phase 6 |
 
 **v24 vs v22 delta (AUPRC)**: FD001 -0.019 (CI overlap), FD002 -0.047,
 FD003 -0.166, SMAP +0.105, MSL -0.050, PSM +0.008, SMD +0.040, MBA +0.163.
