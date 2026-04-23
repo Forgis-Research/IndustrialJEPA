@@ -1,0 +1,44 @@
+{
+  "dataset": "sepsis",
+  "results": [
+    {
+      "dataset": "sepsis",
+      "seed": 42,
+      "n_channels": 34,
+      "patch_size": 1,
+      "pretrain_best_loss": 0.002052411175100133,
+      "pretrain_time_s": 33.66320991516113,
+      "ft_best_val": 1.0855197185470211,
+      "ft_time_s": 190.8423912525177,
+      "eval_time_s": 33.76626706123352,
+      "auprc": 0.18339756754682265,
+      "auroc": 0.7980980519401701,
+      "f1_best": 0.2861555116856652,
+      "precision_best": 0.2563685636856369,
+      "recall_best": 0.32377418308895056,
+      "prevalence": 0.027243507558657534,
+      "monotonicity_violation_rate": 1.1737109361804698e-05,
+      "per_horizon_auprc": {
+        "1": 0.0763472444743033,
+        "2": 0.08222767782178736,
+        "3": 0.08785796346476504,
+        "6": 0.10409358112098524,
+        "12": 0.13471151120061753,
+        "24": 0.18597937095203346,
+        "48": 0.26144683491216125
+      },
+      "per_horizon_auroc": {
+        "1": 0.7699942328721179,
+        "2": 0.7681632512679061,
+        "3": 0.7666585183047259,
+        "6": 0.7631201037749643,
+        "12": 0.7611542406906142,
+        "24": 0.7623614079565555,
+        "48": 0.7762506299577864
+      },
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/surfaces/sepsis_s42.npz",
+      "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s42_pretrain.pt",
+      "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/sepsis_s42_pred_ft.pt"
+    }
+  ]
+}
