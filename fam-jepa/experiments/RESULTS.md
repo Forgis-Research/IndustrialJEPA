@@ -45,6 +45,32 @@ FD003 -0.166, SMAP +0.105, MSL -0.050, PSM +0.008, SMD +0.040, MBA +0.163.
 Variance uniformly 1–30× tighter across datasets. Canonical architecture
 improves 4/5 anomaly datasets while underperforming v21 on FD003 (multi-fault).
 
+## Foundation-Model Baseline: Chronos-2 + Linear Probe
+
+**Fair comparison**: frozen `amazon/chronos-2` (768-d multivariate encoder)
+with per-observation mean-pooled embedding → 768-d linear probe trained on
+the **exact same labeled data** used by FAM pred-FT (same splits, same labels,
+same horizons, same pos-weighted BCE). Chronos-2 has never seen our datasets.
+
+| Dataset | FAM AUPRC | Chronos-2+probe AUPRC | Δ | FAM AUROC | Chronos-2+probe AUROC | Δ | Source |
+|---------|-----------|-----------------------|-----|-----------|-----------------------|-----|--------|
+| FD001   | 0.926±0.001 | **0.925±0.000** | -0.000 | 0.919±0.001 | **0.929±0.002** | +0.010 | v24 chronos2 |
+| SMAP    | 0.395±0.010 | (pending)              |  -  | 0.594±0.005 | (pending)              |  -  | v24 chronos2 |
+| MSL     | 0.187±0.007 | (pending)              |  -  | 0.472±0.015 | (pending)              |  -  | v24 chronos2 |
+| PSM     | 0.425±0.006 | (pending)              |  -  | 0.566±0.009 | (pending)              |  -  | v24 chronos2 |
+| SMD     | 0.236±0.015 | (pending)              |  -  | 0.680±0.017 | (pending)              |  -  | v24 chronos2 |
+| MBA     | 0.947±0.001 | (pending)              |  -  | 0.896±0.003 | (pending)              |  -  | v24 chronos2 |
+
+**FD001 headline**: zero-shot Chronos-2 + linear probe matches our
+architecture within 0.03% AUPRC. Chronos-2 is better at short horizons
+(dt=1 AUPRC 0.41 vs 0.09) and marginally better on AUROC. This challenges
+the premise that per-dataset self-supervised pretraining is necessary for
+event prediction — a generic multivariate foundation model handles
+FD001 competitively.
+
+Feature extraction is ~0.8s/obs on A10G (SMAP has 193K obs → ~40 min).
+Full-sweep Chronos numbers will populate as runs complete.
+
 ## Main Benchmark Table (Paper Tab 1) — v22 legacy (for comparison)
 
 **v22 update**: anomaly rows replaced with pred-FT numbers (frozen encoder,
