@@ -326,7 +326,7 @@ def main():
     for h, a in zip(horizons, per_h['auprc_per_k']):
         print(f"  dt={h:4d}: AUPRC={a:.4f}", flush=True)
 
-    out = args.out or (RES_DIR / f'baseline_chronos2_{args.dataset}.json')
+    out = args.out or (RES_DIR / f'baseline_chronos2_{args.dataset}_s{args.seed}.json')
     with open(out, 'w') as f:
         json.dump({
             'dataset': args.dataset,
