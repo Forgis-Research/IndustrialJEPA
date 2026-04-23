@@ -241,9 +241,9 @@ else:
 #| fig-cap: "AUPRC($\\Delta t$) per dataset, averaged across seeds.  Shorter horizons (smaller $\\Delta t$) are harder because the event must fall within fewer timesteps — fewer positives per window, higher class imbalance.  AUPRC typically rises with $\\Delta t$ until the event-in-window probability saturates.  MBA's AUPRC stays high across all horizons because the 35% anomaly rate means most windows have at least one nearby event."
 rows_plot = {}
 for ds, obj in (phase1 or {}).get('datasets', {}).items():
-    K = len(obj['per_seed'][0]['per_horizon']['auprc'])
-    all_auprc = np.array([r['per_horizon']['auprc'] for r in obj['per_seed']])
-    horizons = obj['per_seed'][0]['per_horizon']['horizons']
+    K = len(obj['per_seed'][0]['per_horizon']['auprc_per_k'])
+    all_auprc = np.array([r['per_horizon']['auprc_per_k'] for r in obj['per_seed']])
+    horizons = obj['per_seed'][0]['per_horizon']['horizon_labels']
     rows_plot[ds] = (horizons, all_auprc.mean(axis=0), all_auprc.std(axis=0))
 
 fig, ax = plt.subplots(figsize=(7.5, 4))
