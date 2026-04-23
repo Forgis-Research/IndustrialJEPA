@@ -78,14 +78,16 @@ same horizons, same pos-weighted BCE). Chronos-2 has never seen our datasets.
 
 | Dataset | FAM AUPRC | Chronos-2+probe AUPRC | Δ AUPRC | FAM AUROC | Chronos-2+probe AUROC | Δ AUROC | Source |
 |---------|-----------|-----------------------|---------|-----------|-----------------------|---------|--------|
-| FD001   | 0.926±0.001 | 0.925±0.000   | -0.000 | 0.919±0.001 | **0.929±0.002** | +0.010 | v24 chronos2 (3 seeds) |
-| FD002   | 0.908±0.002 | **0.916±0.000** | +0.008 | 0.915±0.001 | **0.928±0.000** | +0.013 | v24 chronos2 (1 seed so far) |
-| FD003   | 0.766±0.009 | **0.794±0.003** | +0.028 | 0.876±0.007 | **0.895±0.001** | +0.019 | v24 chronos2 (2 seeds so far) |
-| SMAP    | **0.395±0.010** | 0.285±0.000 | -0.110 | **0.594±0.005** | 0.507±0.000 | -0.087 | v24 chronos2 (1 seed so far) |
-| MSL     | 0.187±0.007 | (pending)   | -  | 0.472±0.015 | (pending)          |  -  | v24 chronos2 |
-| PSM     | 0.425±0.006 | (pending)   | -  | 0.566±0.009 | (pending)          |  -  | v24 chronos2 |
-| SMD     | 0.236±0.015 | (pending)   | -  | 0.680±0.017 | (pending)          |  -  | v24 chronos2 |
+| FD001   | 0.926±0.001 | 0.925±0.000 | -0.000 | 0.919±0.001 | **0.929±0.002** | +0.010 | v24 chronos2 (3 seeds) |
+| FD002   | 0.908±0.002 | **0.917±0.001** | +0.009 | 0.915±0.001 | **0.928±0.000** | +0.013 | v24 chronos2 (3 seeds) |
+| FD003   | 0.766±0.009 | **0.794±0.003** | +0.028 | 0.876±0.007 | **0.895±0.001** | +0.019 | v24 chronos2 (3 seeds) |
+| SMAP    | **0.395±0.010** | 0.285±0.000 | -0.110 | **0.594±0.005** | 0.507±0.000 | -0.087 | v24 chronos2 (1 seed only) |
+| MSL     | 0.187±0.007 | **0.223±0.005** | +0.036 | 0.472±0.015 | **0.532±0.002** | +0.060 | v24 chronos2 (3 seeds) |
+| PSM     | **0.425±0.006** | 0.411±0.005 | -0.014 | **0.566±0.009** | 0.548±0.002 | -0.018 | v24 chronos2 (3 seeds) |
+| SMD     | 0.236±0.015 | (skipped - 327K test obs) | - | 0.680±0.017 | (skipped) | - | v24 chronos2 |
 | MBA     | **0.947±0.001** | 0.918±0.002 | -0.029 | **0.896±0.003** | 0.832±0.003 | -0.064 | v24 chronos2 (3 seeds) |
+| GECCO   | **0.110±0.053** | 0.032±0.001 | -0.078 | 0.762±0.057 | **0.873±0.001** | +0.111 | v24 chronos2 (3 seeds) |
+| BATADAL | 0.196±0.013 | **0.338±0.042** | +0.142 | **0.731±0.025** | 0.688±0.016 | -0.043 | v24 chronos2 (3 seeds) |
 
 **Emerging pattern (partial sweep)**:
  - **C-MAPSS turbofan**: Chronos-2 ties or beats FAM. FD001 tie; FD002 +0.008; FD003 +0.028 (Chronos better). The canonical FAM backbone with a 198K-parameter predictor finetune appears capacity-limited on multi-fault degradation (FD003 is the hardest case), whereas Chronos-2's 768-d generic embeddings carry enough temporal structure that a linear probe suffices.

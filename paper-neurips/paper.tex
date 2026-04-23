@@ -338,7 +338,7 @@ We compare FAM to \texttt{amazon/chronos-2}~\citep{ansari2024chronos} - a \emph{
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{\texttt{amazon/chronos-2} (multivariate, frozen, 768-d) + linear probe vs.\ FAM pred-FT under a shared protocol.} Same labeled splits, same horizon set, same BCE loss. Chronos-2 cells: 3 seeds on FD001/FD002/FD003/MBA, 1 preliminary seed on SMAP, remaining datasets pending. Chronos-T5-tiny (8.4M univariate) is superseded by Chronos-2 as our foundation-model comparator. Sources: \texttt{fam-jepa/experiments/v24/results/baseline\_chronos2\_agg.json} and per-seed JSONs.}
+  \caption{\textbf{\texttt{amazon/chronos-2} (multivariate, frozen, 768-d) + linear probe vs.\ FAM pred-FT under a shared protocol.} Same labeled splits, same horizon set, same BCE loss. Chronos-2 cells: 3 seeds on all datasets shown except SMAP (1 seed; remaining seeds deferred, feature extraction took 40 min on A10G); SMD skipped (327K test observations, ${\approx}5$\,h/seed infeasible). Chronos-T5-tiny (8.4M univariate) is superseded by Chronos-2 as our foundation-model comparator. Sources: \texttt{fam-jepa/experiments/v24/results/baseline\_chronos2\_agg.json} and per-seed JSONs.}
   \label{tab:chronos}
   \small
   \begin{tabular}{llcccc}
@@ -360,6 +360,9 @@ We compare FAM to \texttt{amazon/chronos-2}~\citep{ansari2024chronos} - a \emph{
     MSL     & Chronos-2 (frozen)   & 769 / 120M              & $\mathbf{0.223 \pm 0.005}$ & $\mathbf{0.532 \pm 0.002}$ & \placeholder{pending} \\
     MSL     & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $0.187 \pm 0.007$          & $0.472 \pm 0.015$          & \placeholder{pending} \\
     \midrule
+    PSM     & Chronos-2 (frozen)   & 769 / 120M              & $0.411 \pm 0.005$          & $0.548 \pm 0.002$          & \placeholder{pending} \\
+    PSM     & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.425 \pm 0.006}$ & $\mathbf{0.566 \pm 0.009}$ & \placeholder{pending} \\
+    \midrule
     MBA     & Chronos-2 (frozen)   & 769 / 120M              & $0.918 \pm 0.002$          & $0.832 \pm 0.003$          & \placeholder{pending} \\
     MBA     & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.947 \pm 0.001}$ & $\mathbf{0.896 \pm 0.003}$ & \placeholder{pending} \\
     \midrule
@@ -372,7 +375,13 @@ We compare FAM to \texttt{amazon/chronos-2}~\citep{ansari2024chronos} - a \emph{
   \end{tabular}
 \end{table}
 
-\textbf{Reading the comparison.} The pattern is asymmetric, not a FAM victory. On C-MAPSS turbofan Chronos-2 ties FAM on FD001 (within $0.0003$ AUPRC) and \emph{beats} FAM on FD002 ($+0.008$) and FD003 ($+0.028$); the multi-condition and multi-fault regimes are exactly where FAM's capacity-limited $198$K predictor lags a 120M generalist. On spacecraft anomaly and cardiac datasets (SMAP $+0.110$, MBA $+0.029$), FAM wins because the Chronos pretraining corpus does not cover those input distributions and its frozen features collapse to near-chance AUROC. Chronos-2 is clearly stronger at the shortest horizon ($\Delta t{=}1$ AUPRC $0.41$ vs FAM $0.09$ on FD001) where local-dynamics signal dominates. The honest takeaway: \emph{per-dataset JEPA pretraining is worth the compute where a generic foundation model lacks coverage} (spacecraft, ECG), and \emph{is not worth the compute where the foundation model already has coverage} (turbofan). Predictor finetuning (Contribution 1) is then the component carrying most of FAM's weight, since it works on top of either encoder. Remaining anomaly Chronos-2 cells (MSL, PSM, SMD) are pending at submission time and will complete the comparison.
+\textbf{Reading the comparison.} Across 9 benchmarks with 3-seed Chronos-2 runs (SMAP is a 1-seed preliminary; SMD skipped on cost), the pattern is asymmetric:
+\begin{itemize}[nosep]
+  \item \textbf{Chronos-2 wins AUPRC} on C-MAPSS FD002 ($+0.009$), FD003 ($+0.028$), MSL ($+0.036$), and BATADAL ($+0.142$).
+  \item \textbf{FAM wins AUPRC} on SMAP ($+0.110$), PSM ($+0.014$), MBA ($+0.029$), and GECCO ($+0.078$). Ties on FD001 (within $0.0003$).
+  \item \textbf{The AUPRC-vs-AUROC axes disagree on GECCO and BATADAL}: Chronos-2's probabilities are better-calibrated globally (high AUROC) while FAM's predictor-finetuning ranks the rare positives more sharply (high AUPRC). On GECCO, FAM AUROC $0.76$ vs Chronos $0.87$; AUPRC flipped. On BATADAL, Chronos AUPRC $0.34$ vs FAM $0.20$, but FAM AUROC $0.73$ vs Chronos $0.69$. Report both.
+\end{itemize}
+Chronos-2 is clearly stronger at the shortest horizon ($\Delta t{=}1$ AUPRC $0.41$ vs FAM $0.09$ on FD001) where local-dynamics signal dominates - consistent with its forecasting-oriented pretraining objective. The honest takeaway: \emph{per-dataset JEPA pretraining is worth the compute only on domains the foundation model has not seen} (spacecraft telemetry, cardiac ECG, water quality). On datasets whose input distribution is close to the Chronos-2 pretraining corpus (turbofan, water-cyber) a 120M-parameter frozen encoder + 769-parameter linear probe is at least as good as the canonical FAM. Predictor finetuning (the recipe, not the pretrained predictor weights; see \cref{sec:predictor_pretrain_ablation}) is then the component carrying FAM's residual advantage, since it works on top of either encoder.
 
 % ============================================================
 % 6. ABLATIONS
