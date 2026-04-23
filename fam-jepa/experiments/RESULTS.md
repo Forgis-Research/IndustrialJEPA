@@ -53,8 +53,9 @@ Cleanest test of whether the JEPA-pretrained predictor weights carry downstream 
 |---------|------------------------------|-------------------------------|------------|------|---|
 | FD001   | 0.9257 ± 0.0008              | 0.9235 ± 0.0027               | +0.0021    | 1.12 | 0.38 |
 | SMAP    | 0.3874 ± 0.0205              | 0.3950 ± 0.0286               | -0.0076    | -1.24 | 0.34 |
+| MBA     | 0.9465 ± 0.0004              | 0.9435 ± 0.0016               | +0.0031    | 3.13 | **0.089** |
 
-Both deltas are within noise. On FD001 the pretrained version is +0.002 better (not significant); on SMAP the reset version is marginally better. The practical implication: pred-FT's value comes from (a) the pretrained encoder's representation and (b) the freeze-encoder + small-head + pos-weighted-BCE recipe, not from predictor pretraining specifically. Random-initialising the predictor and only doing pred-FT on top of a frozen encoder is an acceptable simplification. Source: `experiments/v24/results/phase12_predictor_ablation.json` and `phase12_smap_ablation.json`.
+On FD001 and SMAP the pretrained and random-init predictors are within seed noise (SMAP's reset version is marginally better). On MBA - the dataset where FAM beats Chronos-2 by the widest margin - the pretrained predictor trends positive (delta +0.003, p=0.09) but does not clear p<0.05. The practical implication: pred-FT's value comes chiefly from (a) the pretrained encoder's representation and (b) the freeze-encoder + small-head + pos-weighted-BCE recipe; predictor pretraining adds at most a small boost on some datasets (MBA) and nothing on others. Dropping predictor pretraining is a reasonable simplification for practitioners. Sources: `experiments/v24/results/phase12_predictor_ablation.json`, `phase12_smap_ablation.json`, `phase12_mba_ablation.json`.
 
 ## New Domains (v24 Phase 11): GECCO, BATADAL, PhysioNet 2012
 

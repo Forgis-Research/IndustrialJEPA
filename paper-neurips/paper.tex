@@ -453,14 +453,15 @@ The predictor's rollouts are \emph{not} more useful than $\h_\text{past}$ when b
 \subsection{Pretrained Predictor vs.\ Random-Init Predictor}
 \label{sec:predictor_pretrain_ablation}
 
-A cleaner and narrower test of \emph{which part} of pred-FT carries the weight. We hold the pretrained \emph{encoder} fixed and toggle only the predictor's initialisation: (A)~inherit the predictor weights from self-supervised pretraining, (B)~re-initialise the predictor to random (same architecture, same size) and keep the encoder frozen. Both are then pred-FT'd identically. Run on FD001 and SMAP (3 seeds each):
+A cleaner and narrower test of \emph{which part} of pred-FT carries the weight. We hold the pretrained \emph{encoder} fixed and toggle only the predictor's initialisation: (A)~inherit the predictor weights from self-supervised pretraining, (B)~re-initialise the predictor to random (same architecture, same size) and keep the encoder frozen. Both are then pred-FT'd identically. Run on FD001, SMAP, and MBA (3 seeds each):
 
 \begin{itemize}[nosep]
   \item \textbf{FD001}: pretrained $0.9257 \pm 0.0008$ vs.\ reset $0.9235 \pm 0.0027$, paired $\Delta = +0.0021$, $t(2) = 1.12$, $p = 0.38$ (two-sided).
   \item \textbf{SMAP}: pretrained $0.3874 \pm 0.0205$ vs.\ reset $0.3950 \pm 0.0286$, paired $\Delta = -0.0076$, $t(2) = -1.24$, $p = 0.34$.
+  \item \textbf{MBA}: pretrained $0.9465 \pm 0.0004$ vs.\ reset $0.9435 \pm 0.0016$, paired $\Delta = +0.0031$, $t(2) = 3.13$, $p = 0.089$.
 \end{itemize}
 
-On both datasets the pretrained and random-init predictors are within seed noise; on SMAP the reset predictor is marginally better. The pretrained predictor weights carry no statistically detectable signal under pred-FT on either dataset. The value of pred-FT is therefore in (i) the pretrained \emph{encoder}'s representation (visible in the FAM vs Chronos-2 SMAP gap of $+0.110$ AUPRC, \cref{sec:foundation_baselines}) and (ii) the recipe of freezing the encoder and finetuning a small 198K-parameter horizon-conditioned MLP + a 513-parameter LN-linear head with pos-weighted BCE on the per-horizon logits. JEPA pretraining of the predictor is not the bottleneck and could be dropped without measurable harm - a useful simplification for practitioners who wish to keep predictor initialisation random while retaining FAM's encoder pipeline.
+On FD001 and SMAP the pretrained and random-init predictors are within seed noise (SMAP's reset is even marginally better). On MBA (where FAM wins the Chronos-2 comparison by the widest AUPRC margin) the pretrained predictor trends higher ($\Delta = +0.003$) but does not clear $p < 0.05$. Across three datasets the pretrained predictor weights carry at most a small advantage - the value of pred-FT is chiefly in (i) the pretrained \emph{encoder}'s representation (visible in the FAM vs Chronos-2 SMAP gap of $+0.110$ AUPRC and MBA gap of $+0.029$, \cref{sec:foundation_baselines}) and (ii) the recipe of freezing the encoder and finetuning a small 198K-parameter horizon-conditioned MLP + 513-parameter LN-linear head with pos-weighted BCE on the per-horizon logits. JEPA pretraining of the predictor is a small-to-null term; practitioners can drop it without measurable harm on FD001/SMAP, and lose at most ${\sim}0.3\%$ AUPRC on MBA.
 
 \subsection{Causal vs.\ Bidirectional Encoder}
 \label{sec:causal_ablation}
