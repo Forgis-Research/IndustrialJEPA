@@ -1,0 +1,577 @@
+{
+  "variants": {
+    "sigreg": {
+      "per_seed": [
+        {
+          "variant": "sigreg",
+          "seed": 42,
+          "primary": {
+            "auprc": 0.8866755722961948,
+            "auroc": 0.9770362909287711,
+            "f1_best": 0.8208092485549134,
+            "precision_best": 0.7553191489361702,
+            "recall_best": 0.8987341772151899,
+            "threshold_best": 0.815632164478302,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.8061533704390846,
+              0.888142413142413,
+              0.8652477032556367,
+              0.9294869526758074,
+              0.9375257432985733,
+              0.9253157435277949
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9800307219662059,
+              0.9866666666666667,
+              0.9650297619047619,
+              0.9744,
+              0.9552238805970149,
+              0.8426051560379918
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 26.012496948242188,
+            "rmse_expected": 29.090299606323242,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3205748087565104,
+            "final_epoch": 59
+          },
+          "pos_weight": 3.1585127201565557,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23/surfaces/fd001_sigreg_pred_ft_seed42.npz",
+          "runtime_s": 5.979061603546143
+        },
+        {
+          "variant": "sigreg",
+          "seed": 123,
+          "primary": {
+            "auprc": 0.9125692161773898,
+            "auroc": 0.9805992362969421,
+            "f1_best": 0.8414634146341463,
+            "precision_best": 0.8117647058823529,
+            "recall_best": 0.8734177215189873,
+            "threshold_best": 0.8912582397460938,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7640288283145427,
+              0.888142413142413,
+              0.8847237831612831,
+              0.9440416741959393,
+              0.9451448178594961,
+              0.9302505885747214
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9769585253456222,
+              0.9866666666666667,
+              0.9717261904761905,
+              0.9786666666666667,
+              0.9601990049751243,
+              0.8507462686567164
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 24.158641815185547,
+            "rmse_expected": 27.34109115600586,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.3149843139648438,
+            "final_epoch": 56
+          },
+          "pos_weight": 3.4270833333333335,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23/surfaces/fd001_sigreg_pred_ft_seed123.npz",
+          "runtime_s": 4.059927463531494
+        },
+        {
+          "variant": "sigreg",
+          "seed": 456,
+          "primary": {
+            "auprc": 0.8330445838251888,
+            "auroc": 0.9718121410745963,
+            "f1_best": 0.8072289156626505,
+            "precision_best": 0.7701149425287356,
+            "recall_best": 0.8481012658227848,
+            "threshold_best": 0.8913063406944275,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.7129251700680271,
+              0.9540404040404039,
+              0.9012010558885559,
+              0.9279566156066157,
+              0.9069820846306937,
+              0.8666921153311836
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9831029185867896,
+              0.9944444444444445,
+              0.96875,
+              0.9701333333333333,
+              0.9357756671189507,
+              0.7390321121664405
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 29.757352828979492,
+            "rmse_expected": 33.43467712402344,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.30737374877929685,
+            "final_epoch": 59
+          },
+          "pos_weight": 3.1342412451361867,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23/surfaces/fd001_sigreg_pred_ft_seed456.npz",
+          "runtime_s": 4.465771675109863
+        }
+      ],
+      "agg": {
+        "n_seeds": 3,
+        "auprc_mean": 0.8774297907662577,
+        "auprc_std": 0.0405605121363461,
+        "auroc_mean": 0.9764825561001031,
+        "auroc_std": 0.004419641083504733,
+        "f1_best_mean": 0.8231671929505701,
+        "f1_best_std": 0.017238623967332566,
+        "rmse_expected_mean": 29.955355962117512,
+        "rmse_expected_std": 3.137545117035009,
+        "mono_violation_mean": 0.0,
+        "mono_violation_std": 0.0
+      }
+    },
+    "baseline": {
+      "per_seed": [
+        {
+          "variant": "baseline",
+          "seed": 42,
+          "primary": {
+            "auprc": 0.9454625974683923,
+            "auroc": 0.9895554586728403,
+            "f1_best": 0.8902077151335311,
+            "precision_best": 0.8379888268156425,
+            "recall_best": 0.9493670886075949,
+            "threshold_best": 0.7882844805717468,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.982142857142857,
+              0.941540404040404,
+              0.9463019908332408,
+              0.9968615384615387,
+              0.9784026243425575,
+              0.9444224223136265
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9984639016897081,
+              0.9933333333333333,
+              0.9873511904761905,
+              0.9989333333333333,
+              0.9841700587969244,
+              0.8833107191316146
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 14.739742279052734,
+            "rmse_expected": 18.622478485107422,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.19153910573323568,
+            "final_epoch": 58
+          },
+          "pos_weight": 3.1585127201565557,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23/surfaces/fd001_baseline_pred_ft_seed42.npz",
+          "runtime_s": 4.250234127044678
+        },
+        {
+          "variant": "baseline",
+          "seed": 123,
+          "primary": {
+            "auprc": 0.9448043310775436,
+            "auroc": 0.9885294206079558,
+            "f1_best": 0.8606811145510835,
+            "precision_best": 0.8424242424242424,
+            "recall_best": 0.879746835443038,
+            "threshold_best": 0.8549283146858215,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.982142857142857,
+              0.9651515151515152,
+              0.937122773060273,
+              0.9760536002009688,
+              0.9751464036094976,
+              0.9366188922316896
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9984639016897081,
+              0.9955555555555555,
+              0.9866071428571429,
+              0.9925333333333333,
+              0.9846223428312981,
+              0.8652193577566711
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 15.332319259643555,
+            "rmse_expected": 20.315813064575195,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.21682667287190754,
+            "final_epoch": 26
+          },
+          "pos_weight": 3.4270833333333335,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23/surfaces/fd001_baseline_pred_ft_seed123.npz",
+          "runtime_s": 1.9655916690826416
+        },
+        {
+          "variant": "baseline",
+          "seed": 456,
+          "primary": {
+            "auprc": 0.9628300005773635,
+            "auroc": 0.9922727682732493,
+            "f1_best": 0.8862275449101796,
+            "precision_best": 0.8409090909090909,
+            "recall_best": 0.9367088607594937,
+            "threshold_best": 0.7380025386810303,
+            "prevalence": 0.158,
+            "n_cells": 1000,
+            "n_positive": 158
+          },
+          "per_horizon": {
+            "auprc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9379251700680271,
+              0.9540404040404039,
+              0.9295600926850927,
+              0.9769894047981006,
+              0.9840543465543464,
+              0.9656352211003603
+            ],
+            "auroc_per_k": [
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              0.9953917050691244,
+              0.9944444444444445,
+              0.9858630952380952,
+              0.9925333333333333,
+              0.9909543193125283,
+              0.9240162822252375
+            ],
+            "horizon_labels": [
+              1,
+              2,
+              3,
+              5,
+              10,
+              15,
+              20,
+              30,
+              50,
+              100
+            ],
+            "prevalence_per_k": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.07,
+              0.1,
+              0.16,
+              0.25,
+              0.33,
+              0.67
+            ]
+          },
+          "monotonicity": {
+            "violation_rate": 0.0,
+            "mean_violation": 0.0,
+            "max_violation": 0.0,
+            "n_pairs": 900
+          },
+          "legacy": {
+            "rmse_cross": 12.413702011108398,
+            "rmse_expected": 14.720826148986816,
+            "horizon_cap": 100.0
+          },
+          "train": {
+            "best_val": 0.17581610107421874,
+            "final_epoch": 37
+          },
+          "pos_weight": 3.1342412451361867,
+          "surface_file": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v23/surfaces/fd001_baseline_pred_ft_seed456.npz",
+          "runtime_s": 2.7677972316741943
+        }
+      ],
+      "agg": {
+        "n_seeds": 3,
+        "auprc_mean": 0.9510323097077665,
+        "auprc_std": 0.010222399965333948,
+        "auroc_mean": 0.9901192158513484,
+        "auroc_std": 0.0019343033766847826,
+        "f1_best_mean": 0.879038791531598,
+        "f1_best_std": 0.016022286567228764,
+        "rmse_expected_mean": 17.886372566223145,
+        "rmse_expected_std": 2.8692087043754135,
+        "mono_violation_mean": 0.0,
+        "mono_violation_std": 0.0
+      }
+    },
+    "paired_sigreg_vs_baseline": {
+      "auprc": {
+        "n": 3,
+        "a_mean": 0.8774297907662577,
+        "b_mean": 0.9510323097077665,
+        "delta_mean": -0.07360251894150867,
+        "delta_std": 0.050434506933016335,
+        "t_stat": -2.5276999840814995,
+        "t_p": 0.12730294185908542,
+        "w_stat": 0.0,
+        "w_p": 0.25
+      },
+      "auroc": {
+        "n": 3,
+        "a_mean": 0.9764825561001031,
+        "b_mean": 0.9901192158513484,
+        "delta_mean": -0.013636659751245284,
+        "delta_std": 0.0063395260887288835,
+        "t_stat": -3.7257339435324006,
+        "t_p": 0.06508605372521198,
+        "w_stat": 0.0,
+        "w_p": 0.25
+      },
+      "rmse_expected": {
+        "n": 3,
+        "a_mean": 29.955355962117512,
+        "b_mean": 17.886372566223145,
+        "delta_mean": 12.068983395894369,
+        "delta_std": 6.006535980599171,
+        "t_stat": 3.4802242931555636,
+        "t_p": 0.07356799837510751,
+        "w_stat": 0.0,
+        "w_p": 0.25
+      }
+    }
+  },
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "runtime_min": 0.3917029658953349
+}

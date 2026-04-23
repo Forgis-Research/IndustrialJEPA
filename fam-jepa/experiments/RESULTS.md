@@ -439,3 +439,85 @@ phase 6; AUPRC 0.951 is higher than the v21 RESULTS.md FD001 entry
    for consistency with the paper's "one architecture" framing.  The
    matched-protocol and variant comparisons are v22 ablations in
    RESULTS.md and the Quarto notebook.
+
+---
+
+## v23 Session (2026-04-23)
+
+Three focused ablations + one new dataset.  Patch-tokenization and
+SIGReg are one-architecture ablations; PhysioNet 2019 Sepsis is a new
+medical domain with an established AUROC SOTA benchmark.
+
+### v23 Phase 0 - PA-F1 from stored v22 surfaces
+
+Computed PA-F1 from the v22 pred-FT surfaces via sweep of threshold
+percentiles (experiments/v22/compute_pa_f1_from_surfaces.py).  This is
+the metric most papers report; our primary AUPRC is surface-based and
+honest, but PA-F1 is the one that appears in MTS-JEPA / AT / TranAD
+tables.
+
+| Dataset | PA-F1 (v22 pred-FT, 3s)  | non-PA F1 (v22 pred-FT, 3s) | SOTA PA-F1 (MTS-JEPA / TranAD) |
+|---------|--------------------------|------------------------------|--------------------------------|
+| SMAP    | 0.792 ± 0.016            | 0.184 ± 0.075                | 0.336 (MTS-JEPA)               |
+| MSL     | 0.516 ± 0.072            | 0.136 ± 0.106                | 0.336 (MTS-JEPA)               |
+| PSM     | 0.619 ± 0.061            | 0.243 ± 0.148                | 0.616 (MTS-JEPA)               |
+| SMD     | 0.608 ± 0.050            | 0.181 ± 0.073                | 0.925 (AT, different split)    |
+| MBA     | 0.999 ± 0.000            | 0.363 ± 0.177                | --                             |
+
+**Kim 2022 caveat.**  PA-F1 (point-adjustment F1) inflates scores by
+flipping the entire anomaly segment to positive when any point inside
+it is flagged.  SMAP jumps from 0.18 (non-PA) to 0.79 (PA) - that is
+the metric artifact, not a real improvement.  The paper table reports
+non-PA F1 and states the inflation explicitly.
+
+### v23 Phase 1+2 - SIGReg (drop EMA) on FD001
+
+Replace EMA target encoder with explicit collapse prevention (VICReg
+triplet: L1 + variance + covariance on h_past, stop-grad on the same
+encoder for the future target).  Curriculum on k (k in [1, 10] for
+epochs 1-20, linearly grow to [1, 150] by epoch 40).  Early-stopping
+patience counter only runs after the curriculum fully ramps.
+
+Without fixing the patience-during-ramp issue, all 3 seeds early-stop
+inside the trivial warmup (loss drops from 0.05 to 0.04 with small
+jitter, patience runs out).  Fix: `if ep < K_RAMP_END_EP: don't count`.
+
+Pretrain: 3 seeds × 44-50 ep each, best loss 0.042-0.044, no collapse.
+
+Pred-FT comparison on FD001 (same downstream protocol, 3 seeds paired):
+
+| Variant   | AUPRC         | AUROC         | RMSE (expected) | Notes             |
+|-----------|---------------|---------------|-----------------|-------------------|
+| sigreg    | 0.877 ± 0.041 | 0.976 ± 0.004 | 29.96 ± 3.14    | no EMA            |
+| baseline  | 0.951 ± 0.010 | 0.990 ± 0.002 | 17.89 ± 2.87    | v22 EMA baseline  |
+
+Paired (sigreg - baseline): AUPRC delta -0.074 (t(2)=-2.53, p=0.127),
+AUROC delta -0.014 (p=0.065), RMSE_expected delta +12.07 (p=0.074).
+
+**Conclusion: SIGReg (this recipe) underperforms EMA on FD001.**  Per
+the session rule, we did not extend the ablation to SMAP.  Candidate
+reasons: (i) no EMA means the target moves with the student at every
+step - targets are never "ahead" of the student, so the predictor has
+no stable signal to chase; (ii) VICReg var+cov can keep representations
+non-collapsed without making them predictively useful.  V17 Phase 3
+used a *curriculum* from EMA -> SIGReg; that path might still work,
+but the V23 goal was to test "drop EMA entirely," which is the
+honestly-reported result here.
+
+### v23 Phase 3 - PhysioNet 2019 Sepsis loader
+
+New data/sepsis.py loader.  Set A (~20.3k patients) + set B (~20.0k
+patients) downloaded from s3://physionet-open/challenge-2019/1.0.0/
+(~316 MB, not the 6 GB the session prompt estimated - the .psv files
+are small).  34 clinical channels (drop Age/Gender/Unit1/Unit2/
+HospAdmTime/ICULOS per session prompt default); per-patient
+forward-fill then zero-fill; z-score normalize on the pretrain cohort.
+
+Split:
+  ft_train : 16269 patients (set A 80%, seed-shuffled, timestep
+             prevalence 2.2%)
+  ft_val   :  4067 patients (set A 20%, prevalence 2.2%)
+  ft_test  : 20000 patients (set B, prevalence 1.4%)
+  pretrain : 14843 non-septic ft_train patients (548 628 normal
+             timesteps, no sepsis leakage)
+
