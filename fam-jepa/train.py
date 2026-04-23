@@ -149,21 +149,29 @@ class EventDataset(Dataset):
       context: (ctx_len, C)  — observations up to time t
       tte: scalar time-to-next-event from t. inf if none.
       t_index: absolute time index
+
+    ``min_context`` (default 128 = 8 tokens at P=16) enforces the
+    ARCHITECTURE.md rule: a transformer with fewer than 8 tokens degenerates.
+    Timesteps t < min_context are skipped entirely.
     """
 
     def __init__(self, x: np.ndarray, labels: np.ndarray,
                  max_context: int = 512, stride: int = 1,
-                 max_future: int = 200):
+                 max_future: int = 200, min_context: int = 128):
         self.x = torch.from_numpy(np.asarray(x, dtype=np.float32))
         self.labels = np.asarray(labels, dtype=np.int32)
         self.max_context = max_context
         self.stride = stride
         self.max_future = max_future
+        self.min_context = min_context
 
         T = len(x)
-        t_start = 1  # need at least 1 context step
+        t_start = max(1, min_context)
         t_end = min(T, T - 1)  # at least 1 future step for tte
-        self.starts = list(range(t_start, t_end, stride))
+        if t_end <= t_start:
+            self.starts = []
+        else:
+            self.starts = list(range(t_start, t_end, stride))
         self._tte = self._compute_tte(self.labels, max_future)
 
     @staticmethod

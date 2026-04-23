@@ -40,17 +40,21 @@ from train import (
 from _cmapss_raw import load_cmapss_raw
 
 
-def build_event_concat(engines, stride, max_context=512, max_future=200):
+def build_event_concat(engines, stride, max_context=512, max_future=200,
+                       min_context=128):
     datasets = []
     for eid, seq in engines.items():
         T = len(seq)
-        if T < 8:
+        if T <= min_context:
             continue
         labels = np.zeros(T, dtype=np.int32)
         labels[T - 1] = 1
         datasets.append(EventDataset(seq, labels, max_context=max_context,
-                                     stride=stride, max_future=max_future))
-    return ConcatDataset(datasets)
+                                     stride=stride, max_future=max_future,
+                                     min_context=min_context))
+    # Filter out zero-length datasets (very short engines)
+    datasets = [d for d in datasets if len(d) > 0]
+    return ConcatDataset(datasets) if datasets else ConcatDataset([])
 
 
 def run_seed(subset: str, seed: int, max_context: int = 512,
@@ -90,16 +94,21 @@ def run_seed(subset: str, seed: int, max_context: int = 512,
                 n_layers=2, d_ff=256, dropout=0.1, ema_momentum=0.99,
                 predictor_hidden=256)
 
-    t0 = time.time()
-    pre_out = pretrain(model, train_pre_loader, val_pre_loader,
-                       lr=3e-4, n_epochs=pre_epochs,
-                       patience=pre_patience, device=device)
-    pre_time = time.time() - t0
-    print(f"  pretrain done in {pre_time:.1f}s "
-          f"(best_val={pre_out['best_loss']:.4f})", flush=True)
-
     ckpt_path = CKPT_DIR / f'{tag}_pretrain.pt'
-    torch.save(model.state_dict(), ckpt_path)
+    if ckpt_path.exists():
+        print(f"  pretrain ckpt exists, loading: {ckpt_path}", flush=True)
+        model.load_state_dict(torch.load(ckpt_path, map_location='cpu'))
+        pre_out = {'best_loss': float('nan'), 'history': []}
+        pre_time = 0.0
+    else:
+        t0 = time.time()
+        pre_out = pretrain(model, train_pre_loader, val_pre_loader,
+                           lr=3e-4, n_epochs=pre_epochs,
+                           patience=pre_patience, device=device)
+        pre_time = time.time() - t0
+        print(f"  pretrain done in {pre_time:.1f}s "
+              f"(best_val={pre_out['best_loss']:.4f})", flush=True)
+        torch.save(model.state_dict(), ckpt_path)
 
     # ---- Finetune ----
     horizons = get_horizons(subset)
