@@ -7,7 +7,8 @@ import numpy as np
 V24 = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24')
 RES = V24 / 'results'
 
-DATASETS = ['FD001', 'FD002', 'FD003', 'SMAP', 'MSL', 'PSM', 'SMD', 'MBA', 'sepsis']
+DATASETS = ['FD001', 'FD002', 'FD003', 'SMAP', 'MSL', 'PSM', 'SMD', 'MBA',
+            'sepsis', 'GECCO', 'BATADAL', 'physionet2012']
 SEEDS = [42, 123, 456]
 
 out = {}
