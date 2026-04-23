@@ -1,0 +1,17 @@
+{
+  "results": [
+    {
+      "seed": 42,
+      "reset_predictor": false,
+      "ft_best_val": 13.82326224493602,
+      "ft_time_s": 100.59892416000366,
+      "auprc": 0.3806552597827525,
+      "auroc": 0.5668753554577225,
+      "f1_best": 0.44307038108436825,
+      "precision_best": 0.28545523995458744,
+      "recall_best": 0.9893356084035406,
+      "prevalence": 0.28176315287759346,
+      "monotonicity_violation_rate": 0.019634730772919915
+    }
+  ]
+}
