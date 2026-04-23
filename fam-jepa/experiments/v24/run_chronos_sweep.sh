@@ -10,7 +10,9 @@ cd /home/sagemaker-user/IndustrialJEPA/fam-jepa
 
 # Already done: FD001 (3 seeds), SMAP (s42 running -> will redo s123, s456 later)
 # Skip: sepsis (too slow - 40K patients)
-ORDER=(MBA FD003 FD002 MSL PSM SMD)
+ORDER=(MBA FD003 FD002 GECCO BATADAL MSL PSM SMD)
+# Note: Sepsis and PhysioNet 2012 skipped (too many test obs for Chronos-2
+# inference at ~0.8 s/obs; would take 10+ hours).
 
 for DS in "${ORDER[@]}"; do
     for SEED in 42 123 456; do

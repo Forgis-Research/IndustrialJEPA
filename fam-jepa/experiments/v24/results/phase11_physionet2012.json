@@ -1,0 +1,44 @@
+{
+  "dataset": "physionet2012",
+  "results": [
+    {
+      "dataset": "physionet2012",
+      "seed": 42,
+      "n_channels": 36,
+      "patch_size": 1,
+      "pretrain_best_loss": 0.002214211001517941,
+      "pretrain_time_s": 56.00043082237244,
+      "ft_best_val": 0.7711367275979784,
+      "ft_time_s": 82.8072280883789,
+      "eval_time_s": 17.269997596740723,
+      "auprc": 0.22521804157838868,
+      "auroc": 0.8566219832311682,
+      "f1_best": 0.31031884008324273,
+      "precision_best": 0.21986456803757146,
+      "recall_best": 0.5272232568967524,
+      "prevalence": 0.06304806304806305,
+      "monotonicity_violation_rate": 0.24924493932758396,
+      "per_horizon_auprc": {
+        "1": 0.02619196643431145,
+        "3": 0.2294771461137902,
+        "6": 0.21743975209341437,
+        "12": 0.22897206367852949,
+        "24": 0.2340011876165976,
+        "36": 0.22610837263161754,
+        "48": 0.22297265499078694
+      },
+      "per_horizon_auroc": {
+        "1": 0.9383540818509755,
+        "3": 0.9754615199229894,
+        "6": 0.94826513498034,
+        "12": 0.9043059290811228,
+        "24": 0.804091327710153,
+        "36": 0.683579575288217,
+        "48": 0.649567913269604
+      },
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/surfaces/physionet2012_s42.npz",
+      "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/physionet2012_s42_pretrain.pt",
+      "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24/ckpts/physionet2012_s42_pred_ft.pt"
+    }
+  ]
+}
