@@ -12,6 +12,71 @@
       "recall_best": 0.9893356084035406,
       "prevalence": 0.28176315287759346,
       "monotonicity_violation_rate": 0.019634730772919915
+    },
+    {
+      "seed": 42,
+      "reset_predictor": true,
+      "ft_best_val": 14.727441672531386,
+      "ft_time_s": 88.08950781822205,
+      "auprc": 0.39061700916022296,
+      "auroc": 0.5887870255549514,
+      "f1_best": 0.4546483089287032,
+      "precision_best": 0.3047478532709438,
+      "recall_best": 0.8947718739542461,
+      "prevalence": 0.28176315287759346,
+      "monotonicity_violation_rate": 0.1138828594875147
+    },
+    {
+      "seed": 123,
+      "reset_predictor": false,
+      "ft_best_val": 10.41035064629146,
+      "ft_time_s": 87.23794388771057,
+      "auprc": 0.4151358232376077,
+      "auroc": 0.6235492716663498,
+      "f1_best": 0.4702813256028621,
+      "precision_best": 0.3499753960870799,
+      "recall_best": 0.7166250510235977,
+      "prevalence": 0.28176315287759346,
+      "monotonicity_violation_rate": 0.029155461453474533
+    },
+    {
+      "seed": 123,
+      "reset_predictor": true,
+      "ft_best_val": 17.458677974958267,
+      "ft_time_s": 88.64177775382996,
+      "auprc": 0.43201017949142584,
+      "auroc": 0.6421069343484086,
+      "f1_best": 0.4792869926640749,
+      "precision_best": 0.34094629319015246,
+      "recall_best": 0.806547936440226,
+      "prevalence": 0.28176315287759346,
+      "monotonicity_violation_rate": 0.13263893576230382
+    },
+    {
+      "seed": 456,
+      "reset_predictor": false,
+      "ft_best_val": 19.77187795109219,
+      "ft_time_s": 77.28893041610718,
+      "auprc": 0.366327290152927,
+      "auroc": 0.5779997786661304,
+      "f1_best": 0.4547452049944509,
+      "precision_best": 0.30914029686524686,
+      "recall_best": 0.859630864955706,
+      "prevalence": 0.28176315287759346,
+      "monotonicity_violation_rate": 0.07456721529285128
+    },
+    {
+      "seed": 456,
+      "reset_predictor": true,
+      "ft_best_val": 18.272171183711006,
+      "ft_time_s": 90.13093757629395,
+      "auprc": 0.3623315598740603,
+      "auroc": 0.5904874331316272,
+      "f1_best": 0.4668269997790217,
+      "precision_best": 0.3195115135862488,
+      "recall_best": 0.8662023366049726,
+      "prevalence": 0.28176315287759346,
+      "monotonicity_violation_rate": 0.07800012552207117
     }
   ]
 }
