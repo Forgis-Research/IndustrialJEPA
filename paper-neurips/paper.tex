@@ -109,7 +109,7 @@ PatchTST~\citep{nie2023patchtst} showed channel-independent processing often win
 
 We follow standard practice for multi-domain time series~\citep{nie2023patchtst,ansari2024chronos,goswami2024moment}: patch tokenisation with per-window instance normalisation.
 
-\textbf{Patches.} $P$ consecutive raw samples form one token. $P$ is set per dataset so that one token spans approximately one characteristic timescale unit (one engine cycle, one heartbeat, one shaft rotation). \Cref{tab:tokenization} lists per-dataset values. The encoder is a causal Transformer with sinusoidal positional encodings, so the context length $T$ is variable at both training and inference: for prognostic datasets with a clear lifecycle start (C-MAPSS), we feed the full history; for continuous monitoring streams (SMAP, PSM), we use a sliding window. No architectural change is needed - only the input length differs.
+\textbf{Patches.} $P{=}16$ consecutive raw samples form one token. This is fixed globally across all datasets --- there are zero dataset-specific hyperparameters. \Cref{tab:tokenization} lists the resulting token counts. The encoder is a causal Transformer with sinusoidal positional encodings, so the context length is variable at both training and inference: for prognostic datasets with a clear lifecycle start (C-MAPSS, Sepsis), we feed the full history; for continuous monitoring streams (SMAP, PSM), we use a sliding window of 512 steps. No architectural change is needed --- only the input length differs.
 
 \textbf{Instance normalisation.} Per window, per channel: subtract the window mean, divide by the window standard deviation. This removes distribution shift across machines and operating conditions without requiring training-set statistics at inference.
 
@@ -117,20 +117,21 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
 
 \begin{table}[h]
   \centering
-  \caption{Tokenization per dataset. $P$ is the only dataset-specific parameter.}
+  \caption{Dataset overview. $P{=}16$ is fixed globally --- there are zero dataset-specific hyperparameters.}
   \label{tab:tokenization}
   \small
   \begin{tabular}{@{}lrrrl@{}}
     \toprule
-    Dataset           & Sensors & Rate    & Patch $P$ & Typical context $T$                   \\
+    Dataset           & Sensors & Rate    & Patch $P$ & Typical context                        \\
     \midrule
-    C-MAPSS FD001-004 & 14      & 1/cycle & 1         & full history (128-362 cycles)         \\
-    SMAP / MSL        & 25 / 55 & 1 Hz    & 16        & sliding (1024 steps $\approx$ 17 min) \\
-    PSM               & 25      & 1 Hz    & 16        & sliding (1024 steps $\approx$ 17 min) \\
-    MBA (ECG)         & 1       & 360 Hz  & 16        & sliding (1024 steps $\approx$ 2.8 s)  \\
+    C-MAPSS FD001-004 & 14      & 1/cycle & 16        & full history (8--23 tokens)             \\
+    SMAP / MSL        & 25 / 55 & 1 Hz    & 16        & sliding 512 steps (32 tokens)          \\
+    PSM               & 25      & 1/min   & 16        & sliding 512 steps (32 tokens)          \\
+    SMD               & 38      & 1/min   & 16        & sliding 512 steps (32 tokens)          \\
+    MBA (ECG)         & 2       & 275 Hz  & 16        & sliding 512 steps (32 tokens)          \\
+    Sepsis (ICU)      & 40      & 1/hour  & 16        & full stay (2--21 tokens)               \\
     \bottomrule
   \end{tabular}
-  {\footnotesize\par $\dagger$ Downsampled $8\times$ from 64~kHz.}
 \end{table}
 
 \subsection{Architecture}
@@ -139,7 +140,7 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\textwidth]{figures/fig_architecture_ema.pdf}
-  \caption{\textbf{FAM.} Context encoder $\encoder$ (causal) produces $\h_\text{past}$. Predictor $\predictor$ maps $(\h_\text{past}, k)$ to $\hat{\h}_\text{fut}$. Target encoder $\target$ (EMA) encodes the future window bidirectionally to $\h_\text{fut}$. Loss: $\|\hat{\h}_\text{fut} - \h_\text{fut}\|_1$.}
+  \caption{\textbf{FAM.} Context encoder $\encoder$ (causal) produces $\h_t$. Predictor $\predictor$ maps $(\h_t, \Delta t)$ to $\hat{\h}_{(t,t+\Delta t]}$. Target encoder $\target$ (EMA) encodes the next $\Delta t$ steps bidirectionally to $\h^*_{(t,t+\Delta t]}$. Loss: $\|\hat{\h}_{(t,t+\Delta t]} - \h^*_{(t,t+\Delta t]}\|_1$. The pretraining interval $(t, t{+}\Delta t]$ is the same interval used for event prediction downstream.}
   \label{fig:architecture}
 \end{figure}
 
@@ -149,16 +150,16 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
   \label{eq:encoder}
 \end{equation}
 
-\textbf{Predictor} $\predictor$: a 2-layer MLP. Given $\h_t$ and a prediction horizon $\Delta t$, it produces a predicted future embedding:
+\textbf{Predictor} $\predictor$: a 2-layer MLP. Given $\h_t$ and a prediction horizon $\Delta t$, it produces a predicted embedding of the future interval $(t, t{+}\Delta t]$:
 \begin{equation}
-  \hat{\h}_{t+\Delta t} = \predictor(\h_t, \Delta t).
+  \hat{\h}_{(t,t+\Delta t]} = \predictor(\h_t, \Delta t).
   \label{eq:predictor}
 \end{equation}
 During pretraining, $\Delta t \sim \text{LogU}[1, {\Delta t}_\text{max}]$ is sampled randomly, forcing the encoder to internalise dynamics at multiple timescales.
 
-\textbf{Target encoder} $\target$: an EMA copy of $\encoder$ ($\tau{=}0.99$) that encodes the actual future bidirectionally with attention pooling $\to \h^*_{t+\Delta t} \in \R^d$. This provides the prediction target. We also experiment with a curriculum variant that transitions from EMA to SIGReg spectral regularisation~\citep{balestriero2025lejepa} (which eliminates the target encoder entirely; see \cref{sec:ablations}).
+\textbf{Target encoder} $\target$: an EMA copy of $\encoder$ ($\tau{=}0.99$) that encodes the next $\Delta t$ steps $\x_{(t, t+\Delta t]}$ bidirectionally with attention pooling $\to \h^*_{(t,t+\Delta t]} \in \R^d$. Crucially, the target interval starts immediately at $t$ --- there is no gap between context and target. The same interval is used for event prediction downstream (\cref{sec:downstream}). We also experiment with a curriculum variant that transitions from EMA to SIGReg spectral regularisation~\citep{balestriero2025lejepa} (which eliminates the target encoder entirely; see \cref{sec:ablations}).
 
-\textbf{Pretraining loss}: $\loss = \|\hat{\h}_{t+\Delta t} - \text{sg}(\h^*_{t+\Delta t})\|_1 + \lambda \cdot \text{var-reg}$, where sg denotes stop-gradient.
+\textbf{Pretraining loss}: $\loss = \|\hat{\h}_{(t,t+\Delta t]} - \text{sg}(\h^*_{(t,t+\Delta t]})\|_1 + \lambda \cdot \text{var-reg}$, where sg denotes stop-gradient.
 
 \subsection{Downstream: Freeze Encoder, Finetune Predictor}
 \label{sec:downstream}
@@ -191,7 +192,11 @@ Each horizon is an independent binary prediction (sigmoid, not softmax). The fin
   \loss_\text{FT} = \sum_{\Delta t \in \mathcal{H}} w^+ \cdot \text{BCE}\bigl(p(t, \Delta t),\; y(t, \Delta t)\bigr),
   \label{eq:ft_loss}
 \end{equation}
-where $y(t, \Delta t) = \mathbb{1}[\text{event occurs within } \Delta t \text{ steps of } t]$ and $w^+ = N_{\text{neg}} / N_{\text{pos}}$ handles class imbalance. This is the conditional CDF of time-to-event, identical in structure to discrete-time survival models~\citep{lee2018deephit,ren2019drsa}. By construction, $p(t, \Delta t)$ should be non-decreasing in $\Delta t$: if an event occurs within 5 steps, it certainly occurs within 10. We verify this monotonicity as a sanity check (\cref{sec:experiments}). Residual miscalibration is corrected by temperature scaling on the validation set.
+where $y(t, \Delta t) = \mathbb{1}[\text{event in } (t, t{+}\Delta t]]$ and $w^+ = N_{\text{neg}} / N_{\text{pos}}$ handles class imbalance. This is the conditional CDF of time-to-event, identical in structure to discrete-time survival models~\citep{lee2018deephit,ren2019drsa}. Two structural properties follow:
+\begin{enumerate}[nosep,leftmargin=*]
+  \item \textbf{Monotonicity.} $p(t, \Delta t)$ is non-decreasing in $\Delta t$: if an event occurs within $\Delta t_1$ steps it certainly occurs within $\Delta t_2 > \Delta t_1$ steps. Violations are calibration errors; we report the violation rate as a diagnostic.
+  \item \textbf{Interval arithmetic.} The probability of an event in an arbitrary future interval $(t{+}a,\; t{+}b]$ is $p(t, b) - p(t, a)$ for $b > a$. No additional model evaluation is needed.
+\end{enumerate}
 
 % ============================================================
 % 4. EVALUATION

@@ -1,9 +1,65 @@
-# V23 Session — SIGReg, Patch Tokenization, Sepsis Prediction
+# V23 Session — Architecture Cleanup + SIGReg + Sepsis
 
 **Usage**: Paste as opening prompt to a Claude Code session on the GPU VM.
 **Working directory**: `IndustrialJEPA/fam-jepa/`
 **Duration**: ~3 hours on A10G.
-**Prereqs**: Read CLAUDE.md, experiments/RESULTS.md, v22 SESSION_PROMPT.md
+**Prereqs**: Read CLAUDE.md, `fam-jepa/ARCHITECTURE.md` (definitive spec),
+experiments/RESULTS.md, v22 SESSION_PROMPT.md
+
+---
+
+## Architecture changes (implement FIRST — all experiments use these)
+
+Read `fam-jepa/ARCHITECTURE.md` before coding anything. Key changes from v22:
+
+### 1. Pretraining target = cumulative interval, no gap
+
+**Old (v22)**: target = x[t+Δt : t+Δt+w], w=10.
+Skip Δt steps, then encode a fixed 10-step window.
+
+**New**: target = x(t : t+Δt].
+Encode the next Δt steps immediately after the cut. No gap, no fixed w.
+The target length IS Δt. This makes pretraining and finetuning use the
+same interval: "what happens in the next Δt steps."
+
+### 2. Patch tokenization: P=16 globally
+
+Replace `patch_length=1` with `P=16` for ALL datasets (including C-MAPSS
+and Sepsis). One tokenizer, zero dataset-specific hyperparameters.
+`SensorProjection` already supports this via the `patch_length` parameter.
+Pad last patch with zeros if input length is not divisible by 16.
+
+### 3. Variable-length context (restore from v11)
+
+Drop the fixed-100 window. Use variable-length context:
+- C-MAPSS: full engine history (up to ~362 cycles)
+- Anomaly datasets: sliding, max 512 steps
+- Sepsis: full ICU stay (up to ~336 hours)
+
+The collate function pads + creates a mask. The causal transformer
+handles this via `key_padding_mask` (already implemented in v11).
+
+### 4. Horizons are independent of P
+
+The predictor takes Δt as a continuous scalar input — no constraint that
+Δt be a multiple of P. The pretraining target x(t:t+Δt] is tokenized
+with padding on the last patch if needed.
+
+- C-MAPSS: Δt ∈ {1, 5, 10, 20, 50, 100, 150} cycles
+- SMAP/PSM/SMD/MBA: Δt ∈ {1, 5, 10, 20, 50, 100, 150, 200} steps
+- Sepsis: Δt ∈ {1, 2, 3, 6, 12, 24, 48} hours
+
+### 5. Stride=1 at evaluation
+
+Stride=1 for test surfaces (every timestep gets a prediction).
+Stride>1 at training is fine for compute.
+
+### 6. Terminology
+
+- "context" not "window" or "past"
+- "Δt" not "k" — everywhere in code and comments
+- h_t not h_past
+- h*_(t,t+Δt] not h_future
 
 ---
 
@@ -15,123 +71,75 @@ Replace EMA target encoder with explicit collapse prevention (SIGReg).
 This simplifies the method and removes a hyperparameter.
 
 **Prior work in this repo:**
-- V17 phase 3: curriculum EMA→SIGReg on FD001 (100 epochs EMA warm-up,
-  then ramp λ_sig 0→0.05 while removing EMA). Worked but never re-evaluated
+- V17 phase 3: curriculum EMA→SIGReg on FD001 — worked but never re-evaluated
   under AUPRC.
-- V20 phase 3: SIGReg-pred beat EMA on F1w+RMSE at 100% labels (0.451 vs
-  0.391 F1w), but was never tested under AUPRC or on other datasets.
-- V22 pretraining already uses a variance regularizer (λ_var=0.04,
-  VICReg-style `relu(1-std)`) on top of EMA.
+- V20 phase 3: SIGReg-pred beat EMA on F1w+RMSE (0.451 vs 0.391 F1w),
+  never tested under AUPRC or on other datasets.
+- V22 already uses variance regularizer (λ_var=0.04) on top of EMA.
 
 **What to run:**
 
 1. **FD001 SIGReg from scratch** (no EMA at any point). Use full VICReg
    triplet (invariance L1 + variance relu(1-std) + covariance off-diag)
-   with curriculum on k: start k∈[1,10] for first 20 epochs, expand to
-   k∈[1,150] by epoch 40. This stabilizes early training when the
-   predictor hasn't learned anything yet.
+   with curriculum on Δt: start Δt∈[1,10] for first 20 epochs, expand to
+   Δt∈[1,150] by epoch 40.
    - Loss = L1_normalized + λ_var * var_loss + λ_cov * cov_loss
    - λ_var=0.04, λ_cov=0.02 (start here, adjust if collapse)
-   - Target = context_encoder(future).detach() (stop-grad, no EMA)
+   - Target = context_encoder(x(t:t+Δt]).detach() (stop-grad, no EMA)
    - 3 seeds, early stop patience=5, max 50 epochs
 
-2. **Compare to EMA baseline**: use existing v22 pretrained baseline
-   checkpoints (FD001). Freeze both encoders, run pred-FT 3 seeds.
+2. **Compare to EMA baseline**: rerun EMA pretrain with the new cumulative
+   target (not skip-gap). Then freeze both encoders, pred-FT 3 seeds.
    Report AUPRC under identical downstream protocol.
 
 3. **If SIGReg matches baseline on FD001**: repeat on SMAP with entity
    splits. If it doesn't match, document why and move on (<30 min debug).
 
-**Collapse detection**: monitor std of h_past per dimension each epoch.
-If mean(std) < 0.01 → collapsed, abort that seed.
+**Collapse detection**: monitor mean(std(h_t)) per dimension each epoch.
+If < 0.01 → collapsed, abort that seed.
 
-### Goal B: Patch tokenization on SMAP/PSM (ablation)
-
-Current tokenization: `patch_length=1`, i.e. `Linear(C, d)` per timestep.
-Each timestep is one token. For 25-channel SMAP with window=100, that's
-100 tokens of dim 256 — the temporal transformer sees each timestep but
-channels are mixed in the input projection.
-
-**Patch tokenization**: group L consecutive timesteps into one token via
-`Linear(C * L, d)`. With L=10 and window=100, that's 10 tokens. This:
-- Reduces sequence length (faster attention, more scalable)
-- Forces the model to learn local temporal patterns within each patch
-- Is standard in PatchTST / TimesFM / Chronos
-
-**What to run:**
-
-1. Modify `SensorProjection` (already supports `patch_length` parameter).
-   Test L ∈ {5, 10, 20} on SMAP (25 channels, window=100).
-2. Pretrain each variant (same protocol as v22: L1 + var_reg, early stop).
-3. Pred-FT with entity splits, 3 seeds. Report AUPRC.
-4. **Only test on SMAP and PSM** — these have long, high-frequency streams
-   where patching should help most. C-MAPSS cycles are already semantically
-   meaningful units, patching there makes less sense.
-
-**Key question**: does patching help or hurt when the downstream task is
-event prediction (not forecasting)? Longer patches blur the temporal
-resolution of the probability surface.
-
-### Goal C: PhysioNet 2019 Sepsis — new domain, clear onset event
+### Goal B: PhysioNet 2019 Sepsis — new domain, clear onset event
 
 Add a medical event-prediction dataset with well-defined onset, strong
 literature baselines, and a fundamentally different event type (clinical
 deterioration, not mechanical/anomaly).
 
-**Dataset**: PhysioNet Computing in Cardiology 2019 Challenge (early
-prediction of sepsis in ICU patients).
-- ~40k ICU stays, 40 clinical variables (vitals, labs, demographics)
-- Binary label `SepsisLabel` with clear onset time (flips 0→1)
-- Hourly resolution, variable-length stays (6–336 hours), missing values
-- Literature SOTA: AUROC ~0.78–0.85, utility score ~0.36–0.45
+**Dataset**: PhysioNet Computing in Cardiology 2019 Challenge.
+- ~40k ICU stays, 40 clinical variables, binary SepsisLabel with clear onset
+- Hourly resolution, variable-length stays, missing values
+- Literature SOTA: AUROC ~0.78–0.85
 - Free download: `wget -r -N -c -np https://physionet.org/files/challenge-2019/1.0.0/`
-
-**Why this dataset matters for the paper:**
-- **Clear onset time**: sepsis has a defined start — our surface p(t, Δt)
-  predicts "sepsis within Δt hours from time t". This is the predictive
-  use case (not just detection of ongoing anomaly).
-- **Established SOTA**: many published baselines to compare against.
-- **Medical domain**: different from all current datasets. Strengthens
-  the "forecast anything" claim across turbofan/spacecraft/server/cardiac/ICU.
-- **Missing values + irregular features**: tests whether the architecture
-  generalises beyond clean, regularly sampled sensor streams.
 
 **What to run:**
 
-1. **Data loader** (`data/sepsis.py`):
-   - Download training sets A and B (set C is hidden).
-   - Each patient is a `.psv` file (pipe-separated). Load all, concat.
-   - Handle missing values: forward-fill then zero-fill (standard).
-   - Drop static demographics (Age, Gender, HospAdmTime) or append as
-     constant channels — try both if time, default to drop.
-   - Normalize per-feature on training set.
-   - Split: use set A for train/val (80/20 patient-level), set B for test.
-   - Return dict with `train`, `test`, `labels_test`, same interface as
-     other loaders.
+1. **Data loader** (`data/sepsis.py` — already created in v23 session, verify
+   it matches the new architecture spec):
+   - Forward-fill then zero-fill missing values
+   - Drop static demographics (Age, Gender, HospAdmTime)
+   - Normalize per-feature on training set
+   - Split: set A for train/val (80/20 patient-level), set B for test
 
-2. **Pretrain** on set A training split (normal data only — stays without
-   sepsis, or pre-onset portions of sepsis stays). Same protocol: causal
-   transformer, L1 + var_reg, early stop. Window = 24h (24 timesteps).
-   k ∈ [1, 48] (predict up to 48h ahead).
+2. **Pretrain** on set A training split. P=1 (hourly is already coarse).
+   Variable-length context (full stay). Δt ∈ [1, 48] hours.
+   Target = x(t : t+Δt] — cumulative interval, no gap.
 
-3. **Pred-FT** with entity splits (each patient is an entity). Freeze
-   encoder, finetune predictor + sigmoid head. 3 seeds.
-   Compute AUPRC on probability surface + per-horizon AUPRC.
+3. **Pred-FT** with patient-level splits. Freeze encoder, finetune
+   predictor + sigmoid head. 3 seeds. Horizons Δt ∈ {1,2,3,6,12,24,48} hours.
+   Compute AUPRC on probability surface.
 
-4. **SOTA comparison**: report AUROC (standard in sepsis literature) and
-   our AUPRC. Key baselines:
-   - MGP-AttTCN (AUROC 0.852) — Futoma et al.
-   - InceptionTime (AUROC 0.847) — Ismail Fawaz et al.
-   - Challenge winner (utility 0.364) — Reyna et al. 2020
+4. **Report**: AUROC (for literature comparison) and AUPRC (our primary).
 
-**Practical note**: the full dataset is ~6 GB of .psv files (~40k patients).
-Download time ~5 min on the VM. Preprocessing into numpy arrays ~2 min.
-The small size per patient (mean ~40 timesteps) means pretraining is fast.
+### Goal C: Anomaly datasets with new architecture
 
-### Goal D: PA-F1 from stored surfaces (quick, first)
+Re-pretrain and re-run pred-FT on SMAP with the new architecture
+(P=16, cumulative target, variable context up to 512). This replaces the
+v22 baseline numbers. 3 seeds, entity splits.
+
+If time: also PSM.
+
+### Goal D: PA-F1 from stored v22 surfaces (quick, first)
 
 Run `experiments/v22/compute_pa_f1_from_surfaces.py`.
-Produces `pa_f1_from_surfaces.json` with PA-F1 for all 5 anomaly datasets.
 Update RESULTS.md. Takes <1 min, do this first.
 
 ---
@@ -140,27 +148,28 @@ Update RESULTS.md. Takes <1 min, do this first.
 
 | Phase | What | Est. time | Priority |
 |-------|------|-----------|----------|
-| 0 | PA-F1 from surfaces, update RESULTS.md | 5 min | Do first |
-| 1 | SIGReg pretrain FD001 (3 seeds) | 40 min | Critical |
-| 2 | SIGReg vs EMA: pred-FT comparison on FD001 | 20 min | Critical |
-| 3 | Sepsis data loader + download + sanity check | 20 min | Critical |
-| 4 | Sepsis pretrain + pred-FT (3 seeds) | 40 min | Critical |
-| 5 | Patch tokenization: pretrain SMAP L={5,10,20} | 30 min | Important |
-| 6 | Patch pred-FT on SMAP (best L + baseline) | 20 min | Important |
-| 7 | If SIGReg works on FD001: repeat on SMAP | 20 min | If time |
-| 8 | Update RESULTS.md + render notebook | 15 min | Always |
+| 0 | PA-F1 from v22 surfaces | 5 min | Do first |
+| 1 | Implement architecture changes (tokenizer, target, context) | 30 min | Critical |
+| 2 | SIGReg pretrain FD001 (3 seeds) | 40 min | Critical |
+| 3 | EMA pretrain FD001 with new target (3 seeds) | 40 min | Critical |
+| 4 | SIGReg vs EMA: pred-FT comparison | 15 min | Critical |
+| 5 | Sepsis: verify loader, pretrain, pred-FT | 40 min | Critical |
+| 6 | SMAP: pretrain P=16 + pred-FT (3 seeds) | 30 min | Important |
+| 7 | Update RESULTS.md + render notebook | 15 min | Always |
 
-**Total**: ~3.5h (tight — skip phase 7 if behind schedule).
+**Total**: ~3.5h.
 
 ---
 
 ## Ground rules
 
-1. **Collapse monitoring**: log mean(std(h_past)) each epoch. Abort seed if < 0.01.
-2. **SIGReg = no EMA, stop-grad only.** Target = context_encoder(future).detach().
-3. **Curriculum**: ramp k range, not λ. Start k∈[1,10], expand to full range by epoch 40.
-4. Store surfaces as .npz. Compute AUPRC + legacy metrics from surfaces.
-5. Reporting: `mean ± std (Ns)`. Decompose F1 into P + R.
-6. Commit + push after each phase.
-7. Update RESULTS.md after every phase.
-8. If something clearly fails (collapse, loss plateau), document and move on. Max 30 min debug per issue.
+1. **Read `fam-jepa/ARCHITECTURE.md` first.** All code must match the spec.
+2. **Cumulative target**: target = x(t : t+Δt]. No gap. No fixed w.
+3. **Collapse monitoring**: log mean(std(h_t)) each epoch. Abort if < 0.01.
+4. **SIGReg = no EMA, stop-grad only.** Target = encoder(x(t:t+Δt]).detach().
+5. **Curriculum**: ramp Δt range, not λ. Start Δt∈[1,10], expand by epoch 40.
+6. Store surfaces as .npz. Compute AUPRC + legacy metrics from surfaces.
+7. Reporting: `mean ± std (Ns)`. Decompose F1 into P + R.
+8. Commit + push after each phase. Update RESULTS.md after every phase.
+9. If something clearly fails, document and move on. Max 30 min debug.
+10. **Stride=1 at evaluation.** Stride>1 at training is fine.
