@@ -226,6 +226,20 @@ As a secondary metric, we report \textbf{AUROC} pooled over the same cells---thr
   \label{fig:auroc_curve}
 \end{figure}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_probability_surface.pdf}
+  \caption{\textbf{A real FAM probability surface on C-MAPSS FD001.} (a) predicted $p(t, \Delta t)$ from the v24 canonical backbone (seed 42) for one test engine. (b) ground-truth label surface $y(t, \Delta t) = \mathbb{1}[\text{RUL}(t) \leq \Delta t]$. (c) marginal $p(t_0, \Delta t)$ at a fixed observation time $t_0$: the CDF-shape is monotonically non-decreasing and the \emph{interval arithmetic} $P(\text{event in } (t_0{+}50, t_0{+}100]) = p(t_0, 100) - p(t_0, 50)$ is a direct readout. No additional model evaluation is needed to compute arbitrary future-interval probabilities from the surface.}
+  \label{fig:probability_surface}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_cross_domain.pdf}
+  \caption{\textbf{Cross-domain pooled AUPRC across v24 datasets.} Blue: FAM pred-FT (v24 canonical, 3 seeds each, mean $\pm$ std). Orange: \texttt{amazon/chronos-2} frozen encoder + linear probe under the same labeled-split protocol. Grey numbers under each bar: published SOTA metric and value on that dataset (different metrics across datasets, listed for context not direct comparison). FAM beats Chronos-2 on stream-anomaly and cardiac datasets (SMAP $+0.110$, MBA $+0.030$); Chronos-2 ties or wins on turbofan (FD001 tie, FD002 $+0.008$, FD003 $+0.028$). Missing Chronos-2 bars mark pending sweep entries at submission time.}
+  \label{fig:cross_domain}
+\end{figure}
+
 \subsection{Legacy Metrics as Projections}
 
 Every domain-specific metric is a lossy projection of $p(t, \Delta t)$. \Cref{tab:metric_projections} lists the three most common.
