@@ -30,9 +30,12 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 
 def _load(path: Path) -> dict | None:
-    if not path.exists():
+    if not path.exists() or path.stat().st_size < 100:
         return None
-    d = np.load(path, allow_pickle=True)
+    try:
+        d = np.load(path, allow_pickle=True)
+    except (OSError, EOFError):
+        return None
     return {'p': d['p_surface'], 'y': d['y_surface'].astype(np.int8),
             'hz': d['horizons']}
 

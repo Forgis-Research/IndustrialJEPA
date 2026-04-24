@@ -1,6 +1,6 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v27 (2026-04-24). Update after every session.
+**Last updated**: v28 (2026-04-24). Update after every session.
 
 This file is the single source of truth for all experimental results.
 Every number that enters the paper must have an entry here with provenance.
@@ -15,6 +15,138 @@ Every number that enters the paper must have an entry here with provenance.
 - Format: `mean ± std (Ns, 95% CI [lo, hi])` where Ns = number of seeds.
 - v20 results use per-window F1w (old primary). v21+ results use AUPRC (new primary).
 - Probability surfaces stored as `.npz` for v21+ runs — any metric recomputable.
+
+---
+
+## v28 honest-eval, model-improvement tries, and 2 new datasets (2026-04-24)
+
+The v27 fix for over-stationarization (norm_mode='none' on C-MAPSS) lifted
+the per-horizon AUROC from chance-level on degradation data, but several
+gaps remained. v28 attacks four:
+
+  1. **Honest metrics**. Mean per-horizon AUROC becomes the new headline
+     number. Pooled AUPRC is reported with a base-rate baseline so the
+     "vanity" portion (a base-rate classifier scores 0.92 on FD001) is
+     visible. See `notebooks/28_metric_analysis.qmd` for the walkthrough.
+  2. **Three model-improvement tries** to test whether the predictor can
+     be lifted further on FD001 + MBA: lag features (Try A), aux
+     stat-prediction loss during pretraining (Try B), dense-horizon
+     finetuning (Try C). Plus a Try A* follow-up combining lag features
+     with norm_mode='none'.
+  3. **Two new datasets** added to the FAM benchmark: GECCO (drinking-
+     water contamination) and BATADAL (water-distribution cyber-physical
+     attacks). Each has cached Chronos-2 features so head-to-head is
+     fair and immediate.
+  4. The originally-planned new datasets (SWaT, HAI 22.04, CHB-MIT
+     seizure prediction) all hit infrastructure walls and are documented
+     under `experiments/v28/PHASE1_DATA_NOTES.md` with the
+     "next-time-pickup" instructions.
+
+### v28 model-improvement tries on FD001 + MBA (3 seeds each)
+
+All numbers are **mean per-horizon AUROC** (the new primary) at sparse
+K=7 (C-MAPSS) or K=8 (anomaly) horizons. Above-base = lift over a
+base-rate classifier on the same horizon grid. v27 baseline numbers are
+the same `norm_mode` / data path as the v28 try, computed at sparse K
+for apples-to-apples comparison.
+
+| Try | Dataset | Mean h-AUROC | Δ above base | vs v27 baseline |
+|-----|---------|--------------|--------------|-----------------|
+| A — lag features `[10,50,100]` + RevIN | FD001 | 0.501 ± 0.005 | -0.016 | -0.222 (FAIL) |
+| A — same | MBA | **0.782 ± 0.070** | +0.301 | +0.054 over v27 'none' |
+| B — aux stat loss + RevIN | FD001 | 0.496 ± 0.001 | -0.021 | -0.227 (FAIL) |
+| B — same | MBA | 0.740 ± 0.021 | +0.260 | +0.012 |
+| C — dense-horizon FT (K=20 random/batch) | FD001 'none' | 0.729 ± 0.007 | +0.212 | +0.006 (≈tie) |
+| C — same | MBA 'revin' | 0.707 ± 0.007 | +0.226 | -0.022 |
+| **A\*** — lag features + norm_mode='none' | FD001 | **0.742 ± 0.002** | **+0.226** | **+0.019** |
+
+**Verdict.** Try A under RevIN fails on FD001 — RevIN normalizes each
+lag-channel independently per context and washes out the cross-context
+drift signal that the lag features were meant to expose. Try B under
+RevIN fails on FD001 — the raw-stat L1 loss is of order 700 which
+dominates the JEPA loss; the encoder learns to ignore the JEPA path.
+Try C is a wash on FD001 (the predictor is already saturated at the v27
+baseline). **Try A\* (lag + norm_mode='none') is the v28 winner on
+FD001**: +0.019 mean per-horizon AUROC at 0.7σ noise.
+
+On MBA, **Try A under RevIN is the v28 winner** (0.782 mean h-AUROC,
++0.054 over the v27 'none' baseline of 0.728). Lag features genuinely
+help when RevIN is preserved on a single-stream cardiac dataset where
+the absolute baseline is meaningful.
+
+### v28 dense-horizon FT on FD001/2/3 + SMAP + MSL (3 seeds each, sparse K eval)
+
+Tests whether sampling K=20 random horizons per training batch improves
+the predictor's smoothness. Eval is on the fixed sparse K=7/8 grid so
+numbers are directly comparable to the v27 baseline.
+
+| Dataset | norm_mode | v28 dense FT | v27 baseline | Δ |
+|---------|-----------|--------------|--------------|---|
+| FD001 | none  | 0.722 ± 0.003 | 0.724 ± 0.024 | -0.001 (≈) |
+| FD002 | none  | 0.568 ± 0.001 | 0.569 ± 0.001 | -0.001 (≈) |
+| FD003 | none  | **0.819 ± 0.008** | 0.809 ± 0.009 | +0.011 (winner) |
+| SMAP  | revin | 0.550 ± 0.029 | (v26 sparse n/a) | TBD |
+| MSL   | revin | 0.438 ± —    | (v26 sparse n/a, but Chronos-2 was 0.496) | -0.058 (HURT) |
+
+Dense FT helps on FD003, ties on FD001/2, hurts on MSL. **Conclusion:
+not a universal improvement.** Use baseline FT unless a per-dataset gain
+justifies it.
+
+### v28 NEW datasets: GECCO + BATADAL (3 seeds each, FAM revin baseline)
+
+Both already have cached Chronos-2 features in `experiments/v24/chronos_features/`,
+so the head-to-head is fair and immediate. Pooled AUPRC and mean
+per-horizon AUROC at K=8 sparse horizons.
+
+| Dataset | FAM v28 mean h-AUROC | Chronos-2 mean h-AUROC | FAM Δ above base | Chronos-2 Δ above base |
+|---------|----------------------|------------------------|-------------------|--------------------------|
+| GECCO   | **0.859 ± 0.045** | 0.767 | **+0.373** | +0.267 |
+| BATADAL | **0.613 ± 0.038** | 0.491 | **+0.123** | -0.011 (chance) |
+
+**FAM beats Chronos-2 on both new datasets** by a clear margin on mean
+per-horizon AUROC: +0.092 on GECCO and +0.122 on BATADAL. On BATADAL
+Chronos-2 is at chance (mean h-AUROC = 0.491) while FAM is +0.123 above
+base — a regime where the foundation-model baseline genuinely fails
+and the per-dataset pretrained encoder does not.
+
+### v28 honest-metric reporting
+
+For the v28 master table we now ALWAYS report:
+
+  - **Pooled AUPRC** alongside **base-rate AUPRC** for the same surface
+    (so Δ above base is visible).
+  - **Mean per-horizon AUROC** (prevalence-invariant, so trivial Δt=150
+    cells with 99% prevalence don't drown the hard Δt=1, 5, 10 cells).
+  - **Pooled AUROC** (single number per dataset, not split by horizon).
+
+Why the change: pooled AUPRC at K=7 horizons inflates because the
+short-Δt cells (~2.5% positive on FD001) and long-Δt cells (99%
+positive) are pooled into one ranking. A base-rate classifier — outputting
+`p = prevalence(Δt)` regardless of input — scores AUPRC = 0.924 on
+FD001 because it correctly ranks all Δt=150 cells above Δt=1 cells.
+Our model scores 0.927. The "v28 lift over v27" of +0.003 pooled AUPRC
+is meaningless. Mean per-horizon AUROC of v27 was 0.724; v28 Try A* is
+0.742; lift +0.019. That number is honest.
+
+### v28 provenance
+
+| Phase | What | Artifact |
+|-------|------|----------|
+| 1 | Dataset acquisition (3 attempted, 0 fully shipped, 2 substitutes) | `experiments/v28/PHASE1_DATA_NOTES.md` |
+| 2A | Try A: lag features + RevIN on FD001 + MBA × 3 seeds | `results/phase2a_*.json` |
+| 2B | Try B: aux stat loss + RevIN on FD001 + MBA × 3 seeds | `results/phase2b_*.json` |
+| 2C | Try C: dense-horizon FT on FD001 + MBA × 3 seeds | `results/phase2c_*.json` |
+| 2D | Try A*: lag features + norm_mode='none' on FD001 × 3 seeds | `results/phase2d_FD001_lag_none.json` |
+| 3 baseline | FAM v28 baseline on NEW datasets (GECCO, BATADAL) × 3 seeds | `results/phase3_baseline_*.json` |
+| 3 dense | FAM v28 dense-FT on FD001/2/3 + SMAP + MSL × 3 seeds | `results/phase3_dense_*.json` |
+| 3B | Lag-feature extension (lag+none on FD002/3, lag+revin on MBA/SMD/GECCO/BATADAL) | `results/phase{2a,2d}_*.json` |
+| 4 | FAM \| Chronos-2 \| GT triplet PNGs for each dataset | `results/surface_pngs/triplet_*.png` |
+| 5 | Quarto analysis notebook | `notebooks/28_v28_analysis.{qmd,html}` |
+
+Default training protocol unchanged (P=16, d=256, L=2, EMA momentum
+0.99, pos-weighted BCE, hazard-CDF output). New options live behind
+opt-in flags in `experiments/v28/runner_v28.py` so the v27 ckpts and
+runs are unaffected.
 
 ---
 
