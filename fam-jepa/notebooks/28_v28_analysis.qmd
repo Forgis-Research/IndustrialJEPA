@@ -220,46 +220,78 @@ def fam_v27_dense(ds):
         return {**rec['fam_v26_revin'], 'tag': 'v26 revin (dense)'}
     return None
 
-def fam_dense(ds):
-    """Read mean h-AUROC + pooled AUPRC from v28 dense surface."""
-    p = V28 / 'surfaces_dense' / f'dense_fam_v28_{ds}_s42.npz'
-    if not p.exists(): return None
-    d = np.load(p, allow_pickle=True)
+def _surface_metrics(p_path):
+    if not Path(p_path).exists(): return None
+    try:
+        d = np.load(p_path, allow_pickle=True)
+    except: return None
     pp, yy = d['p_surface'], d['y_surface']
     valid = [i for i in range(pp.shape[1]) if 0 < yy[:, i].mean() < 1]
     if not valid: return None
-    return {
-        'mean_h_auroc': float(np.mean([roc_auc_score(yy[:, i], pp[:, i])
-                                       for i in valid])),
-        'pooled_auprc': float(average_precision_score(yy.ravel(), pp.ravel())),
-        'K': len(d['horizons']),
-    }
+    return float(np.mean([roc_auc_score(yy[:, i], pp[:, i]) for i in valid]))
 
-print(f"{'Dataset':<10} {'FAM source':<22} {'mean h-AUROC':>14} {'pooled AUPRC':>14}  "
-      f"{'Chronos-2 h-AUROC':>18} {'Chronos-2 AUPRC':>16}")
+
+def fam_dense_seeds(ds, base):
+    """Return list of mean h-AUROC across seeds for a dense surface set."""
+    out = []
+    for seed in [42, 123, 456]:
+        v = _surface_metrics(base / f'dense_fam_v28_{ds}_s{seed}.npz' if 'v28' in str(base)
+                              else base / f'dense_fam_v27_{ds}_s{seed}.npz' if ds.startswith('FD')
+                              else base / f'dense_fam_v26_{ds}_s{seed}.npz')
+        if v is not None: out.append(v)
+    return out
+
+
+print(f"{'Dataset':<10} {'v27 baseline':>16} {'v28 best':>16} {'Δ (paired)':>12} "
+      f"{'paired t (p)':>16} {'Chronos-2 (s42)':>18} {'v28 vs Chr':>11}")
 print('-' * 110)
+from scipy import stats
 for ds in DATASETS:
-    # Pick the BEST FAM number across (v28 dense, v27 dense) by mean h-AUROC.
-    v28d = fam_dense(ds)
-    v27d = fam_v27_dense(ds)
-    candidates = []
-    if v28d is not None:
-        candidates.append(('v28 dense', v28d))
-    if v27d is not None:
-        candidates.append((v27d['tag'], {'mean_h_auroc': v27d['auroc'],
-                                         'pooled_auprc': v27d['auprc'],
-                                         'K': v27d['K']}))
-    if not candidates:
-        print(f"{ds:<10} {'—':<22} {'—':>14} {'—':>14}  "
-              f"{'—':>18} {'—':>16}")
-        continue
-    src, fb = max(candidates, key=lambda c: c[1]['mean_h_auroc'])
-    cm = chronos_dense(ds)
-    fb_h = f"{fb['mean_h_auroc']:.4f}"
-    fb_p = f"{fb['pooled_auprc']:.4f}"
-    cm_h = '—' if cm is None else f"{cm['mean_h_auroc']:.4f}"
-    cm_p = '—' if cm is None else f"{cm['pooled_auprc']:.4f}"
-    print(f"{ds:<10} {src:<22} {fb_h:>14} {fb_p:>14}  {cm_h:>18} {cm_p:>16}")
+    v27_seeds = fam_dense_seeds(ds, V27 / 'surfaces')
+    v28_seeds = fam_dense_seeds(ds, V28 / 'surfaces_dense')
+    chr_v = _surface_metrics(V27 / 'surfaces' / f'dense_chronos2_{ds}_s42.npz')
+
+    # Use better of (v28 best, v27 baseline) for FAM column when reporting
+    # the v28-vs-Chronos comparison: a regression on SMAP/MSL should not
+    # be hidden by always reporting v28.
+    fam_for_chronos = None
+    if v28_seeds and v27_seeds:
+        fam_for_chronos = max(np.mean(v28_seeds), np.mean(v27_seeds))
+    elif v28_seeds:
+        fam_for_chronos = np.mean(v28_seeds)
+    elif v27_seeds:
+        fam_for_chronos = np.mean(v27_seeds)
+
+    fmt_pm = lambda xs: f"{np.mean(xs):.3f}±{np.std(xs, ddof=1):.3f}" if xs else "—"
+    if v27_seeds and v28_seeds and len(v27_seeds) == len(v28_seeds) >= 2:
+        deltas = [v28 - v27 for v27, v28 in zip(v27_seeds, v28_seeds)]
+        delta_mean = np.mean(deltas)
+        if np.std(deltas, ddof=1) > 1e-10:
+            t_stat, p_val = stats.ttest_rel(v28_seeds, v27_seeds)
+            t_str = f"t={t_stat:+.2f} (p={p_val:.3f})"
+        else:
+            t_str = '—'
+        delta_str = f"{delta_mean:+.4f}"
+    else:
+        delta_str, t_str = '—', '—'
+
+    chr_str = '—' if chr_v is None else f"{chr_v:.4f}"
+    if fam_for_chronos is not None and chr_v is not None:
+        v28chr = f"{fam_for_chronos - chr_v:+.4f}"
+    else:
+        v28chr = '—'
+
+    print(f"{ds:<10} {fmt_pm(v27_seeds):>16} {fmt_pm(v28_seeds):>16} "
+          f"{delta_str:>12} {t_str:>16} {chr_str:>18} {v28chr:>11}")
+print()
+print("Notes:")
+print("  - v27 baseline: FAM v27 'none' for C-MAPSS, FAM v26 'revin' for anomaly.")
+print("  - v28 best: lag+none for FD001; dense_ft for FD002/FD003/SMAP/MSL;")
+print("    lag+revin for MBA/BATADAL; baseline 'revin' for GECCO.")
+print("  - 'v28 vs Chr' uses max(v28, v27) for the FAM side - so SMAP/MSL")
+print("    show the v27 baseline rather than the worse v28 dense_ft variant.")
+print("  - Chronos-2 is the v27 dense re-evaluation (single seed s42).")
+print("  - 'paired t (p)' is a paired t-test on per-seed deltas (n=3).")
 ```
 
 ### Note on grid mismatch
@@ -379,44 +411,71 @@ inside this notebook is apples-to-apples.
 #| label: assessment
 
 print("""
-WHERE FAM GENUINELY PREDICTS (mean h-AUROC well above base rate)
-================================================================
+v28 HEADLINE NUMBERS (after ml-researcher self-check, dense paired-seed)
+=======================================================================
 
-  - C-MAPSS FD001/FD003 with norm_mode='none' (v27 fix preserved
-    in v28): drift signal is encoded.
-  - GECCO drinking-water contamination: mean h-AUROC = 0.86 vs
-    Chronos-2 0.77. Slow event onsets are visible on the surface.
-  - BATADAL water-distribution attacks: mean h-AUROC = 0.61 vs
+C-MAPSS (paired-seed dense Δt = 1..150, n=3)
+  FD001 lag+none:   +0.059 mean h-AUROC vs v27 baseline
+                    (paired t=2.13, p=0.17 — direction robust on all 3
+                    seeds; p-value driven by v27's 4× larger seed variance)
+  FD002 dense_ft:   +0.015 (paired t=18.2, p=0.003 — small but
+                    statistically significant improvement)
+  FD003 dense_ft:   +0.027 (paired t=2.47, p=0.13 — positive on all 3
+                    seeds, headline-worthy with hedging)
+
+Anomaly (paired-seed dense Δt = 1..200, n=3 where applicable)
+  MBA lag+revin:    -0.004 (paired t=-0.14, p=0.90 — the sparse K=8 win
+                    did NOT transfer to dense K=200, was a horizon-
+                    aggregation artifact)
+  GECCO baseline:   0.685 ± 0.067 — Chronos-2 wins at matched dense (0.767)
+  BATADAL lag+revin: 0.564 ± 0.005 — beats Chronos-2 by +0.073
+
+WHERE FAM GENUINELY PREDICTS
+============================
+  - FD001 / FD003 with norm_mode='none' (v27 fix preserved in v28):
+    mean h-AUROC 0.77 / 0.85, drift signal is encoded.
+  - BATADAL water-distribution attacks: mean h-AUROC 0.56 vs
     Chronos-2 0.49 (CHANCE). FAM does what Chronos-2 cannot.
+  - SMAP using v27 'revin' baseline: mean h-AUROC 0.59 vs Chronos-2 0.50.
 
 WHERE FAM ONLY DETECTS
 ======================
-
-  - MBA arrhythmia: mean h-AUROC at Δt=1 is 0.83 (clear) but the
-    lead-time analysis shows p does NOT rise BEFORE onset. The model
-    identifies arrhythmic state at the current timestep but does
-    not predict it ahead.
+  - MBA arrhythmia: lead-time analysis shows p does NOT rise BEFORE
+    onset. The model identifies arrhythmic state at the current
+    timestep but does not predict it ahead.
 
 WHERE FAM IS WEAK
 =================
-
-  - MSL: mean h-AUROC = 0.44 — BELOW chance. The dense-FT 'revin'
-    variant is anti-correlated with the labels. v27's diagnosis of
-    pooled AUPRC hiding sub-chance per-horizon discrimination still
-    applies and the v28 changes did not address it on this dataset.
-  - SMD: similar story; high pooled AUPRC, mean h-AUROC near chance.
+  - MSL: mean h-AUROC ≈ 0.40 — BELOW chance under both v27 baseline and
+    v28 dense_ft. The encoder fundamentally fails on this dataset.
+  - GECCO under v28 baseline 'revin': 0.685 ± 0.067 — Chronos-2 is the
+    better choice here.
 
 PHASE 2 MODEL-IMPROVEMENT TAKEAWAYS
 ===================================
 
   - Lag features alone do NOT recover drift signal under RevIN. They
-    do under norm_mode='none' (Try A* on FD001: +0.019 mean h-AUROC).
-  - Aux stat-prediction loss in its current implementation has a
-    magnitude problem: raw-stat L1 ~ 700 dwarfs the JEPA loss ~ 0.04.
-    A future fix would z-score the target stats against the pretrain
-    corpus before loss computation.
-  - Dense-horizon finetuning is roughly neutral. The predictor's
-    smoothness is not the bottleneck; the encoder's drift sensitivity is.
+    DO under norm_mode='none' (FD001 lag+none Δ +0.059 dense, p=0.17).
+  - Aux stat-prediction loss is MISCONFIGURED, not refuted: raw-stat L1
+    ~700 dwarfs the JEPA loss ~0.04 (a 17,500:1 ratio). Re-run with
+    z-scored stats against pretrain corpus before declaring this
+    direction dead.
+  - Dense-horizon finetuning helps small but significant on FD002
+    (p=0.003) and directionally on FD003 (p=0.13). On MSL it produces
+    anti-correlated predictions, possibly a pos_weight calibration issue
+    across heterogeneous per-entity prevalence.
+
+CHRONOS-2 PROTOCOL CAVEAT
+=========================
+  Our Chronos-2 numbers come from a 768-d frozen-feature linear probe
+  trained on each dataset's labels. This answers "can Chronos-2's
+  representations be probed for event prediction?" — not "how does
+  Chronos-2 perform as a foundation forecaster?" A direct comparison
+  against Chronos-2's native forecast output would be a stronger baseline
+  and is left for a future session. The probe comparison is still
+  informative because it controls protocol — same features, same labels,
+  same eval grid — but the asymmetry (FAM trained end-to-end, Chronos-2
+  contributes only frozen features) should be stated.
 
 OPEN PROBLEMS (NEXT SESSION)
 ============================
@@ -425,9 +484,12 @@ OPEN PROBLEMS (NEXT SESSION)
      to fill the cascading-attack regime.
   2. Stream + downsample CHB-MIT seizure prediction one subject at a
      time (~12 GB final cache) for a biomedical predictive regime.
-  3. Re-run Try B with z-scored target stats so the aux loss is on
-     the same scale as the JEPA loss.
-  4. SMD / MSL: investigate why dense-FT under 'revin' produces
+  3. Re-run Try B with z-scored target stats (computed against pretrain
+     corpus statistics, not raw sensor values) — Try B is misconfigured,
+     not refuted.
+  4. Compare against Chronos-2's NATIVE forecasting output on at least
+     one dataset, to address the asymmetric-protocol critique.
+  5. SMD / MSL: investigate why dense-FT under 'revin' produces
      anti-correlated predictions. May be a pos_weight calibration issue
      across very different per-entity prevalence rates.
 """)

@@ -53,26 +53,38 @@ for apples-to-apples comparison.
 | Try | Dataset | Mean h-AUROC | Δ above base | vs v27 baseline |
 |-----|---------|--------------|--------------|-----------------|
 | A — lag features `[10,50,100]` + RevIN | FD001 | 0.501 ± 0.005 | -0.016 | -0.222 (FAIL) |
-| A — same | MBA | **0.782 ± 0.070** | +0.301 | +0.054 over v27 'none' |
-| B — aux stat loss + RevIN | FD001 | 0.496 ± 0.001 | -0.021 | -0.227 (FAIL) |
-| B — same | MBA | 0.740 ± 0.021 | +0.260 | +0.012 |
-| C — dense-horizon FT (K=20 random/batch) | FD001 'none' | 0.729 ± 0.007 | +0.212 | +0.006 (≈tie) |
+| A — same | MBA | 0.782 ± 0.070 | +0.301 | +0.054 over v27 'none' (sparse only) |
+| B — aux stat loss + RevIN | FD001 | 0.496 ± 0.001 | -0.021 | -0.227 (MISCONFIGURED) |
+| B — same | MBA | 0.740 ± 0.021 | +0.260 | +0.012 (MISCONFIGURED) |
+| C — dense-horizon FT (K=20 random/batch) | FD001 'none' | 0.729 ± 0.007 | +0.212 | +0.006 (≈tie sparse) |
 | C — same | MBA 'revin' | 0.707 ± 0.007 | +0.226 | -0.022 |
-| **A\*** — lag features + norm_mode='none' | FD001 | **0.742 ± 0.002** | **+0.226** | **+0.019** |
+| **A\*** — lag features + norm_mode='none' | FD001 | **0.742 ± 0.002** | +0.226 | **+0.019** sparse |
 
-**Verdict.** Try A under RevIN fails on FD001 — RevIN normalizes each
-lag-channel independently per context and washes out the cross-context
-drift signal that the lag features were meant to expose. Try B under
-RevIN fails on FD001 — the raw-stat L1 loss is of order 700 which
-dominates the JEPA loss; the encoder learns to ignore the JEPA path.
-Try C is a wash on FD001 (the predictor is already saturated at the v27
-baseline). **Try A\* (lag + norm_mode='none') is the v28 winner on
-FD001**: +0.019 mean per-horizon AUROC at 0.7σ noise.
+**Verdict** (caveats per the dense paired-seed table below):
 
-On MBA, **Try A under RevIN is the v28 winner** (0.782 mean h-AUROC,
-+0.054 over the v27 'none' baseline of 0.728). Lag features genuinely
-help when RevIN is preserved on a single-stream cardiac dataset where
-the absolute baseline is meaningful.
+  - **Try A under RevIN fails on FD001**: RevIN normalises each lag-channel
+    independently per context, washing out the cross-context drift signal
+    that the lag features were meant to expose.
+  - **Try B (aux stat loss) is MISCONFIGURED**, not refuted. The raw-stat
+    L1 loss reaches magnitude ~700 while the JEPA loss is ~0.04 — a
+    17,000:1 ratio. The encoder learns to ignore the JEPA path because
+    the optimiser chases the dominant term. The Try B "fail" only tells
+    us about loss-scale calibration, NOT about whether stat-prediction
+    auxiliary objectives help. Re-running with z-scored stats (computed
+    against pretrain corpus statistics, not raw sensor values) is the
+    correct experiment; that did not happen this session.
+  - **Try C** is a sparse-eval wash on FD001 but small-significant +0.015
+    on FD002 at dense K=150 (paired t=18.2, p=0.003) and +0.027 on FD003
+    (p=0.13). Worth keeping in the toolbox.
+  - **Try A\*** is the v28 winner on FD001 sparse (+0.019). At dense K=150
+    it gives +0.059 averaged over 3 paired seeds (paired t=2.13, p=0.17 —
+    direction robust, p-value not at threshold because the v27 baseline
+    has 4× the seed variance, not because the lag effect is small).
+  - **MBA Try A win is sparse-only**. At dense K=200 the lag+revin variant
+    gives mean h-AUROC = 0.577 ± 0.044 vs the v27 baseline 0.581 ± 0.001
+    — paired t = -0.14, p = 0.90. The sparse improvement was a
+    horizon-aggregation artifact: Try A boosted certain mid-Δt rows of
+    the K=8 sparse grid, which dominates a 7-row mean.
 
 ### v28 dense-horizon FT on FD001/2/3 + SMAP + MSL (3 seeds each, sparse K eval)
 
@@ -95,54 +107,86 @@ justifies it.
 ### v28 NEW datasets: GECCO + BATADAL (3 seeds each, FAM revin baseline)
 
 Both already have cached Chronos-2 features in `experiments/v24/chronos_features/`,
-so the head-to-head is fair and immediate. Pooled AUPRC and mean
-per-horizon AUROC at K=8 sparse horizons.
+so the head-to-head is fair and immediate. Important: FAM and Chronos-2
+must be evaluated at the SAME horizon grid to be comparable. The numbers
+below are at sparse K=8 (the FAM training grid). The dense K=200
+comparison (which Chronos-2 was scored on in v27 phase 8) tells a
+different story for GECCO — see the "v28 dense Δt master comparison"
+table below.
 
-| Dataset | FAM v28 mean h-AUROC | Chronos-2 mean h-AUROC | FAM Δ above base | Chronos-2 Δ above base |
-|---------|----------------------|------------------------|-------------------|--------------------------|
-| GECCO   | **0.859 ± 0.045** | 0.767 | **+0.373** | +0.267 |
-| BATADAL | **0.613 ± 0.038** | 0.491 | **+0.123** | -0.011 (chance) |
+| Dataset | FAM v28 mean h-AUROC | Chronos-2 same-K | FAM Δ above base |
+|---------|----------------------|-------------------|-------------------|
+| GECCO   | 0.859 ± 0.045 (sparse K=8) | (Chronos K=200, NOT comparable) | +0.373 |
+| BATADAL | **0.613 ± 0.038 (sparse K=8)** | (see dense table) | +0.123 |
 
-**FAM beats Chronos-2 on both new datasets** by a clear margin on mean
-per-horizon AUROC: +0.092 on GECCO and +0.122 on BATADAL. On BATADAL
-Chronos-2 is at chance (mean h-AUROC = 0.491) while FAM is +0.123 above
-base — a regime where the foundation-model baseline genuinely fails
-and the per-dataset pretrained encoder does not.
+**Honest reading: at MATCHED dense K=200**, Chronos-2 wins on GECCO
+(0.767 vs FAM 0.685 ± 0.067) and FAM wins on BATADAL (0.564 ± 0.005
+vs Chronos-2 0.491). The new-dataset story is split: BATADAL is a
+genuine FAM win where Chronos-2 is at chance; GECCO is a Chronos-2 win.
+Both datasets contribute to the diversity-of-domains argument; only one
+contributes to the head-to-head-wins argument.
 
-### v28 dense Δt master comparison (FAM v28 vs v27 baseline vs Chronos-2)
+### v28 dense Δt master comparison — PAIRED-SEED, mean per-horizon AUROC
 
 All numbers are **mean per-horizon AUROC** at K=150 (C-MAPSS) or K=200
-(anomaly) horizons, single seed (s42) for the surface comparison.
-The "FAM v28 best" column picks the BEST of the v28 variants tested
-(lag+none, lag+revin, dense_ft, baseline) by mean per-horizon AUROC.
-The "v27 baseline" column is FAM v27 'none' for C-MAPSS and FAM v26
-'revin' for anomaly, both at the same dense grid.
+(anomaly) horizons, **3 seeds {42, 123, 456}**, paired across seeds for
+the v28-vs-v27 delta. v27 baseline is FAM v27 'none' for C-MAPSS and
+FAM v26 'revin' for anomaly. Chronos-2 is the v27 dense re-evaluation
+(single seed s42).
 
-| Dataset | v27 baseline | v28 best (variant)     | Δ vs v27   | Chronos-2 | v28 - Chr |
-|---------|---------------|-------------------------|------------|-----------|-----------|
-| FD001   | 0.7750 | 0.7793 (lag+none)         | +0.004 | 0.5532 | **+0.226** |
-| FD002   | 0.5212 | 0.5372 (dense_ft)         | +0.016 | 0.6369 | -0.10 |
-| FD003   | 0.7985 | **0.8435 (dense_ft)**     | **+0.045** | 0.6471 | **+0.197** |
-| SMAP    | **0.5746** | 0.5426 (dense_ft)     | -0.032 | 0.5000 | -0.07 (use v27) |
-| MSL     | **0.4146** | 0.4030 (dense_ft)     | -0.012 | 0.4963 | -0.09 (Chr wins) |
-| PSM     | 0.5643 | (no v28 ckpt, killed)     | —      | 0.5108 | +0.054 |
-| SMD     | (no dense surface) | (Phase 3B-killed) | —  | (no surface) | — |
-| MBA     | 0.5822 | **0.6197 (lag+revin)**    | **+0.038** | 0.6554 | -0.04 |
-| GECCO   | (NEW)  | **0.7532 (lag+revin)**    | new   | 0.7673 | -0.01 (close) |
-| BATADAL | (NEW)  | **0.5640 (lag+revin)**    | new   | 0.4913 | **+0.073** |
+| Dataset | v27 baseline | v28 best (variant) | Δ vs v27 | paired t | Chronos-2 (s42) | v28 vs Chr |
+|---------|--------------|---------------------|----------|----------|-----------------|------------|
+| FD001   | 0.713 ± 0.054 | 0.772 ± 0.014 (lag+none)         | +0.059 | t=2.13 (p=0.17) | 0.553 | **+0.219** |
+| FD002   | 0.520 ± 0.001 | 0.535 ± 0.002 (dense_ft)         | +0.015 | t=18.2 (**p=0.003**) | 0.637 | -0.102 |
+| FD003   | 0.821 ± 0.021 | **0.847 ± 0.004 (dense_ft)**     | +0.027 | t=2.47 (p=0.13) | 0.647 | **+0.200** |
+| SMAP    | **0.588 ± 0.056** | (v28 dense_ft regresses)     | (—) | — | 0.500 | **+0.088** |
+| MSL     | 0.394 ± 0.022 | (both poor) | — | — | **0.496** | -0.10 |
+| PSM     | 0.558 ± 0.018 | (no v28 ckpt) | — | — | 0.511 | **+0.047** |
+| MBA     | 0.581 ± 0.001 | 0.577 ± 0.044 (lag+revin) | -0.004 | t=-0.14 (p=0.90) | 0.655 | -0.078 |
+| GECCO   | (NEW)         | 0.685 ± 0.067 (baseline revin) | new | — | **0.767** | -0.082 |
+| BATADAL | (NEW)         | **0.564 ± 0.005 (lag+revin)** | new | — | 0.491 | **+0.073** |
 
-**v28 wins over v27**: FD003 (+0.045), MBA (+0.038), FD002 (+0.016 noise),
-FD001 (+0.004 noise). Plus 2 new datasets (GECCO, BATADAL).
+**Paired-seed deltas v28 vs v27 baseline at dense K=150/200:**
 
-**v28 wins over Chronos-2**: FD001 (+0.226), FD003 (+0.197), BATADAL
-(+0.073), SMAP (using v27 baseline +0.07).
+  - **FD002 dense_ft +0.015 (p=0.003)**: small magnitude, statistically
+    significant. The dense-horizon FT does help here despite tying at sparse
+    eval.
+  - **FD003 dense_ft +0.027 (p=0.13)**: positive on all 3 seeds, but variance
+    not tight enough for p<0.05. Promising direction, headline-worthy with
+    appropriate hedging.
+  - **FD001 lag+none +0.059 (p=0.17)**: large delta, positive on all 3 seeds,
+    but the v27 baseline has 4× higher seed variance (0.054 vs 0.014) which
+    drives down the t-statistic. Direction is robust.
+  - **MBA at dense**: lag+revin's sparse K=8 win does NOT transfer to dense
+    K=200; mean delta = -0.004, p=0.90. The sparse improvement was a
+    horizon-aggregation artifact.
 
-**Chronos-2 wins over FAM v28**: FD002, MSL (both poor), MBA (-0.04),
-GECCO (-0.01, close).
+**v28 vs Chronos-2 at matched dense K (single-seed s42):**
 
-**v28 regresses on**: SMAP (-0.032 dense, dense_ft hurts), MSL (-0.012,
-dense_ft hurts more — anti-correlated under 'revin'). For these
-datasets the v27 baseline is still the recommended deployment.
+  - **v28 wins**: FD001 (+0.219), FD003 (+0.200), SMAP using v27 baseline
+    (+0.088), BATADAL (+0.073), PSM using v27 baseline (+0.047).
+  - **Chronos-2 wins**: FD002 (-0.102), MSL (-0.10), GECCO (-0.082, both
+    weak), MBA (-0.078).
+
+**Corrections from earlier tables in this section.** The earlier sparse
+GECCO comparison reported FAM 0.859 vs Chronos-2 0.767, suggesting FAM
+won on GECCO. That was a grid mismatch — FAM was sparse K=8, Chronos-2
+was dense K=200. At matched dense, **Chronos-2 beats FAM on GECCO**
+(0.767 vs 0.685). The new-dataset claim therefore reduces to a clear
+BATADAL win and a GECCO loss; the dataset diversity argument still
+stands but the head-to-head is split.
+
+**Chronos-2 protocol caveat.** The Chronos-2 numbers in this table come
+from a 768-d frozen-feature linear probe trained on each dataset's
+labels. This answers "can Chronos-2's representations be probed for
+event prediction?" — not "how does Chronos-2 perform as a foundation
+forecaster?" A direct comparison against Chronos-2's native forecast
+output (converting its predictive distribution into event probabilities)
+would be a stronger baseline; we did not run that in v28. The probe
+comparison is still informative because it controls protocol — both
+sides see the same features and the same labels — but reviewers should
+note FAM is fully trained end-to-end while Chronos-2 contributes only
+frozen features.
 
 ### v28 honest-metric reporting
 
