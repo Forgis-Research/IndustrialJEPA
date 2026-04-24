@@ -124,21 +124,71 @@ class TransformerBlock(nn.Module):
 # ---------------------------------------------------------------------------
 
 class CausalEncoder(nn.Module):
-    """Causal transformer encoder → h_t (last valid token)."""
+    """Causal transformer encoder → h_t (last valid token).
+
+    ``norm_mode`` selects the normalization strategy:
+      - 'revin'       — per-context per-channel RevIN (default, v24/v26)
+      - 'none'        — no normalization in the model (data pre-normalized)
+      - 'last_value'  — subtract last valid timestep per channel (NLinear)
+      - 'revin_stat'  — RevIN + project (mean, std) into a learnable stat
+                        token prepended at position 0 of the context
+                        sequence. Causal attention lets every later token
+                        read the stat token. h_t = last non-stat token.
+    """
+
+    VALID_NORM_MODES = ('revin', 'none', 'last_value', 'revin_stat')
 
     def __init__(self, n_channels: int, patch_size: int = 16,
                  d_model: int = 256, n_heads: int = 4, n_layers: int = 2,
-                 d_ff: int = 256, dropout: float = 0.1):
+                 d_ff: int = 256, dropout: float = 0.1,
+                 norm_mode: str = 'revin'):
         super().__init__()
+        assert norm_mode in self.VALID_NORM_MODES, (
+            f"norm_mode must be in {self.VALID_NORM_MODES}, got {norm_mode!r}")
         self.d_model = d_model
         self.P = patch_size
-        self.revin = RevIN()
+        self.n_channels = n_channels
+        self.norm_mode = norm_mode
+
+        if norm_mode in ('revin', 'revin_stat'):
+            self.revin = RevIN()
+        else:
+            self.revin = None
+        if norm_mode == 'revin_stat':
+            self.stat_proj = nn.Linear(2 * n_channels, d_model)
+        else:
+            self.stat_proj = None
+
         self.patch_embed = PatchEmbedding(n_channels, patch_size, d_model)
         self.layers = nn.ModuleList([
             TransformerBlock(d_model, n_heads, d_ff, dropout)
             for _ in range(n_layers)
         ])
         self.norm = nn.LayerNorm(d_model)
+
+    def _preprocess(self, x, mask):
+        """Return (x_processed, stat_token | None) per self.norm_mode."""
+        if self.norm_mode == 'revin':
+            x, _ = self.revin(x, mask)
+            return x, None
+        if self.norm_mode == 'revin_stat':
+            x, (mu, sigma) = self.revin(x, mask)
+            stat_feat = torch.cat([mu.squeeze(1), sigma.squeeze(1)], dim=-1)
+            stat_token = self.stat_proj(stat_feat)
+            return x, stat_token
+        if self.norm_mode == 'last_value':
+            B, T, _ = x.shape
+            if mask is not None:
+                valid = (~mask).long()
+                positions = torch.arange(T, device=x.device)
+                last_idx = (valid * positions).argmax(dim=1)
+                last_val = x[torch.arange(B, device=x.device), last_idx].unsqueeze(1)
+            else:
+                last_val = x[:, -1:, :]
+            return x - last_val, None
+        if self.norm_mode == 'none':
+            return x, None
+        raise ValueError(self.norm_mode)
 
     def forward(self, x: torch.Tensor,
                 mask: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -147,26 +197,44 @@ class CausalEncoder(nn.Module):
         Returns: h_t (B, d).
         """
         B, T, C = x.shape
-        # RevIN
-        x, _ = self.revin(x, mask)
-        # Patch embed
+        x, stat_token = self._preprocess(x, mask)
         tokens = self.patch_embed(x)  # (B, N, d)
         N = tokens.shape[1]
-        # Positional encoding
-        tokens = tokens + sinusoidal_pe(torch.arange(N, device=x.device), self.d_model)
-        # Patch-level padding mask
-        patch_mask = self._compute_patch_mask(mask, T, N, x.device) if mask is not None else None
-        # Causal attention mask
-        causal = nn.Transformer.generate_square_subsequent_mask(N, device=x.device)
-        # Forward through layers
+
+        if stat_token is None:
+            tokens = tokens + sinusoidal_pe(
+                torch.arange(N, device=x.device), self.d_model)
+        else:
+            # Patches get PE(1..N); stat-token gets PE(0).
+            tokens = tokens + sinusoidal_pe(
+                torch.arange(1, N + 1, device=x.device), self.d_model)
+            stat_pe = sinusoidal_pe(
+                torch.zeros(1, dtype=torch.long, device=x.device),
+                self.d_model)  # (1, d)
+            stat_with_pe = stat_token.unsqueeze(1) + stat_pe.unsqueeze(0)
+            tokens = torch.cat([stat_with_pe, tokens], dim=1)  # (B, N+1, d)
+
+        N_total = tokens.shape[1]
+        patch_mask = (self._compute_patch_mask(mask, T, N, x.device)
+                      if mask is not None else None)
+        if patch_mask is not None and stat_token is not None:
+            stat_mask = torch.zeros(B, 1, dtype=torch.bool, device=x.device)
+            patch_mask = torch.cat([stat_mask, patch_mask], dim=1)  # (B, N+1)
+
+        causal = nn.Transformer.generate_square_subsequent_mask(
+            N_total, device=x.device)
+
         h = tokens
         for layer in self.layers:
             h = layer(h, key_padding_mask=patch_mask, attn_mask=causal)
-        h = self.norm(h)  # (B, N, d)
-        # Extract last valid token
+        h = self.norm(h)
+
+        # Extract last valid non-stat token. The stat token (if present) sits
+        # at index 0 — it can never be "last" unless N_total==1 (only the stat
+        # token), which would mean an empty context.
         if patch_mask is not None:
             valid = (~patch_mask).long()
-            last_idx = (valid * torch.arange(N, device=x.device)).argmax(dim=1)
+            last_idx = (valid * torch.arange(N_total, device=x.device)).argmax(dim=1)
             h_t = h[torch.arange(B, device=x.device), last_idx]
         else:
             h_t = h[:, -1]
@@ -190,15 +258,32 @@ class CausalEncoder(nn.Module):
 # ---------------------------------------------------------------------------
 
 class TargetEncoder(nn.Module):
-    """Bidirectional transformer + attention pool → h* (B, d)."""
+    """Bidirectional transformer + attention pool → h* (B, d).
+
+    Shares ``norm_mode`` with the context encoder so pretraining uses the
+    same pre-patch preprocessing on both sides. ``'revin_stat'`` collapses
+    to plain ``'revin'`` on the target side — the target interval is short
+    and has no "lifecycle state" to preserve, and the asymmetric stat
+    token lives in the context path only.
+    """
 
     def __init__(self, n_channels: int, patch_size: int = 16,
                  d_model: int = 256, n_heads: int = 4, n_layers: int = 2,
-                 d_ff: int = 256, dropout: float = 0.1):
+                 d_ff: int = 256, dropout: float = 0.1,
+                 norm_mode: str = 'revin'):
         super().__init__()
+        effective_mode = 'revin' if norm_mode == 'revin_stat' else norm_mode
+        assert effective_mode in CausalEncoder.VALID_NORM_MODES
         self.d_model = d_model
         self.P = patch_size
-        self.revin = RevIN()
+        self.n_channels = n_channels
+        self.norm_mode = effective_mode
+
+        if effective_mode == 'revin':
+            self.revin = RevIN()
+        else:
+            self.revin = None
+
         self.patch_embed = PatchEmbedding(n_channels, patch_size, d_model)
         self.layers = nn.ModuleList([
             TransformerBlock(d_model, n_heads, d_ff, dropout)
@@ -210,6 +295,24 @@ class TargetEncoder(nn.Module):
         self.pool_attn = nn.MultiheadAttention(d_model, n_heads, dropout=0.0,
                                                batch_first=True)
 
+    def _preprocess(self, x, mask):
+        if self.norm_mode == 'revin':
+            x, _ = self.revin(x, mask)
+            return x
+        if self.norm_mode == 'last_value':
+            B, T, _ = x.shape
+            if mask is not None:
+                valid = (~mask).long()
+                positions = torch.arange(T, device=x.device)
+                last_idx = (valid * positions).argmax(dim=1)
+                last_val = x[torch.arange(B, device=x.device), last_idx].unsqueeze(1)
+            else:
+                last_val = x[:, -1:, :]
+            return x - last_val
+        if self.norm_mode == 'none':
+            return x
+        raise ValueError(self.norm_mode)
+
     def forward(self, x: torch.Tensor,
                 mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
@@ -218,7 +321,7 @@ class TargetEncoder(nn.Module):
         Returns: h* (B, d).
         """
         B = x.shape[0]
-        x, _ = self.revin(x, mask)
+        x = self._preprocess(x, mask)
         tokens = self.patch_embed(x)
         N = tokens.shape[1]
         tokens = tokens + sinusoidal_pe(torch.arange(N, device=x.device), self.d_model)
@@ -299,15 +402,19 @@ class FAM(nn.Module):
     def __init__(self, n_channels: int, patch_size: int = 16,
                  d_model: int = 256, n_heads: int = 4, n_layers: int = 2,
                  d_ff: int = 256, dropout: float = 0.1,
-                 ema_momentum: float = 0.99, predictor_hidden: int = 256):
+                 ema_momentum: float = 0.99, predictor_hidden: int = 256,
+                 norm_mode: str = 'revin'):
         super().__init__()
         self.d_model = d_model
         self.ema_momentum = ema_momentum
+        self.norm_mode = norm_mode
 
         self.encoder = CausalEncoder(
-            n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout)
+            n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout,
+            norm_mode=norm_mode)
         self.target_encoder = TargetEncoder(
-            n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout)
+            n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout,
+            norm_mode=norm_mode)
         self.predictor = Predictor(d_model, predictor_hidden)
         self.event_head = EventHead(d_model)
 
