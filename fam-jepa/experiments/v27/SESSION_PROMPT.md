@@ -224,11 +224,16 @@ figure rendering will happen locally.
 ### Phase 8: Update RESULTS.md + Quarto notebook (30 min)
 
 - v27 section in RESULTS.md with **per-horizon AUROC table**
-- `notebooks/27_v27_analysis.qmd` with:
-  - Per-horizon AUROC: RevIN vs no-RevIN vs NLinear vs RevIN+stats
+- `notebooks/27_v27_analysis.qmd` — use the **data-curator agent** to
+  build this notebook. It should contain:
+  - Per-horizon AUROC table: RevIN vs no-RevIN vs NLinear vs RevIN+stats
   - Surface heatmaps for FD001 (one engine): v26 baseline vs fix
+    (use pcolormesh with log y-axis for Δt, viridis colormap)
   - Prediction gap analysis: p(y=0) vs p(y=1) at Δt=1 per variant
-  - MBA/SMAP regression check
+  - MBA/SMAP regression check (per-horizon AUROC, confirm no drop)
+  - Per-dataset summary table with pooled AUPRC + Δt=1 AUROC
+- Use the **figure-creator agent** for any publication-quality plots
+  that should go into the paper (surface heatmaps, bar charts)
 - Render: `quarto render notebooks/27_v27_analysis.qmd`
 
 ---
