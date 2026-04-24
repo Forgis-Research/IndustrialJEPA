@@ -109,57 +109,87 @@ Dataset | Model | Mean h-AUROC | Pooled AUPRC | Δ above base | Δt=1 AUROC
 
 ---
 
-## Phase 1: New datasets — data loading + Chronos-2 baselines (2.5 h)
+## Phase 1: New datasets — data loading + Chronos-2 baselines (3 h)
 
-### 1a. SWaT (Secure Water Treatment)
+Three new datasets, each testing a different event regime:
 
-- **Domain**: Industrial control system / cybersecurity
-- **Source**: iTrust (https://itrust.sutd.edu.sg/itrust-labs_datasets/dataset_info/)
-- **Note**: Requires registration. If data is already at `datasets/data/swat/`,
-  use it. If not, skip and use HAI instead.
-- **Channels**: 51 sensors (flow, pressure, level, pH, conductivity)
-- **Rate**: 1/sec
-- **Event**: Cyber-physical attacks (36 labeled attacks across 11 days of operation)
-- **SOTA**: USAD F1=0.80 (Audibert+ 2020); TranAD F1=0.80 (Tuli+ 2022)
-- **Horizons**: {1, 5, 10, 20, 50, 100, 150, 200}
-- **norm_mode**: 'revin' (multi-entity anomaly)
-- **Loader**: `data/swat.py` exists as stub — implement or check if functional
+### 1a. SWaT (Secure Water Treatment) — abrupt attacks
 
-### 1b. CWRU Bearing (Case Western Reserve University)
-
-- **Domain**: Mechanical vibration / bearing fault
-- **Source**: https://engineering.case.edu/bearingdatacenter/download-data-file
-- **Channels**: 2 (drive-end accelerometer + fan-end accelerometer)
-- **Rate**: 12 kHz (downsample to ~1 kHz for tractability)
-- **Event**: Bearing fault onset (inner race, outer race, ball fault)
-- **SOTA**: CNN-based: F1 ~0.99 (supervised classification); for RUL/degradation
-  tracking, less clear — IMS bearing dataset has RMSE benchmarks
-- **Horizons**: {1, 5, 10, 20, 50, 100, 150, 200}
-- **norm_mode**: 'revin' (vibration data, shape-based faults)
-- **Loader**: Write new `data/cwru.py`. Download .mat files, extract channels,
-  segment into fault/healthy runs.
-
-### 1c. WADI (Water Distribution)
-
-- **Domain**: Water distribution / ICS
-- **Source**: iTrust (same registration as SWaT)
-- **Channels**: 123 sensors
-- **Rate**: 1/sec
-- **Event**: 15 cyber-physical attacks across 2 days
-- **SOTA**: GDN AUROC=0.97 (Deng & Hooi 2021)
+- **Domain**: Industrial control system / water treatment
+- **Source**: iTrust. If data at `datasets/data/swat/`, use it. Otherwise skip
+  to HAI (see fallback).
+- **Channels**: 51 (25 sensor + 26 actuator — flow, pressure, level, pump/valve)
+- **Rate**: 1 Hz
+- **Size**: 947K train (attack-free), 450K test (36 attacks)
+- **Event**: Cyber-physical attacks — valve forced open, chemical injection,
+  sensor spoofing. Abrupt and multi-stage.
+- **What it tests**: Actuator-sensor coupling (unique — no other dataset has
+  control actions). Abrupt event regime.
+- **SOTA**: Anomaly Transformer AUPRC ~0.87; TranAD F1=0.80 (no PA)
 - **Horizons**: {1, 5, 10, 20, 50, 100, 150, 200}
 - **norm_mode**: 'revin'
-- **Loader**: Write new `data/wadi.py`
-- **Fallback**: If SWaT/WADI registration not available, use **HAI** (HIL-based
-  Augmented ICS Security, NIMS Korea, publicly downloadable from
-  https://github.com/icsdataset/hai — 59 channels, 1/sec, labeled attacks)
+- **Loader**: `data/swat.py` exists as stub. CSV files: `SWaT_Dataset_Normal_v1.csv`
+  (train), `SWaT_Dataset_Attack_v0.csv` (test). Label column: `Normal/Attack`.
+  Z-score sensors on train stats. Actuators are 0/1 — leave as float.
 
-**For each new dataset:**
+### 1b. HAI (Hardware-in-the-loop Augmented ICS) — cascading propagation
+
+- **Domain**: ICS hardware-in-loop simulation (boiler → turbine → water treatment)
+- **Source**: https://github.com/icsdataset/hai — **direct download, no registration**
+- **Channels**: 86 (across 4 subsystems: P1 boiler, P2 turbine, P3 water, P4 HIL)
+- **Rate**: 1 Hz
+- **Size**: ~1.0M train, ~0.5M test, 52 attack scenarios
+- **Event**: Multi-subsystem cascading attacks. Attack in P1 (boiler) propagates
+  to P2 (turbine) 30-120 seconds later. Tests slow-propagation prediction.
+- **What it tests**: Multi-subsystem lag propagation. The 30-120s delay between
+  attack and downstream effect is the genuine prediction signal.
+- **SOTA**: GDN F1=0.362 (no PA); TaPR=0.61 (official metric)
+- **Horizons**: {1, 5, 10, 20, 50, 100, 150, 200}
+- **norm_mode**: 'revin'
+- **Loader**: Write `data/hai.py`. Use HAI 22.04 (latest). Multiple CSV files per
+  split in `hai-22.04/`. Column `attack` is binary label. Drop `timestamp` and
+  `attack`. Drop channels with train std < 0.01 (~10 dead channels). Z-score
+  on train stats.
+- **Note**: Also serves as fallback if SWaT registration is unavailable.
+
+### 1c. CHB-MIT Scalp EEG — seizure prediction (preictal drift)
+
+- **Domain**: Clinical neurology — pediatric epilepsy
+- **Source**: https://physionet.org/content/chbmit/1.0.0/ — **no registration**
+- **Download**: `wget -r -N -c -np https://physionet.org/files/chbmit/1.0.0/`
+- **Channels**: 18-23 EEG channels (10-20 system). Use 18 canonical channels
+  present in all subjects.
+- **Rate**: 256 Hz → **downsample to 32 Hz** for tractability
+- **Size**: 24 subjects, 982 hours total, 198 seizures. Per subject ~40h.
+  At 32 Hz: ~113M samples total.
+- **Event**: Seizure onset. The **preictal** period (30 min before onset) is
+  the predictive signal — a gradual neurological state change before the
+  abrupt seizure.
+- **What it tests**: Quasi-periodic rare events with long preictal slow drift.
+  This is the genuine prediction challenge — can the model detect the
+  preictal state 30 minutes before seizure onset?
+- **SOTA**: Sensitivity 92.8% at FPR 0.06/h (Ozcan & Bhatt 2021);
+  AUPRC ~0.82 (transformer-based, Li+ 2022)
+- **Protocol**: Per-subject train/test. 30-min preictal label (y=1 for
+  30 min before onset). 4-hour buffer after seizure offset (exclude from
+  training). Leave-one-seizure-out for test.
+- **Horizons**: {1, 5, 10, 30, 60, 120, 300, 600} (in seconds at 32 Hz;
+  that's {32, 160, 320, 960, 1920, 3840, 9600, 19200} steps)
+- **P**: 16 (at 32 Hz, P=16 = 0.5 sec — fine for EEG)
+- **norm_mode**: 'revin' (per-subject variability is huge)
+- **Loader**: Write `data/chbmit.py`. Use `mne` (`pip install mne`) to read
+  `.edf` files. Parse `chb*/chb*-summary.txt` for seizure times. Resample
+  to 32 Hz. Extract 18 canonical channels. Build binary labels with 30-min
+  preictal window.
+- **Note**: Class imbalance is extreme (~0.3% positive). Our pos-weighted
+  BCE handles this directly.
+
+### For each new dataset:
 1. Write data loader in `data/` following existing patterns
-2. Run Chronos-2 baseline (reuse v24 `baseline_chronos2.py`)
+2. Run Chronos-2 baseline (reuse v24 `baseline_chronos2.py` pattern)
 3. Run FAM pretrain + pred-FT with appropriate norm_mode
 4. Store surfaces, render PNGs, report per-horizon table
-5. Report SOTA comparison
+5. Report SOTA comparison on their metric
 
 ---
 
@@ -258,9 +288,9 @@ Run the best variant(s) from Phase 2 on ALL datasets:
 | PSM | revin | 1..200 | 15 min |
 | SMD | revin | 1..200 | 30 min |
 | MBA | revin | 1..200 | 15 min |
-| SWaT/HAI | revin | 1..200 | 20 min |
-| CWRU | revin | 1..200 | 15 min |
-| WADI/HAI2 | revin | 1..200 | 20 min |
+| SWaT | revin | 1..200 | 20 min |
+| HAI | revin | 1..200 | 20 min |
+| CHB-MIT | revin | see Phase 1c | 30 min |
 
 3 seeds each. Store all surfaces as .npz ON THE VM.
 
