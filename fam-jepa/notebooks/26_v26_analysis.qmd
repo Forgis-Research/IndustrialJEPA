@@ -1,0 +1,309 @@
+---
+title: "V26 Session Summary"
+subtitle: "Discrete hazard → CDF parameterization; monotonicity by construction"
+author: "IndustrialJEPA"
+date: "2026-04-24"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+---
+
+## What v26 delivers
+
+V26 is a **single architectural change** at the finetuning output:
+
+- **v24 (old)**: per-horizon independent logits → `sigmoid` → `p(t, Δt_k)`.
+  Nothing tied horizons together; monotonicity had to be learned.
+  Violation rates ranged 0% (C-MAPSS) to ~25% (MBA).
+- **v26 (new)**: per-horizon hazards `λ_k = σ(event_head(predictor(h_t, Δt_k)))`,
+  survival `S_k = ∏_{j≤k}(1 - λ_j)`, CDF `p(t, Δt_k) = 1 - S_k`.
+  Monotonicity is **structural** - 0% violations by construction.
+
+The rest of the architecture (RevIN → Patch(P=16) → causal transformer →
+MLP predictor → EMA target) is unchanged. The change is purely at the
+probability-surface parameterization.
+
+```{python}
+#| label: setup
+import json
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+V24 = Path('../experiments/v24')
+V26 = Path('../experiments/v26')
+
+def load_json(p):
+    p = Path(p)
+    if not p.exists():
+        return None
+    return json.loads(p.read_text())
+
+# v26 FAM numbers
+v26_files = {
+    'FD001':         V26 / 'results/phase2_FD001.json',
+    'FD002':         V26 / 'results/phase2_FD002.json',
+    'FD003':         V26 / 'results/phase2_FD003.json',
+    'SMAP':          V26 / 'results/phase3_SMAP.json',
+    'MSL':           V26 / 'results/phase3_MSL.json',
+    'PSM':           V26 / 'results/phase3_PSM.json',
+    'SMD':           V26 / 'results/phase3_SMD.json',
+    'MBA':           V26 / 'results/phase3_MBA.json',
+    'physionet2012': V26 / 'results/phase4_physionet2012.json',
+}
+v26 = {k: load_json(v) for k, v in v26_files.items()}
+
+# v24 baseline for comparison (same splits, only the parameterization differs)
+v24_files = {
+    'FD001':         V24 / 'results/phase2_FD001.json',
+    'FD002':         V24 / 'results/phase2_FD002.json',
+    'FD003':         V24 / 'results/phase2_FD003.json',
+    'SMAP':          V24 / 'results/phase4_SMAP.json',
+    'MSL':           V24 / 'results/phase4_MSL.json',
+    'PSM':           V24 / 'results/phase4_PSM.json',
+    'SMD':           V24 / 'results/phase4_SMD.json',
+    'MBA':           V24 / 'results/phase4_MBA.json',
+    'physionet2012': V24 / 'results/phase11_physionet2012.json',
+}
+v24 = {k: load_json(v) for k, v in v24_files.items()}
+```
+
+## Headline - v26 vs v24
+
+```{python}
+#| label: headline
+
+def agg(d, key):
+    if d is None:
+        return None
+    if key in d:
+        return d[key]
+    if 'results' in d and d['results']:
+        rs = d['results']
+        vs = [r[key.replace('_mean', '').replace('_std', '')] for r in rs]
+        if key.endswith('_mean'):
+            return float(np.mean(vs))
+        if key.endswith('_std'):
+            return float(np.std(vs))
+    return None
+
+
+def mono_max(d):
+    if d is None:
+        return None
+    if 'monotonicity_max' in d:
+        return d['monotonicity_max']
+    if 'results' in d:
+        vs = [r.get('monotonicity_violation_rate', 0.0)
+              for r in d['results']]
+        return float(max(vs)) if vs else None
+    return None
+
+
+rows = []
+for ds, d26 in v26.items():
+    d24 = v24.get(ds)
+    if d26 is None:
+        continue
+    v26_auprc_m = agg(d26, 'auprc_mean')
+    v26_auprc_s = agg(d26, 'auprc_std')
+    v24_auprc_m = agg(d24, 'auprc_mean') if d24 else None
+    v24_auprc_s = agg(d24, 'auprc_std') if d24 else None
+    v26_mono = mono_max(d26)
+    v24_mono = mono_max(d24) if d24 else None
+
+    delta = None
+    if v26_auprc_m is not None and v24_auprc_m is not None:
+        delta = v26_auprc_m - v24_auprc_m
+
+    rows.append({
+        'Dataset': ds,
+        'v24 AUPRC': f"{v24_auprc_m:.4f} ± {v24_auprc_s:.4f}"
+                     if v24_auprc_m is not None else '-',
+        'v26 AUPRC': f"{v26_auprc_m:.4f} ± {v26_auprc_s:.4f}"
+                     if v26_auprc_m is not None else '-',
+        'Δ AUPRC': f"{delta:+.4f}" if delta is not None else '-',
+        'v24 mono max': f"{v24_mono:.4f}" if v24_mono is not None else '-',
+        'v26 mono max': f"{v26_mono:.6f}" if v26_mono is not None else '-',
+    })
+
+pd.DataFrame(rows)
+```
+
+**Reading this table**: positive Δ AUPRC = v26 beats v24, negative = v24
+wins. The "mono max" column is the worst-seed monotonicity violation
+rate. Under the hazard CDF it should be exactly 0.000000 for every v26
+row - no exceptions.
+
+## Monotonicity - the structural guarantee
+
+```{python}
+#| label: mono_plot
+fig, ax = plt.subplots(figsize=(9, 4))
+datasets, v24_mono_vals, v26_mono_vals = [], [], []
+for ds, d26 in v26.items():
+    d24 = v24.get(ds)
+    m24 = mono_max(d24) if d24 else None
+    m26 = mono_max(d26)
+    if m24 is None or m26 is None:
+        continue
+    datasets.append(ds)
+    v24_mono_vals.append(m24)
+    v26_mono_vals.append(m26)
+
+if datasets:
+    x = np.arange(len(datasets))
+    w = 0.38
+    ax.bar(x - w / 2, v24_mono_vals, w, label='v24 (independent logits)',
+           color='#D55E00', alpha=0.85)
+    ax.bar(x + w / 2, v26_mono_vals, w, label='v26 (hazard CDF)',
+           color='#0072B2', alpha=0.85)
+    ax.set_xticks(x)
+    ax.set_xticklabels(datasets, rotation=30, ha='right')
+    ax.set_ylabel('Monotonicity violation rate (max across seeds)')
+    ax.set_title('v24 (learned) vs v26 (structural) monotonicity')
+    ax.legend()
+    ax.grid(alpha=0.3, axis='y')
+    plt.tight_layout()
+plt.show()
+```
+
+## Per-horizon AUPRC
+
+```{python}
+#| label: per_horizon
+fig, axes = plt.subplots(2, 4, figsize=(14, 7), sharey=False)
+axes = axes.ravel()
+for i, (ds, d26) in enumerate(list(v26.items())[:8]):
+    ax = axes[i]
+    if d26 is None or 'results' not in d26:
+        ax.set_visible(False)
+        continue
+    horizons = None
+    per_h = []
+    for r in d26['results']:
+        ph = r.get('per_horizon_auprc', {})
+        if not ph:
+            continue
+        hs = [int(h) for h in ph.keys()]
+        hs.sort()
+        horizons = hs
+        per_h.append([ph[str(h)] for h in hs])
+    if horizons is None or not per_h:
+        ax.set_visible(False)
+        continue
+    per_h = np.array(per_h)
+    mean = per_h.mean(axis=0)
+    std = per_h.std(axis=0)
+    ax.plot(horizons, mean, marker='o', color='#0072B2',
+            label='v26')
+    ax.fill_between(horizons, mean - std, mean + std,
+                    color='#0072B2', alpha=0.2)
+
+    d24 = v24.get(ds)
+    if d24 and 'results' in d24:
+        per_h24 = []
+        for r in d24['results']:
+            ph = r.get('per_horizon_auprc', {})
+            if ph:
+                per_h24.append([ph[str(h)] for h in horizons])
+        if per_h24:
+            per_h24 = np.array(per_h24)
+            m24 = per_h24.mean(axis=0)
+            s24 = per_h24.std(axis=0)
+            ax.plot(horizons, m24, marker='s', color='#D55E00',
+                    linestyle='--', label='v24')
+            ax.fill_between(horizons, m24 - s24, m24 + s24,
+                            color='#D55E00', alpha=0.15)
+
+    ax.set_xscale('log')
+    ax.set_title(ds)
+    ax.set_xlabel('Δt')
+    ax.set_ylabel('AUPRC')
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
+plt.tight_layout()
+plt.show()
+```
+
+## Dense horizon surfaces (FD001, SMAP, MBA)
+
+```{python}
+#| label: dense_surfaces
+from pathlib import Path
+surf_files = {
+    'FD001_s42': V26 / 'surfaces/FD001_s42_dense.npz',
+    'SMAP_s42':  V26 / 'surfaces/SMAP_s42_dense.npz',
+    'MBA_s42':   V26 / 'surfaces/MBA_s42_dense.npz',
+}
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+for i, (tag, path) in enumerate(surf_files.items()):
+    ax = axes[i]
+    if not path.exists():
+        ax.set_title(f"{tag}: surface not found")
+        ax.set_axis_off()
+        continue
+    d = np.load(path, allow_pickle=True)
+    p = d['p_surface']                       # (N, K)
+    y = d['y_surface']                       # (N, K)
+    horizons = d['horizons']
+    # Sample rows for a clean heatmap: show a random 400-row window
+    N = min(400, p.shape[0])
+    rng = np.random.default_rng(0)
+    idx = np.sort(rng.choice(p.shape[0], size=N, replace=False))
+    im = ax.imshow(p[idx], aspect='auto', origin='lower',
+                   cmap='viridis', vmin=0, vmax=1,
+                   extent=[horizons[0], horizons[-1], 0, N])
+    ax.set_title(tag)
+    ax.set_xlabel('Δt')
+    ax.set_ylabel('observation (subsample)')
+    ax.set_xscale('log')
+    plt.colorbar(im, ax=ax, fraction=0.05, pad=0.02)
+plt.tight_layout()
+plt.show()
+```
+
+## Chronos-2 head-to-head
+
+```{python}
+#| label: chronos
+chr_compare = load_json(V26 / 'results/phase6_chronos_compare.json')
+if chr_compare:
+    rows = []
+    for ds, rec in chr_compare.items():
+        fam = rec.get('fam')
+        cr  = rec.get('chronos2')
+        if not fam or not cr:
+            continue
+        rows.append({
+            'Dataset': ds,
+            'FAM AUPRC': f"{fam['auprc_mean']:.4f} ± {fam['auprc_std']:.4f}",
+            'Chronos-2 AUPRC': f"{cr['auprc_mean']:.4f} ± {cr['auprc_std']:.4f}",
+            'Δ': f"{rec.get('delta', 0):+.4f}",
+            'Winner': rec.get('winner', '-'),
+        })
+    import pandas as pd
+    pd.DataFrame(rows)
+```
+
+Note: Chronos-2 numbers come from v24 (`baseline_chronos2_*_s*.json`)
+because the test splits are bit-identical between v24 and v26 (same seed
+in `_cmapss_raw.load_cmapss_raw`, same `split_*_entities`, same
+chronological t1/t2/gap for PSM/MBA). Re-running Chronos-2 would produce
+the same numbers - it's a frozen model with a linear probe on deterministic
+features.
+
+## Notes on what did not change
+
+The entire v26 benefit is one `cumprod` in `FAM.finetune_forward`. Encoder
+pretraining, RevIN, P=16, context lengths, horizons - all identical to
+v24. This keeps the ablation crisp: any difference between v24 and v26 is
+attributable to the parameterization, not a confounded recipe change.
