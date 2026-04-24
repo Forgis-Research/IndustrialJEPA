@@ -2181,8 +2181,9 @@ vertical-align: -.125em;
   <li><a href="#prediction-gap-diagnostic" id="toc-prediction-gap-diagnostic" class="nav-link" data-scroll-target="#prediction-gap-diagnostic">4. Prediction gap diagnostic</a></li>
   <li><a href="#full-benchmark-c-mapss-fd00123-v26-vs-v27-none" id="toc-full-benchmark-c-mapss-fd00123-v26-vs-v27-none" class="nav-link" data-scroll-target="#full-benchmark-c-mapss-fd00123-v26-vs-v27-none">5. Full benchmark: C-MAPSS FD001/2/3 (v26 vs v27 none)</a></li>
   <li><a href="#regression-check-mba-smap-with-norm_modenone" id="toc-regression-check-mba-smap-with-norm_modenone" class="nav-link" data-scroll-target="#regression-check-mba-smap-with-norm_modenone">6. Regression check — MBA + SMAP with norm_mode=‘none’</a></li>
-  <li><a href="#fd001-engine-49---surface-heatmaps-v26-vs-v27" id="toc-fd001-engine-49---surface-heatmaps-v26-vs-v27" class="nav-link" data-scroll-target="#fd001-engine-49---surface-heatmaps-v26-vs-v27">7. FD001 engine 49 - surface heatmaps, v26 vs v27</a></li>
-  <li><a href="#mba-dense-surface-v26-revin-the-winner-on-cardiac" id="toc-mba-dense-surface-v26-revin-the-winner-on-cardiac" class="nav-link" data-scroll-target="#mba-dense-surface-v26-revin-the-winner-on-cardiac">8. MBA dense surface (v26 revin — the winner on cardiac)</a></li>
+  <li><a href="#fd001-per-engine-surfaces-v26-vs-v27-vs-ground-truth" id="toc-fd001-per-engine-surfaces-v26-vs-v27-vs-ground-truth" class="nav-link" data-scroll-target="#fd001-per-engine-surfaces-v26-vs-v27-vs-ground-truth">7. FD001 per-engine surfaces — v26 vs v27 vs ground truth</a></li>
+  <li><a href="#mba-dense-surface---v26-revin-vs-ground-truth" id="toc-mba-dense-surface---v26-revin-vs-ground-truth" class="nav-link" data-scroll-target="#mba-dense-surface---v26-revin-vs-ground-truth">8. MBA dense surface - v26 revin vs ground truth</a></li>
+  <li><a href="#smap-per-entity-surfaces---v26-revin-vs-ground-truth" id="toc-smap-per-entity-surfaces---v26-revin-vs-ground-truth" class="nav-link" data-scroll-target="#smap-per-entity-surfaces---v26-revin-vs-ground-truth">9. SMAP per-entity surfaces - v26 revin vs ground truth</a></li>
   <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">9. Takeaways</a></li>
   </ul>
 </nav>
@@ -2233,7 +2234,7 @@ Please view our Getting Started page to access the most up-to-date information o
 Installed kernel version: 1.0.9 
 Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2247,7 +2248,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2261,7 +2262,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2274,7 +2275,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2288,7 +2289,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2301,7 +2302,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2314,7 +2315,7 @@ Applying the following default arguments:
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
@@ -2322,26 +2323,52 @@ Applying the following default arguments:
 </div>
 <p>SMAP regresses by 12 pp AUPRC — global z-score across 55 heterogeneous telemetry entities collapses scale information that per-instance RevIN was keeping. The paper will recommend <code>norm_mode=&#39;revin&#39;</code> for multi-entity anomaly datasets.</p>
 </section>
-<section id="fd001-engine-49---surface-heatmaps-v26-vs-v27" class="level2">
-<h2 class="anchored" data-anchor-id="fd001-engine-49---surface-heatmaps-v26-vs-v27">7. FD001 engine 49 - surface heatmaps, v26 vs v27</h2>
-<div id="fd001-engine49-heatmap" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="8">
+<section id="fd001-per-engine-surfaces-v26-vs-v27-vs-ground-truth" class="level2">
+<h2 class="anchored" data-anchor-id="fd001-per-engine-surfaces-v26-vs-v27-vs-ground-truth">7. FD001 per-engine surfaces — v26 vs v27 vs ground truth</h2>
+<p>Each row: one test engine. Columns: v26 revin prediction, v27 none prediction, ground truth <code>y(t, Δt) = 𝟙[tte(t) ≤ Δt]</code>. The ground truth is monotone in Δt and sharply L-shaped as t approaches the failure cycle — a correct model should reproduce this L. V26 flattens to horizontal bands (base rate), v27 reconstructs the L.</p>
+<div id="fd001-multi-engine-heatmap" class="cell" data-fig-height="9" data-fig-width="11" data-execution_count="8">
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+<div id="fd001-engine49-close" class="cell" data-fig-height="3.8" data-fig-width="12" data-execution_count="9">
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
 </div>
 </div>
 </section>
-<section id="mba-dense-surface-v26-revin-the-winner-on-cardiac" class="level2">
-<h2 class="anchored" data-anchor-id="mba-dense-surface-v26-revin-the-winner-on-cardiac">8. MBA dense surface (v26 revin — the winner on cardiac)</h2>
-<div id="mba-heatmap" class="cell" data-fig-height="4" data-fig-width="8" data-execution_count="9">
+<section id="mba-dense-surface---v26-revin-vs-ground-truth" class="level2">
+<h2 class="anchored" data-anchor-id="mba-dense-surface---v26-revin-vs-ground-truth">8. MBA dense surface - v26 revin vs ground truth</h2>
+<p>MBA is the cardiac example. V26 <code>revin</code> is the winner on cardiac (v27 <code>none</code> essentially ties); there is no v27 panel here because the model did not change. The interesting check is that the predicted surface lights up at the same timesteps as the ground truth arrhythmia segments.</p>
+<div id="mba-heatmap" class="cell" data-fig-height="5.5" data-fig-width="10" data-execution_count="10">
 <div class="cell-output cell-output-stdout">
 <pre><code>Trying to create a Glue session for the kernel.
 Session Type: etl
-Session ID: 9f1f9b13-7794-46e8-a6a9-af07856d4634
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
+Applying the following default arguments:
+--glue_kernel_version 1.0.9
+--enable-glue-datacatalog true</code></pre>
+</div>
+</div>
+</section>
+<section id="smap-per-entity-surfaces---v26-revin-vs-ground-truth" class="level2">
+<h2 class="anchored" data-anchor-id="smap-per-entity-surfaces---v26-revin-vs-ground-truth">9. SMAP per-entity surfaces - v26 revin vs ground truth</h2>
+<p>SMAP is the multi-entity anomaly case. We pick three test entities with clear, sparse anomaly segments (E-5, E-1, T-1). V26 <code>revin</code> again - v27 <code>none</code> broke SMAP.</p>
+<div id="smap-per-entity-heatmap" class="cell" data-fig-height="7.5" data-fig-width="11" data-execution_count="11">
+<div class="cell-output cell-output-stdout">
+<pre><code>Trying to create a Glue session for the kernel.
+Session Type: etl
+Session ID: 3b2870f8-f918-4e1e-af11-96a1ec77f4df
 Applying the following default arguments:
 --glue_kernel_version 1.0.9
 --enable-glue-datacatalog true</code></pre>
