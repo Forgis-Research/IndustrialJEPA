@@ -488,49 +488,47 @@ else:
     display(Image('plots/27_smap_per_entity_heatmap.png'))
 ```
 
-## 10. Chronos-2 baseline surfaces (pooled test sets)
+## 10. Chronos-2 baseline + dense Δt + delta surfaces
 
-Amazon's Chronos-2 is used as a frozen foundation-model baseline: we
-extract 768-d features per test observation, train a single linear
-probe on the same labeled splits, and produce a pooled-test
-probability surface directly comparable to FAM (same test samples,
-same horizons, same ordering).
+Three things at once for every dataset:
 
-Each PNG shows the pooled surface side-by-side with FAM v26 (and v27
-'none' on C-MAPSS) and the ground-truth label surface. Equal-height
-rows make small Δt visible; x-axis is the deterministic test-sample
-index.
+  1. **Dense Δt** - re-evaluate at every integer Δt instead of the
+     7-8 sparse training horizons. The FAM predictor takes Δt as a
+     continuous scalar; the cumprod CDF guarantees monotonicity at
+     any horizon grid (verified in v26). For Chronos-2 we retrain a
+     150- or 200-output linear probe on the cached features
+     (~1-50 s per dataset).
+  2. **Chronos-2 baseline** alongside FAM v26 (and FAM v27 'none' on
+     C-MAPSS). Chronos-2 = frozen 768-d features from
+     `amazon/chronos-2` + linear probe trained on the SAME splits.
+  3. **Delta surfaces** `|p(t,Δt) - y(t,Δt)|` in grayscale on the
+     bottom row: white = perfect, black = wrong. Mean delta in each
+     panel title is the per-pixel L1 error.
+
+Sparse pooled AUPRC for the metrics table:
 
 ```{python}
 #| label: chronos2-summary
-import json
 chronos_summary = load(V27 / 'results/chronos2_surfaces_summary.json') or {}
+dense_summary   = load(V27 / 'results/dense_pooled_summary.json') or {}
 rows = []
 for ds, r in chronos_summary.items():
+    dense = dense_summary.get(ds, {}).get('chronos2', {})
     rows.append({
         'dataset': ds,
-        'Chronos-2 pooled AUPRC': f"{r['pooled_auprc']:.4f}",
-        'Chronos-2 pooled AUROC': f"{r['pooled_auroc']:.4f}",
-        'Δt=1 AUROC': f"{next(h['auroc'] for h in r['per_horizon'] if h['dt']==1):.3f}",
-        'Δt=50 AUROC': f"{next(h['auroc'] for h in r['per_horizon'] if h['dt']==50):.3f}",
-        'n_test': r['n_test'],
+        'Chronos-2 sparse AUPRC':  f"{r['pooled_auprc']:.4f}",
+        'Chronos-2 dense AUPRC':   f"{dense.get('auprc', float('nan')):.4f}",
+        'Chronos-2 Δt=1 AUROC':    f"{next(h['auroc'] for h in r['per_horizon'] if h['dt']==1):.3f}",
+        'n_test':                  r['n_test'],
     })
 pd.DataFrame(rows)
 ```
 
-Per-horizon AUROC below 0.6 at short Δt across FD001/FD002/FD003
-reveals that **Chronos-2 suffers the same over-stationarization
-problem** as FAM v26 on the degradation family: pooled AUPRC looks
-competitive (0.93 / 0.91 / 0.80) while per-horizon AUROC barely
-exceeds chance. Chronos-2 is a frozen tokenizer + linear probe, and
-its tokenizer applies its own instance normalization - the same
-failure mode as RevIN for these datasets.
-
 ```{python}
-#| label: chronos2-png-helper
+#| label: png-helper
 import matplotlib.image as mpimg
 
-def show_png(png_path, height_px=380):
+def show_png(png_path, height_px=520):
     """Display a PNG via matplotlib so Quarto/SageMaker captures it
     cleanly (IPython.display.Image is intercepted by the Glue kernel)."""
     if not png_path.exists():
@@ -543,28 +541,33 @@ def show_png(png_path, height_px=380):
     plt.show()
 ```
 
-### 10.1 C-MAPSS: FAM v26 | FAM v27 none | Chronos-2 | GT
+### 10.1 C-MAPSS: FAM v26 | FAM v27 none | Chronos-2 | GT + delta surfaces
+
+The over-stationarization story is brutal at the per-pixel level. On
+FD001 / FD003 the FAM v26 and Chronos-2 delta panels are mostly black
+(model output disagrees with GT everywhere) while FAM v27 'none' is
+visibly lighter — its mean |p-y| drops by ~0.05-0.13.
 
 ```{python}
-#| label: chronos2-cmapss
+#| label: dense-delta-cmapss
 for ds in ['FD001', 'FD002', 'FD003']:
-    show_png(V27 / f'results/surface_pngs/chronos2_compare_{ds}.png')
+    show_png(V27 / f'results/surface_pngs/dense_delta_{ds}.png')
 ```
 
-### 10.2 Anomaly datasets: FAM v26 | Chronos-2 | GT
+### 10.2 Anomaly datasets: FAM v26 | Chronos-2 | GT + delta surfaces
 
 ```{python}
-#| label: chronos2-anomaly
+#| label: dense-delta-anomaly
 for ds in ['SMAP', 'MSL', 'PSM', 'MBA']:
-    show_png(V27 / f'results/surface_pngs/chronos2_compare_{ds}.png')
+    show_png(V27 / f'results/surface_pngs/dense_delta_{ds}.png')
 ```
 
 ### 10.3 Chronos-2 only (no FAM baseline shipped): GECCO, BATADAL
 
 ```{python}
-#| label: chronos2-only
+#| label: dense-delta-chronos-only
 for ds in ['GECCO', 'BATADAL']:
-    show_png(V27 / f'results/surface_pngs/chronos2_compare_{ds}.png')
+    show_png(V27 / f'results/surface_pngs/dense_delta_{ds}.png')
 ```
 
 ## 11. Takeaways
