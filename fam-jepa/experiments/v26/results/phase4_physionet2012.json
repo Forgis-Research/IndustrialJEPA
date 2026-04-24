@@ -1,5 +1,11 @@
 {
   "dataset": "physionet2012",
+  "n_seeds": 3,
+  "auprc_mean": 0.2207811044551015,
+  "auprc_std": 0.00044686603185671163,
+  "auroc_mean": 0.8944566144101018,
+  "auroc_std": 0.00034010122450906064,
+  "monotonicity_max": 0.0,
   "results": [
     {
       "dataset": "physionet2012",
@@ -78,6 +84,45 @@
       "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/surfaces/physionet2012_s123.npz",
       "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/ckpts/physionet2012_s123_pretrain.pt",
       "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/ckpts/physionet2012_s123_pred_ft.pt"
+    },
+    {
+      "dataset": "physionet2012",
+      "seed": 456,
+      "n_channels": 36,
+      "patch_size": 1,
+      "pretrain_best_loss": 0.002157992625143379,
+      "pretrain_time_s": 38.22018313407898,
+      "ft_best_val": 0.6297278555612715,
+      "ft_time_s": 56.67979550361633,
+      "eval_time_s": 8.320038318634033,
+      "auprc": 0.22021277639891218,
+      "auroc": 0.8946858518798408,
+      "f1_best": 0.308611620795107,
+      "precision_best": 0.22114406928228322,
+      "recall_best": 0.5105431439209972,
+      "prevalence": 0.04533207838992963,
+      "monotonicity_violation_rate": 0.0,
+      "per_horizon_auprc": {
+        "1": 0.033205136190336444,
+        "2": 0.10489895687029491,
+        "3": 0.18908494394928552,
+        "6": 0.2139077111744082,
+        "12": 0.23321094678151427,
+        "24": 0.23042430823423715,
+        "48": 0.2247457222748757
+      },
+      "per_horizon_auroc": {
+        "1": 0.9463320009578542,
+        "2": 0.9634511558942311,
+        "3": 0.9702370643138202,
+        "6": 0.9462093191065809,
+        "12": 0.908271735211564,
+        "24": 0.8046946973252537,
+        "48": 0.6548931987235758
+      },
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/surfaces/physionet2012_s456.npz",
+      "ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/ckpts/physionet2012_s456_pretrain.pt",
+      "ft_ckpt_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/ckpts/physionet2012_s456_pred_ft.pt"
     }
   ]
 }

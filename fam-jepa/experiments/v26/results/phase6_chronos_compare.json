@@ -40,10 +40,10 @@
   "FD003": {
     "dataset": "FD003",
     "fam": {
-      "auprc_mean": 0.7744730625635938,
-      "auprc_std": 0.00019157853669066194,
-      "n_seeds": 2,
-      "source": "v26_fam_partial"
+      "auprc_mean": 0.7742449949730453,
+      "auprc_std": 0.0003584660033124009,
+      "n_seeds": 3,
+      "source": "v26_fam"
     },
     "chronos2": {
       "auprc_mean": 0.7944339296467472,
@@ -53,12 +53,17 @@
       "n_seeds": 3,
       "source": "v24_chronos2 (same splits as v26)"
     },
-    "delta": -0.019960867083153366,
+    "delta": -0.020188934673701864,
     "winner": "Chronos-2"
   },
   "SMAP": {
     "dataset": "SMAP",
-    "fam": null,
+    "fam": {
+      "auprc_mean": 0.39924407884275387,
+      "auprc_std": 0.01827365405864534,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
     "chronos2": {
       "auprc_mean": 0.2854489011270438,
       "auprc_std": 0.0,
@@ -66,11 +71,18 @@
       "auroc_std": 0.0,
       "n_seeds": 1,
       "source": "v24_chronos2 (same splits as v26)"
-    }
+    },
+    "delta": 0.11379517771571007,
+    "winner": "FAM"
   },
   "MSL": {
     "dataset": "MSL",
-    "fam": null,
+    "fam": {
+      "auprc_mean": 0.1637238510446543,
+      "auprc_std": 0.005881625699201036,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
     "chronos2": {
       "auprc_mean": 0.2226332040696062,
       "auprc_std": 0.005449443315800559,
@@ -78,11 +90,18 @@
       "auroc_std": 0.0019770057108251925,
       "n_seeds": 3,
       "source": "v24_chronos2 (same splits as v26)"
-    }
+    },
+    "delta": -0.0589093530249519,
+    "winner": "Chronos-2"
   },
   "PSM": {
     "dataset": "PSM",
-    "fam": null,
+    "fam": {
+      "auprc_mean": 0.435064209459902,
+      "auprc_std": 0.008024235359411474,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
     "chronos2": {
       "auprc_mean": 0.4114177745672764,
       "auprc_std": 0.005360934172173474,
@@ -90,16 +109,28 @@
       "auroc_std": 0.0021423610372522345,
       "n_seeds": 3,
       "source": "v24_chronos2 (same splits as v26)"
-    }
+    },
+    "delta": 0.02364643489262558,
+    "winner": "FAM"
   },
   "SMD": {
     "dataset": "SMD",
-    "fam": null,
+    "fam": {
+      "auprc_mean": 0.2152093757596192,
+      "auprc_std": 0.01700047513415008,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
     "chronos2": null
   },
   "MBA": {
     "dataset": "MBA",
-    "fam": null,
+    "fam": {
+      "auprc_mean": 0.949641183530817,
+      "auprc_std": 0.0009803521777502397,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
     "chronos2": {
       "auprc_mean": 0.9184262959255438,
       "auprc_std": 0.002368387183650383,
@@ -107,6 +138,8 @@
       "auroc_std": 0.0026573099000052414,
       "n_seeds": 3,
       "source": "v24_chronos2 (same splits as v26)"
-    }
+    },
+    "delta": 0.031214887605273134,
+    "winner": "FAM"
   }
 }

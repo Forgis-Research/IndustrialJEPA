@@ -1,0 +1,49 @@
+{
+  "datasets": [
+    "FD001",
+    "SMAP",
+    "MBA"
+  ],
+  "seed": 42,
+  "results": [
+    {
+      "dataset": "FD001",
+      "seed": 42,
+      "max_horizon": 150,
+      "n_horizons": 150,
+      "eval_time_s": 1.6922810077667236,
+      "auprc_dense": 0.9294053618087217,
+      "auroc_dense": 0.8487153567154276,
+      "f1_best_dense": 0.9088317327098114,
+      "prevalence": 0.7767140740740741,
+      "monotonicity_violation_rate": 0.0,
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/surfaces/FD001_s42_dense.npz"
+    },
+    {
+      "dataset": "SMAP",
+      "seed": 42,
+      "max_horizon": 200,
+      "n_horizons": 200,
+      "eval_time_s": 36.12504959106445,
+      "auprc_dense": 0.36919595148965434,
+      "auroc_dense": 0.5557093522453527,
+      "f1_best_dense": 0.4413656790759883,
+      "prevalence": 0.2831639022206749,
+      "monotonicity_violation_rate": 0.0,
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/surfaces/SMAP_s42_dense.npz"
+    },
+    {
+      "dataset": "MBA",
+      "seed": 42,
+      "max_horizon": 200,
+      "n_horizons": 200,
+      "eval_time_s": 0.5946247577667236,
+      "auprc_dense": 0.9529540757395638,
+      "auroc_dense": 0.849142696961864,
+      "f1_best_dense": 0.9384797848048161,
+      "prevalence": 0.8486784810126582,
+      "monotonicity_violation_rate": 0.0,
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v26/surfaces/MBA_s42_dense.npz"
+    }
+  ]
+}
