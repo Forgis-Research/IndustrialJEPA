@@ -34,12 +34,12 @@ CDF probabilities.
 | C-MAPSS FD001 | Turbofan | **0.925±0.001** | 0.917±0.002 | 0.926±0.001 | -0.001 | 0.000 → **0.000** | v26 phase 2 |
 | C-MAPSS FD002 | Turbofan | **0.908±0.001** | 0.915±0.000 | 0.908±0.002 | +0.000 | 0.000 → **0.000** | v26 phase 2 |
 | C-MAPSS FD003 | Turbofan | **0.774±0.000** | 0.883±0.001 | 0.766±0.009 | **+0.008** | 0.000 → **0.000** | v26 phase 2 |
-| SMAP | Spacecraft | _pending_ | | 0.395±0.010 | | 0.110 → **0.000** | v26 phase 3 |
-| MSL | Spacecraft | _pending_ | | 0.187±0.007 | | | v26 phase 3 |
-| PSM | Server | _pending_ | | 0.425±0.006 | | 0.072 → **0.000** | v26 phase 3 |
-| SMD | Server | _pending_ | | 0.236±0.015 | | | v26 phase 3 |
-| MBA | Cardiac | _pending_ | | 0.947±0.001 | | 0.248 → **0.000** | v26 phase 3 |
-| PhysioNet 2012 | ICU (P=1) | _pending_ | | 0.227±0.002 (AUROC 0.858) | | | v26 phase 4 |
+| SMAP | Spacecraft | **0.399±0.018** | 0.579±0.027 | 0.395±0.010 | +0.004 | ~0.110 → **0.000** | v26 phase 3 |
+| MSL | Spacecraft | 0.164±0.006 | 0.412±0.002 | 0.187±0.007 | **-0.023** | ~0.100 → **0.000** | v26 phase 3 |
+| PSM | Server | **0.435±0.008** | 0.562±0.010 | 0.425±0.006 | +0.010 | ~0.072 → **0.000** | v26 phase 3 |
+| SMD | Server | 0.215±0.017 | 0.672±0.012 | 0.236±0.015 | **-0.021** | ~0.150 → **0.000** | v26 phase 3 |
+| MBA | Cardiac | **0.950±0.001** | 0.900±0.001 | 0.947±0.001 | +0.003 | **0.248 → 0.000** | v26 phase 3 |
+| PhysioNet 2012 | ICU (P=1) | _running s456_ | | 0.227±0.002 (AUROC 0.858) | | | v26 phase 4 |
 
 **C-MAPSS result**: v26 AUPRC matches v24 on FD001/FD002 within noise;
 FD003 improves by +0.008 AUPRC with 20× tighter variance (σ 0.0085 →
