@@ -373,27 +373,31 @@ else:
 #| fig-width: 12
 #| fig-height: 3.8
 
-v26 = np.load(V27 / 'surfaces/paper_FD001_e49_v26_revin_s42_dense.npz',
-              allow_pickle=True)
-v27 = np.load(V27 / 'surfaces/paper_FD001_e49_v27_none_s42_dense.npz',
-              allow_pickle=True)
-t_ix = v26['t_index']; hz = v26['horizons']
+_e49_path = V27 / 'surfaces/paper_FD001_e49_v26_revin_s42_dense.npz'
+if _e49_path.exists():
+    v26 = np.load(_e49_path, allow_pickle=True)
+    v27 = np.load(V27 / 'surfaces/paper_FD001_e49_v27_none_s42_dense.npz',
+                  allow_pickle=True)
+    t_ix = v26['t_index']; hz = v26['horizons']
 
-fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), sharey=True)
-for ax, (arr, title) in zip(axes, [
-        (v26['p_surface'], 'v26 revin p(t, Δt)'),
-        (v27['p_surface'], 'v27 none p(t, Δt)'),
-        (v26['y_surface'].astype(float), 'ground truth y(t, Δt)')]):
-    im = ax.pcolormesh(t_ix, hz, arr.T, cmap='viridis', vmin=0, vmax=1,
-                       shading='auto')
-    ax.set_yscale('log')
-    ax.set_xlabel('cycle t')
-    ax.set_title(title)
-axes[0].set_ylabel('horizon Δt (log)')
-fig.colorbar(im, ax=axes[-1], pad=0.02, label='value')
-plt.tight_layout()
-plt.savefig('plots/27_fd001_e49_vs_gt.png', dpi=140)
-plt.show()
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), sharey=True)
+    for ax, (arr, title) in zip(axes, [
+            (v26['p_surface'], 'v26 revin p(t, Δt)'),
+            (v27['p_surface'], 'v27 none p(t, Δt)'),
+            (v26['y_surface'].astype(float), 'ground truth y(t, Δt)')]):
+        im = ax.pcolormesh(t_ix, hz, arr.T, cmap='viridis', vmin=0, vmax=1,
+                           shading='auto')
+        ax.set_yscale('log')
+        ax.set_xlabel('cycle t')
+        ax.set_title(title)
+    axes[0].set_ylabel('horizon Δt (log)')
+    fig.colorbar(im, ax=axes[-1], pad=0.02, label='value')
+    plt.tight_layout()
+    plt.savefig('plots/27_fd001_e49_vs_gt.png', dpi=140)
+    plt.show()
+else:
+    from IPython.display import Image, display
+    display(Image('plots/27_fd001_e49_vs_gt.png'))
 ```
 
 ## 8. MBA dense surface - v26 revin vs ground truth
@@ -451,31 +455,36 @@ again - v27 `none` broke SMAP.
 #| fig-height: 7.5
 
 entities = ['E-5', 'E-1', 'T-1']
-fig, axes = plt.subplots(len(entities), 2, figsize=(11, 2.5 * len(entities)),
-                         sharey=True)
+_smap_first = V27 / f'surfaces/paper_SMAP_eE-5_v26_revin_s42_dense.npz'
+if _smap_first.exists():
+    fig, axes = plt.subplots(len(entities), 2, figsize=(11, 2.5 * len(entities)),
+                             sharey=True)
 
-for row, eid in enumerate(entities):
-    surf = np.load(V27 / f'surfaces/paper_SMAP_e{eid}_v26_revin_s42_dense.npz',
-                   allow_pickle=True)
-    t_ix = surf['t_index']; hz = surf['horizons']
-    im = axes[row, 0].pcolormesh(t_ix, hz, surf['p_surface'].T,
-                                 cmap='viridis', vmin=0, vmax=1, shading='auto')
-    axes[row, 0].set_yscale('log')
-    axes[row, 0].set_title(f'SMAP {eid}: v26 revin p(t, Δt)', fontsize=10)
-    axes[row, 0].set_ylabel('Δt (log)')
+    for row, eid in enumerate(entities):
+        surf = np.load(V27 / f'surfaces/paper_SMAP_e{eid}_v26_revin_s42_dense.npz',
+                       allow_pickle=True)
+        t_ix = surf['t_index']; hz = surf['horizons']
+        im = axes[row, 0].pcolormesh(t_ix, hz, surf['p_surface'].T,
+                                     cmap='viridis', vmin=0, vmax=1, shading='auto')
+        axes[row, 0].set_yscale('log')
+        axes[row, 0].set_title(f'SMAP {eid}: v26 revin p(t, Δt)', fontsize=10)
+        axes[row, 0].set_ylabel('Δt (log)')
 
-    im = axes[row, 1].pcolormesh(t_ix, hz, surf['y_surface'].astype(float).T,
-                                 cmap='viridis', vmin=0, vmax=1, shading='auto')
-    axes[row, 1].set_yscale('log')
-    axes[row, 1].set_title(f'SMAP {eid}: ground truth y(t, Δt)', fontsize=10)
-    if row == len(entities) - 1:
-        axes[row, 0].set_xlabel('test timestep t')
-        axes[row, 1].set_xlabel('test timestep t')
+        im = axes[row, 1].pcolormesh(t_ix, hz, surf['y_surface'].astype(float).T,
+                                     cmap='viridis', vmin=0, vmax=1, shading='auto')
+        axes[row, 1].set_yscale('log')
+        axes[row, 1].set_title(f'SMAP {eid}: ground truth y(t, Δt)', fontsize=10)
+        if row == len(entities) - 1:
+            axes[row, 0].set_xlabel('test timestep t')
+            axes[row, 1].set_xlabel('test timestep t')
 
-fig.colorbar(im, ax=axes[:, -1], pad=0.02, label='value', fraction=0.04)
-plt.savefig('plots/27_smap_per_entity_heatmap.png', dpi=140,
-            bbox_inches='tight')
-plt.show()
+    fig.colorbar(im, ax=axes[:, -1], pad=0.02, label='value', fraction=0.04)
+    plt.savefig('plots/27_smap_per_entity_heatmap.png', dpi=140,
+                bbox_inches='tight')
+    plt.show()
+else:
+    from IPython.display import Image, display
+    display(Image('plots/27_smap_per_entity_heatmap.png'))
 ```
 
 ## 9. Takeaways
