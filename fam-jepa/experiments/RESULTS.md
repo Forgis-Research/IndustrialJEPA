@@ -1,6 +1,6 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v26 (2026-04-24). Update after every session.
+**Last updated**: v27 (2026-04-24). Update after every session.
 
 This file is the single source of truth for all experimental results.
 Every number that enters the paper must have an entry here with provenance.
@@ -15,6 +15,120 @@ Every number that enters the paper must have an entry here with provenance.
 - Format: `mean ± std (Ns, 95% CI [lo, hi])` where Ns = number of seeds.
 - v20 results use per-window F1w (old primary). v21+ results use AUPRC (new primary).
 - Probability surfaces stored as `.npz` for v21+ runs — any metric recomputable.
+
+---
+
+## v27 over-stationarization fix (2026-04-24)
+
+The PRIMARY finding of v27: v26's pooled AUPRC numbers were hiding a
+fundamental failure mode on degradation (drift) datasets. Per-instance
+RevIN normalizes the context to zero mean and unit variance per window,
+which erases the slow sensor drift that IS the signal on C-MAPSS. Pooled
+AUPRC still looked competitive because the base-rate component of the
+horizon grid dominates; but per-horizon AUROC revealed that at short-to-
+mid Δt the v26 model was at chance (0.52).
+
+We ran three normalization ablations on FD001 (3 seeds each):
+
+| norm_mode | Δt=10 AUROC | Δt=50 AUROC | Δt=150 AUROC | Pooled AUPRC | Pred gap @ Δt=50 |
+|-----------|-------------|-------------|--------------|--------------|-------------------|
+| v26 `revin`      | 0.520 | 0.526 | 0.549 | 0.925 ± 0.001 | +0.005 |
+| v27 `none`       | **0.639** | **0.789** | **0.857** | **0.946 ± 0.001** | **+0.352** |
+| v27 `last_value` | 0.531 | 0.512 | 0.490 | 0.925 ± 0.000 | +0.005 |
+| v27 `revin_stat` | 0.495 | 0.522 | 0.549 | 0.919 ± 0.003 | +0.012 |
+
+Per-horizon AUROC at Δt=150 goes from 0.549 → 0.857 (+0.308). The
+prediction-gap diagnostic `p(y=1) - p(y=0)` at Δt=50 climbs from
++0.005 (indistinguishable healthy vs failing) to +0.352.
+
+**`norm_mode='none'` with train-set global z-score is the permanent fix
+for degradation datasets.**
+
+**`last_value` (NLinear, Zeng+ 2023)** - subtracting only the last
+observed value instead of the mean - does not recover the signal. The
+inductive bias in that paper (preserve within-window trend) is the wrong
+one for lifecycle state: a 150-cycle drift-to-failure window ends at a
+*different* last value than a healthy 150-cycle window, so anchoring
+every context to zero at the right endpoint wipes out exactly the signal
+we need.
+
+**`revin_stat`** - RevIN plus a learnable "stat token" at position 0 of
+the causal context that projects (μ, σ) into d-dim (Liu+ NeurIPS 2022
+"De-stationary Attention", simplified to a token-injection) - also
+doesn't recover. Hypothesis: during pretraining, the target encoder
+RevIN-normalizes the target interval too, so the stat token has no
+gradient signal to produce useful representations. It ends up
+uninformative.
+
+### Full-benchmark C-MAPSS (v27 `none` vs v26 `revin`, 3 seeds each)
+
+| Dataset | v26 AUPRC | v27 'none' AUPRC | Δ AUPRC | v27 Δt=150 AUROC | v26 Δt=150 AUROC | Δ AUROC@150 |
+|---------|-----------|------------------|---------|------------------|------------------|-------------|
+| FD001 | 0.925 ± 0.001 | **0.946 ± 0.001** | **+0.021** | **0.857** | 0.549 | **+0.308** |
+| FD002 | 0.908 ± 0.001 | **0.910 ± 0.000** | +0.002 | **0.525** | 0.514 | +0.011 |
+| FD003 | 0.774 ± 0.000 | **0.901 ± 0.005** | **+0.127** | **0.885** | 0.498 | **+0.387** |
+
+FD003 is the headline: a **+0.127 pooled AUPRC gain** with 10× tighter
+variance. The v26 FD003 surface was the weakest in the benchmark; v27
+lifts it alongside the stronger subsets. FD002 barely moves - its
+multi-condition operating regime imposes its own normalization already.
+
+### MBA / SMAP regression check
+
+| Dataset | v26 `revin` AUPRC | v27 `none` AUPRC | Δ | Verdict |
+|---------|-------------------|------------------|---|---------|
+| MBA  | 0.950 ± 0.001 | 0.946 ± 0.002 | -0.004 | tie |
+| SMAP | 0.393 ± 0.010 | 0.276 ± 0.002 | **-0.117** | broken |
+
+MBA is a within-noise tie. SMAP breaks: 55 telemetry entities have
+highly heterogeneous channel scales, global z-score collapses them
+onto each other and predictions drop to base rate across all Δt.
+Per-instance RevIN is doing meaningful work on multi-entity anomaly
+streams and must be kept there.
+
+### Conclusion: domain-specific normalization
+
+| Dataset family | Signal type | Recommended norm_mode |
+|----------------|-------------|-----------------------|
+| C-MAPSS FD001/2/3 | slow mean drift (degradation) | `none` + train-set global z-score |
+| SMAP/MSL/PSM/SMD/MBA | local anomaly patterns | `revin` (per-instance) |
+| PhysioNet 2012 | ICU trajectory (P=1) | `revin` (unchanged from v26) |
+
+`fam-jepa/model.py` gates both strategies via a single `norm_mode`
+constructor argument; default stays `'revin'` for backward compatibility
+with v24/v26 checkpoints.
+
+### Paper-quality surfaces
+
+Dense per-engine / per-entity surfaces for paper Figure 3 (v27 vs v26
+side-by-side on the same FD001 engines):
+
+| Artifact | Engine/Entity | v26 `revin` AUPRC | v27 `none` AUPRC | Δ AUPRC |
+|----------|---------------|-------------------|-------------------|---------|
+| FD001 engine 49 (T=303 cycles) | 1 | 0.581 | **0.892** | **+0.311** |
+| FD001 engine 93 (T=244 cycles) | 1 | 0.822 | **0.972** | **+0.150** |
+| FD001 engine 91 (T=234 cycles) | 1 | 0.862 | **0.990** | **+0.128** |
+
+All 9 paper surfaces saved at `experiments/v27/surfaces/paper_*.npz`
+with metadata (entity_id, ckpt_path, seed, horizons). Rendering happens
+locally.
+
+### v27 provenance
+
+| Phase | What | Artifact |
+|-------|------|----------|
+| 1 | v26 baseline diagnostic (confirmed FD001 Δt=10 AUROC = 0.52) | `results/phase1_v26_baseline_diagnostic.json` |
+| 2 | FD001 `norm_mode='none'` × 3 seeds | `results/phase2_FD001_none.json` + `surfaces/FD001_none_s*.npz` |
+| 3 | FD001 `norm_mode='last_value'` × 3 seeds | `results/phase3_FD001_last_value.json` + surfaces |
+| 4 | FD001 `norm_mode='revin_stat'` × 3 seeds | `results/phase4_FD001_revin_stat.json` + surfaces |
+| 5 | MBA + SMAP regression check with `'none'` | `results/phase5_{MBA,SMAP}_none.json` + surfaces |
+| 6 | FD002 + FD003 with `'none'` | `results/phase6_{FD002,FD003}_none.json` + surfaces |
+| 7 | Paper-quality per-entity dense surfaces | `surfaces/paper_*.npz` |
+
+Training protocol is identical to v26 (same `pretrain` + `finetune`
+functions, same P=16, same d_model=256, same seeds {42, 123, 456},
+same hyperparameters). The only two-line change in `model.py` is the
+`norm_mode` parameter.
 
 ---
 

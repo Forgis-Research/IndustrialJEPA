@@ -1,0 +1,406 @@
+---
+title: "V27 Session Summary"
+subtitle: "Over-stationarization fix: normalization as a dataset-family choice"
+author: "IndustrialJEPA"
+date: "2026-04-24"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+---
+
+## One-paragraph verdict
+
+V26's pooled AUPRC numbers were hiding a chance-level per-horizon AUROC
+on C-MAPSS: the model learned the marginal `P(event | Δt)` but could not
+discriminate degradation state. Root cause is RevIN erasing the slow
+sensor mean drift that carries the signal (Liu+ NeurIPS 2022
+"over-stationarization"). Three ablations on FD001 - remove RevIN
+(global z-score), NLinear-style last-value subtraction, and a stat-token
+variant of De-stationary Attention - show that only **removing RevIN
+with a train-set global z-score** recovers the signal. Per-horizon AUROC
+jumps from 0.52 → 0.64 at Δt=10 and 0.53 → 0.79 at Δt=50 on FD001, with
+**+0.127 pooled AUPRC on FD003**. The fix regresses SMAP (multi-entity
+anomaly) from 0.393 → 0.276 AUPRC - per-instance RevIN is doing
+meaningful work on multi-entity streams and must be kept there. The
+paper will report `norm_mode` as a per-dataset-family choice, not a
+universal recipe.
+
+```{python}
+#| label: setup
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score, average_precision_score
+
+V26 = Path('../experiments/v26')
+V27 = Path('../experiments/v27')
+
+
+def load(p):
+    p = Path(p)
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+CMAPSS_HORIZONS = [1, 5, 10, 20, 50, 100, 150]
+ANOMALY_HORIZONS = [1, 5, 10, 20, 50, 100, 150, 200]
+```
+
+## 1. V26 baseline diagnostic — per-horizon AUROC, not pooled
+
+V26 reported FD001 AUPRC = 0.925. Below is the per-horizon
+decomposition — the same surface, different slice.
+
+```{python}
+#| label: v26-diagnostic
+
+diag = load(V27 / 'results/phase1_v26_baseline_diagnostic.json')
+
+def v26_table_for(ds):
+    ds_data = diag[ds]
+    seeds = [k for k in ds_data.keys()]
+    horizons = [r['dt'] for r in ds_data[seeds[0]]['rows']]
+    auroc = np.stack([[r['auroc'] for r in ds_data[s]['rows']] for s in seeds])
+    auprc = np.stack([[r['auprc'] for r in ds_data[s]['rows']] for s in seeds])
+    gap   = np.stack([[r['pred_gap'] for r in ds_data[s]['rows']] for s in seeds])
+    return horizons, auroc, auprc, gap
+
+
+def print_table(ds):
+    h, a, _, g = v26_table_for(ds)
+    df = pd.DataFrame({
+        'Δt': h,
+        'AUROC mean': a.mean(0).round(3),
+        'AUROC std':  a.std(0).round(3),
+        'pred gap mean': g.mean(0).round(4),
+    })
+    return df
+
+
+fd001 = print_table('FD001')
+smap  = print_table('SMAP')
+mba   = print_table('MBA')
+
+print("V26 FD001 (3 seeds) — per-horizon AUROC is at chance across all Δt:")
+print(fd001.to_string(index=False))
+print()
+print("V26 SMAP (3 seeds) — per-horizon AUROC is slightly above chance:")
+print(smap.to_string(index=False))
+print()
+print("V26 MBA (3 seeds) — per-horizon AUROC is >0.7 at every Δt — works fine:")
+print(mba.to_string(index=False))
+```
+
+FD001's per-horizon AUROC is 0.52 at every horizon up to Δt=100. Pooled
+AUPRC of 0.925 was dominated by the late-horizon base rate — at Δt=150,
+99% of examples have already had the event, so AUPRC → prevalence
+regardless of model skill.
+
+## 2. Ablation table — 4 normalization modes on FD001
+
+```{python}
+#| label: ablation-table
+
+def summary_from_phase(path, horizons):
+    d = load(path)
+    per = []
+    for h in horizons:
+        vals = [next(r['auroc'] for r in rs['per_horizon'] if r['dt']==h)
+                for rs in d['results']]
+        per.append(np.mean(vals))
+    pooled = np.mean([r['pooled_auprc'] for r in d['results']])
+    return per, pooled
+
+
+variants = {
+    'v26 revin':       V27 / 'results/phase1_v26_baseline_diagnostic.json',
+    'v27 none':        V27 / 'results/phase2_FD001_none.json',
+    'v27 last_value':  V27 / 'results/phase3_FD001_last_value.json',
+    'v27 revin_stat':  V27 / 'results/phase4_FD001_revin_stat.json',
+}
+
+rows = []
+# v26 baseline from diagnostic
+h26, a26, _, g26 = v26_table_for('FD001')
+pooled26 = np.mean([load(V27 / 'results/phase1_v26_baseline_diagnostic.json')['FD001'][k]['pooled_auprc']
+                    for k in ['s42','s123','s456']])
+rows.append(['v26 revin'] + list(a26.mean(0).round(3)) + [round(pooled26, 4)])
+
+# v27 variants
+for tag, path in list(variants.items())[1:]:
+    per, pooled = summary_from_phase(path, CMAPSS_HORIZONS)
+    rows.append([tag] + list(np.round(per, 3)) + [round(pooled, 4)])
+
+cols = ['variant'] + [f'dt={h}' for h in CMAPSS_HORIZONS] + ['pooled AUPRC']
+df_abl = pd.DataFrame(rows, columns=cols)
+df_abl
+```
+
+## 3. Per-horizon AUROC curves
+
+```{python}
+#| label: auroc-curves
+#| fig-cap: "FD001 per-horizon AUROC across the four normalization modes. Chance line at 0.5."
+#| fig-width: 7
+#| fig-height: 4
+
+fig, ax = plt.subplots(figsize=(7, 4))
+colors = {'v26 revin':'#666', 'v27 none':'#009E73',
+          'v27 last_value':'#E69F00', 'v27 revin_stat':'#0072B2'}
+
+for tag, path in variants.items():
+    if tag == 'v26 revin':
+        per = a26.mean(0)
+    else:
+        per, _ = summary_from_phase(path, CMAPSS_HORIZONS)
+    ax.plot(CMAPSS_HORIZONS, per, 'o-', label=tag, color=colors[tag], lw=2)
+
+ax.axhline(0.5, color='k', lw=0.5, ls='--', alpha=0.5, label='chance')
+ax.set_xscale('log')
+ax.set_xlabel('horizon Δt')
+ax.set_ylabel('AUROC (mean over 3 seeds)')
+ax.set_ylim(0.4, 0.95)
+ax.set_title('FD001 - over-stationarization ablation')
+ax.legend(loc='upper left', frameon=False)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('plots/27_fd001_ablation_auroc.png', dpi=140)
+plt.show()
+```
+
+## 4. Prediction gap diagnostic
+
+The gap `p̄(y=1) - p̄(y=0)` at short Δt is the clearest signal of whether
+the model conditions on the input or just outputs the base rate.
+
+```{python}
+#| label: pred-gap
+#| fig-cap: "Prediction gap by horizon. v26 revin is near zero everywhere - the model outputs base rate. v27 none climbs to +0.35 at Δt=50."
+#| fig-width: 7
+#| fig-height: 4
+
+fig, ax = plt.subplots(figsize=(7, 4))
+
+for tag, path in variants.items():
+    if tag == 'v26 revin':
+        per = g26.mean(0)
+    else:
+        d = load(path)
+        per = [np.mean([next(r['pred_gap'] for r in rs['per_horizon'] if r['dt']==h)
+                        for rs in d['results']]) for h in CMAPSS_HORIZONS]
+    ax.plot(CMAPSS_HORIZONS, per, 'o-', label=tag, color=colors[tag], lw=2)
+
+ax.axhline(0.0, color='k', lw=0.5)
+ax.set_xscale('log')
+ax.set_xlabel('horizon Δt')
+ax.set_ylabel(r'$\bar p(y=1) - \bar p(y=0)$')
+ax.set_title('FD001 - prediction gap diagnostic')
+ax.legend(loc='upper left', frameon=False)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('plots/27_fd001_ablation_gap.png', dpi=140)
+plt.show()
+```
+
+## 5. Full benchmark: C-MAPSS FD001/2/3 (v26 vs v27 none)
+
+```{python}
+#| label: cmapss-full
+
+def load_cmapss_v27_summary(ds):
+    if ds == 'FD001':
+        path = V27 / 'results/phase2_FD001_none.json'
+    else:
+        path = V27 / f'results/phase6_{ds}_none.json'
+    d = load(path)
+    per = {}
+    for h in CMAPSS_HORIZONS:
+        per[h] = np.mean([next(r['auroc'] for r in rs['per_horizon'] if r['dt']==h)
+                          for rs in d['results']])
+    pooled = np.mean([r['pooled_auprc'] for r in d['results']])
+    pooled_std = np.std([r['pooled_auprc'] for r in d['results']])
+    return per, pooled, pooled_std
+
+
+def load_cmapss_v26_summary(ds):
+    surfs = [V26 / f'surfaces/{ds}_s{s}.npz' for s in [42, 123, 456]]
+    pooled_list, per_horizon = [], []
+    for sp in surfs:
+        arr = np.load(sp)
+        p_s, y_s = arr['p_surface'], arr['y_surface']
+        hz = arr['horizons'].tolist()
+        pooled_list.append(average_precision_score(y_s.ravel().astype(int), p_s.ravel()))
+        per_horizon.append({int(h): roc_auc_score(y_s[:,i].astype(int), p_s[:,i])
+                            for i, h in enumerate(hz)})
+    per = {h: np.mean([pr[h] for pr in per_horizon]) for h in CMAPSS_HORIZONS}
+    return per, np.mean(pooled_list), np.std(pooled_list)
+
+
+rows = []
+for ds in ['FD001', 'FD002', 'FD003']:
+    per26, pooled26, std26 = load_cmapss_v26_summary(ds)
+    per27, pooled27, std27 = load_cmapss_v27_summary(ds)
+    rows.append({
+        'dataset': ds,
+        'v26 revin AUPRC': f'{pooled26:.4f} +/- {std26:.4f}',
+        'v27 none AUPRC':  f'{pooled27:.4f} +/- {std27:.4f}',
+        'Δ AUPRC': f'{pooled27 - pooled26:+.4f}',
+        'v26 AUROC @ Δt=150': f'{per26[150]:.3f}',
+        'v27 AUROC @ Δt=150': f'{per27[150]:.3f}',
+        'Δ AUROC @ Δt=150': f'{per27[150] - per26[150]:+.3f}',
+    })
+
+pd.DataFrame(rows)
+```
+
+## 6. Regression check — MBA + SMAP with norm_mode='none'
+
+```{python}
+#| label: regression
+
+def load_anomaly_summary(ds):
+    v27 = load(V27 / f'results/phase5_{ds}_none.json')
+    per27 = {}
+    for h in ANOMALY_HORIZONS:
+        per27[h] = np.mean([next(r['auroc'] for r in rs['per_horizon'] if r['dt']==h)
+                           for rs in v27['results']])
+    pooled27 = np.mean([r['pooled_auprc'] for r in v27['results']])
+    std27 = np.std([r['pooled_auprc'] for r in v27['results']])
+
+    surfs = [V26 / f'surfaces/{ds}_s{s}.npz' for s in [42, 123, 456]]
+    pooled_list, per_horizon = [], []
+    for sp in surfs:
+        arr = np.load(sp)
+        p_s, y_s = arr['p_surface'], arr['y_surface']
+        hz = arr['horizons'].tolist()
+        pooled_list.append(average_precision_score(y_s.ravel().astype(int), p_s.ravel()))
+        per_horizon.append({int(h): roc_auc_score(y_s[:,i].astype(int), p_s[:,i])
+                            for i, h in enumerate(hz)})
+    per26 = {h: np.mean([pr[h] for pr in per_horizon]) for h in ANOMALY_HORIZONS}
+    pooled26 = np.mean(pooled_list)
+    std26 = np.std(pooled_list)
+    return per26, pooled26, std26, per27, pooled27, std27
+
+
+rows = []
+for ds in ['MBA', 'SMAP']:
+    p26, po26, s26, p27, po27, s27 = load_anomaly_summary(ds)
+    rows.append({
+        'dataset': ds,
+        'v26 revin AUPRC': f'{po26:.4f} +/- {s26:.4f}',
+        'v27 none AUPRC':  f'{po27:.4f} +/- {s27:.4f}',
+        'Δ AUPRC': f'{po27 - po26:+.4f}',
+        'v26 AUROC @ Δt=1':  f'{p26[1]:.3f}',
+        'v27 AUROC @ Δt=1':  f'{p27[1]:.3f}',
+        'verdict': 'tie' if abs(po27 - po26) < 0.02 else 'REGRESSION',
+    })
+
+pd.DataFrame(rows)
+```
+
+SMAP regresses by 12 pp AUPRC — global z-score across 55 heterogeneous
+telemetry entities collapses scale information that per-instance RevIN
+was keeping. The paper will recommend `norm_mode='revin'` for
+multi-entity anomaly datasets.
+
+## 7. FD001 engine 49 - surface heatmaps, v26 vs v27
+
+```{python}
+#| label: fd001-engine49-heatmap
+#| fig-cap: "Probability surface p(t, Δt) for FD001 test engine 49 (T=303 cycles, failure at cycle 303). Left: v26 revin (flat - model predicts the base rate P(event|Δt) everywhere). Right: v27 none - discriminative cone that lights up as t approaches the end of life."
+#| fig-width: 10
+#| fig-height: 4
+
+v26_surf = np.load(V27 / 'surfaces/paper_FD001_e49_v26_revin_s42_dense.npz',
+                   allow_pickle=True)
+v27_surf = np.load(V27 / 'surfaces/paper_FD001_e49_v27_none_s42_dense.npz',
+                   allow_pickle=True)
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+for ax, surf, title in [(axes[0], v26_surf, 'v26 revin'),
+                        (axes[1], v27_surf, 'v27 none')]:
+    t_ix = surf['t_index']
+    hz = surf['horizons']
+    p = surf['p_surface']
+    im = ax.pcolormesh(t_ix, hz, p.T, cmap='viridis', vmin=0, vmax=1,
+                       shading='auto')
+    ax.set_yscale('log')
+    ax.set_xlabel('cycle t')
+    ax.set_title(f'FD001 engine 49: {title}')
+    fig.colorbar(im, ax=ax, label='p(t, Δt)')
+
+axes[0].set_ylabel('horizon Δt (log scale)')
+plt.tight_layout()
+plt.savefig('plots/27_fd001_e49_heatmap.png', dpi=140)
+plt.show()
+```
+
+## 8. MBA dense surface (v26 revin — the winner on cardiac)
+
+```{python}
+#| label: mba-heatmap
+#| fig-cap: "MBA test-stream tail, dense Δt 1..200. p(t, Δt) lights up at arrhythmia segments. MBA is unaffected by the FD001 fix — per-instance RevIN is the right call on cardiac data."
+#| fig-width: 8
+#| fig-height: 4
+
+mba_surf = np.load(V27 / 'surfaces/paper_MBA_v26_revin_s42_dense.npz',
+                   allow_pickle=True)
+
+fig, (axp, axy) = plt.subplots(2, 1, figsize=(8, 4), sharex=True,
+                               gridspec_kw={'height_ratios': [5, 1]})
+t_ix = mba_surf['t_index']
+hz = mba_surf['horizons']
+axp.pcolormesh(t_ix, hz, mba_surf['p_surface'].T,
+               cmap='viridis', vmin=0, vmax=1, shading='auto')
+axp.set_yscale('log')
+axp.set_ylabel('Δt (log)')
+axp.set_title('MBA dense p(t, Δt), v26 revin')
+
+# Approximate label strip: y_surface[:,0] is label at Δt=1, i.e. anomaly next step
+axy.fill_between(t_ix, 0, mba_surf['y_surface'][:,0], color='r', alpha=0.6)
+axy.set_yticks([])
+axy.set_xlabel('test timestep t')
+axy.set_ylabel('anom')
+plt.tight_layout()
+plt.savefig('plots/27_mba_heatmap.png', dpi=140)
+plt.show()
+```
+
+## 9. Takeaways
+
+1. **Pooled AUPRC can hide chance-level discrimination.** V26's FD001
+   AUPRC was 0.925, but per-horizon AUROC was 0.52 at Δt ≤ 100. The
+   model was learning the marginal base-rate `P(event | Δt)`. The
+   per-horizon AUROC + prediction-gap diagnostic is the right primary
+   when the base rate is non-stationary in Δt.
+
+2. **Three normalization fixes, one winner.** Removing RevIN (global
+   z-score preprocessing) is the only tested variant that recovers the
+   degradation signal on FD001. NLinear last-value subtraction and
+   the stat-token approach (simplified De-stationary Attention) both
+   stay at the v26 baseline.
+
+3. **FD003 is the headline.** +0.127 pooled AUPRC on the worst C-MAPSS
+   subset; per-horizon AUROC at Δt=150 goes from 0.498 → 0.885.
+
+4. **The fix is not universal.** SMAP regresses by 0.117 AUPRC — the
+   55 telemetry entities have such heterogeneous channel scales that
+   global z-score collapses the signal. `norm_mode` should be
+   documented as a per-dataset-family choice.
+
+5. **Two-line model change.** `model.py` adds a single constructor
+   argument `norm_mode in {'revin', 'none', 'last_value', 'revin_stat'}`
+   that gates the pre-patch preprocessing. Default is `'revin'`, so v24
+   / v26 checkpoints load unchanged. Target encoder symmetrically
+   mirrors the mode on every variant except `'revin_stat'`, which falls
+   back to `'revin'` on the target side (the stat token is asymmetric
+   by design - it lives in the causal context only).
