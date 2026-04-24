@@ -1,0 +1,20 @@
+{
+  "GECCO": {
+    "variant": "baseline",
+    "opts": {
+      "norm_mode": "revin"
+    },
+    "n_seeds": 3,
+    "mean_h_auroc": 0.8590516788876711,
+    "pooled_auprc": 0.21772542024780303
+  },
+  "BATADAL": {
+    "variant": "baseline",
+    "opts": {
+      "norm_mode": "revin"
+    },
+    "n_seeds": 3,
+    "mean_h_auroc": 0.6131677324380391,
+    "pooled_auprc": 0.34915522593850873
+  }
+}

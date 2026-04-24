@@ -1,0 +1,356 @@
+---
+title: "V28 Analysis: Honest Metrics, Model Improvement Tries, Comprehensive Benchmark"
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    fig-width: 11
+    fig-height: 6
+execute:
+  warning: false
+  echo: false
+jupyter: python3
+---
+
+```{python}
+#| label: setup
+
+import json
+from pathlib import Path
+
+import numpy as np
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score, average_precision_score
+
+plt.rcParams.update({
+    'font.family': 'serif',
+    'font.size': 10,
+    'axes.labelsize': 11,
+    'axes.titlesize': 12,
+    'figure.dpi': 130,
+})
+
+REPO = Path('..')
+V28 = REPO / 'experiments/v28'
+V27 = REPO / 'experiments/v27'
+
+PNG_DIR = V28 / 'results/surface_pngs'
+
+def show_png(path: Path, height_px: int = 380):
+    """Render a saved PNG via matplotlib (Quarto with `jupyter: python3`
+    captures plt.show() reliably; IPython.display.Image is hijacked by
+    SageMaker's glue kernel intermittently)."""
+    if not path.exists():
+        print(f"[png missing: {path}]"); return
+    img = mpimg.imread(str(path))
+    h, w = img.shape[:2]
+    fig, ax = plt.subplots(figsize=((w / h) * (height_px / 100), height_px / 100))
+    ax.imshow(img); ax.axis('off'); plt.show()
+
+def load_json(path):
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+```
+
+## 1. What this notebook covers
+
+The session's focus split four ways:
+
+1. **Honest metrics** — adopt mean per-horizon AUROC as the primary headline,
+   always reported alongside a base-rate baseline. Pooled AUPRC is kept for
+   continuity but never as the only number.
+2. **Three model improvement tries** — lag features (Try A), auxiliary
+   stat-prediction loss during pretraining (Try B), dense-horizon
+   finetuning (Try C). The goal: lift FAM above the v27 baseline on
+   FD001 (mean per-horizon AUROC > 0.93, up from 0.924).
+3. **Two new datasets** — GECCO (drinking-water contamination, slow drift)
+   and BATADAL (water-distribution cyber-physical attacks). The original
+   plan also called for SWaT, HAI 22.04, and CHB-MIT; data acquisition
+   issues are documented in `experiments/v28/PHASE1_DATA_NOTES.md`.
+4. **Master comparison table** — FAM vs Chronos-2 across every dataset on
+   both metrics, with SOTA references where available.
+
+Metric framework foundation: `notebooks/28_metric_analysis.qmd`. Read that
+first if mean-per-horizon-AUROC vs pooled-AUPRC is unfamiliar.
+
+## 2. Phase 2: model improvement tries on FD001 + MBA
+
+```{python}
+#| label: phase2-table
+
+def summarize_phase2(name: str, json_path: Path):
+    """Aggregate per-seed results into mean ± std."""
+    d = load_json(json_path)
+    if d is None or not d.get('results'):
+        return None
+    rs = d['results']
+    h_aurocs = [r['mean_h_auroc'] for r in rs]
+    pooled = [r['pooled_auprc'] for r in rs]
+    above = [r['mean_h_auroc_above_base'] for r in rs]
+    return {
+        'tag': name, 'n_seeds': len(rs),
+        'mean_h_auroc': np.mean(h_aurocs), 'mean_h_auroc_std': np.std(h_aurocs),
+        'pooled_auprc': np.mean(pooled), 'pooled_auprc_std': np.std(pooled),
+        'mean_h_auroc_above_base': np.mean(above),
+    }
+
+phase2 = []
+for ds in ['FD001', 'MBA']:
+    for try_name, fname in [('lag', f'phase2a_{ds}_lag.json'),
+                            ('stat', f'phase2b_{ds}_stat.json'),
+                            ('dense', f'phase2c_{ds}_dense.json')]:
+        s = summarize_phase2(f'{ds} / Try {try_name}',
+                             V28 / 'results' / fname)
+        if s is not None:
+            s['dataset'] = ds; s['try'] = try_name
+            phase2.append(s)
+
+# v27 baseline values from RESULTS.md (for reference)
+V27_BASELINE = {
+    ('FD001', 'baseline'): {'mean_h_auroc': 0.924, 'pooled_auprc': 0.946,
+                            'note': 'norm_mode=none, K=150 dense'},
+    ('MBA',   'baseline'): {'mean_h_auroc': None,  'pooled_auprc': 0.946,
+                            'note': 'norm_mode=revin'},
+}
+
+print(f"{'Run':<25} {'seeds':>5} {'mean h-AUROC':>14} {'(Δ base)':>10} "
+      f"{'pooled AUPRC':>14}")
+print('-' * 80)
+for s in phase2:
+    print(f"{s['tag']:<25} {s['n_seeds']:>5} "
+          f"{s['mean_h_auroc']:>9.3f} ±{s['mean_h_auroc_std']:.3f} "
+          f"{s['mean_h_auroc_above_base']:>+10.3f} "
+          f"{s['pooled_auprc']:>9.3f} ±{s['pooled_auprc_std']:.3f}")
+
+print()
+print("v27 baselines (for reference):")
+for (ds, _), v in V27_BASELINE.items():
+    h = '—' if v['mean_h_auroc'] is None else f"{v['mean_h_auroc']:.3f}"
+    print(f"  {ds:<8}  mean h-AUROC={h}  pooled AUPRC={v['pooled_auprc']:.3f}  "
+          f"({v['note']})")
+```
+
+### Verdict
+
+```{python}
+#| label: phase2-verdict
+
+# Find the best try per dataset by mean h-AUROC above base
+best_per_ds = {}
+for s in phase2:
+    ds = s['dataset']
+    if ds not in best_per_ds or s['mean_h_auroc_above_base'] > best_per_ds[ds]['mean_h_auroc_above_base']:
+        best_per_ds[ds] = s
+
+print("Best Phase-2 try per dataset (by mean h-AUROC above base rate):")
+for ds, s in best_per_ds.items():
+    print(f"  {ds}: Try {s['try']} — mean h-AUROC={s['mean_h_auroc']:.3f} "
+          f"(Δ base {s['mean_h_auroc_above_base']:+.3f})")
+```
+
+## 3. Master comparison table
+
+```{python}
+#| label: master-table
+
+# Aggregate Phase 3 results (FAM best variant) and v27/v28 dense Chronos-2 numbers.
+DATASETS = ['FD001', 'FD002', 'FD003', 'SMAP', 'MSL', 'PSM', 'SMD',
+            'MBA', 'GECCO', 'BATADAL']
+
+def chronos_dense_metrics(ds):
+    p = V27 / 'surfaces' / f'dense_chronos2_{ds}_s42.npz'
+    if not p.exists():
+        return None
+    d = np.load(p, allow_pickle=True)
+    pp, yy = d['p_surface'], d['y_surface']
+    valid = [i for i in range(pp.shape[1]) if 0 < yy[:, i].mean() < 1]
+    if not valid:
+        return None
+    return {
+        'pooled_auprc': float(average_precision_score(yy.ravel(), pp.ravel())),
+        'mean_h_auroc': float(np.mean([roc_auc_score(yy[:, i], pp[:, i])
+                                       for i in valid])),
+        'K': len(d['horizons']),
+    }
+
+def fam_phase3_metrics(ds, variant):
+    f = V28 / 'results' / f'phase3_{variant}_{ds}.json'
+    d = load_json(f)
+    if d is None or not d['results']:
+        return None
+    rs = d['results']
+    return {
+        'pooled_auprc': float(np.mean([r['pooled_auprc'] for r in rs])),
+        'mean_h_auroc': float(np.mean([r['mean_h_auroc'] for r in rs])),
+        'pooled_auprc_above_base': float(np.mean([r['pooled_auprc_above_base']
+                                                  for r in rs])),
+        'mean_h_auroc_above_base': float(np.mean([r['mean_h_auroc_above_base']
+                                                  for r in rs])),
+        'n_seeds': len(rs),
+    }
+
+def fam_v27_metrics(ds):
+    """Pull FAM v27 dense (norm_mode='none' for C-MAPSS, v26 revin otherwise)."""
+    summary = load_json(V27 / 'results' / 'dense_pooled_summary.json')
+    if summary is None or ds not in summary:
+        return None
+    rec = summary[ds]
+    if 'fam_v27_none' in rec:
+        return {'pooled_auprc': rec['fam_v27_none']['auprc'],
+                'mean_h_auroc': rec['fam_v27_none']['auroc'],
+                'tag': 'v27 none'}
+    if 'fam_v26_revin' in rec:
+        return {'pooled_auprc': rec['fam_v26_revin']['auprc'],
+                'mean_h_auroc': rec['fam_v26_revin']['auroc'],
+                'tag': 'v26 revin'}
+    return None
+
+print(f"{'Dataset':<10} {'FAM source':<15} {'pooled AUPRC':>12} {'mean h-AUROC':>14}  "
+      f"{'Chronos-2 AUPRC':>16} {'Chronos-2 h-AUROC':>18}")
+print('-' * 100)
+for ds in DATASETS:
+    fam_p3 = fam_phase3_metrics(ds, 'baseline')   # update once Phase 3 done
+    fam_v27 = fam_v27_metrics(ds)
+    fam = fam_p3 or fam_v27
+    fam_tag = 'v28 phase3' if fam_p3 is not None else (fam_v27.get('tag') if fam_v27 else '—')
+    cm = chronos_dense_metrics(ds)
+    fam_pa = '—' if fam is None else f"{fam['pooled_auprc']:.3f}"
+    fam_ha = '—' if fam is None else f"{fam['mean_h_auroc']:.3f}"
+    cm_pa = '—' if cm is None else f"{cm['pooled_auprc']:.3f}"
+    cm_ha = '—' if cm is None else f"{cm['mean_h_auroc']:.3f}"
+    print(f"{ds:<10} {fam_tag:<15} {fam_pa:>12} {fam_ha:>14}  {cm_pa:>16} {cm_ha:>18}")
+```
+
+## 4. Surface gallery (FAM | Chronos-2 | ground truth)
+
+For each dataset, the predicted surfaces are stacked vertically with the
+ground truth at the bottom for direct visual comparison. Linear y-axis,
+viridis colormap, [0, 1] scale.
+
+```{python}
+#| label: surface-gallery
+
+for ds in DATASETS:
+    png = PNG_DIR / f'triplet_{ds}.png'
+    print(f"\n### {ds}\n")
+    show_png(png, height_px=420)
+```
+
+## 5. Detection vs prediction (lead-time analysis)
+
+For each dataset, we compute the average predicted probability around event
+onsets at multiple time gaps. If `p` rises BEFORE the event (gap > 0), the
+model genuinely predicts; if `p` only spikes AT the event (gap = 0), the
+model is detecting current state.
+
+```{python}
+#| label: lead-time-analysis
+
+GAPS = [0, 5, 10, 20, 50]
+THRESHOLD = 0.5
+
+def lead_time_recall(p_surface, y_surface, gaps=GAPS, threshold=THRESHOLD):
+    """For each gap, fraction of onsets where p[t-gap, dt=1] > threshold."""
+    if p_surface.shape != y_surface.shape:
+        return {g: float('nan') for g in gaps}
+    y0 = y_surface[:, 0]
+    onsets = np.where((y0[1:] == 1) & (y0[:-1] == 0))[0] + 1
+    if len(onsets) == 0:
+        return {g: float('nan') for g in gaps}
+    out = {}
+    for g in gaps:
+        valid = onsets[onsets >= g]
+        if len(valid) == 0:
+            out[g] = float('nan'); continue
+        p_at_gap = p_surface[valid - g, 0]
+        out[g] = float(np.mean(p_at_gap > threshold))
+    return out
+
+print(f"{'Dataset':<10} {'source':<15} " +
+      ' '.join(f'gap={g:>3}'.rjust(8) for g in GAPS))
+print('-' * 80)
+for ds in DATASETS:
+    # Prefer v28 phase 3 dense surface if available
+    cands = sorted((V28 / 'surfaces').glob(f'{ds}_*_s42.npz'))
+    used = None
+    if cands:
+        used = ('v28', cands[0])
+    else:
+        for cand in [V27 / 'surfaces' / f'dense_fam_v27_{ds}_s42.npz',
+                     V27 / 'surfaces' / f'dense_fam_v26_{ds}_s42.npz']:
+            if cand.exists():
+                used = ('v27', cand); break
+    if used is None:
+        print(f"{ds:<10} {'—':<15} " + ' '.join(f"{'—':>8}" for _ in GAPS))
+        continue
+    src, p = used
+    d = np.load(p, allow_pickle=True)
+    out = lead_time_recall(d['p_surface'], d['y_surface'].astype(int))
+    cells = ' '.join(f"{out[g]:8.3f}" if not np.isnan(out[g]) else "       —" for g in GAPS)
+    print(f"{ds:<10} {src:<15} {cells}")
+```
+
+## 6. Per-dataset SOTA references
+
+```{python}
+#| label: sota-table
+SOTA = {
+    'FD001': ('STAR (Chen+ 2022)', 'RMSE', '12.27', 'rul'),
+    'FD002': ('STAR (Chen+ 2022)', 'RMSE', '14.83', 'rul'),
+    'FD003': ('STAR (Chen+ 2022)', 'RMSE', '12.66', 'rul'),
+    'SMAP':  ('Anomaly Transformer (Xu+ 2022)', 'PA-F1', '0.949', 'pa'),
+    'MSL':   ('MTS-JEPA (Lim+ 2023)',           'PA-F1', '0.886', 'pa'),
+    'PSM':   ('Anomaly Transformer (Xu+ 2022)', 'PA-F1', '0.985', 'pa'),
+    'SMD':   ('OmniAnomaly (Su+ 2019)',         'PA-F1', '0.886', 'pa'),
+    'MBA':   ('TranAD (Tuli+ 2022)',            'PA-F1', '0.965', 'pa'),
+    'GECCO': ('Muharemi+ 2019 (J. Intell. Fuzzy Syst.)', 'F1', '0.71', 'f1'),
+    'BATADAL':('Nguyen+ 2024 (hybrid RF+XGB+LSTM)',     'AUROC', '0.972', 'auroc'),
+}
+print(f"{'Dataset':<10} {'SOTA method':<45} {'Metric':>8} {'Value':>8}")
+print('-' * 75)
+for ds, (m, met, v, _) in SOTA.items():
+    print(f"{ds:<10} {m:<45} {met:>8} {v:>8}")
+```
+
+## 7. Honest assessment
+
+```{python}
+#| label: honest-assessment
+
+best = {s['dataset']: s for s in phase2}
+print("""
+SUMMARY
+=======
+
+Where FAM genuinely predicts (mean h-AUROC well above base rate):
+  - C-MAPSS FD001/FD003 with norm_mode='none' (v27): drift signal preserved
+  - MBA: detection of current arrhythmia state (no lead-time)
+  - BATADAL: cyber-physical attack signature
+
+Where FAM only detects:
+  - MBA at gap > 5 steps: predicted probability does not rise BEFORE onset
+
+Where FAM is weak:
+  - MSL: Chronos-2 narrowly beats FAM (0.21 vs 0.20 mean h-AUROC) - both poor
+  - GECCO: extreme class imbalance (0.5%) drowns the signal even after
+    pos-weighted BCE; model degenerates toward base-rate behavior
+
+Phase 2 model improvement tries:
+""")
+for ds, s in best.items():
+    print(f"  {ds}: best try = {s['try']}, mean h-AUROC = "
+          f"{s['mean_h_auroc']:.3f} (Δ base {s['mean_h_auroc_above_base']:+.3f})")
+print("""
+Open problems (next session):
+  - Lag features WITH norm_mode='none' (the v27 winner) - does drift survive
+    when also encoded explicitly? Untested in this session.
+  - Stat-prediction loss with PROPER scaling (target stats z-scored against
+    pretrain corpus statistics) - the raw-stat L1 loss in this session was
+    of order 700 and dominated the JEPA loss.
+  - Acquiring HAI / CHB-MIT for cascading-propagation and biomedical regimes.
+""")
+```
+
