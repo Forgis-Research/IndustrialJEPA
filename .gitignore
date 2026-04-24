@@ -102,10 +102,9 @@ results/**/
 *.npz
 *.h5
 *.hdf5
-
-# Exception: v24 probability surfaces are the paper's primary artefact and
-# are needed by the Quarto summary notebook. ~150 MB total, largest file 25 MB.
-!fam-jepa/experiments/v24/surfaces/*.npz
+# Note: fam-jepa/experiments/v24/surfaces/*.npz were committed as a one-off
+# snapshot (commit 6434ae1) for the Quarto notebook. Future .npz files are
+# re-ignored here.
 
 # Stale images at repo root level
 mechanical-jepa/*.png
