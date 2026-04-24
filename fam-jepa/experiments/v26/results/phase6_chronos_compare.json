@@ -1,0 +1,112 @@
+{
+  "FD001": {
+    "dataset": "FD001",
+    "fam": {
+      "auprc_mean": 0.924944886615244,
+      "auprc_std": 0.001250905771073765,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
+    "chronos2": {
+      "auprc_mean": 0.9253704967251092,
+      "auprc_std": 0.0002603163574110926,
+      "auroc_mean": 0.9290333425009688,
+      "auroc_std": 0.0015831729260180252,
+      "n_seeds": 3,
+      "source": "v24_chronos2 (same splits as v26)"
+    },
+    "delta": -0.0004256101098651932,
+    "winner": "Chronos-2"
+  },
+  "FD002": {
+    "dataset": "FD002",
+    "fam": {
+      "auprc_mean": 0.9080037763481533,
+      "auprc_std": 0.0005177871448735304,
+      "n_seeds": 3,
+      "source": "v26_fam"
+    },
+    "chronos2": {
+      "auprc_mean": 0.916680181001889,
+      "auprc_std": 0.0005392226941637808,
+      "auroc_mean": 0.9282378682123933,
+      "auroc_std": 0.0004054108816447242,
+      "n_seeds": 3,
+      "source": "v24_chronos2 (same splits as v26)"
+    },
+    "delta": -0.008676404653735648,
+    "winner": "Chronos-2"
+  },
+  "FD003": {
+    "dataset": "FD003",
+    "fam": {
+      "auprc_mean": 0.7744730625635938,
+      "auprc_std": 0.00019157853669066194,
+      "n_seeds": 2,
+      "source": "v26_fam_partial"
+    },
+    "chronos2": {
+      "auprc_mean": 0.7944339296467472,
+      "auprc_std": 0.0027836963508966785,
+      "auroc_mean": 0.8949916541810197,
+      "auroc_std": 0.0005272901553639789,
+      "n_seeds": 3,
+      "source": "v24_chronos2 (same splits as v26)"
+    },
+    "delta": -0.019960867083153366,
+    "winner": "Chronos-2"
+  },
+  "SMAP": {
+    "dataset": "SMAP",
+    "fam": null,
+    "chronos2": {
+      "auprc_mean": 0.2854489011270438,
+      "auprc_std": 0.0,
+      "auroc_mean": 0.5068881037537075,
+      "auroc_std": 0.0,
+      "n_seeds": 1,
+      "source": "v24_chronos2 (same splits as v26)"
+    }
+  },
+  "MSL": {
+    "dataset": "MSL",
+    "fam": null,
+    "chronos2": {
+      "auprc_mean": 0.2226332040696062,
+      "auprc_std": 0.005449443315800559,
+      "auroc_mean": 0.5316336730265556,
+      "auroc_std": 0.0019770057108251925,
+      "n_seeds": 3,
+      "source": "v24_chronos2 (same splits as v26)"
+    }
+  },
+  "PSM": {
+    "dataset": "PSM",
+    "fam": null,
+    "chronos2": {
+      "auprc_mean": 0.4114177745672764,
+      "auprc_std": 0.005360934172173474,
+      "auroc_mean": 0.5478254277052734,
+      "auroc_std": 0.0021423610372522345,
+      "n_seeds": 3,
+      "source": "v24_chronos2 (same splits as v26)"
+    }
+  },
+  "SMD": {
+    "dataset": "SMD",
+    "fam": null,
+    "chronos2": null
+  },
+  "MBA": {
+    "dataset": "MBA",
+    "fam": null,
+    "chronos2": {
+      "auprc_mean": 0.9184262959255438,
+      "auprc_std": 0.002368387183650383,
+      "auroc_mean": 0.8320052466010406,
+      "auroc_std": 0.0026573099000052414,
+      "n_seeds": 3,
+      "source": "v24_chronos2 (same splits as v26)"
+    }
+  }
+}

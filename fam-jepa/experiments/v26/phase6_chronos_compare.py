@@ -69,8 +69,15 @@ def load_v24_chronos(ds: str) -> dict:
     aurocs = []
     for p in paths:
         d = json.loads(p.read_text())
-        auprcs.append(float(d['primary']['auprc']))
-        aurocs.append(float(d['primary']['auroc']))
+        if d.get('skipped'):
+            continue
+        prim = d.get('primary')
+        if not prim:
+            continue
+        auprcs.append(float(prim['auprc']))
+        aurocs.append(float(prim['auroc']))
+    if not auprcs:
+        return None
     return {'auprc_mean': float(np.mean(auprcs)),
             'auprc_std':  float(np.std(auprcs)),
             'auroc_mean': float(np.mean(aurocs)),
