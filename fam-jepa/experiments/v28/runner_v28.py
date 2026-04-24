@@ -201,12 +201,40 @@ def _target_stats(target_raw: torch.Tensor,
     return torch.cat([mean, std, slope], dim=-1)
 
 
+@torch.no_grad()
+def estimate_stat_normalization(loader, device: str = 'cuda',
+                                max_batches: int = 50) -> tuple:
+    """Scan loader for ~max_batches and compute global (μ, σ) of target stats.
+
+    Returns (stat_mu, stat_sigma) tensors of shape (3 * n_channels,) on `device`.
+    These are used to standardise the aux stat loss so its magnitude does not
+    dominate the JEPA L1 loss (the v28 Try B failure mode).
+    """
+    samples = []
+    n = 0
+    for ctx, ctx_m, tgt, tgt_m, dt in loader:
+        tgt, tgt_m = tgt.to(device), tgt_m.to(device)
+        s = _target_stats(tgt, tgt_m)             # (B, 3*C)
+        samples.append(s)
+        n += s.shape[0]
+        if len(samples) >= max_batches:
+            break
+    s_all = torch.cat(samples, dim=0)              # (N, 3*C)
+    mu = s_all.mean(dim=0)
+    sigma = s_all.std(dim=0).clamp(min=1e-3)
+    print(f"  [stat-norm] estimated over N={n} samples; "
+          f"mu range [{mu.min():.3f},{mu.max():.3f}]  "
+          f"sigma range [{sigma.min():.3f},{sigma.max():.3f}]", flush=True)
+    return mu, sigma
+
+
 def pretrain_with_stat(model: FAM, stat_head: StatHead,
                        train_loader, val_loader,
                        lr: float = 3e-4, weight_decay: float = 0.01,
                        n_epochs: int = 30, patience: int = 5,
                        grad_clip: float = 1.0, device: str = 'cuda',
-                       stat_weight: float = 0.1) -> dict:
+                       stat_weight: float = 0.1,
+                       stat_normalize: bool = False) -> dict:
     """Pretrain FAM with auxiliary stat-prediction loss.
 
     The collate_pretrain function returns RAW (un-normalized) target tensors
@@ -222,6 +250,13 @@ def pretrain_with_stat(model: FAM, stat_head: StatHead,
     params = [p for p in model.parameters() if p.requires_grad] + list(stat_head.parameters())
     optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, n_epochs)
+
+    # Estimate stat-normalization constants once if requested. The pred
+    # head then learns to predict the standardised stats, which keeps the
+    # L1 loss in the same order of magnitude as the JEPA L1.
+    stat_mu, stat_sigma = None, None
+    if stat_normalize:
+        stat_mu, stat_sigma = estimate_stat_normalization(train_loader, device)
 
     best_loss = float('inf')
     best_state, best_stat_state, wait = None, None, 0
@@ -247,6 +282,11 @@ def pretrain_with_stat(model: FAM, stat_head: StatHead,
 
             stat_pred = stat_head(h_t)                 # (B, 3 * C)
             target_stats = _target_stats(tgt, tgt_m)
+            if stat_normalize:
+                # Standardise both prediction and target so the L1 loss
+                # is in z-units, comparable scale to the JEPA L1.
+                stat_pred = (stat_pred - stat_mu) / stat_sigma
+                target_stats = (target_stats - stat_mu) / stat_sigma
             l_stat = F.l1_loss(stat_pred, target_stats.detach())
 
             loss = l_pred + LAMBDA_VAR * l_var + stat_weight * l_stat
@@ -276,6 +316,9 @@ def pretrain_with_stat(model: FAM, stat_head: StatHead,
                                    F.normalize(h_target, dim=-1))
                 stat_pred = stat_head(h_t)
                 tstats = _target_stats(tgt, tgt_m)
+                if stat_normalize:
+                    stat_pred = (stat_pred - stat_mu) / stat_sigma
+                    tstats = (tstats - stat_mu) / stat_sigma
                 l_stat = F.l1_loss(stat_pred, tstats)
                 val_losses.append((l_pred + stat_weight * l_stat).item())
         val_loss = float(np.mean(val_losses)) if val_losses else train_loss
@@ -411,6 +454,7 @@ def run_one(dataset: str, norm_mode: str, seed: int,
             tag_suffix: str = '',
             lag_features: Optional[List[int]] = None,
             aux_stat: bool = False,
+            stat_normalize: bool = False,
             dense_ft: bool = False,
             k_dense: int = 20,
             pre_epochs: int = 30, pre_patience: int = 5,
@@ -424,7 +468,7 @@ def run_one(dataset: str, norm_mode: str, seed: int,
     if lag_features:
         extra += f'_lag{"_".join(str(L) for L in lag_features)}'
     if aux_stat:
-        extra += '_stat'
+        extra += '_statz' if stat_normalize else '_stat'
     if dense_ft:
         extra += f'_dense{k_dense}'
     if tag_suffix:
@@ -478,7 +522,8 @@ def run_one(dataset: str, norm_mode: str, seed: int,
             stat_head = StatHead(d_model=256, n_channels=n_channels, hidden=256)
             pre_out = pretrain_with_stat(model, stat_head, tlo, vlo,
                                          lr=3e-4, n_epochs=pre_epochs,
-                                         patience=pre_patience, device=device)
+                                         patience=pre_patience, device=device,
+                                         stat_normalize=stat_normalize)
         else:
             pre_out = pretrain_default(model, tlo, vlo, lr=3e-4, n_epochs=pre_epochs,
                                        patience=pre_patience, device=device)

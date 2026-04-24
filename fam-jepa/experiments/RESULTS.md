@@ -65,14 +65,24 @@ for apples-to-apples comparison.
   - **Try A under RevIN fails on FD001**: RevIN normalises each lag-channel
     independently per context, washing out the cross-context drift signal
     that the lag features were meant to expose.
-  - **Try B (aux stat loss) is MISCONFIGURED**, not refuted. The raw-stat
-    L1 loss reaches magnitude ~700 while the JEPA loss is ~0.04 — a
-    17,000:1 ratio. The encoder learns to ignore the JEPA path because
-    the optimiser chases the dominant term. The Try B "fail" only tells
-    us about loss-scale calibration, NOT about whether stat-prediction
-    auxiliary objectives help. Re-running with z-scored stats (computed
-    against pretrain corpus statistics, not raw sensor values) is the
-    correct experiment; that did not happen this session.
+  - **Try B (aux stat loss) is MISCONFIGURED in Phase 2B** — raw-stat L1
+    ~700 vs JEPA L1 ~0.04 (17,500:1 ratio). The encoder learned to ignore
+    the JEPA path. Phase 8 re-ran Try B with z-scored stats (estimated
+    once over the train loader) so the aux L1 sits in the same z-scale
+    as the JEPA L1. **Phase 8 result: still does not help.**
+    - FD001 statz: mean h-AUROC = 0.524 ± 0.009 (vs v27 baseline 0.724,
+      still -0.20). Stat loss alone, even properly scaled, cannot recover
+      drift signal that RevIN destroys.
+    - MBA statz: mean h-AUROC = 0.737 ± 0.009 (vs v27 baseline 0.729,
+      +0.008 — within noise). Lag features (Try A, +0.05) work better
+      on MBA than stat-prediction.
+    - **Real takeaway**: predicting target stats from h_t is a weaker
+      objective than feeding the stats directly to the encoder. The
+      v27 ablation showed `revin_stat` (RevIN + stat token in context)
+      doesn't help either — the stat-token gets no meaningful gradient
+      signal. The lesson is consistent: RevIN's per-context normalisation
+      is hard to undo via auxiliary objectives; the cleanest fix is to
+      not normalise per-context (Try A* lag+none).
   - **Try C** is a sparse-eval wash on FD001 but small-significant +0.015
     on FD002 at dense K=150 (paired t=18.2, p=0.003) and +0.027 on FD003
     (p=0.13). Worth keeping in the toolbox.
