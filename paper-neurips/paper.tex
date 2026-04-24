@@ -260,7 +260,7 @@ Every domain-specific metric is a lossy projection of $p(t, \Delta t)$. \Cref{ta
     \midrule
     PA-F1              & Threshold $p$ at $\Delta t{=}0$; credit entire segment if any point detected                                      & Random scores beat DL detectors~\citep{kim2022rigorous}; $+$55\,pp inflation on SMAP & AT~\citep{xu2022anomalytransformer}, DCdet.~\citep{yang2023dcdetector} \\
     \addlinespace
-    RMSE               & $\hat{\tau} = \sum_\Delta t \Delta t \cdot P(\text{event at } \Delta t)$; $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Calibration only; ignores ranking                                                    & STAR~\citep{fan2024star}                                               \\
+    RMSE               & $\hat{\tau} = \sum_{\Delta t} \Delta t \cdot P(\text{event at } \Delta t)$; $\sqrt{\text{mean}(\hat\tau - \tau)^2}$ & Calibration only; ignores ranking                                                    & STAR~\citep{fan2024star}                                               \\
     \addlinespace
     F1($\Delta t{=}1$) & Threshold $p(t, {\Delta t}_1)$ at val cutoff                                                                      & Single horizon; threshold-dep.                                                       & MTS-JEPA~\citep{mtsjepa2026}                                           \\
     \bottomrule
@@ -286,13 +286,13 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Event prediction across eight domains with one architecture (v24 canonical run).} Every FAM row uses an identical $\approx$\,2.16M-parameter causal-JEPA backbone pretrained per-dataset with no labels and finetuned downstream via pred-FT (frozen encoder, BCE on per-horizon sigmoid head). Patch size $P{=}16$ globally, with $P{=}1$ on Sepsis (hourly data, below the $P{=}16$ resolution floor). AUPRC (pooled over all $(t, \Delta t)$ cells) is the primary, threshold-free metric. ``Legacy (ours)'' is non-PA F1 at the best threshold (honest). PA-F1 uses the point-adjustment protocol, reported for literature comparability only; it inflates substantially on long-segment benchmarks~\citep{schmidl2022tsadeval,kim2022rigorous}, so PA-F1 values are \emph{not} directly comparable to non-PA F1. All FAM rows: 3 seeds, mean $\pm$ std. Sources: v24 phase 2--6 results in \texttt{fam-jepa/experiments/v24/results/}. Baselines: STAR~\citep{fan2024star}, MTS-JEPA~\citep{mtsjepa2026}, Anomaly Transformer~\citep{xu2022anomalytransformer}.}
+  \caption{\textbf{Event prediction across eight domains with one architecture (canonical architecture).} Every FAM row uses an identical $\approx$\,2.16M-parameter causal-JEPA backbone pretrained per-dataset with no labels and finetuned downstream via pred-FT (frozen encoder, BCE on per-horizon sigmoid head). Patch size $P{=}16$ globally, with $P{=}1$ on Sepsis (hourly data, below the $P{=}16$ resolution floor). AUPRC (pooled over all $(t, \Delta t)$ cells) is the primary, threshold-free metric. ``Legacy (ours)'' is non-PA F1 at the best threshold (honest). PA-F1 uses the point-adjustment protocol, reported for literature comparability only; it inflates substantially on long-segment benchmarks~\citep{schmidl2022tsadeval,kim2022rigorous}, so PA-F1 values are \emph{not} directly comparable to non-PA F1. All FAM rows: 3 seeds, mean $\pm$ std. Baselines: STAR~\citep{fan2024star}, MTS-JEPA~\citep{mtsjepa2026}, Anomaly Transformer~\citep{xu2022anomalytransformer}. Per-seed results and stored probability surfaces are available in the code repository.}
   \label{tab:benchmark}
   \small
   \setlength{\tabcolsep}{3pt}
   \begin{tabular}{@{}llccccll@{}}
     \toprule
-                  &             & \multicolumn{3}{c}{FAM (ours, v24)}                                                               & \multicolumn{2}{c}{SOTA comparison} &                          \\
+                  &             & \multicolumn{3}{c}{FAM (ours)}                                                               & \multicolumn{2}{c}{SOTA comparison} &                          \\
     \cmidrule(lr){3-5}\cmidrule(lr){6-7}
     Dataset       & Domain      & AUPRC $\uparrow$           & Legacy (ours)        & PA-F1                 & Legacy          & Method    & Ref                              \\
     \midrule
@@ -311,7 +311,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
   \end{tabular}
 \end{table}
 
-\textbf{Summary.} FAM produces a full probability surface $p(t, \Delta t)$ on twelve datasets spanning eight domains with a single $\approx$\,2.16M-parameter causal-JEPA backbone, pretrained per-dataset without labels. Sepsis is the one principled exception to $P{=}16$: at 1/hour most ICU stays are shorter than 128 hours, so we use $P{=}1$ to keep the transformer above its 8-token floor. Pooling over the surface yields AUPRC as a threshold-free primary metric. Relative to the v22 pre-canonical pipeline, v24 tightens cross-seed variance uniformly: SMAP std drops from $\pm0.042$ to $\pm0.010$ (4$\times$), PSM from $\pm0.113$ to $\pm0.006$ (19$\times$), MBA from $\pm0.024$ to $\pm0.001$ (24$\times$), and C-MAPSS from $\pm 0.009\text{--}0.016$ to $\pm 0.001\text{--}0.009$ - every dataset is 1 - 30$\times$ tighter. Anomaly AUPRC rises on 4/5 benchmarks (SMAP $+0.105$, SMD $+0.040$, PSM $+0.008$, MBA $+0.163$; MSL $-0.050$). Sepsis (new, $P{=}1$) reaches AUPRC $0.186 \pm 0.004$ at a $1.4\%$ test prevalence ($\approx 13\times$ the base rate) with AUROC $0.802 \pm 0.003$, below the InceptionTime/MGP-AttTCN 0.78--0.85 AUROC SOTA but within range given the architecture is not sepsis-specific. Under PA-F1 the same surfaces exceed the MTS-JEPA SMAP/MSL/PSM baselines with large margins ($0.808$ vs $0.336$, $0.788$ vs $0.336$, $0.929$ vs $0.616$). \emph{One clear regression}: FD003 AUPRC drops from $0.932$ (v21) to $0.766 \pm 0.009$ under the canonical architecture; the multi-fault degradation mode is not well-matched to the $P{=}16$ cumulative-target recipe. Legacy RMSE on C-MAPSS is not tightened by v24 and is reported separately in the appendix; the primary claim rests on AUPRC. All probability surfaces are stored as \texttt{.npz} in \texttt{fam-jepa/experiments/v24/surfaces/}; legacy F1 (and PA-F1) are derived deterministically from the stored surface so threshold or window-length questions are recomputable offline without rerunning inference. Monotonicity violation rate is $\leq 0.06$ on every seed of every dataset and exactly $0.000$ on all anomaly datasets. We report non-PA F1 as our "Legacy (ours)" column because point-adjustment is known to inflate scores~\citep{kim2022rigorous}; numerical comparison to PA-F1 baselines therefore requires the caveat column to be read alongside.
+\textbf{Summary.} FAM produces a full probability surface $p(t, \Delta t)$ on twelve datasets spanning eight domains with a single $\approx$\,2.16M-parameter causal-JEPA backbone, pretrained per-dataset without labels. Sepsis is the one principled exception to $P{=}16$: at 1/hour most ICU stays are shorter than 128 hours, so we use $P{=}1$ to keep the transformer above its 8-token floor. Pooling over the surface yields AUPRC as a threshold-free primary metric. Relative to the v22 pre-canonical pipeline, v24 tightens cross-seed variance uniformly: SMAP std drops from $\pm0.042$ to $\pm0.010$ (4$\times$), PSM from $\pm0.113$ to $\pm0.006$ (19$\times$), MBA from $\pm0.024$ to $\pm0.001$ (24$\times$), and C-MAPSS from $\pm 0.009\text{--}0.016$ to $\pm 0.001\text{--}0.009$ - every dataset is 1--30$\times$ tighter. Anomaly AUPRC rises on 4/5 benchmarks (SMAP $+0.105$, SMD $+0.040$, PSM $+0.008$, MBA $+0.163$; MSL $-0.050$). Sepsis (new, $P{=}1$) reaches AUPRC $0.186 \pm 0.004$ at a $1.4\%$ test prevalence ($\approx 13\times$ the base rate) with AUROC $0.802 \pm 0.003$, below the InceptionTime/MGP-AttTCN 0.78--0.85 AUROC SOTA but within range given the architecture is not sepsis-specific. Under PA-F1 the same surfaces exceed the MTS-JEPA SMAP/MSL/PSM baselines with large margins ($0.808$ vs $0.336$, $0.788$ vs $0.336$, $0.929$ vs $0.616$). \emph{One clear regression}: FD003 AUPRC drops from $0.932$ (v21) to $0.766 \pm 0.009$ under the canonical architecture; the multi-fault degradation mode is not well-matched to the $P{=}16$ cumulative-target recipe. Legacy RMSE on C-MAPSS is not tightened by v24 and is reported separately in the appendix; the primary claim rests on AUPRC. All probability surfaces are stored as \texttt{.npz}; legacy F1 and PA-F1 are derived deterministically from the stored surface, so threshold or window-length questions are recomputable offline without rerunning inference. Monotonicity violation rate is $\leq 0.06$ on every seed of every dataset and exactly $0.000$ on all anomaly datasets. We report non-PA F1 as our "Legacy (ours)" column because point-adjustment is known to inflate scores~\citep{kim2022rigorous}; numerical comparison to PA-F1 baselines therefore requires the caveat column to be read alongside.
 
 \subsection{C-MAPSS: Time-to-Failure}
 \label{sec:rul_results}
@@ -321,15 +321,15 @@ On FD001 the FAM pipeline is evaluated across five downstream modes and five lab
 \subsection{Anomaly Prediction: SMAP, MSL, PSM, SMD, MBA}
 \label{sec:anomaly_results}
 
-For anomaly datasets the same FAM pretrained encoder is used, and the predictor and a $\approx$\,513-parameter event head are finetuned (pred-FT) with positive-weighted BCE on the per-horizon sigmoid logits. Splits are intra-entity chronological ($60/10/30$ with a window-size gap at each boundary) for SMAP/MSL/SMD and chronological with gap for the single-stream PSM/MBA. Probability surfaces $p(t, \Delta t_k)$ are stored as \texttt{.npz} so PA-F1 and non-PA F1 are recomputed offline by placing $p(t, \Delta t{=}100)$ at $t+100$ and sweeping thresholds. Results from \cref{tab:benchmark}: pooled AUPRC is $0.395 \pm 0.010$ (SMAP), $0.187 \pm 0.007$ (MSL), $0.425 \pm 0.006$ (PSM), $0.236 \pm 0.015$ (SMD), $0.947 \pm 0.001$ (MBA). Under the PA-F1 comparability lens, FAM beats the MTS-JEPA baseline by large margins on the three spacecraft/server datasets: SMAP $0.808$ vs.\ $0.336$, MSL $0.788$ vs.\ $0.336$, PSM $0.929$ vs.\ $0.616$. SMD PA-F1 is $0.844$, short of Anomaly Transformer's $0.925$ under a different (global) split, so the comparison is not apples-to-apples; we report both for transparency. MBA PA-F1 reaches ceiling ($1.000 \pm 0.000$) due to long arrhythmia segments. Non-PA F1 is $0.454$ (SMAP), $0.332$ (MSL), $0.536$ (PSM), $0.273$ (SMD), $0.860$ (MBA). The gap between PA and non-PA F1 (3 - 13$\times$) is a core honesty axis that we recommend future work always report. Monotonicity violation rate is $0.000$ on every anomaly dataset. Variance is uniformly tighter than the v22 pre-canonical pipeline (1 - 30$\times$; see \cref{sec:benchmark} Summary).
+For anomaly datasets the same FAM pretrained encoder is used, and the predictor and a $\approx$\,513-parameter event head are finetuned (pred-FT) with positive-weighted BCE on the per-horizon sigmoid logits. Splits are intra-entity chronological ($60/10/30$ with a window-size gap at each boundary) for SMAP/MSL/SMD and chronological with gap for the single-stream PSM/MBA. Probability surfaces $p(t, \Delta t_k)$ are stored as \texttt{.npz} so PA-F1 and non-PA F1 are recomputed offline by placing $p(t, \Delta t{=}100)$ at $t+100$ and sweeping thresholds. Results from \cref{tab:benchmark}: pooled AUPRC is $0.395 \pm 0.010$ (SMAP), $0.187 \pm 0.007$ (MSL), $0.425 \pm 0.006$ (PSM), $0.236 \pm 0.015$ (SMD), $0.947 \pm 0.001$ (MBA). Under the PA-F1 comparability lens, FAM beats the MTS-JEPA baseline by large margins on the three spacecraft/server datasets: SMAP $0.808$ vs.\ $0.336$, MSL $0.788$ vs.\ $0.336$, PSM $0.929$ vs.\ $0.616$. SMD PA-F1 is $0.844$, short of Anomaly Transformer's $0.925$ under a different (global) split, so the comparison is not apples-to-apples; we report both for transparency. MBA PA-F1 reaches ceiling ($1.000 \pm 0.000$) due to long arrhythmia segments. Non-PA F1 is $0.454$ (SMAP), $0.332$ (MSL), $0.536$ (PSM), $0.273$ (SMD), $0.860$ (MBA). The gap between PA and non-PA F1 (3--13$\times$) is a core honesty axis that we recommend future work always report. Monotonicity violation rate is $0.000$ on every anomaly dataset. Variance is uniformly tighter than the v22 pre-canonical pipeline (1--30$\times$; see \cref{sec:benchmark} Summary).
 
-\subsection{New-Domain Benchmarks (v24 phase 11)}
+\subsection{New-Domain Benchmarks }
 \label{sec:new_domains}
 
 Three additional datasets selected to expand domain coverage beyond turbofan/spacecraft/server/cardiac/ICU-sepsis, all open-license and direct-download, pipeline identical to \cref{sec:anomaly_results}:
 
 \begin{itemize}[nosep]
-  \item \textbf{GECCO 2018 Industrial Challenge} (environmental / drinking-water IoT): 9 sensor channels at $\approx$\,1/min, 139\,K timesteps, single-stream chronological splits with gap. FAM AUPRC $0.110 \pm 0.053$, AUROC $0.762 \pm 0.057$, F1 $0.180 \pm 0.075$. Literature SOTA: F1 $\approx$ 0.71 (Muharemi et al., 2019), AUROC $\approx$ 0.88 on the TAB benchmark (PVLDB 2025). Our canonical recipe under-performs on the AUPRC axis because GECCO's events are brief (18 - 25 min) so cumulative-target over 150 - 200 min dilutes the per-horizon signal; the per-horizon AUPRC peaks at $\Delta t = 5$ - $10$ ($\approx 0.25$) and decays at long horizons.
+  \item \textbf{GECCO 2018 Industrial Challenge} (environmental / drinking-water IoT): 9 sensor channels at $\approx$\,1/min, 139\,K timesteps, single-stream chronological splits with gap. FAM AUPRC $0.110 \pm 0.053$, AUROC $0.762 \pm 0.057$, F1 $0.180 \pm 0.075$. Literature SOTA: F1 $\approx$ 0.71 (Muharemi et al., 2019), AUROC $\approx$ 0.88 on the TAB benchmark (PVLDB 2025). Our canonical recipe under-performs on the AUPRC axis because GECCO's events are brief (18--25 min) so cumulative-target over 150--200 min dilutes the per-horizon signal; the per-horizon AUPRC peaks at $\Delta t = 5$ - $10$ ($\approx 0.25$) and decays at long horizons.
   \item \textbf{BATADAL} (ICS cybersecurity / water distribution): 43 SCADA channels (tank levels, pump states, pressures, flows) at 1/hour, 8\,761 h of normal training + 4\,177 h with 41 labeled attacks. FAM AUPRC $0.196 \pm 0.013$, AUROC $0.731 \pm 0.025$, F1 $0.323 \pm 0.024$. Published SOTA is AUC $0.972$ (Nguyen et al., 2024, hybrid RF+XGB+LSTM). BATADAL is small (8.7\,K pretrain h) - FAM pretraining is capacity-limited.
   \item \textbf{PhysioNet / CinC 2012} (ICU mortality, distinct from PhysioNet 2019 Sepsis): 36 clinical channels on a 1-hour grid over the first 48 hours of each ICU stay, 3\,997 training + 3\,993 test patients, 13 - 14\% mortality. $P{=}1$ (hourly). FAM AUROC $0.858 \pm 0.001$, AUPRC $0.227 \pm 0.002$, F1 $0.316 \pm 0.004$. Chen \& Yang (2019) InceptionTime SOTA is AUROC $0.868$; STraTS (Tipirneni \& Reddy, TKDD 2022) adds $+3.5\%$ PR-AUC. FAM lands within $1$ pp AUROC of the supervised SOTA with a single hyperparameter set shared across all 12 benchmarks.
 \end{itemize}
@@ -343,7 +343,7 @@ We compare FAM to \texttt{amazon/chronos-2}~\citep{ansari2024chronos} - a \emph{
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{\texttt{amazon/chronos-2} (multivariate, frozen, 768-d) + linear probe vs.\ FAM pred-FT under a shared protocol.} Same labeled splits, same horizon set, same BCE loss. Chronos-2 cells: 3 seeds on all datasets shown except SMAP (1 seed; remaining seeds deferred, feature extraction took 40 min on A10G); SMD skipped (327K test observations, ${\approx}5$\,h/seed infeasible). Chronos-T5-tiny (8.4M univariate) is superseded by Chronos-2 as our foundation-model comparator. Sources: \texttt{fam-jepa/experiments/v24/results/baseline\_chronos2\_agg.json} and per-seed JSONs.}
+  \caption{\textbf{\texttt{amazon/chronos-2} (multivariate, frozen, 768-d) + linear probe vs.\ FAM pred-FT under a shared protocol.} Same labeled splits, same horizon set, same BCE loss. Chronos-2 cells: 3 seeds on all datasets shown except SMAP (1 seed; remaining seeds deferred, feature extraction took 40 min on A10G); SMD skipped (327K test observations, ${\approx}5$\,h/seed infeasible). Chronos-T5-tiny (8.4M univariate) is superseded by Chronos-2 as our foundation-model comparator. Per-seed results available in the code repository.}
   \label{tab:chronos}
   \small
   \begin{tabular}{llcccc}
@@ -351,31 +351,31 @@ We compare FAM to \texttt{amazon/chronos-2}~\citep{ansari2024chronos} - a \emph{
     Dataset & Model                & Params (probe / enc) & AUPRC $\uparrow$           & AUROC $\uparrow$           & $\Delta t{=}1$ AUPRC $\uparrow$ \\
     \midrule
     FD001   & Chronos-2 (frozen)   & 769 / 120M              & $0.925 \pm 0.000$          & $\mathbf{0.929 \pm 0.002}$ & $\mathbf{0.41}$ \\
-    FD001   & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.926 \pm 0.001}$ & $0.919 \pm 0.001$          & $0.09$          \\
+    FD001   & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $\mathbf{0.926 \pm 0.001}$ & $0.919 \pm 0.001$          & $0.09$          \\
     \midrule
     FD002   & Chronos-2 (frozen)   & 769 / 120M              & $\mathbf{0.917 \pm 0.001}$ & $\mathbf{0.928 \pm 0.000}$ & $\mathbf{0.41}$ \\
-    FD002   & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $0.908 \pm 0.002$          & $0.915 \pm 0.001$          & $0.06$          \\
+    FD002   & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $0.908 \pm 0.002$          & $0.915 \pm 0.001$          & $0.06$          \\
     \midrule
     FD003   & Chronos-2 (frozen)   & 769 / 120M              & $\mathbf{0.794 \pm 0.003}$ & $\mathbf{0.895 \pm 0.001}$ & \placeholder{pending} \\
-    FD003   & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $0.766 \pm 0.009$          & $0.876 \pm 0.007$          & \placeholder{pending} \\
+    FD003   & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $0.766 \pm 0.009$          & $0.876 \pm 0.007$          & \placeholder{pending} \\
     \midrule
     SMAP    & Chronos-2 (frozen)   & 769 / 120M              & $0.285$                    & $0.507$                    & $0.30$ \\
-    SMAP    & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.395 \pm 0.010}$ & $\mathbf{0.594 \pm 0.005}$ & $0.40$ \\
+    SMAP    & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $\mathbf{0.395 \pm 0.010}$ & $\mathbf{0.594 \pm 0.005}$ & $0.40$ \\
     \midrule
     MSL     & Chronos-2 (frozen)   & 769 / 120M              & $\mathbf{0.223 \pm 0.005}$ & $\mathbf{0.532 \pm 0.002}$ & \placeholder{pending} \\
-    MSL     & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $0.187 \pm 0.007$          & $0.472 \pm 0.015$          & \placeholder{pending} \\
+    MSL     & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $0.187 \pm 0.007$          & $0.472 \pm 0.015$          & \placeholder{pending} \\
     \midrule
     PSM     & Chronos-2 (frozen)   & 769 / 120M              & $0.411 \pm 0.005$          & $0.548 \pm 0.002$          & \placeholder{pending} \\
-    PSM     & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.425 \pm 0.006}$ & $\mathbf{0.566 \pm 0.009}$ & \placeholder{pending} \\
+    PSM     & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $\mathbf{0.425 \pm 0.006}$ & $\mathbf{0.566 \pm 0.009}$ & \placeholder{pending} \\
     \midrule
     MBA     & Chronos-2 (frozen)   & 769 / 120M              & $0.918 \pm 0.002$          & $0.832 \pm 0.003$          & \placeholder{pending} \\
-    MBA     & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.947 \pm 0.001}$ & $\mathbf{0.896 \pm 0.003}$ & \placeholder{pending} \\
+    MBA     & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $\mathbf{0.947 \pm 0.001}$ & $\mathbf{0.896 \pm 0.003}$ & \placeholder{pending} \\
     \midrule
     GECCO   & Chronos-2 (frozen)   & 769 / 120M              & $0.032 \pm 0.001$          & $\mathbf{0.873 \pm 0.001}$ & \placeholder{pending} \\
-    GECCO   & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $\mathbf{0.110 \pm 0.053}$ & $0.762 \pm 0.057$          & \placeholder{pending} \\
+    GECCO   & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $\mathbf{0.110 \pm 0.053}$ & $0.762 \pm 0.057$          & \placeholder{pending} \\
     \midrule
     BATADAL & Chronos-2 (frozen)   & 769 / 120M              & $\mathbf{0.338 \pm 0.042}$ & $0.688 \pm 0.016$          & \placeholder{pending} \\
-    BATADAL & FAM (pred-FT, v24)   & $\approx$\,198K / 1.96M & $0.196 \pm 0.013$          & $\mathbf{0.731 \pm 0.025}$ & \placeholder{pending} \\
+    BATADAL & FAM (pred-FT)   & $\approx$\,198K / 1.96M & $0.196 \pm 0.013$          & $\mathbf{0.731 \pm 0.025}$ & \placeholder{pending} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -439,7 +439,7 @@ Chronos-2 is clearly stronger at the shortest horizon ($\Delta t{=}1$ AUPRC $0.4
 
 \emph{(iii) Pred-FT vs.\ E2E at 5\% labels: robustness is the dominant signal, not mean superiority.} We also extended Phase 0b to 10 paired seeds at 5\% labels (Phase 7). At $N=10$: pred-FT $F_w = 0.229 \pm 0.141$ vs.\ E2E $0.124 \pm 0.201$, paired $t(9) = 1.75$, $p = 0.114$ (two-sided); Wilcoxon one-sided $p = 0.065$; Cohen's $d = 0.55$ (medium effect). Mean-difference tests miss $p < 0.05$. The collapse-rate difference is decisive: E2E collapses to $F_w = 0$ on \textbf{7 of 10 seeds}, pred-FT on $1/10$. At 5\% labels E2E is essentially a coin flip between ``works'' and ``fails completely''; pred-FT is monomodal with a floor near $0.23$.
 
-\emph{(iii) The full label-efficiency curve} (\cref{tab:label_efficiency}) shows the pred-FT/E2E gap is largest at 10\% labels ($+0.177$ in favor of pred-FT, $p = 0.15$), not at 5\%. At 20\% labels E2E recovers and surpasses pred-FT (0.295 vs.\ 0.212); at 50-100\% labels they are tied. The crossover we claim is thus \emph{at $\leq 10\%$ labels} rather than a uniform low-label advantage.
+\emph{(iv) The full label-efficiency curve} (\cref{tab:label_efficiency}) shows the pred-FT/E2E gap is largest at 10\% labels ($+0.177$ in favor of pred-FT, $p = 0.15$), not at 5\%. At 20\% labels E2E recovers and surpasses pred-FT (0.295 vs.\ 0.212); at 50-100\% labels they are tied. The crossover we claim is thus \emph{at $\leq 10\%$ labels} rather than a uniform low-label advantage.
 
 \textbf{RMSE vs.\ F1w disagreement at 5\%.} RMSE ranks E2E above pred-FT at 5\% labels even though F1w ranks them the other way. The cause is scale calibration: AUROCw at 5\% is $\approx 0.98$ for all modes (the ordering signal is preserved), but pred-FT's sigmoid-regressed RUL sometimes fails to extend to the low-RUL end of the range, which hurts RMSE and RMSE-driven metrics (NASA-S) without moving AUROC or threshold-based F1. E2E's full capacity calibrates scale better.
 
@@ -535,7 +535,7 @@ An additional surprise: on FD003, running 200 epochs of pretraining improves pre
 \subsection{Pretraining Objective: EMA vs.\ SIGReg}
 \label{sec:sigreg_ablation}
 
-\Cref{tab:sigreg_ablation} varies the self-supervised pretraining target while holding the downstream pred-FT protocol fixed. EMA (I-JEPA's target-encoder momentum~\citep{assran2023ijepa}) is the Phase~0 default. SIGReg~\citep{lejepa2026} replaces the EMA target with an isotropic-gaussian regularizer; we evaluate it applied to the encoder output (\emph{SIGReg-enc}) and to the predictor output (\emph{SIGReg-pred}).
+\Cref{tab:sigreg_ablation} varies the self-supervised pretraining target while holding the downstream pred-FT protocol fixed. EMA (I-JEPA's target-encoder momentum~\citep{assran2023ijepa}) is the Phase~0 default. SIGReg~\citep{balestriero2025lejepa} replaces the EMA target with an isotropic-gaussian regularizer; we evaluate it applied to the encoder output (\emph{SIGReg-enc}) and to the predictor output (\emph{SIGReg-pred}).
 
 \begin{table}[t]
   \centering
@@ -607,8 +607,8 @@ This paper fixes $W = 16$ horizon windows at patch resolution, chosen to match t
     \midrule
     Attention mask   & Causal                & v11 study                  & Fixed, not compared \\
     Horizon sampling & $\text{LogU}[1, 150]$ & v17 phase 1                & Default             \\
-    Target interval  & Cumulative $(t, t{+}\Delta t]$ & v24 (ARCHITECTURE.md) & Default             \\
-    Output param.    & Discrete hazard $\to$ CDF & v25 (DeepHit/DRSA)   & Default             \\
+    Target interval  & Cumulative $(t, t{+}\Delta t]$ & ARCHITECTURE.md & Default             \\
+    Output param.    & Discrete hazard $\to$ CDF & \cref{sec:downstream}   & Default             \\
     EMA momentum     & $\tau = 0.99$         & v17 phase 1                & Default             \\
     Encoder depth    & $L = 2$               & v17 phase 1                & Default (no sweep)  \\
     $d_\text{model}$ & $256$                 & v17 phase 1                & Default (no sweep)  \\
@@ -621,7 +621,7 @@ This paper fixes $W = 16$ horizon windows at patch resolution, chosen to match t
 \section{Extended Results}
 \label{app:extended}
 
-Per-seed raw results for each table are available in the repository at \texttt{fam-jepa/experiments/v20/phase\{0,1,2,3,5,6\}*.json}. The Phase 0 JSON includes all 50 runs (5 modes $\times$ 2 budgets $\times$ 5 seeds) with per-window AUROC, precision, recall breakdowns at each of the 16 horizon windows. The Phase 5 JSON adds 30 runs at the intermediate 50/20/10\% label budgets. Phase 6 replicates the 50\% and 10\% budgets on FD003 with a FD003-pretrained encoder to verify the crossover is dataset-stable. All JSONs follow the \texttt{aggregate\_seeds()} schema from \texttt{evaluation/grey\_swan\_metrics.py}.
+Per-seed raw results for each table are available in the code repository as JSON files with per-window AUROC, precision, recall breakdowns at each horizon.
 
 \section{PA-F1 Inflation}
 \label{app:pa_f1}
