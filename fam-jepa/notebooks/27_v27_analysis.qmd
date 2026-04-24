@@ -232,15 +232,17 @@ def load_cmapss_v27_summary(ds):
 
 
 def load_cmapss_v26_summary(ds):
-    surfs = [V26 / f'surfaces/{ds}_s{s}.npz' for s in [42, 123, 456]]
-    pooled_list, per_horizon = [], []
-    for sp in surfs:
-        arr = np.load(sp)
-        p_s, y_s = arr['p_surface'], arr['y_surface']
-        hz = arr['horizons'].tolist()
-        pooled_list.append(average_precision_score(y_s.ravel().astype(int), p_s.ravel()))
-        per_horizon.append({int(h): roc_auc_score(y_s[:,i].astype(int), p_s[:,i])
-                            for i, h in enumerate(hz)})
+    """Load v26 baseline from JSON results (no .npz needed)."""
+    phase = 'phase2' if ds.startswith('FD') else 'phase3'
+    d = load(V26 / f'results/{phase}_{ds}.json')
+    seeds = d['results']
+    pooled_list = [s['auprc'] for s in seeds]
+    per_horizon = []
+    for s in seeds:
+        ph = s.get('per_horizon_auprc', s.get('per_horizon', {}).get('auprc_per_k', {}))
+        pa = s.get('per_horizon_auroc', {})
+        per_horizon.append({int(h): pa.get(str(h), pa.get(h, float('nan')))
+                            for h in CMAPSS_HORIZONS})
     per = {h: np.mean([pr[h] for pr in per_horizon]) for h in CMAPSS_HORIZONS}
     return per, np.mean(pooled_list), np.std(pooled_list)
 
@@ -276,15 +278,15 @@ def load_anomaly_summary(ds):
     pooled27 = np.mean([r['pooled_auprc'] for r in v27['results']])
     std27 = np.std([r['pooled_auprc'] for r in v27['results']])
 
-    surfs = [V26 / f'surfaces/{ds}_s{s}.npz' for s in [42, 123, 456]]
-    pooled_list, per_horizon = [], []
-    for sp in surfs:
-        arr = np.load(sp)
-        p_s, y_s = arr['p_surface'], arr['y_surface']
-        hz = arr['horizons'].tolist()
-        pooled_list.append(average_precision_score(y_s.ravel().astype(int), p_s.ravel()))
-        per_horizon.append({int(h): roc_auc_score(y_s[:,i].astype(int), p_s[:,i])
-                            for i, h in enumerate(hz)})
+    # Load v26 baseline from JSON (no .npz needed)
+    d26 = load(V26 / f'results/phase3_{ds}.json')
+    seeds26 = d26['results']
+    pooled_list = [s['auprc'] for s in seeds26]
+    per_horizon = []
+    for s in seeds26:
+        pa = s.get('per_horizon_auroc', {})
+        per_horizon.append({int(h): pa.get(str(h), pa.get(h, float('nan')))
+                            for h in ANOMALY_HORIZONS})
     per26 = {h: np.mean([pr[h] for pr in per_horizon]) for h in ANOMALY_HORIZONS}
     pooled26 = np.mean(pooled_list)
     std26 = np.std(pooled_list)
@@ -320,28 +322,32 @@ multi-entity anomaly datasets.
 #| fig-width: 10
 #| fig-height: 4
 
-v26_surf = np.load(V27 / 'surfaces/paper_FD001_e49_v26_revin_s42_dense.npz',
-                   allow_pickle=True)
-v27_surf = np.load(V27 / 'surfaces/paper_FD001_e49_v27_none_s42_dense.npz',
-                   allow_pickle=True)
+_surf_path = V27 / 'surfaces/paper_FD001_e49_v26_revin_s42_dense.npz'
+if _surf_path.exists():
+    v26_surf = np.load(_surf_path, allow_pickle=True)
+    v27_surf = np.load(V27 / 'surfaces/paper_FD001_e49_v27_none_s42_dense.npz',
+                       allow_pickle=True)
 
-fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
-for ax, surf, title in [(axes[0], v26_surf, 'v26 revin'),
-                        (axes[1], v27_surf, 'v27 none')]:
-    t_ix = surf['t_index']
-    hz = surf['horizons']
-    p = surf['p_surface']
-    im = ax.pcolormesh(t_ix, hz, p.T, cmap='viridis', vmin=0, vmax=1,
-                       shading='auto')
-    ax.set_yscale('log')
-    ax.set_xlabel('cycle t')
-    ax.set_title(f'FD001 engine 49: {title}')
-    fig.colorbar(im, ax=ax, label='p(t, Δt)')
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+    for ax, surf, title in [(axes[0], v26_surf, 'v26 revin'),
+                            (axes[1], v27_surf, 'v27 none')]:
+        t_ix = surf['t_index']
+        hz = surf['horizons']
+        p = surf['p_surface']
+        im = ax.pcolormesh(t_ix, hz, p.T, cmap='viridis', vmin=0, vmax=1,
+                           shading='auto')
+        ax.set_yscale('log')
+        ax.set_xlabel('cycle t')
+        ax.set_title(f'FD001 engine 49: {title}')
+        fig.colorbar(im, ax=ax, label='p(t, Δt)')
 
-axes[0].set_ylabel('horizon Δt (log scale)')
-plt.tight_layout()
-plt.savefig('plots/27_fd001_e49_heatmap.png', dpi=140)
-plt.show()
+    axes[0].set_ylabel('horizon Δt (log scale)')
+    plt.tight_layout()
+    plt.savefig('plots/27_fd001_e49_heatmap.png', dpi=140)
+    plt.show()
+else:
+    from IPython.display import Image, display
+    display(Image('plots/27_fd001_e49_heatmap.png'))
 ```
 
 ## 8. MBA dense surface (v26 revin — the winner on cardiac)
@@ -352,27 +358,31 @@ plt.show()
 #| fig-width: 8
 #| fig-height: 4
 
-mba_surf = np.load(V27 / 'surfaces/paper_MBA_v26_revin_s42_dense.npz',
-                   allow_pickle=True)
+_mba_path = V27 / 'surfaces/paper_MBA_v26_revin_s42_dense.npz'
+if _mba_path.exists():
+    mba_surf = np.load(_mba_path, allow_pickle=True)
 
-fig, (axp, axy) = plt.subplots(2, 1, figsize=(8, 4), sharex=True,
-                               gridspec_kw={'height_ratios': [5, 1]})
-t_ix = mba_surf['t_index']
-hz = mba_surf['horizons']
-axp.pcolormesh(t_ix, hz, mba_surf['p_surface'].T,
-               cmap='viridis', vmin=0, vmax=1, shading='auto')
-axp.set_yscale('log')
-axp.set_ylabel('Δt (log)')
-axp.set_title('MBA dense p(t, Δt), v26 revin')
+    fig, (axp, axy) = plt.subplots(2, 1, figsize=(8, 4), sharex=True,
+                                   gridspec_kw={'height_ratios': [5, 1]})
+    t_ix = mba_surf['t_index']
+    hz = mba_surf['horizons']
+    axp.pcolormesh(t_ix, hz, mba_surf['p_surface'].T,
+                   cmap='viridis', vmin=0, vmax=1, shading='auto')
+    axp.set_yscale('log')
+    axp.set_ylabel('Δt (log)')
+    axp.set_title('MBA dense p(t, Δt), v26 revin')
 
-# Approximate label strip: y_surface[:,0] is label at Δt=1, i.e. anomaly next step
-axy.fill_between(t_ix, 0, mba_surf['y_surface'][:,0], color='r', alpha=0.6)
-axy.set_yticks([])
-axy.set_xlabel('test timestep t')
-axy.set_ylabel('anom')
-plt.tight_layout()
-plt.savefig('plots/27_mba_heatmap.png', dpi=140)
-plt.show()
+    # Approximate label strip: y_surface[:,0] is label at Δt=1, i.e. anomaly next step
+    axy.fill_between(t_ix, 0, mba_surf['y_surface'][:,0], color='r', alpha=0.6)
+    axy.set_yticks([])
+    axy.set_xlabel('test timestep t')
+    axy.set_ylabel('anom')
+    plt.tight_layout()
+    plt.savefig('plots/27_mba_heatmap.png', dpi=140)
+    plt.show()
+else:
+    from IPython.display import Image, display
+    display(Image('plots/27_mba_heatmap.png'))
 ```
 
 ## 9. Takeaways
