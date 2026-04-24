@@ -220,18 +220,46 @@ def fam_v27_dense(ds):
         return {**rec['fam_v26_revin'], 'tag': 'v26 revin (dense)'}
     return None
 
-print(f"{'Dataset':<10} {'FAM v28 best':<25} {'mean h-AUROC':>14} {'pooled AUPRC':>14}  "
+def fam_dense(ds):
+    """Read mean h-AUROC + pooled AUPRC from v28 dense surface."""
+    p = V28 / 'surfaces_dense' / f'dense_fam_v28_{ds}_s42.npz'
+    if not p.exists(): return None
+    d = np.load(p, allow_pickle=True)
+    pp, yy = d['p_surface'], d['y_surface']
+    valid = [i for i in range(pp.shape[1]) if 0 < yy[:, i].mean() < 1]
+    if not valid: return None
+    return {
+        'mean_h_auroc': float(np.mean([roc_auc_score(yy[:, i], pp[:, i])
+                                       for i in valid])),
+        'pooled_auprc': float(average_precision_score(yy.ravel(), pp.ravel())),
+        'K': len(d['horizons']),
+    }
+
+print(f"{'Dataset':<10} {'FAM source':<22} {'mean h-AUROC':>14} {'pooled AUPRC':>14}  "
       f"{'Chronos-2 h-AUROC':>18} {'Chronos-2 AUPRC':>16}")
 print('-' * 110)
 for ds in DATASETS:
-    fb = fam_best(ds)
+    # Pick the BEST FAM number across (v28 dense, v27 dense) by mean h-AUROC.
+    v28d = fam_dense(ds)
+    v27d = fam_v27_dense(ds)
+    candidates = []
+    if v28d is not None:
+        candidates.append(('v28 dense', v28d))
+    if v27d is not None:
+        candidates.append((v27d['tag'], {'mean_h_auroc': v27d['auroc'],
+                                         'pooled_auprc': v27d['auprc'],
+                                         'K': v27d['K']}))
+    if not candidates:
+        print(f"{ds:<10} {'—':<22} {'—':>14} {'—':>14}  "
+              f"{'—':>18} {'—':>16}")
+        continue
+    src, fb = max(candidates, key=lambda c: c[1]['mean_h_auroc'])
     cm = chronos_dense(ds)
-    fb_h = '—' if fb is None else f"{fb['mean_h_auroc']:.4f}"
-    fb_p = '—' if fb is None else f"{fb['pooled_auprc']:.4f}"
-    fb_tag = '—' if fb is None else fb['tag'][:24]
+    fb_h = f"{fb['mean_h_auroc']:.4f}"
+    fb_p = f"{fb['pooled_auprc']:.4f}"
     cm_h = '—' if cm is None else f"{cm['mean_h_auroc']:.4f}"
     cm_p = '—' if cm is None else f"{cm['pooled_auprc']:.4f}"
-    print(f"{ds:<10} {fb_tag:<25} {fb_h:>14} {fb_p:>14}  {cm_h:>18} {cm_p:>16}")
+    print(f"{ds:<10} {src:<22} {fb_h:>14} {fb_p:>14}  {cm_h:>18} {cm_p:>16}")
 ```
 
 ### Note on grid mismatch

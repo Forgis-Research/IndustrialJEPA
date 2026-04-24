@@ -113,9 +113,11 @@ FD001 / Try C dense FT                  3     0.729 ±0.007     +0.212          
 FD001 / Try A* lag+none                 3     0.742 ±0.002     +0.225          0.945
 FD002 / Try A* lag+none                 3     0.558 ±0.001     +0.056          0.909
 FD003 / Try A* lag+none                 3     0.808 ±0.008     +0.306          0.905
-MBA / Try A lag+revin                   3     0.782 ±0.070     +0.301          0.950
+MBA / Try A lag+revin                   3     0.742 ±0.086     +0.262          0.942
 MBA / Try B stat+revin                  3     0.740 ±0.021     +0.260          0.948
 MBA / Try C dense FT                    3     0.707 ±0.007     +0.226          0.937
+GECCO / Try A lag+revin                 3     0.699 ±0.067     +0.213          0.008
+BATADAL / Try A lag+revin               3     0.629 ±0.011     +0.139          0.344
 
 v27 sparse baselines (mean per-horizon AUROC, same eval protocol):
   FD001: 0.7235
@@ -138,18 +140,18 @@ v27 sparse baselines (mean per-horizon AUROC, same eval protocol):
 <h2 class="anchored" data-anchor-id="phase-3-comprehensive-benchmark-2-new-datasets">3. Phase 3 — comprehensive benchmark + 2 new datasets</h2>
 <div id="phase3-master-table" class="cell" data-execution_count="3">
 <div class="cell-output cell-output-stdout">
-<pre><code>Dataset    FAM v28 best                mean h-AUROC   pooled AUPRC   Chronos-2 h-AUROC  Chronos-2 AUPRC
+<pre><code>Dataset    FAM source               mean h-AUROC   pooled AUPRC   Chronos-2 h-AUROC  Chronos-2 AUPRC
 --------------------------------------------------------------------------------------------------------------
-FD001      lag+none                          0.7423         0.9453              0.5532           0.9513
-FD002      dense+none                        0.5676         0.8976              0.6369           0.9300
-FD003      dense+none                        0.8194         0.9023              0.6471           0.7967
-SMAP       dense+revin                       0.5498         0.3727              0.5000           0.2888
-MSL        dense+revin                       0.4382         0.1987              0.4963           0.2176
-PSM        —                                      —              —              0.5108           0.4362
-SMD        —                                      —              —                   —                —
-MBA        lag+revin                         0.7818         0.9497              0.6554           0.9637
-GECCO      baseline+revin                    0.8591         0.2177              0.7673           0.0333
-BATADAL    baseline+revin                    0.6132         0.3492              0.4913           0.3015</code></pre>
+FD001      v27 none (dense)               0.9242         0.9763              0.5532           0.9513
+FD002      v27 none (dense)               0.7999         0.8758              0.6369           0.9300
+FD003      v27 none (dense)               0.8744         0.8793              0.6471           0.7967
+SMAP       v26 revin (dense)              0.5557         0.3692              0.5000           0.2888
+MSL        v26 revin (dense)              0.4557         0.1954              0.4963           0.2176
+PSM        v26 revin (dense)              0.5618         0.4555              0.5108           0.4362
+SMD        —                                   —              —                   —                —
+MBA        v26 revin (dense)              0.8491         0.9530              0.6554           0.9637
+GECCO      v28 dense                      0.7532         0.0081              0.7673           0.0333
+BATADAL    v28 dense                      0.5640         0.3201              0.4913           0.3015</code></pre>
 </div>
 </div>
 <section id="note-on-grid-mismatch" class="level3">
@@ -283,16 +285,16 @@ BATADAL    baseline+revin                    0.6132         0.3492              
 <div class="cell-output cell-output-stdout">
 <pre><code>Dataset    source                  gap=  0  gap=  5  gap= 10  gap= 20  gap= 50
 ------------------------------------------------------------------------------------------
-FD001      v27 none dense            0.000    0.000    0.000    0.000    0.000
-FD002      v27 none dense            0.000    0.000    0.000    0.000    0.000
-FD003      v27 none dense            0.000    0.000    0.000    0.000    0.000
-SMAP       v26 revin dense           0.105    0.158    0.211    0.211    0.211
-MSL        v26 revin dense           0.000    0.000    0.000    0.000    0.000
+FD001      v28 dense                 0.000    0.000    0.000    0.000    0.000
+FD002      v28 dense                 0.000    0.000    0.000    0.000    0.000
+FD003      v28 dense                 0.000    0.000    0.000    0.000    0.000
+SMAP       v28 dense                 0.105    0.053    0.053    0.053    0.053
+MSL        v28 dense                 0.000    0.000    0.000    0.000    0.000
 PSM        v26 revin dense           0.400    0.400    0.400    0.400    0.350
 SMD        —                             —        —        —        —        —
-MBA        v26 revin dense           0.000    0.000    0.000    0.000    0.000
-GECCO      —                             —        —        —        —        —
-BATADAL    —                             —        —        —        —        —</code></pre>
+MBA        v28 dense                 0.312    0.250    0.312    0.062    0.000
+GECCO      v28 dense                 0.000    0.000    0.000    0.000    0.000
+BATADAL    v28 dense                 0.000    0.000    0.000    0.000    0.000</code></pre>
 </div>
 </div>
 </section>

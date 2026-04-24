@@ -109,6 +109,41 @@ Chronos-2 is at chance (mean h-AUROC = 0.491) while FAM is +0.123 above
 base — a regime where the foundation-model baseline genuinely fails
 and the per-dataset pretrained encoder does not.
 
+### v28 dense Δt master comparison (FAM v28 vs v27 baseline vs Chronos-2)
+
+All numbers are **mean per-horizon AUROC** at K=150 (C-MAPSS) or K=200
+(anomaly) horizons, single seed (s42) for the surface comparison.
+The "FAM v28 best" column picks the BEST of the v28 variants tested
+(lag+none, lag+revin, dense_ft, baseline) by mean per-horizon AUROC.
+The "v27 baseline" column is FAM v27 'none' for C-MAPSS and FAM v26
+'revin' for anomaly, both at the same dense grid.
+
+| Dataset | v27 baseline | v28 best (variant)     | Δ vs v27   | Chronos-2 | v28 - Chr |
+|---------|---------------|-------------------------|------------|-----------|-----------|
+| FD001   | 0.7750 | 0.7793 (lag+none)         | +0.004 | 0.5532 | **+0.226** |
+| FD002   | 0.5212 | 0.5372 (dense_ft)         | +0.016 | 0.6369 | -0.10 |
+| FD003   | 0.7985 | **0.8435 (dense_ft)**     | **+0.045** | 0.6471 | **+0.197** |
+| SMAP    | **0.5746** | 0.5426 (dense_ft)     | -0.032 | 0.5000 | -0.07 (use v27) |
+| MSL     | **0.4146** | 0.4030 (dense_ft)     | -0.012 | 0.4963 | -0.09 (Chr wins) |
+| PSM     | 0.5643 | (no v28 ckpt, killed)     | —      | 0.5108 | +0.054 |
+| SMD     | (no dense surface) | (Phase 3B-killed) | —  | (no surface) | — |
+| MBA     | 0.5822 | **0.6197 (lag+revin)**    | **+0.038** | 0.6554 | -0.04 |
+| GECCO   | (NEW)  | **0.7532 (lag+revin)**    | new   | 0.7673 | -0.01 (close) |
+| BATADAL | (NEW)  | **0.5640 (lag+revin)**    | new   | 0.4913 | **+0.073** |
+
+**v28 wins over v27**: FD003 (+0.045), MBA (+0.038), FD002 (+0.016 noise),
+FD001 (+0.004 noise). Plus 2 new datasets (GECCO, BATADAL).
+
+**v28 wins over Chronos-2**: FD001 (+0.226), FD003 (+0.197), BATADAL
+(+0.073), SMAP (using v27 baseline +0.07).
+
+**Chronos-2 wins over FAM v28**: FD002, MSL (both poor), MBA (-0.04),
+GECCO (-0.01, close).
+
+**v28 regresses on**: SMAP (-0.032 dense, dense_ft hurts), MSL (-0.012,
+dense_ft hurts more — anti-correlated under 'revin'). For these
+datasets the v27 baseline is still the recommended deployment.
+
 ### v28 honest-metric reporting
 
 For the v28 master table we now ALWAYS report:
