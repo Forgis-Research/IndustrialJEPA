@@ -13,6 +13,7 @@ format:
 execute:
   echo: false
   warning: false
+jupyter: python3
 ---
 
 ## One-paragraph verdict
@@ -525,15 +526,29 @@ exceeds chance. Chronos-2 is a frozen tokenizer + linear probe, and
 its tokenizer applies its own instance normalization - the same
 failure mode as RevIN for these datasets.
 
+```{python}
+#| label: chronos2-png-helper
+import matplotlib.image as mpimg
+
+def show_png(png_path, height_px=380):
+    """Display a PNG via matplotlib so Quarto/SageMaker captures it
+    cleanly (IPython.display.Image is intercepted by the Glue kernel)."""
+    if not png_path.exists():
+        return
+    img = mpimg.imread(str(png_path))
+    h, w = img.shape[:2]
+    fig_w = (w / h) * (height_px / 100)
+    fig, ax = plt.subplots(figsize=(fig_w, height_px / 100))
+    ax.imshow(img); ax.axis('off')
+    plt.show()
+```
+
 ### 10.1 C-MAPSS: FAM v26 | FAM v27 none | Chronos-2 | GT
 
 ```{python}
 #| label: chronos2-cmapss
-from IPython.display import Image, display
 for ds in ['FD001', 'FD002', 'FD003']:
-    png = V27 / f'results/surface_pngs/chronos2_compare_{ds}.png'
-    if png.exists():
-        display(Image(filename=str(png)))
+    show_png(V27 / f'results/surface_pngs/chronos2_compare_{ds}.png')
 ```
 
 ### 10.2 Anomaly datasets: FAM v26 | Chronos-2 | GT
@@ -541,9 +556,7 @@ for ds in ['FD001', 'FD002', 'FD003']:
 ```{python}
 #| label: chronos2-anomaly
 for ds in ['SMAP', 'MSL', 'PSM', 'MBA']:
-    png = V27 / f'results/surface_pngs/chronos2_compare_{ds}.png'
-    if png.exists():
-        display(Image(filename=str(png)))
+    show_png(V27 / f'results/surface_pngs/chronos2_compare_{ds}.png')
 ```
 
 ### 10.3 Chronos-2 only (no FAM baseline shipped): GECCO, BATADAL
@@ -551,9 +564,7 @@ for ds in ['SMAP', 'MSL', 'PSM', 'MBA']:
 ```{python}
 #| label: chronos2-only
 for ds in ['GECCO', 'BATADAL']:
-    png = V27 / f'results/surface_pngs/chronos2_compare_{ds}.png'
-    if png.exists():
-        display(Image(filename=str(png)))
+    show_png(V27 / f'results/surface_pngs/chronos2_compare_{ds}.png')
 ```
 
 ## 11. Takeaways
