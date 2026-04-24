@@ -1,0 +1,28 @@
+{
+  "phase": "v26_phase1_sanity",
+  "dataset": "FD001",
+  "device": "cuda",
+  "n_params": 2161153,
+  "n_trainable": 1048065,
+  "pretrain_first_loss": 0.05375818832329026,
+  "pretrain_last_loss": 0.029652330093085766,
+  "pretrain_last_hstd": 2.3997316360473633,
+  "ft_best_val": 0.42740198969841003,
+  "cdf_min": 0.025568842887878418,
+  "cdf_max": 0.9828214645385742,
+  "batch_monotonicity_violations": 0,
+  "surface_monotonicity_violations": 0,
+  "surface_n_pairs": 13500,
+  "auprc_pooled": 0.930289087498922,
+  "auroc_pooled": 0.9240072734351337,
+  "monotonicity_violation_rate": 0.0,
+  "per_horizon_auprc": {
+    "1": 0.04565518572685147,
+    "5": 0.29788371896081967,
+    "10": 0.4231533710538523,
+    "20": 0.583116069434934,
+    "50": 0.8022596376683302,
+    "100": 0.9631448886218659,
+    "150": 0.9942131362506099
+  }
+}
