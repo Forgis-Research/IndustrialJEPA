@@ -234,14 +234,14 @@ As a secondary metric, we report \textbf{AUROC} pooled over the same cells - thr
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_probability_surface.pdf}
-  \caption{\textbf{A real FAM probability surface on C-MAPSS FD001.} (a) predicted $p(t, \Delta t)$ from the v24 canonical backbone (seed 42) for one test engine. (b) ground-truth label surface $y(t, \Delta t) = \mathbb{1}[\text{RUL}(t) \leq \Delta t]$. (c) marginal $p(t_0, \Delta t)$ at a fixed observation time $t_0$: the CDF-shape is monotonically non-decreasing and the \emph{interval arithmetic} $P(\text{event in } (t_0{+}50, t_0{+}100]) = p(t_0, 100) - p(t_0, 50)$ is a direct readout. No additional model evaluation is needed to compute arbitrary future-interval probabilities from the surface.}
+  \caption{\textbf{A real FAM probability surface on C-MAPSS FD001.} (a) predicted $p(t, \Delta t)$ from the canonical backbone (seed 42) for one test engine. (b) ground-truth label surface $y(t, \Delta t) = \mathbb{1}[\text{RUL}(t) \leq \Delta t]$. (c) marginal $p(t_0, \Delta t)$ at a fixed observation time $t_0$: the CDF-shape is monotonically non-decreasing and the \emph{interval arithmetic} $P(\text{event in } (t_0{+}50, t_0{+}100]) = p(t_0, 100) - p(t_0, 50)$ is a direct readout. No additional model evaluation is needed to compute arbitrary future-interval probabilities from the surface.}
   \label{fig:probability_surface}
 \end{figure}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_cross_domain.pdf}
-  \caption{\textbf{Cross-domain pooled AUPRC across v24 datasets.} Blue: FAM pred-FT (v24 canonical, 3 seeds each, mean $\pm$ std). Orange: \texttt{amazon/chronos-2} frozen encoder + linear probe under the same labeled-split protocol. Grey numbers under each bar: published SOTA metric and value on that dataset (different metrics across datasets, listed for context not direct comparison). FAM beats Chronos-2 on stream-anomaly and cardiac datasets (SMAP $+0.110$, MBA $+0.030$); Chronos-2 ties or wins on turbofan (FD001 tie, FD002 $+0.008$, FD003 $+0.028$). Missing Chronos-2 bars mark pending sweep entries at submission time.}
+  \caption{\textbf{Cross-domain pooled AUPRC.} Blue: FAM pred-FT (canonical backbone, 3 seeds each, mean $\pm$ std). Orange: \texttt{amazon/chronos-2} frozen encoder + linear probe under the same labeled-split protocol. Grey numbers under each bar: published SOTA metric and value on that dataset (different metrics across datasets, listed for context not direct comparison). FAM beats Chronos-2 on stream-anomaly and cardiac datasets (SMAP $+0.110$, MBA $+0.030$); Chronos-2 ties or wins on turbofan (FD001 tie, FD002 $+0.008$, FD003 $+0.028$). Missing Chronos-2 bars mark pending sweep entries at submission time.}
   \label{fig:cross_domain}
 \end{figure}
 
@@ -409,11 +409,11 @@ FAM wins AUPRC on SMAP ($+0.110$), PSM, MBA, and GECCO; Chronos-2 wins on FD002,
 
 \emph{(i) Pred-FT vs.\ scratch is robustly significant at 5\% labels}: paired $t(4) = 3.03$, $p = 0.039$, Cohen's $d = 1.35$. Scratch collapses to $F_w = 0.035$ while pred-FT delivers $0.261$. This $0.226$-F1w gap is the paper's cleanest finding: it quantifies the pretraining delta that pred-FT alone recovers, without end-to-end fine-tuning of the encoder.
 
-\emph{(ii) Pred-FT vs.\ E2E at 10\% labels is statistically significant at $N=10$ (Phase 8).} At 10\% labels, pred-FT $F_w = 0.291 \pm 0.120$ vs.\ E2E $0.133 \pm 0.164$; $\Delta = +0.157$; paired $t(9) = 2.74$, $\mathbf{p = 0.023}$ (two-sided); Wilcoxon signed-rank one-sided $\mathbf{p = 0.010}$; Cohen's $d = 0.87$ (large effect). Seed-level collapses to $F_w = 0$: pred-FT $\mathbf{0/10}$, E2E $4/10$. This is the paper's statistically-supported pred-FT-beats-E2E result: 10\% labels is the label regime where E2E has enough data to sometimes learn but not enough to learn reliably, and pred-FT's frozen encoder keeps it above the floor.
+\emph{(ii) Pred-FT vs.\ E2E at 10\% labels is statistically significant at $N=10$.} At 10\% labels, pred-FT $F_w = 0.291 \pm 0.120$ vs.\ E2E $0.133 \pm 0.164$; $\Delta = +0.157$; paired $t(9) = 2.74$, $\mathbf{p = 0.023}$ (two-sided); Wilcoxon signed-rank one-sided $\mathbf{p = 0.010}$; Cohen's $d = 0.87$ (large effect). Seed-level collapses to $F_w = 0$: pred-FT $\mathbf{0/10}$, E2E $4/10$. This is the paper's statistically-supported pred-FT-beats-E2E result: 10\% labels is the label regime where E2E has enough data to sometimes learn but not enough to learn reliably, and pred-FT's frozen encoder keeps it above the floor.
 
-\emph{At 20\% labels the crossover flips and E2E has the robustness advantage (Phase 9, $N=10$).} pred-FT $F_w = 0.276 \pm 0.184$ vs.\ E2E $0.312 \pm 0.102$, paired $t(9) = -0.59$, $p = 0.57$ (two-sided); Wilcoxon two-sided $p = 0.77$; Cohen's $d = -0.19$. Collapse count flips: pred-FT $\mathbf{2/10}$, E2E $\mathbf{0/10}$. E2E at 20\% has enough data to learn reliably every seed; pred-FT occasionally fails because freezing the encoder loses expressivity when the task has enough labels to need it. Combined with Phases 7 and 8, the empirical crossover between pred-FT and E2E sits between 10\% and 20\% labels: below that pred-FT is the safer choice; above it, E2E is.
+\emph{At 20\% labels the crossover flips and E2E has the robustness advantage ($N=10$).} pred-FT $F_w = 0.276 \pm 0.184$ vs.\ E2E $0.312 \pm 0.102$, paired $t(9) = -0.59$, $p = 0.57$ (two-sided); Wilcoxon two-sided $p = 0.77$; Cohen's $d = -0.19$. Collapse count flips: pred-FT $\mathbf{2/10}$, E2E $\mathbf{0/10}$. E2E at 20\% has enough data to learn reliably every seed; pred-FT occasionally fails because freezing the encoder loses expressivity when the task has enough labels to need it. Combined with the 5\% and 10\% results, the empirical crossover between pred-FT and E2E sits between 10\% and 20\% labels: below that pred-FT is the safer choice; above it, E2E is.
 
-\emph{(iii) Pred-FT vs.\ E2E at 5\% labels: robustness is the dominant signal, not mean superiority.} We also extended Phase 0b to 10 paired seeds at 5\% labels (Phase 7). At $N=10$: pred-FT $F_w = 0.229 \pm 0.141$ vs.\ E2E $0.124 \pm 0.201$, paired $t(9) = 1.75$, $p = 0.114$ (two-sided); Wilcoxon one-sided $p = 0.065$; Cohen's $d = 0.55$ (medium effect). Mean-difference tests miss $p < 0.05$. The collapse-rate difference is decisive: E2E collapses to $F_w = 0$ on \textbf{7 of 10 seeds}, pred-FT on $1/10$. At 5\% labels E2E is essentially a coin flip between ``works'' and ``fails completely''; pred-FT is monomodal with a floor near $0.23$.
+\emph{(iii) Pred-FT vs.\ E2E at 5\% labels: robustness is the dominant signal, not mean superiority.} At $N=10$ paired seeds with 5\% labels: pred-FT $F_w = 0.229 \pm 0.141$ vs.\ E2E $0.124 \pm 0.201$, paired $t(9) = 1.75$, $p = 0.114$ (two-sided); Wilcoxon one-sided $p = 0.065$; Cohen's $d = 0.55$ (medium effect). Mean-difference tests miss $p < 0.05$. The collapse-rate difference is decisive: E2E collapses to $F_w = 0$ on \textbf{7 of 10 seeds}, pred-FT on $1/10$. At 5\% labels E2E is essentially a coin flip between ``works'' and ``fails completely''; pred-FT is monomodal with a floor near $0.23$.
 
 \emph{(iv) The full label-efficiency curve} (\cref{tab:label_efficiency}) shows the pred-FT/E2E gap is largest at 10\% labels ($+0.177$ in favor of pred-FT, $p = 0.15$), not at 5\%. At 20\% labels E2E recovers and surpasses pred-FT (0.295 vs.\ 0.212); at 50-100\% labels they are tied. The crossover we claim is thus \emph{at $\leq 10\%$ labels} rather than a uniform low-label advantage.
 
@@ -447,24 +447,24 @@ On FD001 and SMAP the pretrained and random-init predictors are within seed nois
 \subsection{Causal vs.\ Bidirectional Encoder}
 \label{sec:causal_ablation}
 
-The context encoder is causal so that $\h_\text{past}$ summarises only information available before the event horizon, matching the deployment setting in predictive-maintenance and streaming-anomaly contexts. A bidirectional variant would leak information across the forecast boundary during pretraining; that said, a controlled causal-vs-bidirectional comparison is not included in this version of the paper because our v20 session budget did not include an additional bidirectional pretraining run (the other ablations reuse existing v17 checkpoints). The corresponding cells in \cref{app:decisions} are open future work.
+The context encoder is causal so that $\h_\text{past}$ summarises only information available before the event horizon, matching the deployment setting in predictive-maintenance and streaming-anomaly contexts. A bidirectional variant would leak information across the forecast boundary during pretraining; that said, a controlled causal-vs-bidirectional comparison is not included in this version of the paper because the other ablations reuse existing pretrained checkpoints and a separate bidirectional pretraining run was not conducted. The corresponding cells in \cref{app:decisions} are open future work.
 
 \subsection{Label-Efficiency Curve}
 \label{sec:label_efficiency}
 
-\paragraph{v24 canonical-architecture replay (FD001, pooled AUPRC).}
-Under the v24 canonical backbone (198K-parameter predictor) we replayed the label-efficiency ablation using AUPRC as the primary metric (3 seeds; same splits as the main benchmark):
+\paragraph{Canonical-architecture replay (FD001, pooled AUPRC).}
+Under the canonical backbone (198K-parameter predictor) we replayed the label-efficiency ablation using AUPRC as the primary metric (3 seeds; same splits as the main benchmark):
 
 \begin{itemize}[nosep]
   \item $10\%$ labels: pred-FT $0.9250 \pm 0.0005$ vs.\ E2E $0.9262 \pm 0.0008$, paired $\Delta = -0.0012$, $t(2) = -5.13$, $p = 0.036$ (two-sided). E2E marginally better.
   \item $100\%$ labels: pred-FT $0.9260 \pm 0.0008$ vs.\ E2E $0.9232 \pm 0.0024$, paired $\Delta = +0.0029$, $t(2) = 2.48$, $p = 0.13$. Pred-FT marginally better.
 \end{itemize}
 
-The v20-era finding that pred-FT beats E2E at 10\% labels (table below, $p = 0.023$ under the $F_w$ metric on the V17 backbone) does \emph{not} reproduce on v24 canonical AUPRC: both modes land within $0.002$ AUPRC at 10\% labels and within $0.003$ at 100\%. We read this honestly. The v24 architecture has a smaller predictor (198K vs.\ V17's 790K), a more stable per-context normalisation (RevIN), and a cumulative target interval - all of which tighten cross-seed variance and erase the label-regime where pred-FT used to have a clear edge. What pred-FT still buys is a $24\times$ reduction in trainable parameters at matched AUPRC, which is operationally valuable even when the label-efficiency gap closes. We leave the table below as an explicit v20/F1w legacy.
+The earlier finding that pred-FT beats E2E at 10\% labels (table below, $p = 0.023$ under the $F_w$ metric on the legacy backbone) does \emph{not} reproduce under the canonical architecture with AUPRC: both modes land within $0.002$ AUPRC at 10\% labels and within $0.003$ at 100\%. We read this honestly. The canonical architecture has a smaller predictor (198K vs.\ the legacy 790K), a more stable per-context normalisation (RevIN), and a cumulative target interval - all of which tighten cross-seed variance and erase the label regime where pred-FT used to have a clear edge. What pred-FT still buys is a $24\times$ reduction in trainable parameters at matched AUPRC, which is operationally valuable even when the label-efficiency gap closes. We leave the table below as an explicit legacy-backbone/$F_w$ reference.
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Legacy label-efficiency curve: pred-FT vs.\ E2E across C-MAPSS subsets (v20 protocol, F1w metric, V17 backbone).} FD001 cells at 5/10/20\% are $N=10$ paired seeds; remaining cells are $N=5$. FD003 rows use 200-epoch-pretrained encoder (matching v17 compute). Bold: $p < 0.05$; italic: $p < 0.15$. Collapses ($F_w = 0.00$) listed as ``p/e''. Under the v24 canonical architecture the $F_w$ crossover does not survive the move to pooled AUPRC (see above); this table is kept for protocol continuity.}
+  \caption{\textbf{Legacy label-efficiency curve: pred-FT vs.\ E2E across C-MAPSS subsets (F1w metric, legacy backbone).} FD001 cells at 5/10/20\% are $N=10$ paired seeds; remaining cells are $N=5$. FD003 rows use a 200-epoch-pretrained encoder. Bold: $p < 0.05$; italic: $p < 0.15$. Collapses ($F_w = 0.00$) listed as ``p/e''. Under the canonical architecture the $F_w$ crossover does not survive the move to pooled AUPRC (see above); this table is kept for protocol continuity.}
   \label{tab:label_efficiency}
   \small
   \begin{tabular}{lcccccc}
@@ -496,7 +496,7 @@ The v20-era finding that pred-FT beats E2E at 10\% labels (table below, $p = 0.0
   \end{tabular}
 \end{table}
 
-\textbf{Pretraining-compute confound on FD003.} The two FD003 blocks in \cref{tab:label_efficiency} show opposite patterns at low labels: the 200-epoch-pretrained encoder gives poor pred-FT F1w at 5-10\% labels (0.04-0.06), while the 100-epoch ckpt gives 0.12-0.14. The 200-ep ckpt wins at 100\% labels (0.27 vs 0.15) and loses at low labels - a pretraining-overfit pattern where longer self-supervised training sharpens the encoder toward the SSL objective at the cost of downstream adaptability. Neither row is definitively ``the'' FD003 result: the 200-ep row is compute-matched to v17 FD001, the 100-ep row is data-volume-matched (FD003 has fewer engines than FD001). We report both and note that FD003 conclusions at low labels are sensitive to this choice.
+\textbf{Pretraining-compute confound on FD003.} The two FD003 blocks in \cref{tab:label_efficiency} show opposite patterns at low labels: the 200-epoch-pretrained encoder gives poor pred-FT F1w at 5-10\% labels (0.04-0.06), while the 100-epoch ckpt gives 0.12-0.14. The 200-ep ckpt wins at 100\% labels (0.27 vs 0.15) and loses at low labels - a pretraining-overfit pattern where longer self-supervised training sharpens the encoder toward the SSL objective at the cost of downstream adaptability. Neither row is definitively ``the'' FD003 result: the 200-ep row is compute-matched to FD001, the 100-ep row is data-volume-matched (FD003 has fewer engines than FD001). We report both and note that FD003 conclusions at low labels are sensitive to this choice.
 
 \textbf{Cross-subset consistency.} Across three C-MAPSS subsets, the pred-FT vs.\ E2E ordering is label-budget and dataset-dependent:
 \begin{itemize}[nosep]
@@ -506,12 +506,12 @@ The v20-era finding that pred-FT beats E2E at 10\% labels (table below, $p = 0.0
 \end{itemize}
 The unified statement is not ``pred-FT always wins at low labels.'' It is narrower and more interesting: \emph{pred-FT wins on the cells where E2E collapses}, and the collapse rate depends on both dataset and label budget. When E2E has enough diverse data to learn reliably (FD002 100\% and 10\%; FD001 and FD003 at 100\% with FD001 being a specific exception), E2E's higher capacity prevails. Pred-FT's advantage is a robustness advantage, not a mean-capacity advantage, and where E2E's floor is high the advantage narrows or inverts.
 
-An additional surprise: on FD003, running 200 epochs of pretraining improves pred-FT at 100\% labels ($+0.124$ F1w) but \emph{reduces} pred-FT at 5-10\% labels ($-0.05$ to $-0.09$ F1w) relative to the 100-epoch ckpt. Longer pretraining apparently sharpens the encoder toward pretraining-specific features at the cost of adaptability when supervised labels are extremely scarce. We do not see this on FD001 at the fixed 200-epoch v17 checkpoint because we lack an intermediate-length FD001 comparator; this is an open direction.
+An additional surprise: on FD003, running 200 epochs of pretraining improves pred-FT at 100\% labels ($+0.124$ F1w) but \emph{reduces} pred-FT at 5-10\% labels ($-0.05$ to $-0.09$ F1w) relative to the 100-epoch ckpt. Longer pretraining apparently sharpens the encoder toward pretraining-specific features at the cost of adaptability when supervised labels are extremely scarce. We do not see this on FD001 at the fixed 200-epoch checkpoint because we lack an intermediate-length FD001 comparator; this is an open direction.
 
 \subsection{Pretraining Objective: EMA vs.\ SIGReg}
 \label{sec:sigreg_ablation}
 
-\Cref{tab:sigreg_ablation} varies the self-supervised pretraining target while holding the downstream pred-FT protocol fixed. EMA (I-JEPA's target-encoder momentum~\citep{assran2023ijepa}) is the Phase~0 default. SIGReg~\citep{balestriero2025lejepa} replaces the EMA target with an isotropic-gaussian regularizer; we evaluate it applied to the encoder output (\emph{SIGReg-enc}) and to the predictor output (\emph{SIGReg-pred}).
+\Cref{tab:sigreg_ablation} varies the self-supervised pretraining target while holding the downstream pred-FT protocol fixed. EMA (I-JEPA's target-encoder momentum~\citep{assran2023ijepa}) is the default. SIGReg~\citep{balestriero2025lejepa} replaces the EMA target with an isotropic-gaussian regularizer; we evaluate it applied to the encoder output (\emph{SIGReg-enc}) and to the predictor output (\emph{SIGReg-pred}).
 
 \begin{table}[t]
   \centering
@@ -534,7 +534,7 @@ An additional surprise: on FD003, running 200 epochs of pretraining improves pre
 \subsection{Architecture Sensitivity}
 \label{sec:arch_sensitivity}
 
-The default FAM architecture is the v24 canonical configuration ($d{=}256$, 2 layers, 4 heads, $d_{ff} = 256$, $\approx$\,2.16M parameters). The legacy V17 variant ($d_{ff} = 1024$, 2.37M parameters, 790K predictor) is retained only inside the ablation tables of \cref{sec:ablations} for historical continuity. The main finding relevant to this paper is that the predictor's cross-horizon diversity matters far more than encoder depth or width: frozen\_multi's $F_w = 0.148$ (\cref{tab:finetune_ablation}) and the high inter-horizon cosine ($>0.98$) show that the horizon-conditioning signal in the pretrained predictor is under-used unless the predictor is finetuned. SIGReg-pred pretraining increases predictor diversity explicitly via spectral regularisation and improves downstream F1w by $+0.06$ (\cref{tab:sigreg_ablation}), consistent with this view. A full depth/width sweep is out of scope for this session; the architecture-decision log in \cref{app:decisions} records the choices with their evidence source.
+The default FAM architecture is the canonical configuration ($d{=}256$, 2 layers, 4 heads, $d_{ff} = 256$, $\approx$\,2.16M parameters). A legacy variant ($d_{ff} = 1024$, 2.37M parameters, 790K predictor) is retained only inside the ablation tables of \cref{sec:ablations} for historical continuity. The main finding relevant to this paper is that the predictor's cross-horizon diversity matters far more than encoder depth or width: frozen\_multi's $F_w = 0.148$ (\cref{tab:finetune_ablation}) and the high inter-horizon cosine ($>0.98$) show that the horizon-conditioning signal in the pretrained predictor is under-used unless the predictor is finetuned. SIGReg-pred pretraining increases predictor diversity explicitly via spectral regularisation and improves downstream F1w by $+0.06$ (\cref{tab:sigreg_ablation}), consistent with this view. A full depth/width sweep is deferred to future work; the architecture-decision log in \cref{app:decisions} records the choices with their evidence source.
 
 % ============================================================
 % 7. LIMITATIONS
@@ -577,14 +577,14 @@ This paper fixes $W = 16$ horizon windows at patch resolution, chosen to match t
     \toprule
     Decision         & Value                 & Source                     & Status              \\
     \midrule
-    Attention mask   & Causal                & v11 study                  & Fixed, not compared \\
-    Horizon sampling & $\text{LogU}[1, 150]$ & v17 phase 1                & Default             \\
+    Attention mask   & Causal                & ablation study             & Fixed, not compared \\
+    Horizon sampling & $\text{LogU}[1, 150]$ & initial sweep              & Default             \\
     Target interval  & Cumulative $(t, t{+}\Delta t]$ & ARCHITECTURE.md & Default             \\
     Output param.    & Discrete hazard $\to$ CDF & \cref{sec:downstream}   & Default             \\
-    EMA momentum     & $\tau = 0.99$         & v17 phase 1                & Default             \\
-    Encoder depth    & $L = 2$               & v17 phase 1                & Default (no sweep)  \\
-    $d_\text{model}$ & $256$                 & v17 phase 1                & Default (no sweep)  \\
-    Loss             & L1 on L2-normalised   & v17 phase 1                & Default             \\
+    EMA momentum     & $\tau = 0.99$         & initial sweep              & Default             \\
+    Encoder depth    & $L = 2$               & initial sweep              & Default (no sweep)  \\
+    $d_\text{model}$ & $256$                 & initial sweep              & Default (no sweep)  \\
+    Loss             & L1 on L2-normalised   & initial sweep              & Default             \\
     Target encoder   & EMA or SIGReg         & \cref{tab:sigreg_ablation} & SIGReg-pred wins    \\
     \bottomrule
   \end{tabular}
@@ -598,7 +598,7 @@ Per-seed raw results for each table are available in the code repository as JSON
 \section{PA-F1 Inflation}
 \label{app:pa_f1}
 
-PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predicted if any single timestep within it exceeds the threshold~\citep{xu2022anomalytransformer}. This protocol inflates reported F1 dramatically when anomaly segments are long and prevalence is non-trivial: the TSAD-Eval study~\citep{schmidl2022tsadeval} shows that a random detector can exceed $F_1 = 0.9$ PA on some datasets. We concretely demonstrate this by contrasting PA-F1 and non-PA F1 for FAM+Mahalanobis on our benchmarks: SMAP $0.793$ PA vs.\ $0.038$ non-PA, SMD $0.252$ PA vs.\ $0.144$ non-PA, PSM $0.813$ PA vs.\ $0.085$ non-PA. The gap in PA-F1 between FAM and MTS-JEPA remains large even under a random-baseline sanity check (v18 phase 12 reports random-init + Mahalanobis at $0.604 \pm 0.007$ PA-F1 on SMAP; FAM is $0.79$), so the PA-F1 margin is not purely inflation - but any single PA-F1 number should be read in conjunction with the corresponding non-PA number.
+PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predicted if any single timestep within it exceeds the threshold~\citep{xu2022anomalytransformer}. This protocol inflates reported F1 dramatically when anomaly segments are long and prevalence is non-trivial: the TSAD-Eval study~\citep{schmidl2022tsadeval} shows that a random detector can exceed $F_1 = 0.9$ PA on some datasets. We concretely demonstrate this by contrasting PA-F1 and non-PA F1 for FAM+Mahalanobis on our benchmarks: SMAP $0.793$ PA vs.\ $0.038$ non-PA, SMD $0.252$ PA vs.\ $0.144$ non-PA, PSM $0.813$ PA vs.\ $0.085$ non-PA. The gap in PA-F1 between FAM and MTS-JEPA remains large even under a random-baseline sanity check (a random-init encoder + Mahalanobis baseline achieves $0.604 \pm 0.007$ PA-F1 on SMAP; FAM is $0.79$), so the PA-F1 margin is not purely inflation - but any single PA-F1 number should be read in conjunction with the corresponding non-PA number.
 
 \section{Preprocessing Details}
 \label{app:preprocessing}
@@ -621,6 +621,6 @@ PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predict
   \end{tabular}
 \end{center}
 
-The normalisation, channel-drop thresholds, and window sizes follow the conventions in the cited SSL and anomaly-detection benchmarks; specific numeric thresholds are in \texttt{fam-jepa/data/*.py}. For C-MAPSS we use the SELECTED\_SENSORS subset from the v11 pipeline (14 sensors after removing near-constant channels). RUL cap is 125 cycles, following STAR.
+The normalisation, channel-drop thresholds, and window sizes follow the conventions in the cited SSL and anomaly-detection benchmarks; specific numeric thresholds are in \texttt{fam-jepa/data/*.py}. For C-MAPSS we use the SELECTED\_SENSORS subset from our preprocessing pipeline (14 sensors after removing near-constant channels). RUL cap is 125 cycles, following STAR.
 
 \end{document}
