@@ -487,7 +487,82 @@ else:
     display(Image('plots/27_smap_per_entity_heatmap.png'))
 ```
 
-## 9. Takeaways
+## 10. Chronos-2 baseline surfaces (pooled test sets)
+
+Amazon's Chronos-2 is used as a frozen foundation-model baseline: we
+extract 768-d features per test observation, train a single linear
+probe on the same labeled splits, and produce a pooled-test
+probability surface directly comparable to FAM (same test samples,
+same horizons, same ordering).
+
+Each PNG shows the pooled surface side-by-side with FAM v26 (and v27
+'none' on C-MAPSS) and the ground-truth label surface. Equal-height
+rows make small Δt visible; x-axis is the deterministic test-sample
+index.
+
+```{python}
+#| label: chronos2-summary
+import json
+chronos_summary = load(V27 / 'results/chronos2_surfaces_summary.json') or {}
+rows = []
+for ds, r in chronos_summary.items():
+    rows.append({
+        'dataset': ds,
+        'Chronos-2 pooled AUPRC': f"{r['pooled_auprc']:.4f}",
+        'Chronos-2 pooled AUROC': f"{r['pooled_auroc']:.4f}",
+        'Δt=1 AUROC': f"{next(h['auroc'] for h in r['per_horizon'] if h['dt']==1):.3f}",
+        'Δt=50 AUROC': f"{next(h['auroc'] for h in r['per_horizon'] if h['dt']==50):.3f}",
+        'n_test': r['n_test'],
+    })
+pd.DataFrame(rows)
+```
+
+Per-horizon AUROC below 0.6 at short Δt across FD001/FD002/FD003
+reveals that **Chronos-2 suffers the same over-stationarization
+problem** as FAM v26 on the degradation family: pooled AUPRC looks
+competitive (0.93 / 0.91 / 0.80) while per-horizon AUROC barely
+exceeds chance. Chronos-2 is a frozen tokenizer + linear probe, and
+its tokenizer applies its own instance normalization - the same
+failure mode as RevIN for these datasets.
+
+### 10.1 C-MAPSS: FAM v26 | FAM v27 none | Chronos-2 | GT
+
+```{python}
+#| label: chronos2-cmapss
+from IPython.display import Image, display
+for ds in ['FD001', 'FD002', 'FD003']:
+    png = V27 / f'results/surface_pngs/chronos2_compare_{ds}.png'
+    if png.exists():
+        display(Image(filename=str(png)))
+```
+
+### 10.2 Anomaly datasets: FAM v26 | Chronos-2 | GT
+
+```{python}
+#| label: chronos2-anomaly
+for ds in ['SMAP', 'MSL', 'PSM', 'MBA']:
+    png = V27 / f'results/surface_pngs/chronos2_compare_{ds}.png'
+    if png.exists():
+        display(Image(filename=str(png)))
+```
+
+### 10.3 Chronos-2 only (no FAM baseline shipped): GECCO, BATADAL
+
+```{python}
+#| label: chronos2-only
+for ds in ['GECCO', 'BATADAL']:
+    png = V27 / f'results/surface_pngs/chronos2_compare_{ds}.png'
+    if png.exists():
+        display(Image(filename=str(png)))
+```
+
+## 11. Takeaways
+
+0. **Chronos-2 shares the over-stationarization failure** on C-MAPSS.
+   Its pooled AUPRC is competitive (0.93/0.91/0.80) but per-horizon
+   AUROC at short Δt is 0.49-0.55 - same flat-band surface as v26
+   FAM. v27 'none' is the only configuration that produces a
+   per-sample-discriminative surface on degradation data.
 
 1. **Pooled AUPRC can hide chance-level discrimination.** V26's FD001
    AUPRC was 0.925, but per-horizon AUROC was 0.52 at Δt ≤ 100. The
