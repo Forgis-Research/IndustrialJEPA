@@ -155,7 +155,11 @@
       "Bash(git ls-tree:*)",
       "Bash(mv mechanical-jepa/data/DATASETS.md fam-jepa/data/)",
       "Bash(mv mechanical-jepa/data/config.py fam-jepa/data/)",
-      "Bash(rm -rf mechanical-jepa/)"
+      "Bash(rm -rf mechanical-jepa/)",
+      "Bash(python3:*)",
+      "Bash(quarto render:*)",
+      "Bash(pdflatex -interaction=nonstopmode fig_architecture.tex)",
+      "WebFetch(domain:proceedings.mlr.press)"
     ]
   }
 }
