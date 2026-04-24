@@ -139,8 +139,8 @@ We follow standard practice for multi-domain time series~\citep{nie2023patchtst,
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.9\textwidth]{figures/fig_architecture_ema.pdf}
-  \caption{\textbf{FAM.} Context encoder $\encoder$ (causal) produces $\h_t$. Predictor $\predictor$ maps $(\h_t, \Delta t)$ to $\hat{\h}_{(t,t+\Delta t]}$. Target encoder $\target$ (EMA) encodes the next $\Delta t$ steps bidirectionally to $\h^*_{(t,t+\Delta t]}$. Loss: $\|\hat{\h}_{(t,t+\Delta t]} - \h^*_{(t,t+\Delta t]}\|_1$. The pretraining interval $(t, t{+}\Delta t]$ is the same interval used for event prediction downstream.}
+  \includegraphics[width=\textwidth]{figures/fig_architecture.pdf}
+  \caption{\textbf{FAM architecture.} \emph{Top:} pretraining. The context encoder $\encoder$ (causal) produces $\h_t$; the predictor $\predictor$ maps $(\h_t, \Delta t)$ to $\hat{\h}$; the EMA target encoder $\target$ (bidirectional + attention pool) provides the L1 target $\h^*$ from the cumulative interval $\x_{(t, t+\Delta t]}$---no gap between context and target. \emph{Bottom:} finetuning. The encoder is frozen; the predictor runs at $K$ horizons; per-horizon hazard logits pass through sigmoid $\to$ conditional hazards $\lambda_k$ $\to$ cumulative product $\to$ survival CDF $p(t, \Delta t_k)$, which is monotonically non-decreasing by construction.}
   \label{fig:architecture}
 \end{figure}
 
