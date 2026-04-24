@@ -372,9 +372,15 @@ class FAM(nn.Module):
                          mode: str = 'pred_ft') -> torch.Tensor:
         """
         context: (B, T, C).
-        horizons: (K,) — fixed set of horizons.
+        horizons: (K,) — fixed set of horizons, sorted ascending.
         mode: 'pred_ft' (freeze encoder) or 'e2e' (train all).
-        Returns: logits (B, K).
+        Returns: cdf (B, K) — event probabilities in (0, 1),
+                 monotonically non-decreasing in K by construction.
+
+        Parameterization (discrete hazard → CDF):
+          λ_k = σ(event_head(predictor(h_t, Δt_k)))   conditional hazard
+          S_k = ∏_{j≤k} (1 - λ_j)                     survival function
+          p(t, Δt_k) = 1 - S_k                         CDF (non-decreasing)
         """
         if mode == 'pred_ft':
             with torch.no_grad():
@@ -391,8 +397,11 @@ class FAM(nn.Module):
             device=h_t.device, dtype=torch.float32)
         h_pred = self.predictor(h_exp, dt_exp).view(B, K, d)
 
-        logits = self.event_head(h_pred)  # (B, K)
-        return logits
+        hazard_logits = self.event_head(h_pred)          # (B, K)
+        lambdas = torch.sigmoid(hazard_logits)            # (B, K) ∈ (0,1)
+        survival = torch.cumprod(1 - lambdas, dim=-1)     # (B, K) non-increasing
+        cdf = 1 - survival                                # (B, K) non-decreasing
+        return cdf
 
     # --- Convenience ---
 

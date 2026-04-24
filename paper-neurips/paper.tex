@@ -56,7 +56,7 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-  Predicting rare events in multivariate time series - loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia - demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor for each event type - the encoder learns dynamics, the predictor is steered toward the event. Second, we evaluate all tasks through the same probability surface $p(t, \Delta t)$ - event probability as a function of observation time $t$ and prediction horizon $\Delta t$ - scored by AUPRC pooled over all $(t, \Delta t)$ cells. AUPRC is threshold-free and robust to the severe class imbalance inherent in rare-event prediction, unlike the Brier score or per-point F1 which are dominated by the majority class. Across 12 datasets in 8 domains - including three new-domain benchmarks (water-quality IoT, ICS water-cyber, ICU mortality) - FAM achieves pooled AUPRC of $0.867$ (turbofan, mean across FD001-003), $0.291$ (spacecraft, mean across SMAP/MSL), $0.331$ (server, mean across PSM/SMD), $0.947$ (cardiac, MBA), $0.186$ (ICU sepsis, $1.4\%$ prevalence), and $0.227$ (ICU mortality). Domain AUROC on PhysioNet 2012 ICU mortality reaches $0.858 \pm 0.001$, within 1 pp of the InceptionTime supervised baseline ($0.868$). Against a multivariate foundation-model baseline, a frozen \texttt{amazon/chronos-2} (768-d) encoder with a linear probe on per-observation pooled embeddings is \emph{competitive} with FAM pred-FT: Chronos-2 ties on FD001 (within $0.0003$ AUPRC) and \emph{beats} FAM on FD002 ($+0.008$) and FD003 ($+0.028$), while FAM wins on the domain-outlier streams SMAP ($+0.110$) and MBA ($+0.029$). The honest interpretation: dataset-specific JEPA pretraining pays off only where generic foundation-model pretraining lacks coverage, and the predictor-finetuning recipe is the main mechanism by which FAM converts representation into event-specific scores. Code and stored probability surfaces at \url{https://github.com/Forgis-Research/IndustrialJEPA}.
+  Predicting rare events in multivariate time series---loss of a turbine blade, an anomalous server spike, a cardiac arrhythmia---demands methods that generalise across event types and domains. Existing approaches silo each event type into a separate supervised model and evaluate with incomparable, domain-specific metrics. We introduce FAM (Forecast-Anything Model), built on two ideas. First, \emph{predictor finetuning}: a causal JEPA encoder is pretrained per-dataset with no labels; downstream, we freeze the encoder and finetune only the horizon-conditioned predictor (${\sim}9\%$ of parameters) for each event type. Second, we evaluate all tasks through a probability surface $p(t, \Delta t)$---event probability as a function of observation time and prediction horizon---parameterized as a discrete-time survival CDF that is monotonically non-decreasing by construction. Across 12 datasets in 8 domains, a single 2.16M-parameter architecture with no dataset-specific hyperparameters matches or exceeds domain-specific baselines: within 1\,pp AUROC of a supervised ICU-mortality model, and exceeding MTS-JEPA on spacecraft anomaly detection by $+47$\,pp PA-F1. Code and stored probability surfaces at \url{https://github.com/Forgis-Research/IndustrialJEPA}.
 \end{abstract}
 
 % ============================================================
@@ -69,15 +69,15 @@ A turbine blade cracks after 12{,}000 flight hours. A satellite sensor drifts si
 
 Yet every event prediction task has the same structure: given observations up to time $t$, estimate $P(\text{event at horizon } k)$ for $k = 1, \ldots, K$. The model that produces this probability surface does not need to know what kind of event it is predicting. It needs to learn the dynamics of normality; the deviation from that normality defines the event.
 
-\paragraph{FAM.} We pretrain a causal Transformer encoder to predict future sensor representations in latent space via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa}. The horizon-conditioned predictor $\predictor$ maps the encoder's summary of the past, $\h_\text{past}$, to a predicted future representation $\hat{\h}_\text{fut}$ at variable horizon $k$, forcing the encoder to internalise dynamics at multiple timescales. Pretraining uses standard components - patches~\citep{nie2023patchtst}, instance normalisation, causal attention, EMA target~\citep{assran2023ijepa}, L1 loss - and is self-supervised.
+\paragraph{FAM.} We pretrain a causal Transformer encoder to predict future sensor representations in latent space via a Joint Embedding Predictive Architecture (JEPA)~\citep{assran2023ijepa}. The horizon-conditioned predictor $\predictor$ maps the encoder's summary $\h_t$ to a predicted future representation at variable horizon $\Delta t$, forcing the encoder to internalise dynamics at multiple timescales. Pretraining uses standard components---patches~\citep{nie2023patchtst}, instance normalisation~\citep{kim2022revin}, causal attention, EMA target~\citep{assran2023ijepa}---and is self-supervised.
 
-\paragraph{Core idea: predictor finetuning.} After pretraining, every SSL method discards its prediction head and probes the encoder. We do the opposite: we freeze the encoder and finetune the predictor. The predictor is a small horizon-conditioned MLP ($\approx$\,198K parameters) that takes $(\h_\text{past}, \Delta t)$ and outputs a predicted future representation; we cap it with a tiny $\approx$\,513-parameter LayerNorm + linear head that turns the predicted representation into a per-horizon event logit. Together this is more expressive than a linear probe on $\h_\text{past}$ alone but far cheaper than end-to-end finetuning ($\approx$\,2.16M parameters) and more label-efficient at scarce labels. A controlled ablation (\cref{sec:predictor_pretrain_ablation}) shows that the predictor's \emph{pretrained} weights are within seed noise of a random-initialised same-size MLP, on both FD001 and SMAP: the value of pred-FT is in the \emph{recipe} (freeze encoder, finetune small predictor head with positive-weighted BCE on the per-horizon logits), not in predictor pretraining. We show the recipe matters most when labels are scarce ($\leq 10\%$, $p = 0.023$), precisely the regime where event prediction is hardest.
+\paragraph{Core idea: predictor finetuning.} After pretraining, every SSL method discards its prediction head and probes the encoder. We do the opposite: freeze the encoder, finetune the predictor. The predictor is a small horizon-conditioned MLP (${\sim}9\%$ of parameters) that, together with a per-horizon event head, is more expressive than a linear probe but far cheaper than end-to-end finetuning. The output is parameterized as a discrete-time survival CDF~\citep{lee2018deephit}, guaranteeing that event probabilities are monotonically non-decreasing in the prediction horizon by construction.
 
 \paragraph{Contributions.}
 \begin{enumerate}[nosep]
-  \item \textbf{Predictor finetuning (pred-FT) as the downstream recipe.} We freeze the JEPA encoder and finetune only the predictor + head ($\approx$\,9\% of the 2.16M parameters). Under the v20 F1w metric on the 790K-predictor V17 backbone, pred-FT significantly beats end-to-end finetuning at 10\% labels ($p = 0.023$, $N{=}10$, \cref{tab:label_efficiency}). Under the v24 canonical architecture (198K predictor) and pooled AUPRC both modes land within $0.002$ AUPRC at 10\% labels on FD001 (\cref{sec:label_efficiency}) - the label-efficiency crossover is protocol-specific. What survives into v24 is the \emph{recipe}: freezing the encoder and finetuning a small head gives you the same AUPRC as a much larger E2E run, for a fraction of the trainable parameters and with 1 - 30$\times$ tighter cross-seed variance than the v22 Mahalanobis pipeline (\cref{sec:benchmark}).
+  \item \textbf{Predictor finetuning as the downstream recipe.} Freeze the encoder, finetune the predictor + head. This achieves the same AUPRC as end-to-end finetuning with $24\times$ fewer trainable parameters and tighter cross-seed variance (\cref{sec:finetune_ablation,sec:label_efficiency}).
 
-  \item \textbf{Multi-domain validation under a unified metric.} The same architecture, pretrained per-dataset with no labels, matches or exceeds domain-specific models across C-MAPSS, SMAP, MSL, PSM, SMD, and MBA. All tasks are evaluated through the same probability surface $p(t, \Delta t)$ scored by AUPRC pooled over all cells---threshold-free and robust to class imbalance. Legacy metrics (PA-F1, RMSE) are derived from the stored surface for direct comparability (\cref{sec:metrics,sec:experiments}).
+  \item \textbf{Multi-domain event prediction under a unified metric.} One architecture across 12 datasets in 8 domains, evaluated through the same probability surface $p(t, \Delta t)$ scored by AUPRC---threshold-free and robust to class imbalance (\cref{sec:metrics,sec:experiments}).
 \end{enumerate}
 
 % ============================================================
@@ -182,20 +182,25 @@ Given event labels, we freeze $\encoder$ and finetune $\predictor$ + a linear he
   \end{tabular}
 \end{table}
 
-The predictor is run at horizons $\Delta t \in \mathcal{H} = \{{\Delta t}_1, \ldots, {\Delta t}_K\}$. A shared linear head maps each predicted representation to an event probability:
+The predictor is run at sorted horizons $\mathcal{H} = \{{\Delta t}_1 < \cdots < {\Delta t}_K\}$. A shared linear head maps each predicted representation to a per-interval \emph{conditional hazard}:
 \begin{equation}
-  p(t, \Delta t) \;=\; \sigma\!\bigl(\mathbf{w}^\top \hat{\h}_{(t, t+\Delta t]} + b\bigr) \;\in\; (0, 1).
+  \lambda_k(t) \;=\; \sigma\!\bigl(\mathbf{w}^\top \hat{\h}_{(t, t+\Delta t_k]} + b\bigr) \;\in\; (0, 1),
+  \label{eq:hazard}
+\end{equation}
+where $\lambda_k(t) = P(\text{event in } (\Delta t_{k-1}, \Delta t_k] \mid T^* > \Delta t_{k-1}, \mathbf{x}_{\leq t})$ and $T^*$ is the time-to-next-event. No distributional assumptions are required: each $\lambda_k$ is a free function of $\h_t$ via the predictor network. The event probability surface is the discrete-time survival CDF~\citep{lee2018deephit,ren2019drsa}:
+\begin{equation}
+  p(t, \Delta t_k) \;=\; 1 - \prod_{j=1}^{k} (1 - \lambda_j(t)).
   \label{eq:event_prob}
 \end{equation}
-Each horizon is an independent binary prediction (sigmoid, not softmax). The finetuning loss sums positive-weighted binary cross-entropy over horizons:
+The finetuning loss sums positive-weighted binary cross-entropy over horizons:
 \begin{equation}
-  \loss_\text{FT} = \sum_{\Delta t \in \mathcal{H}} w^+ \cdot \text{BCE}\bigl(p(t, \Delta t),\; y(t, \Delta t)\bigr),
+  \loss_\text{FT} = \sum_{k=1}^{K} w^+ \cdot \text{BCE}\bigl(p(t, \Delta t_k),\; y(t, \Delta t_k)\bigr),
   \label{eq:ft_loss}
 \end{equation}
-where $y(t, \Delta t) = \mathbb{1}[\text{event in } (t, t{+}\Delta t]]$ and $w^+ = N_{\text{neg}} / N_{\text{pos}}$ handles class imbalance. This is the conditional CDF of time-to-event, identical in structure to discrete-time survival models~\citep{lee2018deephit,ren2019drsa}. Two structural properties follow:
+where $y(t, \Delta t) = \mathbb{1}[\text{event in } (t, t{+}\Delta t]]$ and $w^+ = N_{\text{neg}} / N_{\text{pos}}$. Two structural properties follow from the parameterization, not from post-hoc enforcement:
 \begin{enumerate}[nosep,leftmargin=*]
-  \item \textbf{Monotonicity.} $p(t, \Delta t)$ is non-decreasing in $\Delta t$: if an event occurs within $\Delta t_1$ steps it certainly occurs within $\Delta t_2 > \Delta t_1$ steps. Violations are calibration errors; we report the violation rate as a diagnostic.
-  \item \textbf{Interval arithmetic.} The probability of an event in an arbitrary future interval $(t{+}a,\; t{+}b]$ is $p(t, b) - p(t, a)$ for $b > a$. No additional model evaluation is needed.
+  \item \textbf{Monotonicity by construction.} Each factor $(1 - \lambda_j) \in (0, 1)$, so the survival product $\prod_{j \leq k}(1 - \lambda_j)$ is non-increasing in $k$, and $p(t, \Delta t_k) = 1 - \prod(\cdot)$ is non-decreasing. Zero violations by design.
+  \item \textbf{Interval arithmetic.} $P(\text{event in } (t{+}a,\; t{+}b]) = p(t, b) - p(t, a)$ for $b > a$, since $p$ is a valid CDF.
 \end{enumerate}
 
 % ============================================================
@@ -577,7 +582,7 @@ The default FAM architecture is the v24 canonical configuration ($d{=}256$, 2 la
 % ============================================================
 \section{Conclusion}
 
-We showed that a JEPA predictor - trained to compress future dynamics during self-supervised pretraining - can be repurposed as an event-specific prediction head by finetuning it with minimal labels while keeping the encoder frozen. This simple idea yields an $\approx$\,2.16M-parameter model that reaches within 1 pp AUROC of a dedicated supervised ICU-mortality baseline on PhysioNet 2012 ($0.858$ vs InceptionTime $0.868$), exceeds MTS-JEPA PA-F1 on SMAP ($+47$\,pp), MSL ($+45$\,pp), and PSM ($+31$\,pp), and covers 12 datasets across 8 domains with a single hyperparameter set. At 10\% labels on FD001 the v24 canonical pred-FT and E2E modes tie within $0.002$ AUPRC - the v20-era F1w-metric crossover is protocol-specific - but pred-FT trains 24$\times$ fewer parameters for the same AUPRC and with tighter seed variance. The multivariate foundation model \texttt{amazon/chronos-2} under an identical labeled-probe protocol ties or beats FAM on C-MAPSS (FD001 tie, FD002 $+0.008$, FD003 $+0.028$ for Chronos) and loses on spacecraft anomaly (SMAP) and cardiac (MBA) by $+0.11$ and $+0.03$ AUPRC; the per-dataset JEPA pretrain is therefore complementary, not superior. All tasks are evaluated through the same probability surface $p(t, \Delta t)$ scored by AUPRC - threshold-free, robust to class imbalance, and enabling legacy metrics (RMSE, PA-F1, F1) to be recomputed from stored surfaces without rerunning inference. The encoder learns dynamics; the predictor learns the event.
+A JEPA predictor---trained to compress future dynamics during self-supervised pretraining---can be repurposed as an event-specific prediction head by finetuning it with minimal labels while keeping the encoder frozen. This yields a 2.16M-parameter model that covers 12 datasets across 8 domains with a single architecture, matching or exceeding domain-specific baselines. The probability surface $p(t, \Delta t)$, parameterized as a discrete-time survival CDF, provides a unified evaluation framework that is threshold-free and robust to class imbalance. The encoder learns dynamics; the predictor learns the event.
 
 % ============================================================
 \bibliography{references}
@@ -602,7 +607,8 @@ This paper fixes $W = 16$ horizon windows at patch resolution, chosen to match t
     \midrule
     Attention mask   & Causal                & v11 study                  & Fixed, not compared \\
     Horizon sampling & $\text{LogU}[1, 150]$ & v17 phase 1                & Default             \\
-    Target window    & Fixed-$w$, $w{=}10$   & v17 phase 1                & Default             \\
+    Target interval  & Cumulative $(t, t{+}\Delta t]$ & v24 (ARCHITECTURE.md) & Default             \\
+    Output param.    & Discrete hazard $\to$ CDF & v25 (DeepHit/DRSA)   & Default             \\
     EMA momentum     & $\tau = 0.99$         & v17 phase 1                & Default             \\
     Encoder depth    & $L = 2$               & v17 phase 1                & Default (no sweep)  \\
     $d_\text{model}$ & $256$                 & v17 phase 1                & Default (no sweep)  \\

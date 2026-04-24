@@ -115,20 +115,30 @@ Same interval, same semantics.
 
 ## 3. Finetuning (pred-FT)
 
-Freeze encoder. Train predictor + sigmoid head on labeled data.
+Freeze encoder. Train predictor + event head on labeled data.
+Output is parameterized as a **discrete hazard → CDF** to guarantee
+monotonicity by construction (not post-hoc enforcement).
 
 ```
 context  x[0:t]  → frozen encoder → h_t  (d,)
 
-For each Δt ∈ H = {Δt_1, ..., Δt_K}:
-  predictor(h_t, Δt) → ĥ → σ(w·ĥ + b) → p(t, Δt)
+For each Δt_k ∈ H = {Δt_1 < ... < Δt_K}:
+  predictor(h_t, Δt_k) → ĥ_k → event_head → hazard logit
+
+λ_k = σ(hazard_logit_k)              conditional hazard ∈ (0,1)
+S_k = ∏_{j≤k} (1 - λ_j)             survival function (non-increasing)
+p(t, Δt_k) = 1 - S_k                 CDF (non-decreasing)
 ```
 
-$p(t, \Delta t)$ = predicted probability that an event occurs in $(t, t{+}\Delta t]$.
+**Interpretation**: λ_k = P(event in (Δt_{k-1}, Δt_k] | no event before Δt_{k-1}).
+Each λ_k is an arbitrary function of h_t — no distributional assumptions.
 
 **Label**: $y(t, \Delta t) = \mathbb{1}[\text{event occurs in } (t, t{+}\Delta t]]$
 
-**Loss**: $\sum_{\Delta t \in \mathcal{H}} w^+ \cdot \text{BCE}(p(t, \Delta t), y(t, \Delta t))$
+**Loss**: $\sum_{k} w^+ \cdot \text{BCE}(p(t, \Delta t_k), y(t, \Delta t_k))$
+
+where $w^+ = N_{neg} / N_{pos}$ handles class imbalance. Gradients flow
+through `cumprod` — interval j gets gradient signal from all horizons k ≥ j.
 
 ### Horizons
 
@@ -145,15 +155,19 @@ $\mathcal{H}$ is chosen per dataset to cover the relevant event timescale:
 | SMAP/MSL/PSM/SMD/MBA | {1, 5, 10, 20, 50, 100, 150, 200} | steps  |
 | Sepsis        | {1, 2, 3, 6, 12, 24, 48}                 | hours  |
 
-### Monotonicity (structural property)
+### Monotonicity (by construction)
 
-$p(t, \Delta t)$ is a discrete CDF of time-to-event. By definition:
+$p(t, \Delta t)$ is a discrete CDF of time-to-event. Monotonicity
+is guaranteed by the hazard parameterization:
 
 $$\Delta t_2 > \Delta t_1 \implies p(t, \Delta t_2) \geq p(t, \Delta t_1)$$
 
-If an event occurs within 32 steps, it certainly occurs within 64 steps.
-Monotonicity violations are **calibration errors**, not something to
-enforce post-hoc. Measure violation rate as a diagnostic.
+Each $(1-\lambda_j) \in (0,1)$, so the survival product is non-increasing,
+and $1 - \text{product}$ is non-decreasing. Zero violations by design.
+
+This is standard discrete-time survival analysis (DeepHit, DRSA) — not
+an assumption about the data, but a reparameterization that makes the
+CDF constraint structural.
 
 ### Derived quantities
 

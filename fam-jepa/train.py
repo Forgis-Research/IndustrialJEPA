@@ -49,6 +49,7 @@ HORIZONS = {
 }
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+EPS = 1e-7  # clamp for log-stability in BCE on probabilities
 
 
 def get_horizons(dataset: str) -> List[int]:
@@ -356,12 +357,14 @@ def finetune(model: FAM, train_loader, val_loader,
             ctx, ctx_m = ctx.to(device), ctx_m.to(device)
             tte = tte.to(device)
 
-            logits = model.finetune_forward(ctx, h_tensor, ctx_m, mode)  # (B, K)
+            cdf = model.finetune_forward(ctx, h_tensor, ctx_m, mode)  # (B, K)
             y = build_label_surface(tte.unsqueeze(1), h_tensor)  # (B, 1, K)
             y = y.squeeze(1)  # (B, K)
 
-            loss = F.binary_cross_entropy_with_logits(
-                logits, y, pos_weight=pw_tensor, reduction='mean')
+            # Pos-weighted BCE on CDF probabilities
+            p = cdf.clamp(EPS, 1 - EPS)
+            loss = -(pw_tensor * y * torch.log(p)
+                     + (1 - y) * torch.log(1 - p)).mean()
 
             optimizer.zero_grad()
             loss.backward()
@@ -400,10 +403,11 @@ def _eval_ft_loss(model, loader, h_tensor, pw_tensor, mode, device):
     for ctx, ctx_m, tte, t_idx in loader:
         ctx, ctx_m = ctx.to(device), ctx_m.to(device)
         tte = tte.to(device)
-        logits = model.finetune_forward(ctx, h_tensor, ctx_m, mode)
+        cdf = model.finetune_forward(ctx, h_tensor, ctx_m, mode)
         y = build_label_surface(tte.unsqueeze(1), h_tensor).squeeze(1)
-        loss = F.binary_cross_entropy_with_logits(
-            logits, y, pos_weight=pw_tensor, reduction='mean')
+        p = cdf.clamp(EPS, 1 - EPS)
+        loss = -(pw_tensor * y * torch.log(p)
+                 + (1 - y) * torch.log(1 - p)).mean()
         losses.append(loss.item())
     return np.mean(losses)
 
@@ -439,8 +443,8 @@ def evaluate(model: FAM, test_loader, horizons: List[int],
         ctx, ctx_m = ctx.to(device), ctx_m.to(device)
         tte = tte.to(device)
 
-        logits = model.finetune_forward(ctx, h_tensor, ctx_m, mode)
-        p = torch.sigmoid(logits)
+        cdf = model.finetune_forward(ctx, h_tensor, ctx_m, mode)
+        p = cdf  # already probabilities via discrete hazard → CDF
         y = build_label_surface(tte.unsqueeze(1), h_tensor).squeeze(1)
 
         p_list.append(p.cpu().numpy())

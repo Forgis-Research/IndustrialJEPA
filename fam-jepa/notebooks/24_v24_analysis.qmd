@@ -243,15 +243,25 @@ for ds, d in data.items():
     step = max(1, N // 2000)
     ps_s = ps[::step]
     ys_s = ys[::step]
-    axes[row, 0].imshow(ps_s.T, aspect='auto', cmap='viridis',
-                        vmin=0, vmax=1, origin='lower')
-    axes[row, 0].set_title(f'{ds}  predicted p(t, Δt)')
-    axes[row, 0].set_ylabel('Δt index')
-    axes[row, 0].set_xlabel('t')
-    axes[row, 1].imshow(ys_s.T, aspect='auto', cmap='Reds',
-                        vmin=0, vmax=1, origin='lower')
-    axes[row, 1].set_title(f'{ds}  ground truth y(t, Δt)')
-    axes[row, 1].set_xlabel('t')
+    horizons = surf['horizons'].astype(float)
+    t_vals = np.arange(len(ps_s))
+    # pcolormesh needs edges, not centers
+    h_edges = np.concatenate([[horizons[0] * 0.7],
+        np.sqrt(horizons[:-1] * horizons[1:]),  # geometric midpoints
+        [horizons[-1] * 1.3]])
+    t_edges = np.arange(len(ps_s) + 1) - 0.5
+    for col, (arr, cmap, title) in enumerate([
+        (ps_s, 'viridis', f'{ds}  predicted p(t, Δt)'),
+        (ys_s, 'Reds',    f'{ds}  ground truth y(t, Δt)'),
+    ]):
+        axes[row, col].pcolormesh(t_edges, h_edges, arr.T,
+                                  cmap=cmap, vmin=0, vmax=1)
+        axes[row, col].set_yscale('log')
+        axes[row, col].set_yticks(horizons)
+        axes[row, col].set_yticklabels([str(int(h)) for h in horizons])
+        axes[row, col].set_title(title)
+        axes[row, col].set_xlabel('t')
+    axes[row, 0].set_ylabel('Δt')
     row += 1
 plt.tight_layout()
 plt.savefig('plots/v24_surface_heatmaps.png', bbox_inches='tight', dpi=100)
