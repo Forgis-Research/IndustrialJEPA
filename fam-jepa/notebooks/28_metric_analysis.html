@@ -212,32 +212,31 @@ window.Quarto = {
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>), sharey<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>im0 <span class="op">=</span> axes[<span class="dv">0</span>].pcolormesh(t_eng, h, p_eng.T, cmap<span class="op">=</span><span class="st">'viridis'</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">1</span>, shading<span class="op">=</span><span class="st">'auto'</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yscale(<span class="st">'log'</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">'horizon Δt (log)'</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">'horizon Δt'</span>)</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'observation time t (cycles)'</span>)</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Predicted p(t, Δt)'</span>)</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>fig.colorbar(im0, ax<span class="op">=</span>axes[<span class="dv">0</span>], label<span class="op">=</span><span class="st">'probability'</span>, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>im1 <span class="op">=</span> axes[<span class="dv">1</span>].pcolormesh(t_eng, h, y_eng.T, cmap<span class="op">=</span><span class="st">'Reds'</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">1</span>, shading<span class="op">=</span><span class="st">'auto'</span>)</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_yscale(<span class="st">'log'</span>)</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">'observation time t (cycles)'</span>)</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'Ground truth y(t, Δt)'</span>)</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>fig.colorbar(im1, ax<span class="op">=</span>axes[<span class="dv">1</span>], label<span class="op">=</span><span class="st">'label'</span>, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Annotate one cell</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].annotate(<span class="st">'y(t=200, Δt=50)=1</span><span class="ch">\n</span><span class="st">"engine fails within</span><span class="ch">\n</span><span class="st">50 cycles of t=200"'</span>,</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>                 xy<span class="op">=</span>(<span class="dv">200</span>, <span class="dv">50</span>), fontsize<span class="op">=</span><span class="dv">8</span>,</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>                 arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">'-&gt;'</span>, color<span class="op">=</span><span class="st">'blue'</span>, lw<span class="op">=</span><span class="fl">1.5</span>),</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>                 xytext<span class="op">=</span>(<span class="dv">155</span>, <span class="dv">5</span>), color<span class="op">=</span><span class="st">'blue'</span>,</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>                 bbox<span class="op">=</span><span class="bu">dict</span>(fc<span class="op">=</span><span class="st">'white'</span>, ec<span class="op">=</span><span class="st">'blue'</span>, alpha<span class="op">=</span><span class="fl">0.9</span>, boxstyle<span class="op">=</span><span class="st">'round,pad=0.3'</span>))</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>plt.savefig(<span class="st">'plots/28_surface_walkthrough.png'</span>, dpi<span class="op">=</span><span class="dv">150</span>, bbox_inches<span class="op">=</span><span class="st">'tight'</span>)</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">'observation time t (cycles)'</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'Ground truth y(t, Δt)'</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>fig.colorbar(im1, ax<span class="op">=</span>axes[<span class="dv">1</span>], label<span class="op">=</span><span class="st">'label'</span>, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Annotate one cell</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].annotate(<span class="st">'y(t=200, Δt=50)=1</span><span class="ch">\n</span><span class="st">"engine fails within</span><span class="ch">\n</span><span class="st">50 cycles of t=200"'</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>                 xy<span class="op">=</span>(<span class="dv">200</span>, <span class="dv">50</span>), fontsize<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>                 arrowprops<span class="op">=</span><span class="bu">dict</span>(arrowstyle<span class="op">=</span><span class="st">'-&gt;'</span>, color<span class="op">=</span><span class="st">'blue'</span>, lw<span class="op">=</span><span class="fl">1.5</span>),</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>                 xytext<span class="op">=</span>(<span class="dv">155</span>, <span class="dv">5</span>), color<span class="op">=</span><span class="st">'blue'</span>,</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>                 bbox<span class="op">=</span><span class="bu">dict</span>(fc<span class="op">=</span><span class="st">'white'</span>, ec<span class="op">=</span><span class="st">'blue'</span>, alpha<span class="op">=</span><span class="fl">0.9</span>, boxstyle<span class="op">=</span><span class="st">'round,pad=0.3'</span>))</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>plt.savefig(<span class="st">'plots/28_surface_walkthrough.png'</span>, dpi<span class="op">=</span><span class="dv">150</span>, bbox_inches<span class="op">=</span><span class="st">'tight'</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-display">
 <div id="surface-walkthrough" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="28_metric_analysis_files/figure-html/surface-walkthrough-output-1.png" width="1520" height="504" class="figure-img"></p>
+<p><img src="28_metric_analysis_files/figure-html/surface-walkthrough-output-1.png" width="1521" height="504" class="figure-img"></p>
 <figcaption>FD001 engine 49: predicted surface (left) vs ground truth (right). Each cell p(t, Δt) answers: ‘what is the probability of failure within Δt cycles, given observations up to cycle t?’ Ground truth is binary: either the engine fails within that window (yellow=1) or it doesn’t (dark=0).</figcaption>
 </figure>
 </div>
