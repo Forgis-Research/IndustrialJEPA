@@ -251,6 +251,10 @@ For each variant, produce a 3-panel PNG:
 
 Compute h-AUROC at the dense grid (mean AUROC over 150 horizons).
 
+### Self-check (end of Phase 0)
+
+Before proceeding: verify monotonicity holds at ALL Delta_t values. Sample 1000 random h_t vectors, check that p(h_t, dt) is non-decreasing in dt for every one. Verify CDF reaches near-0 at dt=1 and near-1 at dt=max for engines near failure. If any violation is found, the monotone pathway has a bug - fix before continuing.
+
 ### Decision gate
 
 **IF** monotone CDF produces smoother surfaces AND equal or better h-AUROC:
@@ -395,6 +399,10 @@ Evaluate the 2x2 grid. Save as `results/phase1_decision.json`:
   predictor initialization is a genuine advantage. This supports the
   "predictor finetuning" contribution.
 
+### Self-check (end of Phase 1)
+
+Before proceeding: verify that all 5 variants were trained with EXACTLY the same data splits, horizons, labels, and loss function. Re-run one variant from a different random init to verify reproducibility within 0.01 h-AUROC. If results are not reproducible, investigate the source of variance before moving on.
+
 ---
 
 ## Phase 2: Precursor check - skip datasets without signal (~1h)
@@ -524,11 +532,41 @@ All numbers: `mean +/- std (3s)`. Bold best. Underline second-best.
 
 ---
 
-## Phase 4: Legacy metrics from stored surfaces (~30min)
+### Self-check (end of Phase 3)
+
+Before proceeding: for 3 randomly selected datasets, load the stored .npz surfaces and recompute h-AUROC from scratch. Verify it matches the reported number to 4 decimal places. Check that no surface has NaN or all-zero columns. If any discrepancy is found, re-run the affected dataset before moving to Phase 4.
+
+---
+
+## Phase 4: SOTA Research and Legacy Metrics (~1.5h)
+
+### Phase 4a: SOTA Deep Research (~1h)
+
+For EACH dataset in the benchmark, conduct deep research to find the current published SOTA result. This is critical for the paper's credibility.
+
+**For each dataset:**
+1. Use web search to find the current published SOTA result for the relevant metric (RMSE for C-MAPSS, F1 for anomaly datasets, AUROC for clinical)
+2. Understand PRECISELY how the SOTA method computes their metric:
+   - What preprocessing do they apply?
+   - What evaluation protocol (train/val/test split, cross-validation)?
+   - What scoring function (e.g., asymmetric scoring for C-MAPSS)?
+   - What thresholding protocol (best-F1, fixed threshold, PA)?
+3. Verify we are computing our legacy metric with the EXACT same protocol. If we are not, adapt our computation to match.
+4. Self-check: run the SOTA's evaluation protocol on our stored surfaces. If results differ from our naive computation, investigate and fix.
+5. Cite the SOTA paper properly (author, year, venue)
+
+**Output**: A table in the quarto notebook (section 9.5) mapping:
+```
+| Dataset | Legacy Metric | SOTA Method | SOTA Value | Venue/Year | Their Protocol | Our Result (Their Protocol) | Our Result (Naive) | Protocol Match? |
+```
+
+If "Protocol Match?" is "No" for any dataset, the "Our Result (Their Protocol)" column is the number that goes in the paper.
+
+### Phase 4b: Compute Legacy Metrics (~30min)
 
 ### Goal
 
-Fill the legacy metric columns in Table 4 from stored .npz surfaces.
+Fill the legacy metric columns in Table 4 from stored .npz surfaces, using the protocols verified in Phase 4a.
 
 ### C-MAPSS (FD001, FD002, FD003): RMSE
 
@@ -570,6 +608,10 @@ Report h-AUROC only. This is a novel event-prediction framing.
 ### Output
 
 Save: `results/phase4_legacy_metrics.json`
+
+### Self-check (end of Phase 4)
+
+For C-MAPSS FD001, manually verify the RMSE computation against the STAR paper's protocol. Check that we use the same RUL cap (125), the same scoring function, the same test set. If any discrepancy is found, recompute with the correct protocol and update the legacy metrics JSON.
 
 ---
 
@@ -627,6 +669,7 @@ Create `notebooks/30_v30_analysis.qmd` with sections:
    gracefully?
 9. **Honest assessment** - what FAM does well, where it fails, open
    questions for v31
+10. **New dataset scouting** - Phase 8 candidate analysis (if completed)
 
 Render to HTML: `quarto render notebooks/30_v30_analysis.qmd`
 
@@ -755,6 +798,66 @@ git commit -m "v30-p7: session summary + RESULTS.md update"
 
 ---
 
+## Phase 8 (Stretch Goal): New Dataset Scouting (~2h)
+
+### Goal
+
+Identify 4 additional datasets with concrete forecasting events and published
+SOTA results that would strengthen the paper's breadth claim. This phase runs
+only if the main phases (0-7) finish early. Use remaining compute time here.
+
+### For each candidate dataset, determine:
+
+1. **Dataset name, source, size, sampling rate, number of channels**
+2. **The specific EVENT to forecast** - not just anomaly detection, but a concrete forecasting target (e.g., "bearing failure within N cycles", "sepsis onset within 6 hours")
+3. **Published SOTA method, metric, and value** - with proper citation (author, year, venue)
+4. **Why it fits FAM** - multivariate, has precursors, reasonable context length for P=16
+5. **Why it is DIFFERENT from existing datasets** - new domain, new event type, new temporal scale
+6. **Quick feasibility check** - is the data publicly available? What preprocessing is needed? How long would a full integration take?
+
+### Good candidates to investigate
+
+- **NASA Bearing Dataset** - vibration, bearing failure prediction
+- **FEMTO/PRONOSTIA** - bearing degradation, accelerated life tests
+- **Tennessee Eastman Process** - chemical process fault prediction
+- **MIMIC-III/IV** - clinical deterioration, sepsis onset, mortality
+- **Backblaze Hard Drive** - disk failure prediction from SMART data
+- **HAI 22.04** - industrial control system attacks
+- **SWaT** - Secure Water Treatment, cyber-physical attacks
+
+### Output
+
+Include brief analysis of each candidate in the quarto notebook section 10.
+Save structured results to `results/phase8_dataset_scouting.json`:
+
+```json
+{
+  "candidates": [
+    {
+      "name": "...",
+      "source": "...",
+      "size": "...",
+      "channels": N,
+      "sampling_rate": "...",
+      "event": "...",
+      "sota_method": "...",
+      "sota_metric": "...",
+      "sota_value": X,
+      "sota_citation": "Author et al., Venue Year",
+      "fits_fam_because": "...",
+      "different_because": "...",
+      "publicly_available": true,
+      "preprocessing_needed": "...",
+      "integration_effort_hours": N,
+      "recommendation": "include|skip|maybe"
+    }
+  ],
+  "top_4_picks": ["...", "...", "...", "..."]
+}
+```
+
+---
+
 ## Important rules
 
 1. **Decision gates are HARD gates.** Do NOT proceed to Phase 3 before
@@ -798,3 +901,22 @@ git commit -m "v30-p7: session summary + RESULTS.md update"
     (theory) can run in parallel with Phase 5 (figures) if you manage
     the files carefully. Do not spend more than 30min on any single
     decision gate.
+
+11. **DO NOT STOP EARLY.** Use ALL available compute time. If you finish
+    the main phases early, work on the stretch goal (Phase 8), deepen the
+    theory self-check, or re-run marginal datasets with more seeds.
+
+12. **COMMIT HOURLY.** After every hour of work, commit progress with a
+    descriptive message. This protects against session crashes and provides
+    a clear audit trail. Use the pattern:
+    `git commit -m "v30 hourly: [what was done in the last hour]"`.
+
+13. **USE ALL NECESSARY AGENTS.** Launch ml-researcher for SOTA deep
+    research (Phase 4a). Launch data-curator for new dataset scouting
+    (Phase 8). Use parallel agents when tasks are independent. Do not try
+    to do everything sequentially when agents can work in parallel.
+
+14. **PRECURSOR CHECK IS FAST.** If a 1-seed run shows h-AUROC < 0.50
+    within the first epoch of finetuning, the dataset has no signal at
+    this temporal resolution. Stop the run, document it, move on. Do not
+    waste 30 minutes on a null result that is obvious after 2 minutes.
