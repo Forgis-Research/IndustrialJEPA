@@ -26,8 +26,15 @@
     },
     {
       "dataset": "CHBMIT",
-      "fam": null,
-      "chronos2": null
+      "fam": {
+        "src": "v29-mlp",
+        "n": 3,
+        "mean_h_auroc": 0.5013725363996574,
+        "std": 0.003241300321717962,
+        "pooled_auprc": 0.3997312932195387
+      },
+      "chronos2_h_auroc": null,
+      "delta_fam_minus_chronos": null
     },
     {
       "dataset": "FD001",

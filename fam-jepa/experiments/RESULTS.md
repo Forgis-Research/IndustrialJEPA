@@ -1,6 +1,98 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v28 (2026-04-24). Update after every session.
+**Last updated**: v29 (2026-04-25). Update after every session.
+
+---
+
+## v29 - 3 new datasets + transformer-predictor ablation (2026-04-25)
+
+V29 expands FAM coverage to 13 datasets and answers ARCHITECTURE.md's open
+question about whether a transformer predictor would beat the 2-layer MLP.
+
+### Three new datasets
+
+| Dataset | Type | n_channels | Sample rate | Source | mean h-AUROC (3 seeds) | base |
+|---------|------|-----------|-------------|--------|------------------------|------|
+| **SKAB** | hydraulic test rig | 8 | 1 Hz | github.com/waico/SKAB | **0.726 ± 0.038** | 0.503 |
+| **ETTm1** | power-grid transformer | 7 | 1/15min | github.com/zhouhaoyi/ETDataset | **0.869 ± 0.004** | 0.500 |
+| **CHB-MIT** | pediatric EEG (seizure) | 18 | 256→32 Hz | physionet.org/content/chbmit | **0.501 ± 0.003** (NULL) | 0.501 |
+
+ETTm1 uses a *derived* event label: y_t = 1 iff OT_t exceeds the causal
+rolling 7-day baseline by >2σ (a global threshold puts ALL events in the
+first summer, leaving val/test with zero positives — the protocol bug
+that blocks the naive setup). SKAB and ETTm1 PNG surfaces are at
+`experiments/v29/results/surface_pngs/panels_{SKAB,ETTm1}.png`.
+
+CHB-MIT is a clean **null result**: 3 seeds give 0.5002 / 0.5050 / 0.4989
+which is exactly the base-rate AUROC. The most likely contributing
+factors (documented in the v29 notebook): pretrain Δt cap of 960 (30s,
+chosen for memory) is 60x shorter than the 30-min preictal window, and
+single-subject training without subject-conditioning likely drowns the
+generic precursor signal in inter-subject variation. v29's CHB-MIT
+result is honest evidence that a generic event-prediction model does not
+transfer out of the box to a domain with very specific physiological
+dynamics — a useful counterpoint to the "one architecture works
+everywhere" framing.
+
+### Transformer-predictor ablation (FD001/FD003/MBA × 3 seeds)
+
+| Dataset | MLP (197K params) | Transformer (462K) | Δ |
+|---------|-------------------|--------------------|----|
+| FD001 | 0.7139 ± 0.028 | 0.7038 ± 0.029 | -0.010 |
+| FD003 | 0.8073 ± 0.015 | 0.8117 ± 0.019 | +0.004 |
+| MBA   | 0.7462 ± 0.006 | 0.7777 ± 0.067 | +0.031 (high var) |
+
+**Verdict**: tied. The hypothesis "the last-token bottleneck collapses
+information" (ARCHITECTURE.md line 269) is **refuted**. Two layers of
+d=256 self-attention in the encoder are enough to compress the full
+context into h_t. MBA's apparent +0.031 has 22× MLP's std — one
+transformer seed (s42) collapsed to 0.71, dragging variance up. The MLP
+predictor stays as the canonical choice on parsimony + parameter count.
+
+### Master table — v29 + back-catalogue best per dataset
+
+| Dataset | Best FAM h-AUROC ± std (n) | Source | Chronos-2 (s42) | Δ FAM |
+|---------|----------------------------|--------|-----------------|-------|
+| SKAB    | 0.726 ± 0.038 (3) | v29-mlp | — | — |
+| ETTm1   | 0.869 ± 0.004 (3) | v29-mlp | — | — |
+| CHBMIT  | 0.501 ± 0.003 (3) | v29-mlp | — | — |
+| FD001   | 0.742 ± 0.003 (3) | v28 lag+none | 0.553 | **+0.189** |
+| FD002   | 0.569 ± 0.001 (3) | v27 'none' | 0.637 | -0.068 |
+| FD003   | 0.819 ± 0.009 (3) | v28 dense FT | 0.647 | **+0.172** |
+| SMAP    | 0.550 ± 0.036 (3) | v28 dense FT | 0.500 | +0.050 |
+| MSL     | 0.438 (1) | v28 dense FT | 0.496 | -0.058 |
+| PSM     | 0.559 ± 0.015 (3) | v28 baseline | 0.511 | +0.048 |
+| SMD     | 0.616 (1) | v28 baseline | — | — |
+| MBA     | 0.778 ± 0.067 (3) | v29 transformer | 0.655 | **+0.122** |
+| GECCO   | 0.859 ± 0.055 (3) | v28 baseline (sparse K=8) | 0.767 (dense K=200) | +0.092 † |
+| BATADAL | 0.629 ± 0.014 (3) | v28 lag+revin | 0.491 | +0.137 |
+
+† **Grid mismatch**: GECCO FAM is sparse K=8, Chronos-2 is dense K=200.
+At matched dense K=200 (v28 dense surfaces), Chronos-2 wins GECCO by
+0.082. The v28 SESSION_SUMMARY documents this honestly.
+
+**Headline**: FAM beats Chronos-2 on **6/9 cleanly-comparable datasets**
+(FD001, FD003, SMAP, PSM, MBA, BATADAL); loses on FD002, MSL; GECCO is
+ambiguous (sparse-vs-dense grid mismatch); SKAB/ETTm1/CHBMIT have no
+Chronos-2 comparison yet (cached features for these datasets are a
+follow-up build-out).
+
+### What did not ship
+
+  - **Chronos-2 features for SKAB/ETTm1/CHBMIT.** Computing them is a
+    separate ~1h job per dataset (forwards through the Chronos-2 model
+    on every test context). Listed for v30.
+  - **Phase 3 re-runs of the 10 legacy datasets with v29 runner.** Since
+    Phase 2 said MLP wins (or ties), the existing v27/v28 MLP results
+    are the right comparison; re-running at v29 settings would only
+    introduce seed-jitter noise, not new information.
+  - **Multi-subject CHB-MIT analysis.** All 3 subjects' data is
+    downloaded (chb01/03/05 = 4.7GB, 119 EDF files); the loader handles
+    them; but the per-subject FT runs treat them as one concatenated
+    stream which is the wrong protocol. Per-subject leave-one-seizure-
+    out + subject-conditioning is a separate study.
+
+---
 
 This file is the single source of truth for all experimental results.
 Every number that enters the paper must have an entry here with provenance.
