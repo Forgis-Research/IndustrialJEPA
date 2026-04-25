@@ -191,28 +191,50 @@ high-variance v29 transformer-predictor results in the table — MBA is
 ```{python}
 #| label: master-table
 #| echo: false
-# Build the master table by pulling best mean_h_auroc per dataset across all
-# v27/v28/v29 result jsons.
-
-# Use the pre-computed master table (aggregated on the VM across v27-v29)
-master_path = RES / 'phase3_master_table.json'
-if master_path.exists():
-    master = json.load(open(master_path))
-    rows = []
-    for entry in master['datasets']:
-        row = {
-            'dataset': entry['dataset'],
-            'FAM h-AUROC': (f"{entry['fam']['mean_h_auroc']:.3f} +/- {entry['fam']['std']:.3f}" if entry['fam'].get('std') is not None else f"{entry['fam']['mean_h_auroc']:.3f} (n=1)") if entry.get('fam') and entry['fam'].get('mean_h_auroc') is not None else '-',
-            'n': entry['fam']['n'] if entry.get('fam') else 0,
-            'source': entry['fam']['src'] if entry.get('fam') else '-',
-            'Chronos-2': f"{entry['chronos2_h_auroc']:.3f}" if entry.get('chronos2_h_auroc') is not None else '-',
-            'Δ FAM-Chr': f"{entry['delta_fam_minus_chronos']:+.3f}" if entry.get('delta_fam_minus_chronos') is not None else '-',
-        }
-        rows.append(row)
-    print(pd.DataFrame(rows).to_string(index=False))
+# Read the canonical master table produced by phase3_master_table.py
+# (the in-notebook scan was missing v28 phase2d/phase3_dense/phase2a paths
+# and silently dropped FD001/FD002/FD003/SMAP/MSL — fixed by reading the
+# pre-computed json that scans EVERY phase*_*.json file in v28/results/).
+mt = load_json(RES / 'phase3_master_table.json')
+if mt is None:
+    print("(phase3_master_table.json missing — run experiments/v29/phase3_master_table.py)")
 else:
-    print("(master table JSON not found — view the pre-rendered HTML instead)")
+    rows = []
+    for entry in mt['datasets']:
+        ds = entry['dataset']
+        f = entry.get('fam') or {}
+        h = f.get('mean_h_auroc')
+        std = f.get('std')
+        n = f.get('n')
+        src = f.get('src')
+        chr_ = entry.get('chronos2_h_auroc')
+        delta = entry.get('delta_fam_minus_chronos')
+        rows.append({
+            'dataset': ds,
+            'FAM h-AUROC': f"{h:.4f}" if h is not None else '—',
+            'std': f"{std:.3f}" if std is not None else '—',
+            'n': n if n is not None else '—',
+            'source': (src or '—').replace('v28:', '').replace('.json', ''),
+            'Chronos-2 (s42)': f"{chr_:.4f}" if chr_ is not None else '—',
+            'Δ FAM - Chr': f"{delta:+.4f}" if delta is not None else '—',
+        })
+    print(pd.DataFrame(rows).to_string(index=False))
 ```
+
+**Honest classification of the FAM-vs-Chronos-2 head-to-head** (per
+v29 self-check finding #2):
+
+  - **4 clear FAM wins**: FD001 (+0.189), FD003 (+0.172), MBA (+0.091),
+    BATADAL (+0.137) — all above 1 FAM std at matched eval grids.
+  - **1 clear loss**: FD002 (-0.068).
+  - **3 ambiguous / borderline**: SMAP (+0.050 vs FAM std 0.036, within
+    noise), PSM (+0.048, borderline), GECCO (+0.092 with sparse-vs-dense
+    grid mismatch — at matched dense K=200, Chronos-2 wins by 0.082;
+    documented in v28).
+  - **1 unreportable**: MSL (n=1, FAM appears to lose by 0.058 but
+    cannot be distinguished from a single lucky/unlucky seed).
+  - **3 no-Chronos comparison**: SKAB / ETTm1 / CHB-MIT (Chronos-2
+    feature cache for these datasets is v30 work).
 
 # 4 — Surface gallery
 
