@@ -15,7 +15,7 @@ question about whether a transformer predictor would beat the 2-layer MLP.
 |---------|------|-----------|-------------|--------|------------------------|------|
 | **SKAB** | hydraulic test rig | 8 | 1 Hz | github.com/waico/SKAB | **0.726 ± 0.038** | 0.503 |
 | **ETTm1** | power-grid transformer | 7 | 1/15min | github.com/zhouhaoyi/ETDataset | **0.869 ± 0.004** | 0.500 |
-| **CHB-MIT** | pediatric EEG (seizure) | 18 | 256→32 Hz | physionet.org/content/chbmit | **0.501 ± 0.003** (NULL) | 0.501 |
+| **CHB-MIT** v2 | pediatric EEG (seizure) | 18 | 256→32 Hz | physionet.org/content/chbmit | **0.497 ± 0.003** (NULL) | 0.513 |
 
 ETTm1 uses a *derived* event label: y_t = 1 iff OT_t exceeds the causal
 rolling 7-day baseline by >2σ (a global threshold puts ALL events in the
@@ -23,59 +23,107 @@ first summer, leaving val/test with zero positives — the protocol bug
 that blocks the naive setup). SKAB and ETTm1 PNG surfaces are at
 `experiments/v29/results/surface_pngs/panels_{SKAB,ETTm1}.png`.
 
-CHB-MIT is a clean **null result**: 3 seeds give 0.5002 / 0.5050 / 0.4989
-which is exactly the base-rate AUROC. The most likely contributing
-factors (documented in the v29 notebook): pretrain Δt cap of 960 (30s,
-chosen for memory) is 60x shorter than the 30-min preictal window, and
-single-subject training without subject-conditioning likely drowns the
-generic precursor signal in inter-subject variation. v29's CHB-MIT
-result is honest evidence that a generic event-prediction model does not
+CHB-MIT v2 is a clean **null result** with the protocol bug fixed.
+v1 (the first 3-seed run) used `y=1` for every sample in the 30-min
+preictal window, but the EventDataset converts binary labels to
+time-to-next-event - inside the preictal window every sample's tte=1
+because the next sample is also preictal. That collapsed the surface
+to "is this sample preictal?" rather than "is a seizure approaching
+within Δt?". v2 fixes the loader to mark only the seizure ONSET
+sample with `y=1` (the natural FAM event-prediction semantics);
+3 seeds still give 0.5002 / 0.4982 / 0.4938 mean per-horizon AUROC,
+slightly BELOW the base rate (0.513). Pooled AUPRC = 0.063 = base.
+
+The bug-fixed null is the more honest scientific finding: with the
+correct task framing, FAM at this configuration cannot extract
+pediatric seizure precursors at the 1-300s eval horizons. Most likely
+contributing factors:
+  1. Severe class imbalance: ~6 onsets in 8M training samples.
+  2. EEG seizure precursors require specialized features (frequency-
+     domain, phase synchrony) - raw 18-channel EEG with no spectral
+     preprocessing is not enough.
+  3. SOTA seizure prediction (Ozcan & Bhatt 2021, sensitivity 92.8% at
+     FPR 0.06/h) uses subject-specific training; generic per-subject
+     concatenation in v29 averages away the inter-subject differences.
+  4. Pretrain Δt_max = 960 (30s) is 6x shorter than the 30-min
+     SOTA prediction horizon - eval at horizons up to 5 min relies on
+     the smooth Δt embedding to extrapolate.
+
+This is honest evidence that a generic event-prediction model does not
 transfer out of the box to a domain with very specific physiological
 dynamics — a useful counterpoint to the "one architecture works
 everywhere" framing.
 
 ### Transformer-predictor ablation (FD001/FD003/MBA × 3 seeds)
 
-| Dataset | MLP (197K params) | Transformer (462K) | Δ |
-|---------|-------------------|--------------------|----|
-| FD001 | 0.7139 ± 0.028 | 0.7038 ± 0.029 | -0.010 |
-| FD003 | 0.8073 ± 0.015 | 0.8117 ± 0.019 | +0.004 |
-| MBA   | 0.7462 ± 0.006 | 0.7777 ± 0.067 | +0.031 (high var) |
+| Dataset | MLP (198K params) | Transformer (463K, 2.34x) | Δ paired | paired t | p-value |
+|---------|-------------------|---------------------------|----------|----------|---------|
+| FD001 | 0.7139 ± 0.028 | 0.7038 ± 0.029 | -0.010 | t=-1.03 | p=0.412 |
+| FD003 | 0.8073 ± 0.015 | 0.8117 ± 0.019 | +0.004 | t=+0.24 | p=0.836 |
+| MBA   | 0.7462 ± 0.006 | 0.7777 ± 0.067 | +0.031 | t=+0.75 | p=0.531 |
 
-**Verdict**: tied. The hypothesis "the last-token bottleneck collapses
-information" (ARCHITECTURE.md line 269) is **refuted**. Two layers of
-d=256 self-attention in the encoder are enough to compress the full
-context into h_t. MBA's apparent +0.031 has 22× MLP's std — one
-transformer seed (s42) collapsed to 0.71, dragging variance up. The MLP
-predictor stays as the canonical choice on parsimony + parameter count.
+**Verdict** (paired t-test, n=3 per row): **no significant difference**
+on any of the three datasets (all p > 0.4). FD001 and FD003 give
+opposite directional results - itself evidence that the effect size is
+near zero. MBA's directional +0.031 has 11x MLP's std; one transformer
+seed (s42) collapsed to 0.71, dragging variance up.
 
-### Master table — v29 + back-catalogue best per dataset
+**Important caveat**: the TransformerPredictor has **463K params vs MLP
+198K (2.34x)**, contradicting the prompt's "~200K matched". The honest
+framing is "**a 2.34x larger transformer predictor does not significantly
+improve over the MLP**", not "transformer attention doesn't help" in the
+abstract. A param-matched mean-pool MLP variant (Variant B in the
+original 2x2 design) was not run - so the question of attention vs
+capacity for the marginal effects remains open. Listed as v30 work.
 
-| Dataset | Best FAM h-AUROC ± std (n) | Source | Chronos-2 (s42) | Δ FAM |
-|---------|----------------------------|--------|-----------------|-------|
-| SKAB    | 0.726 ± 0.038 (3) | v29-mlp | — | — |
-| ETTm1   | 0.869 ± 0.004 (3) | v29-mlp | — | — |
-| CHBMIT  | 0.501 ± 0.003 (3) | v29-mlp | — | — |
-| FD001   | 0.742 ± 0.003 (3) | v28 lag+none | 0.553 | **+0.189** |
-| FD002   | 0.569 ± 0.001 (3) | v27 'none' | 0.637 | -0.068 |
-| FD003   | 0.819 ± 0.009 (3) | v28 dense FT | 0.647 | **+0.172** |
-| SMAP    | 0.550 ± 0.036 (3) | v28 dense FT | 0.500 | +0.050 |
-| MSL     | 0.438 (1) | v28 dense FT | 0.496 | -0.058 |
-| PSM     | 0.559 ± 0.015 (3) | v28 baseline | 0.511 | +0.048 |
-| SMD     | 0.616 (1) | v28 baseline | — | — |
-| MBA     | 0.778 ± 0.067 (3) | v29 transformer | 0.655 | **+0.122** |
-| GECCO   | 0.859 ± 0.055 (3) | v28 baseline (sparse K=8) | 0.767 (dense K=200) | +0.092 † |
-| BATADAL | 0.629 ± 0.014 (3) | v28 lag+revin | 0.491 | +0.137 |
+The MLP predictor stays as the canonical choice on parsimony grounds.
+The TransformerPredictor lives in `model.py` for the next ablation.
+
+### Master table - best across v27-v29 (NOT a uniform Phase 3 run)
+
+The session prompt called for a uniform Phase 3 run over all 13 datasets
+with the chosen predictor and 3 seeds. **Phase 3 was not done.** For the
+10 legacy datasets we reuse v27/v28 results which used heterogeneous
+hyperparameters across phases. The table below is "**best previously
+recorded MLP-predictor result per dataset**" not a fresh uniform
+benchmark. A clean Phase 3 is the v30 highest priority. The MLP-only
+restriction (per v29 self-check finding #1) prevents cherry-picking the
+high-variance v29 transformer-predictor results.
+
+| Dataset | Best FAM h-AUROC ± std (n) | Source | Chronos-2 (s42) | Δ vs Chronos | within FAM std? |
+|---------|----------------------------|--------|-----------------|--------------|-----------------|
+| SKAB    | 0.726 ± 0.038 (3) | v29-mlp | — | — | — |
+| ETTm1   | 0.869 ± 0.004 (3) | v29-mlp | — | — | — |
+| CHBMIT  | 0.497 ± 0.003 (3) | v29-mlp v2 (label-fix) | — | — | NULL (≤ base) |
+| FD001   | 0.742 ± 0.003 (3) | v28 lag+none | 0.553 | **+0.189** | clear |
+| FD002   | 0.569 ± 0.001 (3) | v27 'none' | 0.637 | -0.068 | clear loss |
+| FD003   | 0.819 ± 0.009 (3) | v28 dense FT | 0.647 | **+0.172** | clear |
+| SMAP    | 0.550 ± 0.036 (3) | v28 dense FT | 0.500 | +0.050 | within std |
+| MSL     | 0.438 (n=1) | v28 dense FT | 0.496 | -0.058 | n=1, NOT REPORTABLE |
+| PSM     | 0.559 ± 0.015 (3) | v28 baseline | 0.511 | +0.048 | borderline |
+| SMD     | 0.616 (n=1) | v28 baseline | — | — | n=1, NOT REPORTABLE |
+| MBA     | 0.746 ± 0.006 (3) | v29 MLP | 0.655 | +0.091 | clear |
+| GECCO   | 0.859 ± 0.055 (3) | v28 (sparse K=8) | 0.767 (dense K=200) | +0.092 † | grid mismatch |
+| BATADAL | 0.629 ± 0.014 (3) | v28 lag+revin | 0.491 | +0.137 | clear |
 
 † **Grid mismatch**: GECCO FAM is sparse K=8, Chronos-2 is dense K=200.
 At matched dense K=200 (v28 dense surfaces), Chronos-2 wins GECCO by
 0.082. The v28 SESSION_SUMMARY documents this honestly.
 
-**Headline**: FAM beats Chronos-2 on **6/9 cleanly-comparable datasets**
-(FD001, FD003, SMAP, PSM, MBA, BATADAL); loses on FD002, MSL; GECCO is
-ambiguous (sparse-vs-dense grid mismatch); SKAB/ETTm1/CHBMIT have no
-Chronos-2 comparison yet (cached features for these datasets are a
-follow-up build-out).
+**Honest headline** (per v29 self-check finding #2): of the 9 datasets
+with Chronos-2 numbers:
+  - **4 clear FAM wins**: FD001 (+0.19), FD003 (+0.17), MBA (+0.09),
+    BATADAL (+0.14) - all > 1 FAM std and at matched grids.
+  - **3 within-noise wins**: SMAP (+0.050 vs FAM std 0.036), PSM
+    (+0.048 vs FAM std 0.015 - clear), GECCO (+0.092 in sparse,
+    -0.082 in dense - net ambiguous).
+  - **1 clear loss**: FD002 (-0.068).
+  - **1 unreportable**: MSL (n=1; could be lucky/unlucky seed; FAM
+    appears to lose by -0.058 but needs 3 seeds to confirm).
+
+The earlier "FAM beats Chronos-2 on 7/9" claim was technically correct
+in sign but inflated the confidence; the corrected count is 4 clear
+wins, 1 clear loss, 4 ambiguous (3 within noise + 1 single-seed).
 
 ### What did not ship
 

@@ -29,9 +29,9 @@
       "fam": {
         "src": "v29-mlp",
         "n": 3,
-        "mean_h_auroc": 0.5013725363996574,
-        "std": 0.003241300321717962,
-        "pooled_auprc": 0.3997312932195387
+        "mean_h_auroc": 0.4973692012154367,
+        "std": 0.003280444143270285,
+        "pooled_auprc": 0.06356587049170774
       },
       "chronos2_h_auroc": null,
       "delta_fam_minus_chronos": null
@@ -123,14 +123,14 @@
     {
       "dataset": "MBA",
       "fam": {
-        "src": "v29-p2-xpred",
+        "src": "v29-p2-mlp",
         "n": 3,
-        "mean_h_auroc": 0.7776634238939965,
-        "std": 0.06716426774137542,
-        "pooled_auprc": 0.9315074326563918
+        "mean_h_auroc": 0.746219061755922,
+        "std": 0.005925863491772883,
+        "pooled_auprc": 0.9493261732499848
       },
       "chronos2_h_auroc": 0.6554405679224108,
-      "delta_fam_minus_chronos": 0.12222285597158566
+      "delta_fam_minus_chronos": 0.09077849383351122
     },
     {
       "dataset": "GECCO",

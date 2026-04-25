@@ -59,17 +59,21 @@ def metrics_from_npz(p: Path):
 
 
 def best_fam(ds: str) -> dict | None:
-    """Return best FAM result for a dataset, scanning v29 then v28 then v27."""
+    """Return best FAM result for a dataset, scanning v29 then v28 then v27.
+
+    Per the v29 self-check (finding #1): we only consider MLP-predictor
+    runs to keep the master table consistent with the Phase 2 verdict
+    ("MLP wins on parsimony grounds, transformer ties at best with high
+    variance"). The transformer-predictor results live in phase2_*_transformer.json
+    and are ignored here even when they show a higher mean — including
+    them would cherry-pick the high-variance transformer wins (e.g. MBA).
+    """
     candidates = []
 
-    # v29 new datasets
+    # v29 MLP-predictor runs only (per self-check finding #1)
     for src, jp in [
         ('v29-mlp', V29 / 'results' / f'phase1_{ds}_mlp.json'),
-        ('v29-xpred', V29 / 'results' / f'phase1_{ds}_transformer.json'),
-        # v29 legacy (only Phase 2 datasets)
         ('v29-p2-mlp', V29 / 'results' / f'phase2_{ds}_mlp.json'),
-        ('v29-p2-xpred', V29 / 'results' / f'phase2_{ds}_transformer.json'),
-        # v29 phase3 (if we ran it)
         ('v29-p3-mlp', V29 / 'results' / f'phase3_{ds}_mlp.json'),
     ]:
         d = load(jp)

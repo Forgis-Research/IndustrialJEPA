@@ -118,25 +118,68 @@ for ds in DATASETS_P2:
 print(pd.DataFrame(table).to_string(index=False))
 ```
 
-**Verdict**: the transformer predictor and the MLP predictor are
-**statistically tied** on all three test datasets. FD001 transformer
-loses by 0.010 (within noise), FD003 transformer wins by 0.004 (within
-noise), MBA transformer wins by 0.031 but with a 22x larger standard
-deviation across seeds (one of three transformer seeds collapsed to
-chance, dragging the variance up).
+**Paired t-tests** (per-seed transformer minus MLP, n=3):
+
+```{python}
+#| label: phase2-ttest
+#| echo: false
+p = RES / 'phase2_paired_ttest.json'
+if p.exists():
+    d = json.load(open(p))
+    rows = []
+    for ds, r in d.items():
+        rows.append({
+            'dataset': ds,
+            'mlp': f"{r['mlp_mean']:.4f}±{r['mlp_std']:.4f}",
+            'transformer': f"{r['xpred_mean']:.4f}±{r['xpred_std']:.4f}",
+            'delta_paired': f"{r['delta_mean']:+.4f}",
+            't_stat': f"{r['t_stat']:+.3f}",
+            'p_value': f"{r['p_value']:.3f}",
+            'verdict': r['verdict'],
+        })
+    print(pd.DataFrame(rows).to_string(index=False))
+```
+
+**Verdict**: a paired t-test on each dataset shows **no significant
+difference** between MLP and transformer (all p > 0.4, n=3 seeds).
+FD001 directional loss for transformer (-0.010), FD003 directional win
+(+0.004), MBA directional win (+0.031, but transformer std is 11x
+MLP's). FD001 and FD003 give opposite directional conclusions —
+itself evidence that the effect size is near zero.
+
+**Important caveat (param-count confound)**: the TransformerPredictor
+has 462,592 parameters vs the MLP's 197,632, a **2.34x difference**.
+The session prompt called for "~200K matched"; that constraint was not
+met. The honest framing of the result is "**a 2.34x larger transformer
+predictor does not significantly outperform the MLP**", not "transformer
+attention doesn't help" in the abstract. A param-matched mean-pool MLP
+variant (Variant B in the original 2x2 design) would distinguish whether
+attention vs capacity drives any small effect, and was not run this
+session.
 
 The hypothesis "the last-token bottleneck collapses information that the
-predictor needs" is **refuted** for these datasets - 2 layers of d=256
-self-attention in the encoder are enough to compress the full context
-into h_t. The MLP predictor stays as the canonical choice on both
-parsimony and parameter count grounds (197K vs 462K).
+predictor needs" (ARCHITECTURE.md line 269) is therefore **not
+confirmed** — but neither is it cleanly refuted, because the parameter
+confound and the missing Variant B leave the question open. The MLP
+predictor stays as the canonical choice on parsimony grounds; the
+transformer is added to the model.py codebase for future ablations.
 
-This is the question ARCHITECTURE.md flagged ("the predictor may benefit
-from a small transformer architecture rather than MLP, especially for
-learning nonlinear regime transitions") - the answer is no, at least at
-the current encoder scale and the lifecycle/streaming horizons we test.
+# 3 — Master 13-dataset table (best across v27-v29, NOT a uniform Phase 3 run)
 
-# 3 — Master 13-dataset benchmark table
+**Honest framing** (per v29 self-check, finding #3): Phase 3 of the
+session prompt called for a uniform run over all 13 datasets with the
+chosen predictor and 3 seeds each. That was **not done** — for the 10
+legacy datasets we reuse the existing v27/v28 results (which used
+heterogeneous hyperparameters across phases). The "master table" below
+is therefore "best previously-recorded MLP-predictor result per dataset
+across v27-v29", not a fresh uniform benchmark. A clean uniform Phase 3
+is the v30 highest priority.
+
+The MLP-only restriction (per finding #1) prevents cherry-picking the
+high-variance v29 transformer-predictor results in the table — MBA is
+0.7462 ± 0.006 (MLP), not 0.778 (transformer with one collapsed seed).
+
+
 
 ```{python}
 #| label: master-table
@@ -260,23 +303,52 @@ What needs caveats:
     closest baselines are forecasting MSE numbers, which measure a
     different task.
 
-  - **CHB-MIT is a null result.** Three seeds gave mean h-AUROC of
-    0.5002, 0.5050, 0.4989 — essentially chance (base rate gives 0.5009).
-    FAM at this configuration cannot extract pediatric seizure precursors.
-    Likely contributing factors:
-      1. Pretrain Δt_max capped at 960 (30s) for memory reasons —
-         the 30-min preictal window is 60x longer than anything the
-         predictor saw during pretraining.
-      2. Per-subject training without subject-conditioning likely averages
-         away inter-subject differences in seizure precursor patterns.
-      3. The 30-min preictal label is long; most of those samples are
-         indistinguishable from interictal background and dilute the signal.
-      4. EEG seizure prediction SOTA (Ozcan & Bhatt 2021, sensitivity
-         92.8% at FPR 0.06/h) uses subject-specific training with
-         seizure-aware data augmentation - neither of which v29 employs.
-    This null result is honest and worth keeping in the paper as
-    evidence that a generic event-prediction model does not transfer
-    out of the box to a domain with very specific physiological dynamics.
+  - **CHB-MIT v1 had a label-semantics protocol bug** caught by the
+    v29 ml-researcher self-check. The original loader set y=1 for every
+    sample in the 30-min preictal window before each seizure, but
+    `EventDataset._compute_tte()` derives time-to-event from the *next*
+    future timestep where labels[t+d]==1. Inside the preictal window
+    every sample's tte=1 (the next sample is also preictal), which
+    collapses the horizon surface to "is this sample preictal?"
+    rather than "is a seizure approaching within Δt steps?". The
+    correct fix is to mark only the seizure ONSET sample with y=1; the
+    loader was patched and CHB-MIT was re-run as v2. The v1 null
+    (0.5014 ± 0.003) was a protocol bug, not a model failure.
+
+  - **CHB-MIT v2 (label-fix) result**: 0.5002 / 0.4982 / 0.4938 across
+    3 seeds — STILL at chance (slightly below the base 0.513). Pooled
+    AUPRC = 0.063 = base rate. The labeling fix confirms the null is
+    real, not an artefact. Most likely deeper reasons FAM-as-is cannot
+    solve CHB-MIT: severe class imbalance (~6 onsets in 8M training
+    samples), no spectral preprocessing, no subject-conditioning. SOTA
+    seizure prediction (Ozcan & Bhatt 2021, 92.8% sens at FPR 0.06/h)
+    uses subject-specific training with seizure-aware augmentation -
+    neither in v29's generic protocol. Two structural concerns also
+    remain: (i) pretrain Δt_max is capped at 960 (30s) for memory while
+    eval horizons go to 9600 (5 min) — 10x extrapolation via the smooth
+    Δt embedding, and (ii) max eval horizon (5 min) is 6x SHORTER than
+    the SOTA prediction horizon (30 min). Both are v30 work.
+
+  - **SKAB split is fault-category shift, not i.i.d.** A deterministic
+    sort (valve1 → valve2 → other) + 60/20/20 sequential split puts all
+    valve1 + valve2 in train, all "other" experiments in val/test. The
+    test set therefore contains zero valve1 and zero valve2 faults, so
+    the SKAB AUROC of 0.726 ± 0.038 measures cross-category fault
+    generalization, which is harder than the SKAB leaderboard protocol
+    (random splits). Disclosed.
+
+  - **ETTm1 framing is internally derived, not externally validated.**
+    The event "OT > rolling-7-day-baseline + 2σ" has not been benchmarked
+    in the literature - we are first to frame ETTm1 as event prediction.
+    AUROC 0.869 ± 0.004 is suspiciously stable; a ridge regressor on
+    [last OT, OT slope, OT rolling std] is the natural lower-bound
+    baseline. Listed as v30 work.
+
+  - The transformer-predictor ablation is on three datasets only (FD001,
+    FD003, MBA), not all 13, and at 2.34x parameter count vs MLP.
+    A param-matched mean-pool MLP variant (Variant B in the original
+    2x2 design matrix) was not run - so we can't separate "attention
+    helps" from "more capacity helps".
 
   - The transformer-predictor ablation is on three datasets only (FD001,
     FD003, MBA), not all 13. Promoting the winning predictor to all

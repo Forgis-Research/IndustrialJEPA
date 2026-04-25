@@ -89,13 +89,18 @@ def _load_edf(path: Path, n_channels: int = N_CHANNELS) -> np.ndarray:
 
 def _build_labels(file_recs: List[Dict],
                   signals: List[np.ndarray]) -> List[np.ndarray]:
-    """Build per-file labels: y=1 in the preictal 30-min before seizure onset.
-    Postictal 4-hour buffer is encoded as label=-1 (excluded by the
-    EventDataset wrapper, which treats inf time-to-event as 'no event').
+    """Build per-file labels: y=1 ONLY at the seizure ONSET sample.
 
-    For simplicity, we mark only y=1 (preictal) — the postictal buffer is
-    handled at the per-stream level by truncating each subject's stream
-    around the buffer.
+    This is the correct event-prediction label semantics: EventDataset uses
+    binary labels to compute time-to-next-event; if we mark the entire 30-min
+    preictal window as y=1, then within that window every sample's tte=1
+    (next 'event' is the next preictal sample), which collapses the surface
+    to "is this sample preictal or not?" rather than the intended "is a
+    seizure approaching?". The preictal *concept* is preserved automatically:
+    a sample 25 minutes before onset gets tte = 25*60*32 = 48000 steps; the
+    label surface y(t, Δt) at all eval horizons (max 9600 = 5 min) is then
+    correctly 0 for that sample, and only flips to 1 when the seizure is
+    within Δt steps. This was a critical bug caught by v29 self-check.
     """
     labels = []
     for rec, sig in zip(file_recs, signals):
@@ -103,9 +108,8 @@ def _build_labels(file_recs: List[Dict],
         y = np.zeros(T, dtype=np.int32)
         for (s, _) in rec['seizures']:
             onset_sample = int(s * TARGET_SR)
-            preictal_start = max(0, onset_sample
-                                 - PREICTAL_SECONDS * TARGET_SR)
-            y[preictal_start:onset_sample] = 1
+            if 0 <= onset_sample < T:
+                y[onset_sample] = 1
         labels.append(y)
     return labels
 
