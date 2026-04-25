@@ -191,10 +191,14 @@ class CausalEncoder(nn.Module):
         raise ValueError(self.norm_mode)
 
     def forward(self, x: torch.Tensor,
-                mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+                mask: Optional[torch.Tensor] = None,
+                return_all: bool = False):
         """
         x: (B, T, C). mask: (B, T) bool, True=padding.
-        Returns: h_t (B, d).
+        return_all=False (default): returns h_t (B, d) — last valid non-stat token.
+        return_all=True: returns (h_all, patch_mask) where
+          h_all: (B, N_total, d) — every output token, including stat token if any
+          patch_mask: (B, N_total) bool, True=padding (None when no input mask)
         """
         B, T, C = x.shape
         x, stat_token = self._preprocess(x, mask)
@@ -228,6 +232,9 @@ class CausalEncoder(nn.Module):
         for layer in self.layers:
             h = layer(h, key_padding_mask=patch_mask, attn_mask=causal)
         h = self.norm(h)
+
+        if return_all:
+            return h, patch_mask
 
         # Extract last valid non-stat token. The stat token (if present) sits
         # at index 0 — it can never be "last" unless N_total==1 (only the stat
@@ -370,6 +377,52 @@ class Predictor(nn.Module):
         return self.net(torch.cat([h, dt], dim=-1))
 
 
+class TransformerPredictor(nn.Module):
+    """Transformer predictor: attends over ALL encoder tokens + Δt query.
+
+    The MLP predictor sees only h_t (last encoder token) — a single 256-d
+    vector that has to summarize the entire context. This predictor sees
+    the full sequence h_all (B, N, d) and appends a Δt query token; the
+    attention from the Δt position over all encoder positions lets the
+    predictor exploit the drift gradient and local patterns the last-token
+    bottleneck collapses.
+
+    Output is taken from the Δt query position.
+    """
+
+    def __init__(self, d_model: int = 256, n_heads: int = 4, n_layers: int = 1,
+                 d_ff: int = 256, dropout: float = 0.0):
+        super().__init__()
+        self.dt_embed = nn.Sequential(
+            nn.Linear(1, d_model), nn.GELU())
+        layer = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=n_heads, dim_feedforward=d_ff,
+            dropout=dropout, activation='gelu', batch_first=True,
+            norm_first=True)
+        self.transformer = nn.TransformerEncoder(layer, num_layers=n_layers)
+        self.out_norm = nn.LayerNorm(d_model)
+        self.out_proj = nn.Linear(d_model, d_model)
+
+    def forward(self, h_all: torch.Tensor, delta_t: torch.Tensor,
+                key_padding_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """h_all: (B, N, d). delta_t: (B,). key_padding_mask: (B, N) True=pad.
+
+        Returns: (B, d) — output from the appended Δt query position.
+        """
+        B = h_all.shape[0]
+        dt_tok = self.dt_embed(delta_t.float().unsqueeze(-1))  # (B, d)
+        tokens = torch.cat([h_all, dt_tok.unsqueeze(1)], dim=1)  # (B, N+1, d)
+        if key_padding_mask is not None:
+            # The Δt query token is always valid (False = not padding).
+            extra = torch.zeros(B, 1, dtype=torch.bool,
+                                device=key_padding_mask.device)
+            kpm = torch.cat([key_padding_mask, extra], dim=1)
+        else:
+            kpm = None
+        out = self.transformer(tokens, src_key_padding_mask=kpm)
+        return self.out_proj(self.out_norm(out[:, -1]))
+
+
 # ---------------------------------------------------------------------------
 # Event head (shared linear → sigmoid)
 # ---------------------------------------------------------------------------
@@ -403,11 +456,15 @@ class FAM(nn.Module):
                  d_model: int = 256, n_heads: int = 4, n_layers: int = 2,
                  d_ff: int = 256, dropout: float = 0.1,
                  ema_momentum: float = 0.99, predictor_hidden: int = 256,
-                 norm_mode: str = 'revin'):
+                 norm_mode: str = 'revin',
+                 predictor_kind: str = 'mlp',
+                 predictor_n_layers: int = 1):
         super().__init__()
+        assert predictor_kind in ('mlp', 'transformer'), predictor_kind
         self.d_model = d_model
         self.ema_momentum = ema_momentum
         self.norm_mode = norm_mode
+        self.predictor_kind = predictor_kind
 
         self.encoder = CausalEncoder(
             n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout,
@@ -415,7 +472,12 @@ class FAM(nn.Module):
         self.target_encoder = TargetEncoder(
             n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout,
             norm_mode=norm_mode)
-        self.predictor = Predictor(d_model, predictor_hidden)
+        if predictor_kind == 'mlp':
+            self.predictor = Predictor(d_model, predictor_hidden)
+        else:
+            self.predictor = TransformerPredictor(
+                d_model=d_model, n_heads=n_heads,
+                n_layers=predictor_n_layers, d_ff=d_model, dropout=0.0)
         self.event_head = EventHead(d_model)
 
         # Initialize target encoder from encoder weights (matching keys)
@@ -460,8 +522,12 @@ class FAM(nn.Module):
         delta_t: (B,) — horizon values.
         Returns: (pred, target_repr) both (B, d), L2-normalized.
         """
-        h_t = self.encoder(context, context_mask)
-        h_pred = self.predictor(h_t, delta_t)
+        if self.predictor_kind == 'transformer':
+            h_all, h_kpm = self.encoder(context, context_mask, return_all=True)
+            h_pred = self.predictor(h_all, delta_t, key_padding_mask=h_kpm)
+        else:
+            h_t = self.encoder(context, context_mask)
+            h_pred = self.predictor(h_t, delta_t)
 
         with torch.no_grad():
             h_target = self.target_encoder(target, target_mask)
@@ -489,20 +555,41 @@ class FAM(nn.Module):
           S_k = ∏_{j≤k} (1 - λ_j)                     survival function
           p(t, Δt_k) = 1 - S_k                         CDF (non-decreasing)
         """
+        return_all = (self.predictor_kind == 'transformer')
         if mode == 'pred_ft':
             with torch.no_grad():
-                h_t = self.encoder(context, context_mask)
-            h_t = h_t.detach()
+                enc_out = self.encoder(context, context_mask,
+                                       return_all=return_all)
+            if return_all:
+                h_all, h_kpm = enc_out
+                h_all = h_all.detach()
+            else:
+                h_t = enc_out.detach()
         else:
-            h_t = self.encoder(context, context_mask)
+            enc_out = self.encoder(context, context_mask,
+                                   return_all=return_all)
+            if return_all:
+                h_all, h_kpm = enc_out
+            else:
+                h_t = enc_out
 
-        # Vectorized: run predictor at all K horizons
-        B, d = h_t.shape
         K = horizons.shape[0]
-        h_exp = h_t.unsqueeze(1).expand(B, K, d).reshape(B * K, d)
-        dt_exp = horizons.unsqueeze(0).expand(B, K).reshape(B * K).to(
-            device=h_t.device, dtype=torch.float32)
-        h_pred = self.predictor(h_exp, dt_exp).view(B, K, d)
+        if return_all:
+            B, N, d = h_all.shape
+            # Vectorize over K horizons by tiling along batch dim.
+            h_exp = h_all.unsqueeze(1).expand(B, K, N, d).reshape(B * K, N, d)
+            dt_exp = horizons.unsqueeze(0).expand(B, K).reshape(B * K).to(
+                device=h_all.device, dtype=torch.float32)
+            kpm_exp = (h_kpm.unsqueeze(1).expand(B, K, N).reshape(B * K, N)
+                       if h_kpm is not None else None)
+            h_pred = self.predictor(h_exp, dt_exp,
+                                    key_padding_mask=kpm_exp).view(B, K, d)
+        else:
+            B, d = h_t.shape
+            h_exp = h_t.unsqueeze(1).expand(B, K, d).reshape(B * K, d)
+            dt_exp = horizons.unsqueeze(0).expand(B, K).reshape(B * K).to(
+                device=h_t.device, dtype=torch.float32)
+            h_pred = self.predictor(h_exp, dt_exp).view(B, K, d)
 
         hazard_logits = self.event_head(h_pred)          # (B, K)
         lambdas = torch.sigmoid(hazard_logits)            # (B, K) ∈ (0,1)
