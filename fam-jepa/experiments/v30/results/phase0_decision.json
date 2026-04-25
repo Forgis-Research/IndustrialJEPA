@@ -1,0 +1,20 @@
+{
+  "fd001_seed": 42,
+  "variant_a_dense_discrete": {
+    "mean_h_auroc": 0.8130363027645048,
+    "pooled_auprc": 0.9777863379024612,
+    "png": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v30/results/surface_pngs/FD001_none_discrete_hazard_td20_p0_s42.png",
+    "tag": "FD001_none_discrete_hazard_td20_p0_s42",
+    "ft_time_s": 3.9534385204315186
+  },
+  "variant_b_monotone_cdf": {
+    "mean_h_auroc": 0.5,
+    "pooled_auprc": 0.7767140740740741,
+    "png": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v30/results/surface_pngs/FD001_none_monotone_cdf_td20_p0_s42.png",
+    "tag": "FD001_none_monotone_cdf_td20_p0_s42",
+    "ft_time_s": 1.5770907402038574
+  },
+  "chosen_head": "discrete_hazard",
+  "reason": "MonotoneCDF h-AUROC (0.5000) < dense discrete (0.8130); chose discrete_hazard.",
+  "total_time_s": 10.09646224975586
+}
