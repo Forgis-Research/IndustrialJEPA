@@ -44,7 +44,11 @@ Every experiment MUST report:
 2. **Mean per-horizon AUROC** (honest primary metric)
 3. **Pooled AUPRC with base-rate baseline** (for context, not as headline)
 4. **Prediction gap** `p̄(y=1) - p̄(y=0)` at shortest horizon
-5. **Surface PNG** (predicted vs ground truth, linear y-axis)
+5. **Three-panel surface PNG** for every dataset × model:
+   - Panel 1: predicted `p(t, Δt)` (viridis, 0-1)
+   - Panel 2: ground truth `y(t, Δt)` (viridis, 0-1)
+   - Panel 3: error `|p - y|` (grayscale, 0-1, with mean |p-y| in title)
+   All panels: linear y-axis, same scale. Save to `results/surface_pngs/`.
 
 ```python
 def report_surface(p_surface, y_surface, horizons, tag=""):
@@ -240,14 +244,25 @@ Run ALL datasets with the v27 clean architecture + the better predictor
 
 ---
 
-## Phase 4: Surface PNGs + triplets (1 h)
+## Phase 4: Surface PNGs (1 h)
 
-For EVERY dataset, render:
+For EVERY dataset, render two rows:
+
+**Row 1: FAM**
 ```
-[FAM predicted p(t,Δt)] | [Chronos-2 p(t,Δt)] | [ground truth y(t,Δt)]
+[FAM p(t,Δt)] | [ground truth y(t,Δt)] | [|FAM - y| error, grayscale, mean=X.XXX]
 ```
 
-Linear y-axis. Viridis colormap. Save to `experiments/v29/results/surface_pngs/`.
+**Row 2: Chronos-2**
+```
+[Chronos-2 p(t,Δt)] | [ground truth y(t,Δt)] | [|Chronos-2 - y| error, grayscale, mean=X.XXX]
+```
+
+Linear y-axis. Viridis for p and y (0-1). Grayscale for error (0-1).
+Mean |p-y| in the error panel title — this is the single most readable
+diagnostic (lower = better, interpretable as average probability error).
+
+Save to `experiments/v29/results/surface_pngs/`.
 Use **figure-creator agent** for the 3 best examples (paper figures).
 
 ---
