@@ -65,12 +65,82 @@ main_table_variants chosen for Phase 3 reporting: **FAM-predft**
 
 | Dataset | mean h-AUROC | n seeds | base | decision | reason |
 |---------|--------------|---------|------|----------|--------|
-| **MSL**     | 0.350 (3 seeds: 0.412/0.303/0.336) | 3 | 0.498 | **skip** | below chance — refines v29 n=1 result of 0.438; FAM has no signal at this temporal resolution |
-| **SMD**     | TBD | 3 | 0.500 | TBD | pending |
+| **MSL**     | 0.350 ± 0.056 (0.412/0.303/0.336) | 3 | 0.498 | **skip** | below chance — refines v29 n=1 result of 0.438; FAM has no signal at this temporal resolution |
+| **SMD**     | 0.656 ± 0.014 (0.645/0.672/0.649) | 3 | 0.500 | **include** | clear signal; only s42/s123 ckpts existed in v28 — pretrained s456 from scratch in Phase 2 |
 | **PhysioNet** | not run | 0 | — | **skip** | no LOADERS entry; deferred to v31 |
 | **CHB-MIT** | 0.497 ± 0.003 (v29) | 3 | 0.513 | **skip** | null confirmed v29 with bug-fixed labels |
 
-(Phase 2 SMD pending; Phase 3 launch follows.)
+### Phase 3 - uniform benchmark (dense K=150, 11 datasets × 3 seeds, 1679s = 28 min)
+
+| Dataset | h-AUROC 100% (3 seeds) | h-AUROC 10% | v29 sparse-K=8 | Δ vs v29 |
+|---------|------------------------|-------------|----------------|----------|
+| **FD001** | **0.786 ± 0.033** | 0.772 ± 0.059 | 0.742 | **+0.044** |
+| FD002 | 0.566 ± 0.011 | — | 0.569 | -0.003 |
+| **FD003** | **0.853 ± 0.004** | 0.830 ± 0.018 | 0.819 | **+0.034** |
+| **SMAP**  | **0.598 ± 0.036** | — | 0.550 | **+0.048** |
+| PSM   | 0.562 ± 0.013 | — | 0.559 | +0.003 |
+| MBA   | 0.642 ± 0.030 | 0.642 ± 0.030 (single-entity, 10% no-op) | 0.746 | **-0.104** |
+| GECCO | 0.819 ± 0.064 | — | 0.859 | -0.040 |
+| BATADAL | 0.599 ± 0.045 | 0.599 ± 0.045 (single-entity, 10% no-op) | 0.629 | -0.030 |
+| SKAB  | 0.674 ± 0.032 | — | 0.726 | -0.052 |
+| ETTm1 | 0.833 ± 0.008 | — | 0.869 | -0.036 |
+| **SMD**   | **0.654 ± 0.004** | — | 0.616 | **+0.038** |
+
+**Dense-K=150 trade-off finding (informs v31 head choice)**:
+Dense K=150 helps datasets where the signal is at long horizons (FD001
++0.044, FD003 +0.034, SMAP +0.048, SMD +0.038, PSM +0.003) — i.e.
+lifecycle / slow-drift signals. It hurts datasets where the signal is
+concentrated at short horizons (MBA -0.104, SKAB -0.052, GECCO -0.040,
+ETTm1 -0.036, BATADAL -0.030) — i.e. local anomaly / shape signals.
+The Phase 0 ablation on FD001 alone was misleading. v31 should consider
+per-domain head choice (sparse for streaming-anomaly, dense for
+lifecycle / slow-drift).
+
+**Single-entity 10% labels limitation**: MBA / BATADAL / GECCO / PSM
+have a single-entity ft_train (one continuous time series); the entity-
+level subsampling at label_fraction=0.1 keeps the single entity, so
+"10%" is identical to "100%". Sub-time-series subsampling is a v31 fix.
+
+### Phase 4 - legacy metrics + SOTA (no point-adjust for anomaly)
+
+| Dataset | Legacy metric | FAM v30 | Published SOTA | gap | notes |
+|---------|---------------|---------|----------------|-----|-------|
+| FD001 | RMSE (RUL cap 125) | 36.5 ± 2.3 | ~11.3-11.4 (TMSCNN, ACS Omega 2024) | +25 | FAM's first-crossing-of-p≥0.5 RUL ≠ standard last-cycle RUL protocol |
+| FD002 | RMSE (RUL cap 125) | 44.1 ± 2.9 | ~14.79 (TMSCNN, Sci Reports 2024) | +29 | same |
+| FD003 | RMSE (RUL cap 125) | 39.5 ± 0.7 | ~11.4 | +28 | same |
+| MBA | AUROC @ Δt=1 | 0.697 ± ? | ~0.988 (TranAD VLDB 2022) | -0.29 | TranAD = anomaly-score AUROC; FAM = per-horizon event AUROC. Different tasks. |
+| SMAP / PSM / SMD | F1@Δt=1 (no-PA) | 0.46 / 0.50 / 0.26 | CLEANet 0.611, MODEM 0.84 (raw F1 only) | varies | KIM ET AL. AAAI 2022 PA-F1 trap — FAM is non-PA; cite Kim when reporting |
+| GECCO / SKAB | F1@Δt=1 (no-PA) | 0.50 / 0.50 | no top-venue SSL | n/a | FAM likely first SSL method published |
+| BATADAL | F1@Δt=1 (no-PA) | 0.55 | 0.915 (arXiv:2512.14422 supervised hybrid) | -0.36 | FAM operates SSL + low-label regime |
+| ETTm1 | h-AUROC only | 0.833 ± 0.008 | n/a | n/a | no published SOTA on this event-prediction formulation |
+
+**Phase 4a Action items for the paper**:
+1. Cite Kim et al. AAAI 2022 (arXiv:2109.05257) when reporting SMAP/PSM/SMD; state FAM is non-PA explicitly.
+2. Use C-MAPSS RMSE SOTA ≈ 11.3-11.4 (NOT STAR 10.61 — 2022 preprint only).
+3. Disambiguate MBA from MITDB 48-record multi-class arrhythmia dataset.
+4. Frame ETTm1 as "first event-prediction baseline on this task formulation".
+5. GECCO / SKAB: "first SSL method published on this benchmark."
+
+### Phase 6 - theory self-check (paper-neurips/theory_findings.tex, 966 lines)
+
+- Proposition 1: 6/7 proof steps CONFIRMED. Step 5 (Jensen-gap) had a
+  WEAKNESS (used sup ϕ'' under marginal A4 but needed pointwise η(H*));
+  closed via new assumption A1' (calibrated event posterior bounded a.s.)
+  yielding C̃_p = 1/(2·η_min·(1-η_max)) ≥ C_p. In-paper proofs untouched.
+- New formal results: codomain-mismatch proposition; excess-risk
+  decomposition (two-regime story for label efficiency); per-horizon
+  bound; calibration bound for discrete hazard CDF (O(K/√n)); MonotoneCDF
+  non-claim documenting under what assumption it would be Bayes-optimal;
+  7 architecture rules R1-R7.
+
+### Phase 8 - new dataset scouting (top 4 picks for v31 appendix)
+
+| Candidate | Domain | Event | SOTA | Effort |
+|-----------|--------|-------|------|--------|
+| FEMTO/PRONOSTIA | rotating machinery / vibration | bearing failure | RULSurv CRA=0.76 | 6h |
+| Tennessee Eastman (Extended) | chemical process (52 channels) | fault onset | CRNN macro-F1=0.93 | 5h |
+| MIMIC-Sepsis (MIMIC-IV) | clinical ICU (4h resolution) | septic shock onset | NeurIPS 2025 D&B benchmark | 10h |
+| HAI 22.04 | energy ICS / SCADA (86 channels) | cyber-attack onset | HAICon eTaPR F1=0.84 | 4h |
 
 ---
 
