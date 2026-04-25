@@ -66,10 +66,11 @@ V27_CKPT = FAM_DIR / 'experiments/v27/ckpts'
 
 def find_pretrain_ckpt(dataset: str, norm_mode: str, seed: int,
                        predictor_kind: str = 'mlp') -> Optional[Path]:
-    """Return path of the canonical v29/v28/v27 pretrained MLP checkpoint."""
+    """Return path of the canonical v30/v29/v28/v27 pretrained MLP checkpoint."""
     if predictor_kind != 'mlp':
         return None  # transformer-predictor ckpts only in v29 with _xpred suffix
     candidates = [
+        CKPT_DIR / f'{dataset}_{norm_mode}_s{seed}_pretrain.pt',  # v30
         V29_CKPT / f'{dataset}_{norm_mode}_s{seed}_pretrain.pt',
         V28_CKPT / f'{dataset}_{norm_mode}_s{seed}_pretrain.pt',
         V27_CKPT / f'{dataset}_{norm_mode}_s{seed}_pretrain.pt',
@@ -333,13 +334,20 @@ def run_v30(dataset: str, seed: int,
 
     train_engines = bundle['ft_train']
     if label_fraction < 1.0:
-        keys = sorted(train_engines.keys())
-        n_keep = max(1, int(round(len(keys) * label_fraction)))
         rng = np.random.RandomState(seed + 7777)
-        keep = sorted(rng.choice(keys, size=n_keep, replace=False).tolist())
-        train_engines = {k: train_engines[k] for k in keep}
+        if isinstance(train_engines, dict):
+            keys = sorted(train_engines.keys())
+            n_keep = max(1, int(round(len(keys) * label_fraction)))
+            keep = sorted(rng.choice(keys, size=n_keep, replace=False).tolist())
+            train_engines = {k: train_engines[k] for k in keep}
+            n_orig = len(bundle['ft_train'])
+        else:
+            n_orig = len(train_engines)
+            n_keep = max(1, int(round(n_orig * label_fraction)))
+            keep_idx = sorted(rng.choice(n_orig, size=n_keep, replace=False).tolist())
+            train_engines = [train_engines[i] for i in keep_idx]
         print(f"  [ft] label_fraction={label_fraction} → "
-              f"{len(train_engines)}/{len(bundle['ft_train'])} train engines",
+              f"{len(train_engines)}/{n_orig} train engines",
               flush=True)
 
     train_ft = _build_event_concat(train_engines, stride=train_stride,

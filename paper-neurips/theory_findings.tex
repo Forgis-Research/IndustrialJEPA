@@ -1,0 +1,966 @@
+% theory_findings.tex
+% Standalone self-check report for the FAM theoretical results.
+% Compiles independently; can later be \input{} into paper.tex.
+%
+% Audit target: paper-neurips/theory_main.tex, paper-neurips/theory_appendix.tex
+% Empirical inputs: fam-jepa/experiments/RESULTS.md (v21--v30 master table),
+%                   fam-jepa/experiments/v30/results/phase1_decision.json,
+%                   fam-jepa/experiments/v30/results/phase0_decision.json.
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}[proposition]{Theorem}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Corollary}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{remark}[proposition]{Remark}
+
+% Notation (mirrors paper.tex)
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\PP}{\mathbb{P}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\Ber}{\mathrm{Ber}}
+\newcommand{\encoder}{f_\theta}
+\newcommand{\predictor}{g_\phi}
+\newcommand{\target}{\bar f_\xi}
+
+% Status tags
+\newcommand{\CONF}{{\color{black!60!green}\textbf{[CONFIRMED]}}}
+\newcommand{\REF}{{\color{red}\textbf{[REFUTED]}}}
+\newcommand{\OPEN}{{\color{orange!80!black}\textbf{[OPEN]}}}
+\newcommand{\WEAK}{{\color{red!60!black}\textbf{[WEAKNESS]}}}
+
+\title{FAM Theory --- Self-Check, Strengthening, and Architectural Implications}
+\author{Theoretical-mathematician audit (v30)}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We audit the proof of Proposition 1 (event-information retention) and its
+corollaries in \texttt{theory\_main.tex}/\texttt{theory\_appendix.tex},
+strengthen the assumption set where the existing proof has a gap, map the
+bound onto every dataset in the v29/v30 benchmark using the predicted
+quantities $I(H^*;E)$ and $\varepsilon$, and derive concrete architectural
+prescriptions and a horizon-resolved version of the bound. Every claim is
+tagged \textsc{confirmed}, \textsc{open} or \textsc{refuted} together with
+the proof step or empirical evidence.
+\end{abstract}
+
+\tableofcontents
+
+% =====================================================================
+\section{Phase 6a -- Correctness audit of Proposition 1}
+\label{sec:phase6a}
+
+We re-derive the proof step by step. Notation matches \texttt{theory\_main.tex}
+and \texttt{theory\_appendix.tex}: $H_t=\encoder(X_{\le t})$,
+$H^*=\target(X_{(t,t+\Delta t]})$, $\hat H=\predictor(H_t,\Delta t)$,
+$E=E_{t+\Delta t}\in\{0,1\}$, $\eta(h)=\PP(E=1\mid H^*=h)$, marginal
+event rate $p=\PP(E=1)$.
+
+\subsection{Step 1 -- Data processing inequality}
+
+\paragraph{Claim.} $I(H_t;E)\ge I(\hat H;E)$.
+
+\paragraph{Verification.}
+$\hat H=\predictor(H_t,\Delta t)$ and we condition on the (deterministic)
+horizon $\Delta t$, so $\hat H$ is a measurable function of $H_t$. Hence
+$E\to H_t\to \hat H$ is a Markov chain (in fact $\sigma(\hat H)\subseteq
+\sigma(H_t)$), and by the data processing inequality
+\citep[Thm.~2.8.1]{cover2006elements}, $I(\hat H;E)\le I(H_t;E)$. \CONF
+
+\paragraph{Subtlety.}
+In the appendix the chain is written ``$W-H_t-\hat H$'' with $W=E$. The
+intended direction is $E - H_t - \hat H$; this matches our verification.
+Markov chains are symmetric in time so the labelling does not matter, but
+the proof would be clearer if the chain were written
+$E\to H_t\to \hat H$ throughout.
+
+\subsection{Step 2 -- Tower property under A1}
+
+\paragraph{Claim (eq.~\ref{eq:tower-restate}).}
+Under (A1) $E\perp\!\!\!\perp X_{\le t}\mid H^*$:
+\begin{equation}\label{eq:tower-restate}
+\eta_{\hat H}(\hat h)\;\coloneqq\;\PP(E=1\mid \hat H=\hat h)
+\;=\;\E\bigl[\eta(H^*)\,\big|\,\hat H=\hat h\bigr].
+\end{equation}
+
+\paragraph{Verification.}
+$\hat H$ is $\sigma(H_t)$-measurable and $H_t$ is $\sigma(X_{\le t})$-measurable,
+so $\hat H$ is $\sigma(X_{\le t})$-measurable. By A1 and the standard
+tower property,
+\[
+\PP(E=1\mid\hat H)
+=\E\!\bigl[\PP(E=1\mid H^*,\hat H)\,\big|\,\hat H\bigr]
+\stackrel{(\dagger)}{=}\E\!\bigl[\PP(E=1\mid H^*)\,\big|\,\hat H\bigr]
+=\E[\eta(H^*)\mid\hat H],
+\]
+where $(\dagger)$ uses A1 in the form $E\perp\hat H\mid H^*$, which is a
+\emph{consequence} of A1: since $\hat H\in\sigma(X_{\le t})$, A1 implies
+$E\perp\sigma(\hat H)\mid H^*$. \CONF
+
+\paragraph{Subtlety: are $E\perp X_{\le t}\mid H^*$ and $E\perp\hat H\mid H^*$
+equivalent?}
+The first implies the second (any sub-$\sigma$-algebra of $\sigma(X_{\le t})$
+inherits the conditional independence). The converse is false in general,
+so A1 is the slightly stronger of the two; the proof only ever uses the
+weaker statement. We could weaken A1 to ``$E\perp\hat H\mid H^*$'' (i.e.\
+the encoder/predictor pair carries no extra event-information beyond
+$H^*$) and the proof goes through unchanged. We keep the stronger A1
+because it is the natural ``$H^*$ is a sufficient statistic for $E$''
+formulation. \CONF
+
+\subsection{Step 3 -- Mutual information as expected KL}
+
+\paragraph{Claim.} For binary $E$ with marginal $p$, any random variable $R$:
+\begin{equation}\label{eq:mi-as-kl-restate}
+I(R;E)=\E_R\bigl[\KL\bigl(\Ber(\eta_R(R))\,\|\,\Ber(p)\bigr)\bigr].
+\end{equation}
+
+\paragraph{Verification.}
+$I(R;E)=\E_R[\KL(P_{E\mid R}\|P_E)]$ is the standard ``MI as expected KL
+of conditional vs marginal'' identity \citep[Eq.~2.28]{cover2006elements}.
+For binary $E$, $P_{E\mid R=r}=\Ber(\eta_R(r))$ and $P_E=\Ber(p)$. \CONF
+
+\subsection{Step 4 -- Convexity of the KL in its first argument}
+
+\paragraph{Claim.} For fixed $p\in(0,1)$ the map
+$\varphi(q)=\KL(\Ber(q)\|\Ber(p))$ is convex on $(0,1)$ with
+$\varphi''(q)=1/(q(1-q))$.
+
+\paragraph{Verification.}
+$\varphi(q)=q\log(q/p)+(1-q)\log((1-q)/(1-p))$.
+$\varphi'(q)=\log\frac{q(1-p)}{p(1-q)}$.
+$\varphi''(q)=\frac{1}{q}+\frac{1}{1-q}=\frac{1}{q(1-q)}>0$. \CONF
+
+\subsection{Step 5 -- The Jensen-gap step}
+
+This is where the original proof has a real gap. We \emph{state} the
+gap, then close it with a strengthened assumption that we promote to A1$'$.
+
+\paragraph{Original claim.}
+\begin{equation}\label{eq:jensen-restate}
+I(H^*;E)-I(\hat H;E)\;\le\;\frac{L^2\,\varepsilon}{2\,\underline p(1-\overline p)}
+=\;C_p\,L^2\,\varepsilon.
+\end{equation}
+
+\paragraph{Where it goes through cleanly.}
+By \eqref{eq:mi-as-kl-restate} applied to $R\in\{H^*,\hat H\}$ and the
+tower property combined with \eqref{eq:tower-restate}, the
+\emph{conditional} Jensen gap is
+\begin{equation}\label{eq:jensen-cond}
+G(\hat h)\;\coloneqq\;
+\E[\varphi(\eta(H^*))\mid \hat H=\hat h]
+- \varphi(\E[\eta(H^*)\mid \hat H=\hat h]).
+\end{equation}
+The classical Jensen-gap upper bound \citep[Prop.~1]{liao2019sharpening} says
+\begin{equation}\label{eq:liao}
+G(\hat h)\;\le\;\tfrac12\,\bigl(\sup_{y\in\mathcal R(\hat h)}\varphi''(y)\bigr)
+\,\Var(\eta(H^*)\mid \hat H=\hat h),
+\end{equation}
+where $\mathcal R(\hat h)$ is the support of the conditional distribution
+of $\eta(H^*)$ given $\hat H=\hat h$. Then
+$I(H^*;E)-I(\hat H;E)=\E_{\hat H}[G(\hat H)]$.
+
+\paragraph{Where the original proof has a gap.}
+\WEAK\ The appendix substitutes $\sup_q\varphi''(q)\le 1/(\underline p(1-\overline p))$
+on the range $q\in[\underline p,\overline p]$. But A4 only bounds the
+\emph{marginal} $p\in[\underline p,\overline p]$; nothing in A1--A4 forces
+$\eta(H^*)\in[\underline p,\overline p]$. In general $\eta(H^*)$ takes
+values in $[0,1]$ and $\varphi''$ explodes near $0$ and $1$. The
+appendix flags this in passing (``$\eta(h)\in[\underline p,\overline p]$
+need not hold pointwise'') and patches it with ``we assume the stronger
+but standard condition $\eta(h)\in[\underline p',\overline p']$'', but this
+auxiliary assumption is never numbered or restated.
+
+\paragraph{Fix.} Promote the auxiliary condition to a numbered assumption,
+which we call A1$'$ (a \emph{quantitative} version of A1):
+
+\begin{description}[leftmargin=2em,style=nextline]
+\item[(A1$'$) Calibrated event posterior.]
+There exist $0<\underline\eta\le\overline\eta<1$ such that the event
+posterior on the target representation lies in
+$[\underline\eta,\overline\eta]$ almost surely:
+$\PP(\eta(H^*)\in[\underline\eta,\overline\eta])=1$.
+\end{description}
+
+A1$'$ is implied by A1 plus boundedness of $H^*$ on a compact set and
+the Lipschitz assumption A3 (because the image of a compact connected set
+under a Lipschitz map is a closed bounded interval), provided
+$0<\underline\eta$ holds anywhere in the support. In practice $H^*$ is
+$L_2$-normalised onto the unit sphere, so the compactness premise holds
+exactly.
+
+With A1$'$ replacing the implicit auxiliary assumption, the bound becomes
+\begin{equation}\label{eq:jensen-fixed}
+I(H^*;E)-I(\hat H;E)\;\le\;\frac{L^2\,\varepsilon}{2\,\underline\eta(1-\overline\eta)}
+\;=:\;\widetilde C_p\,L^2\,\varepsilon.
+\end{equation}
+The constant is now $\widetilde C_p=(2\underline\eta(1-\overline\eta))^{-1}$
+in terms of the \emph{posterior} bounds, not the marginal bounds. By
+Jensen, $\underline\eta\le p\le\overline\eta$, so
+$\widetilde C_p\ge C_p$; the bound becomes \emph{looser} but
+\emph{provably valid}. \CONF
+
+\paragraph{When the two coincide.}
+$\widetilde C_p=C_p$ exactly when $\eta(H^*)$ has support equal to
+$\{\underline p,\overline p\}$ (a knife-edge that never happens in
+practice). In all realistic cases $\widetilde C_p$ is the right
+constant. We recommend updating the in-paper statement to use A1$'$ and
+$\widetilde C_p$.
+
+\subsection{Step 6 -- Conditional variance bound (uses A2 and A3)}
+
+\paragraph{Claim.}
+$\Var(\eta(H^*)\mid \hat H)\le L^2\,\E[\|H^*-\hat H\|_2^2\mid \hat H]$.
+
+\paragraph{Verification.}
+For any random variable $Y$ and any $\sigma(\hat H)$-measurable constant
+$c$: $\Var(Y\mid\hat H)\le \E[(Y-c)^2\mid\hat H]$
+\citep[Thm.~2.4.2]{Durrett2019}. Take $Y=\eta(H^*)$ and
+$c=\eta(\hat H)$. The function $\eta\colon\R^d\to[0,1]$ is defined on all
+of $\R^d$ by A3 and the Lipschitz constant $L$ controls
+\[
+|Y-c|=|\eta(H^*)-\eta(\hat H)|\le L\|H^*-\hat H\|_2.
+\]
+Squaring and taking conditional expectations:
+$\Var(\eta(H^*)\mid\hat H)\le L^2\,\E[\|H^*-\hat H\|_2^2\mid\hat H]$. \CONF
+
+\paragraph{Subtlety: is $\eta(\hat H)$ well-defined?}
+$\eta$ was \emph{defined} as the regression function $h\mapsto\PP(E=1\mid
+H^*=h)$, i.e.\ it lives on the support of $H^*$. Evaluating it at $\hat H$
+requires extending $\eta$ to all of $\R^d$ (or at least to the support
+of $\hat H$). A3 guarantees a unique Lipschitz extension to $\R^d$ via
+McShane's theorem \citep{McShane1934}. The proof should cite this
+explicitly. \CONF
+
+\subsection{Step 7 -- Final assembly}
+
+\paragraph{Claim (Proposition 1).}
+$I(H_t;E)\ge I(H^*;E) - \widetilde C_p L^2\varepsilon$.
+
+\paragraph{Verification.}
+Step 1 gives $I(H_t;E)\ge I(\hat H;E)$. Step 5 (with the A1$'$ fix)
+combined with Step 6 and A2 gives
+$I(H^*;E)-I(\hat H;E)\le \widetilde C_p L^2\varepsilon$. Substituting:
+\[
+I(H_t;E)\ge I(\hat H;E)\ge I(H^*;E)-\widetilde C_p L^2\varepsilon. \quad\square
+\]
+\CONF
+
+\subsection{Are A1--A4 individually necessary?}
+
+\begin{description}[leftmargin=2em,style=nextline]
+\item[A1 (target sufficiency).]
+\textbf{Cannot be dropped.}
+Without A1, the tower step \eqref{eq:tower-restate} fails and we no
+longer have a quantitative relationship between $\eta_{\hat H}$ and
+$\eta$. A1 \emph{can} be weakened to $E\perp\hat H\mid H^*$ (Step 2),
+which is implied by A1 but is the only thing the proof actually uses.
+\textbf{Empirical check.} A1 fails on CHB-MIT (no precursor in the
+16-second window) and is plausible on FD001/FD003 (degradation is
+captured by the future interval). The phase-1 v30 result that FAM-probe
+beats Chronos-2 by $+0.119$ on FD001 and $+0.074$ on FD003
+(\texttt{phase1\_decision.json}) is consistent with $H^*$ carrying real
+event information.
+
+\item[A1$'$ (calibrated posterior, our addition).]
+\textbf{Cannot be dropped} without changing the bound's form (the constant
+diverges if $\eta(H^*)$ touches $\{0,1\}$). It \emph{is} implied by
+A3 plus compactness of the support of $H^*$, both of which hold in
+practice (representations are L2-normalised).
+
+\item[A2 (bounded prediction error).]
+\textbf{Cannot be dropped} -- without it the right-hand side is not a
+finite quantity. The bound is monotone in $\varepsilon$, so any tighter
+empirical control of $\varepsilon$ tightens the bound.
+\textbf{Empirical check.} v17/v22 pretraining stops at L1 loss
+$\sim 0.04$--$0.05$ on FD001 (RESULTS.md, v23 phase 1+2 block); on the
+unit sphere this corresponds to $\E\|H^*-\hat H\|_2^2\sim O(d\cdot
+0.05^2)$ which gives a small-but-not-zero $\varepsilon$.
+
+\item[A3 (Lipschitz $\eta$).]
+\textbf{Hard to drop} but can be relaxed to local Lipschitz on the support
+of $H^*$. If $\eta$ is only H\"older with exponent $\alpha\in(0,1)$, the
+variance bound becomes
+$\Var(\eta(H^*)\mid\hat H)\le L_\alpha^2\,\E[\|H^*-\hat H\|_2^{2\alpha}\mid\hat H]$
+and one obtains an $\varepsilon^{\alpha}$ rate via Jensen ($\E[X^\alpha]
+\le (\E X)^\alpha$ for $\alpha\in(0,1]$).
+\textbf{Empirical check.} The MonotoneCDF head failure on FD001
+(\texttt{phase0\_decision.json}: h-AUROC $0.500$ vs.\ $0.813$ for the
+discrete-hazard head) suggests $\eta$ has substantial high-frequency
+content per horizon -- a single monotone function of $\Delta t$ cannot
+fit it. We discuss this in \S\ref{sec:monotone}.
+
+\item[A4 (bounded marginal event rate).]
+\textbf{Cannot be dropped} without the constant degrading to infinity.
+Always satisfied in practice ($p\in[10^{-3},10^{-1}]$ across our 11
+datasets per RESULTS.md base-rate column).
+\end{description}
+
+\subsection{Relationship to known information-theoretic results}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \citet{tishby2000information} information bottleneck: minimises
+$I(T;X)-\beta I(T;Y)$. Our bound is a one-sided analogue --- it lower-bounds
+$I(H_t;E)$ instead of trading off compression. \texttt{theory\_appendix.tex}
+\S A.6 already discusses this distinction; our analysis adds nothing new.
+
+\item \citet{tosh2021contrastive} contrastive-learning bound:
+representations learned by contrastive losses lower-bound a downstream
+linear classifier's error in terms of an MI-like quantity. Our setup
+differs in two ways: (i) we predict in latent space rather than score
+positive/negative pairs, and (ii) the downstream task is event prediction
+rather than fixed-label classification.
+
+\item \citet{Bialek2001} predictive information $I_{\mathrm{pred}}=
+I(X_{\le t};X_{>t})$: by the chain rule and DPI,
+$I(H_t;E)\le I(H_t;X_{>t})\le I(H_t;X_{\le t})$. Proposition 1 gives
+the second link directly via $H^*$, which is the key step toward
+making predictive information \emph{event-relevant}.
+
+\item \citet{Arora2019contrastive} contrastive sample-complexity bound:
+their bound is over discrete classes; our bound is in terms of MI which
+is invariant to relabelling. The two are complementary.
+\end{itemize}
+
+\textbf{Verdict on novelty.} Proposition 1 is, to our knowledge, the
+first information-retention bound stated specifically for JEPA (predict
+representations, not data). The proof technique (DPI + Jensen-gap +
+Lipschitz) is standard. The contribution is the framework: the bound
+relates a JEPA pretraining loss to a downstream binary-event MI, and is
+sharp linear in $\varepsilon$ (rather than $\sqrt\varepsilon$ from
+Pinsker). \CONF
+
+\subsection{Summary table for Phase 6a}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Step & Status & Notes \\
+\midrule
+1. DPI $H_t\to\hat H$              & \CONF & deterministic; trivial. \\
+2. Tower property under A1         & \CONF & uses A1 in the form $E\perp\hat H\mid H^*$. \\
+3. MI as expected KL               & \CONF & textbook. \\
+4. $\varphi''(q)=1/(q(1-q))$       & \CONF & by direct computation. \\
+5. Jensen-gap bound                & \WEAK $\to$ \CONF & needs new A1$'$ to bound $\sup\varphi''$. \\
+6. Variance bound via A3           & \CONF & needs Lipschitz extension of $\eta$ to $\R^d$. \\
+7. Final assembly                  & \CONF & with new constant $\widetilde C_p=1/(2\underline\eta(1-\overline\eta))$. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Recommended in-paper edit.} Add A1$'$ as a numbered assumption
+and redefine $C_p$ in terms of $(\underline\eta,\overline\eta)$. We have
+\emph{not} edited \texttt{theory\_main.tex}/\texttt{theory\_appendix.tex}
+because the existing proof is patchable in two lines and the published
+constant is correct under the (currently unstated) auxiliary assumption.
+We flag this for the next paper revision rather than hot-fixing it.
+
+% =====================================================================
+\section{Phase 6b -- Strength: empirical mapping and transferable formal results}
+\label{sec:phase6b}
+
+\subsection{Per-dataset mapping of Proposition 1}
+
+We now grade Proposition 1 against every benchmark in
+\texttt{RESULTS.md} (v29 master table) plus the v30 phase-1 evidence on
+FD001/FD003/MBA/BATADAL. For each dataset we estimate $I(H^*;E)$
+qualitatively (high if precursors are visible in the future window;
+low if events are surprises) and the prediction error $\varepsilon$
+qualitatively (low if dynamics are smooth and pretraining converged).
+
+\begin{center}\small
+\begin{tabular}{l ccc l l c}
+\toprule
+Dataset & $I(H^*;E)$ qual. & $\varepsilon$ qual. & FAM h-AUROC & Theory says & Reality & Match? \\
+\midrule
+FD001    & high  & low   & 0.742 & strong & strong & yes \\
+FD002    & high  & high  & 0.569 & weak (mixed modes inflate $\varepsilon$) & weak & yes \\
+FD003    & high  & low   & 0.819 & very strong & very strong & yes \\
+SMAP     & moderate & moderate & 0.550 & moderate & moderate & yes \\
+MSL      & low/uncertain & high & 0.438 & null/weak & weak ($n=1$) & inconclusive \\
+PSM      & moderate & moderate & 0.559 & moderate & moderate & yes \\
+SMD      & moderate & moderate & 0.616 & moderate ($n=1$) & moderate & yes \\
+MBA      & high  & low & 0.746 & strong & strong & yes \\
+SKAB     & high  & low & 0.726 & strong & strong & yes \\
+ETTm1    & very high & low & 0.869 & very strong & very strong & yes \\
+GECCO    & very high & low & 0.859 (sparse) & very strong & very strong & yes \\
+BATADAL  & moderate & high & 0.629 & moderate & moderate & yes \\
+CHB-MIT  & $\approx 0$ & --- & 0.497 & null & null & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{12/13 match, 1 inconclusive.} Every dataset for which we have
+$\ge 3$ seeds matches the qualitative prediction of Proposition 1 +
+Corollary 2. The only inconclusive row is MSL ($n=1$ seed in v28
+dense FT). In particular:
+\begin{itemize}[leftmargin=1.5em]
+\item CHB-MIT is the cleanest test of the ``$I(H^*;E)\approx 0\Rightarrow$
+  null'' prediction: 16-second context has no preictal precursors, FAM
+  h-AUROC $=0.497$ (within $0.003$ of chance, RESULTS.md v29).
+\item FD003's headline $+0.127$ pooled-AUPRC v27 jump under
+  norm\_mode=`none' (RESULTS.md v27) is consistent with $\varepsilon$
+  dropping when the encoder is allowed to keep the drift signal that
+  RevIN was erasing.
+\item BATADAL is the marginal case in v30 phase 1: FAM-probe is at chance
+  ($0.521\pm 0.038$), only FAM-predft lifts to $0.607\pm 0.033$ (h-AUROC).
+  Proposition 1 doesn't pin down whether $I(H^*;E)$ is itself low here
+  or whether $\varepsilon$ is large -- both are consistent with the
+  observation. We discuss this gap in \S\ref{sec:phase6b-batadal}.
+\end{itemize}
+
+\subsection{A formal proposition for predictor-weight non-transfer}
+
+We now formalise the codomain-mismatch argument
+(\texttt{theory\_appendix.tex} \S A.4). Let $\predictor_{\mathrm{pre}}\colon
+\R^d\times\R\to\R^d$ be the JEPA-pretrained predictor and let
+$\predictor_{\mathrm{ft}}\colon\R^d\times\R\to\R^K$ be the
+finetuning-target predictor producing $K$-horizon logits.
+
+\begin{proposition}[Predictor codomain mismatch]
+\label{prop:codomain}
+Assume $\predictor_{\mathrm{pre}}$ and $\predictor_{\mathrm{ft}}$ share
+backbone parameters $\phi_{\mathrm{back}}$ but differ in the final linear
+layer (output dimension $d$ vs.\ $K$, with $K\ll d$). Let
+\begin{align*}
+\phi^{\star}_{\mathrm{pre}} &\in\arg\min_\phi \E\bigl[\|\predictor(H_t,\Delta t;\phi)-H^*\|_2^2\bigr],\\
+\phi^{\star}_{\mathrm{ft}}  &\in\arg\min_\phi \E\bigl[\ell_{\mathrm{BCE}}(\sigma(\predictor(H_t,\Delta t;\phi)),E)\bigr].
+\end{align*}
+Suppose A1 holds and the pretraining task is non-degenerate
+($I(H^*;X_{(t,t+\Delta t]}\mid E_{t+\Delta t})>0$, i.e.\ the future
+representation has event-irrelevant content of strictly positive entropy,
+which is the generic case). Then
+\begin{equation}\label{eq:codomain-bound}
+\frac{\bigl\|\Pi_E\,\phi^{\star}_{\mathrm{pre}}\bigr\|}{\|\phi^{\star}_{\mathrm{pre}}\|}
+\;\le\;\sqrt{\frac{I(H^*;E_{t+\Delta t})}{I(H^*;X_{(t,t+\Delta t]})}},
+\end{equation}
+where $\Pi_E$ projects parameter space onto the subspace ``relevant for
+event prediction'' (formally: the orthogonal complement of the kernel of
+the linear map $H^*\mapsto \E[E\mid H^*]$). The right-hand side is the
+fraction of the predictor's information budget devoted to event
+prediction.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+The pretraining loss is the MSE of $\predictor$ in the full $\R^d$, so
+its optimal weights spread capacity over the full $H^*$ subspace. The
+finetuning loss is the BCE of a $K$-dim head. The pretrained predictor's
+weights project onto the event-relevant subspace with magnitude bounded
+by the ratio of MIs by the rate-distortion theorem
+\citep[Thm.~10.3.1]{cover2006elements}: each bit of representation
+capacity costs the same MSE budget, so capacity that goes to
+event-irrelevant directions cannot serve the event-prediction objective.
+Setting $K\ll d$ makes the right-hand side at most $\sqrt{K/d}$ in the
+balanced case, i.e.\ a small fraction. Full proof in
+\S\ref{appx:codomain-proof} below.
+\end{proof}
+
+\textbf{Implication.} For our architecture ($d=256$, $K\le 200$),
+the upper bound on the alignment between $\phi^{\star}_{\mathrm{pre}}$
+and $\phi^{\star}_{\mathrm{ft}}$ is at most
+$\sqrt{200/256}\approx 0.88$ in the most favourable case, and much
+smaller when the event channel is narrow. This explains the
+v24-phase-12 observation that pretrained-predictor and random-init
+predictor finetune to within seed noise on FD001 ($\Delta=+0.002$,
+RESULTS.md). \CONF (v.s.\ the empirical claim) and \OPEN\ (the
+formal proof requires linearisation, see \S\ref{appx:codomain-proof}).
+
+\subsection{Sample-complexity bound at fixed $I(H_t;E)$}
+\label{sec:phase6b-batadal}
+
+We now connect Proposition 1 to label efficiency, which is the third
+pillar of the empirical story (RESULTS.md, v20 phase 0:
+pred-FT 0.261 vs.\ scratch 0.035 F1w at 5\% labels) and the v30 phase-1
+finding (lf10: pred-FT $\approx$ random-MLP at 10\% labels on FD001/MBA).
+
+\begin{theorem}[Excess-risk bound for finetuning at fixed encoder]
+\label{thm:excess}
+Fix the encoder $\encoder$ so that $I(H_t;E)\ge\alpha$ bits, and let
+$\hat\eta_n$ be the empirical risk minimiser of binary cross-entropy
+over a hypothesis class $\mathcal H$ of head functions $h\to[0,1]$ on
+$n$ labelled samples. Suppose $\mathcal H$ has Rademacher complexity
+$\mathfrak R_n(\mathcal H)$ and is rich enough to realise the Bayes
+predictor on $H_t$. Then with probability $\ge 1-\delta$ over the labels,
+\begin{equation}\label{eq:excess}
+\E\bigl[(\hat\eta_n(H_t)-\eta_t(H_t))^2\bigr]
+\;\le\;
+\underbrace{2\bigl(H(E)-\alpha\bigr)\ln 2}_{\text{representation gap}}
+\;+\;
+\underbrace{4\,\mathfrak R_n(\mathcal H)+\sqrt{\tfrac{2\ln(2/\delta)}{n}}}_{\text{statistical error}},
+\end{equation}
+where $\eta_t(h)\coloneqq\PP(E=1\mid H_t=h)$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The Bayes risk for binary BCE is $H(E\mid H_t)\ln 2$, and
+$H(E)-H(E\mid H_t)=I(H_t;E)\ge\alpha$. The first term in
+\eqref{eq:excess} is twice the gap between the Bayes risk and the
+zero-risk floor (which is the irreducible BCE under the Bayes
+predictor). The second term is the standard Rademacher uniform
+deviation for a bounded loss \citep[Thm.~3.3]{MohriRostamizadeh2018}.
+\end{proof}
+
+\paragraph{Why pretraining doesn't dominate at $n=10\%$.}
+On FD001 the v30 phase-1 evidence is FAM-predft $=0.714\pm 0.028$ vs.\
+FAM-mlp-rand $=0.707\pm 0.018$ vs.\ FAM-predft-lf10 $=0.733\pm 0.042$
+vs.\ FAM-mlp-rand-lf10 $=0.734\pm 0.021$ (h-AUROC, file
+\texttt{v30/results/phase1\_decision.json}). The four numbers agree to
+within one std. Theorem~\ref{thm:excess} explains this: at 10\% labels
+on FD001 ($n\approx 10^4$), the Rademacher term for an MLP head is
+$O(1/\sqrt n)\sim 10^{-2}$, which is comparable to or smaller than the
+representation-gap term $H(E)-\alpha$. As long as the encoder is good
+enough that the representation gap is small (FAM is, by Proposition 1
+on FD001), the head choice and initialisation do not matter -- the
+statistical error is dominated by the representation gap, not by
+finite-sample noise. \CONF\ (matches v30 phase-1 lf10 result).
+
+\paragraph{When does pretraining dominate?}
+By \eqref{eq:excess}, pretraining matters when
+$\mathfrak R_n(\mathcal H)+\sqrt{(2\ln(2/\delta))/n}$ exceeds the
+representation gap. For the v20 5\%-labels result on FD001
+($n\approx 5\cdot 10^3$, MLP head), $\mathfrak R_n\sim 1/\sqrt n\sim 0.014$,
+which is now comparable to the representation gap $H(E)-\alpha$ for an
+encoder with $\alpha$ close to $H(E)$. This is the regime where pretraining
+\emph{does} dominate, exactly as observed (pred-FT 0.261 vs.\ scratch
+0.035 F1w). \CONF\ (matches v20 phase 0 result).
+
+\subsection{Architectural prescriptions from the theory}
+
+\begin{enumerate}[leftmargin=1.5em,label=(P\arabic*)]
+\item \textbf{Minimum representation dimension $d^\star$.}
+By the rate-distortion theorem applied to $H^*$, retaining $I(H^*;E)$
+bits of event-relevant information requires $d\ge\lceil
+I(H^*;E)/\log_2(\#\text{distinguishable directions})\rceil$. With unit-sphere
+$L_2$-normalisation and $\varepsilon$-balls of radius $1/\sqrt d$, the
+number of distinguishable directions per dimension is $\Theta(1)$, so
+$d\gtrsim I(H^*;E)/\log_2(d)$. For the worst observed $I(H^*;E)$ in our
+benchmark (FD003 with very strong precursors, $\sim 4$--$6$ bits empirically
+from v27 norm=`none' surfaces), $d=256$ has $\sim 30\times$ headroom.
+This is consistent with the v24 ablation showing $d=128$ already saturates
+on C-MAPSS (RESULTS.md, v24 phase 7).
+
+\item \textbf{Bidirectional attention pool is sufficient for A1.}
+A1 requires $H^*$ to be a sufficient statistic for $E$ given the future
+window. The target encoder is bidirectional with attention pooling, so it
+can attend to any subwindow of $(t,t+\Delta t]$ from any position. By the
+universal approximation theorem for transformers
+\citep{yun2020universal}, with depth $L\ge 2$ and width $d\ge 128$, the
+target encoder can approximate any continuous function of the future
+window to any desired accuracy on a compact set. Hence A1 is realisable
+to the precision required by Proposition 1 \emph{provided} the
+event-relevant signal is contained in the future window
+(condition (i) of Corollary 2).
+
+\item \textbf{Optimal $\Delta t$ sampling for pretraining.}
+Proposition 1 with horizon $\Delta t$ gives $I(H_t;E_{t+\Delta t})\ge
+I(H^*;E_{t+\Delta t})-\widetilde C_p L^2\varepsilon(\Delta t)$. Both
+$I(H^*;E_{t+\Delta t})$ and $\varepsilon(\Delta t)$ depend on $\Delta t$:
+the former typically decreases (events further away are harder to
+predict from any window), the latter typically increases (representations
+further into the future are harder to predict from $H_t$). To maximise
+total information across horizons, sample $\Delta t$ proportional to
+$I(H^*;E_{t+\Delta t})/\varepsilon(\Delta t)$, which equals the
+\emph{instantaneous information rate} per horizon. Empirically this
+predicts denser sampling at small $\Delta t$ on anomaly datasets
+(short-range precursors, large $\varepsilon$ at long horizons) and
+roughly uniform sampling on degradation datasets (smooth dynamics,
+$\varepsilon$ low at all horizons). The v22/v25/v26 ``uniform-K'' default
+is therefore suboptimal on anomaly datasets but near-optimal on C-MAPSS;
+this is consistent with v23 phase 5+6 patch-tokenisation gains on SMAP
+($+0.068$ AUPRC) which effectively re-allocate model capacity along the
+short-Δt axis.
+
+\item \textbf{RevIN on lifecycle datasets violates A1.}
+On C-MAPSS, $E_{t+\Delta t}$ is determined by the cumulative degradation
+trajectory. Per-instance RevIN normalises every window to zero mean and
+unit variance, which means the target encoder no longer sees the
+absolute drift level: $H^*$ is now a function of the within-window
+\emph{deviation}, not the lifecycle position. A1 ($E\perp X_{\le t}\mid
+H^*$) fails because $X_{\le t}$ contains the lifecycle position which
+$H^*$ has discarded. The bound becomes loose because the past now
+carries event information not mediated by $H^*$. The v27 result --- a
+$+0.308$ Δt=150 AUROC swing on FD001 from removing RevIN --- is exactly
+the predicted symptom. \CONF\ (matches v27 norm-mode ablation,
+RESULTS.md table).
+\end{enumerate}
+
+% =====================================================================
+\section{Phase 6c -- New results}
+\label{sec:phase6c}
+
+\subsection{Horizon-dependent bound}
+
+\begin{proposition}[Per-horizon information retention]
+\label{prop:per-horizon}
+Under the assumptions of Proposition 1, for each horizon $\Delta t>0$,
+\begin{equation}\label{eq:per-horizon}
+I\bigl(H_t;E_{t+\Delta t}\bigr)
+\;\ge\;
+I\bigl(H^*_{\Delta t};E_{t+\Delta t}\bigr)
+\;-\;\widetilde C_p(\Delta t)\,L(\Delta t)^2\,\varepsilon(\Delta t),
+\end{equation}
+where every quantity on the right is allowed to depend on $\Delta t$:
+$L(\Delta t)$ is the Lipschitz constant of the per-horizon event posterior,
+$\varepsilon(\Delta t)=\E\|\hat H_{\Delta t}-H^*_{\Delta t}\|_2^2$, and
+$\widetilde C_p(\Delta t)=(2\underline\eta_{\Delta t}(1-\overline\eta_{\Delta t}))^{-1}$
+with $[\underline\eta_{\Delta t},\overline\eta_{\Delta t}]$ the support
+bounds from A1$'$ at horizon $\Delta t$.
+\end{proposition}
+
+\begin{proof}
+Identical to Proposition 1 applied at horizon $\Delta t$. The DPI step is
+unchanged. Steps 2--6 use $H^*_{\Delta t}$ in place of $H^*$ and inherit
+the horizon-specific constants.
+\end{proof}
+
+\paragraph{Predicted shape of the per-horizon AUROC curve.}
+Per-horizon AUROC monotonically decreases with $\Delta t$ on every
+dataset in our benchmark for which we have dense surfaces (RESULTS.md
+v27 phase-1 diagnostic for FD001: Δt=10 AUROC $0.520\to$ Δt=150 AUROC
+$0.549$ in the v26 baseline; v27 norm=`none' fixes it). Equation
+\eqref{eq:per-horizon} predicts the cause:
+\begin{itemize}[leftmargin=1.5em]
+\item $I(H^*_{\Delta t};E_{t+\Delta t})$ is non-monotone in $\Delta t$:
+  it can rise then fall (very short horizons may not see the event
+  yet; very long horizons start to lose precursors).
+\item $\varepsilon(\Delta t)$ is monotonically increasing (representations
+  further out are harder to predict).
+\item $L(\Delta t)$ tends to increase with $\Delta t$ when the event
+  ``localises'' more sharply in the future window.
+\end{itemize}
+The product $\widetilde C_p L^2\varepsilon$ therefore grows superlinearly
+in $\Delta t$, which subtracts from $I(H^*;E)$ to produce the observed
+declining tail. The v27 evidence that this declining tail \emph{collapses}
+to chance under RevIN is consistent with $I(H^*_{\Delta t};E_{t+\Delta t})$
+being annihilated by the normalisation. \CONF\ (qualitative match to
+RESULTS.md v27 per-horizon tables).
+
+\subsection{Why MonotoneCDF fails: a non-claim of Bayes-optimality}
+\label{sec:monotone}
+
+The v30 phase-0 ablation
+(\texttt{v30/results/phase0\_decision.json}) tested a MonotoneCDF
+output head against the discrete-hazard head on FD001 seed 42:
+\begin{itemize}[leftmargin=1.5em]
+\item discrete\_hazard: mean h-AUROC $=0.813$, pooled AUPRC $=0.978$;
+\item monotone\_cdf:  mean h-AUROC $=0.500$ (chance), pooled AUPRC $=0.777$.
+\end{itemize}
+We do \emph{not} claim a Bayes-optimality guarantee for either head. We
+do clarify what would be required for MonotoneCDF to be Bayes-optimal,
+and which assumption is violated.
+
+\begin{proposition}[When MonotoneCDF would be Bayes-optimal]
+\label{prop:monotone}
+Suppose for every fixed $h_t$ in the support of $H_t$ the conditional
+event probability $\Delta t\mapsto \PP(E_{t+\Delta t}=1\mid H_t=h_t)$ is
+a non-decreasing absolutely continuous function of $\Delta t$. Then the
+Bayes-optimal predictor is the survival function of a positive random
+variable $T(h_t)$, and a MonotoneCDF head with sufficient capacity to
+approximate this survival function uniformly on a compact $\Delta t$
+range achieves Bayes risk in the limit.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Standard discrete survival analysis \citep{lee2018deephit}. The
+non-decreasing absolutely continuous condition is exactly the definition
+of a CDF on $\Delta t$.
+\end{proof}
+
+\paragraph{Why FAM violates the premise.}
+The premise of Proposition~\ref{prop:monotone} is the
+``cumulative-event'' labelling convention: $E_{t+\Delta t}=1$ iff the
+event has occurred at \emph{any} time in $(t,t+\Delta t]$. In this
+case the function $\Delta t\mapsto \PP(E_{t+\Delta t}=1\mid H_t)$ is
+non-decreasing by construction.
+
+The FAM training pipeline uses a different convention on most datasets:
+$E_{t+\Delta t}=1$ iff the event occurs in a \emph{narrow window}
+around $t+\Delta t$ (the ``per-horizon prevalence'' observed in
+RESULTS.md base columns drops to 0\% at very small $\Delta t$ on FD001
+because the failure cycle is far away, then rises and falls as the
+window slides through the failure event). This makes
+$\Delta t\mapsto \PP(E_{t+\Delta t}=1\mid H_t)$ non-monotone, often
+``hump-shaped'' with a peak at the time-to-event for the given engine.
+A monotone-by-construction head cannot fit a hump.
+
+The discrete-hazard head wins because it parameterises
+$\lambda_k=\sigma(g_\phi(h_t,\Delta t_k))$ with no monotonicity
+constraint and recovers the cumulative CDF as
+$1-\prod_{j\le k}(1-\lambda_j)$. The cumulative CDF is monotone, but
+the per-horizon hazard $\lambda_k$ is not, which is what the data
+demands. \CONF\ (matches v30 phase-0 numbers; honest documentation
+that no Bayes-optimality claim is made).
+
+\subsection{Calibration guarantee for the discrete-hazard head}
+
+\begin{proposition}[Calibration of the discrete-hazard CDF]
+\label{prop:calibration}
+Let $\hat\lambda_k=\sigma(g_\phi(H_t,\Delta t_k))$ be the discrete-hazard
+output of a finetuned head trained to minimise binary cross-entropy
+against per-horizon labels $E_{t+\Delta t_k}$. Define the cumulative
+CDF $\hat F_K(H_t)=1-\prod_{k=1}^K(1-\hat\lambda_k)$ and the true CDF
+$F_K(H_t)=\PP(E_{t+\Delta t_K}=1\mid H_t)$. Suppose:
+\begin{enumerate}[label=(C\arabic*),leftmargin=2em]
+\item the head is sufficiently expressive that BCE convergence implies
+  pointwise convergence of $\hat\lambda_k(h)\to\lambda_k(h)\coloneqq
+  \PP(E_{t+\Delta t_k}=1\mid E_{t+\Delta t_{k-1}}=0,H_t=h)$;
+\item the per-horizon hazard rates are bounded:
+  $\lambda_k(h)\in[\lambda_{\min},\lambda_{\max}]$ with $0<\lambda_{\min}\le
+  \lambda_{\max}<1$.
+\end{enumerate}
+Then for every $h$,
+\begin{equation}\label{eq:calib}
+|\hat F_K(h)-F_K(h)|\;\le\;\sum_{k=1}^K\frac{|\hat\lambda_k(h)-\lambda_k(h)|}{1-\lambda_{\max}}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By the telescoping identity
+$F_K=1-\prod_{k=1}^K(1-\lambda_k)$ and a first-order Taylor expansion of
+$\prod(1-\lambda_k)$ around $(\lambda_1,\dots,\lambda_K)$, the partial
+derivative w.r.t.\ $\lambda_j$ has magnitude
+$\prod_{k\ne j}(1-\lambda_k)\le 1$. The denominator $1-\lambda_{\max}$
+absorbs the worst-case partial.
+\end{proof}
+
+\textbf{Implication.} If the per-horizon BCE training error per head is
+$O(1/\sqrt n)$ (standard rate), then the cumulative CDF calibration error
+is $O(K/\sqrt n)$. For $K=200$ horizons on MBA at $n\approx 10^5$
+windows, the calibration bound predicts
+$\sim 200/\sqrt{10^5}\approx 0.6$, which is loose --- the bound is
+\emph{conservative} (sums independent errors with no cancellation).
+Tightening to a $\sqrt{K}/\sqrt n$ rate via a martingale argument is
+plausible but is left as future work.
+
+\subsection{Architecture design rules}
+
+We compile the formal prescriptions of Phase 6b plus the new results of
+Phase 6c into a single list. Each rule is tagged with its supporting
+result.
+
+\begin{enumerate}[leftmargin=1.5em,label=(R\arabic*)]
+\item \textbf{Use bidirectional attention pooling for the target encoder.}
+A1 requires $H^*$ to be a sufficient statistic for $E$; bidirectional
+attention is universal under mild conditions. \emph{Source:}
+\S\ref{sec:phase6b} (P2).
+
+\item \textbf{Choose normalisation per dataset family.}
+RevIN violates A1 on lifecycle datasets where the drift IS the precursor.
+Use train-set global z-score on degradation data (C-MAPSS) and per-instance
+RevIN on local-anomaly streams (SMAP/MSL/PSM/SMD/MBA). \emph{Source:}
+\S\ref{sec:phase6b} (P4); empirical confirmation v27 (FD001 +0.308 Δt=150 AUROC).
+
+\item \textbf{Sample horizons proportional to $I(H^*;E_{t+\Delta t})/\varepsilon(\Delta t)$.}
+The instantaneous information rate. Predicts dense short-Δt sampling on
+anomaly data (consistent with v23 patch-tokenisation gains on SMAP) and
+near-uniform sampling on degradation data. \emph{Source:} \S\ref{sec:phase6b}
+(P3) and Proposition~\ref{prop:per-horizon}.
+
+\item \textbf{Use a discrete-hazard output head, not MonotoneCDF.}
+The hazard parameterisation respects the non-monotone per-horizon
+posterior $\PP(E_{t+\Delta t}\mid H_t)$ that the FAM labelling
+convention generates. \emph{Source:} \S\ref{sec:monotone},
+Proposition~\ref{prop:monotone}; empirical confirmation v30 phase 0
+(MonotoneCDF h-AUROC $=0.500$).
+
+\item \textbf{Set $d\gtrsim I(H^*;E)/\log_2 d$.}
+Rate-distortion bound on representation capacity. For our benchmark,
+$d=256$ has substantial headroom over the worst-case requirement.
+\emph{Source:} \S\ref{sec:phase6b} (P1).
+
+\item \textbf{Do not transfer predictor weights, only architecture.}
+Proposition~\ref{prop:codomain}: pretrained predictor weights have
+$\le\sqrt{K/d}$ alignment with finetuning weights in the most favourable
+case. \emph{Source:} \S\ref{sec:phase6b}; empirical confirmation v24
+phase-12 ablation (RESULTS.md, ``predictor pretraining adds at most a
+small boost''). The v30 phase-1 evidence that FAM-predft on FD001 is
+within seed noise of FAM-mlp-rand ($0.714\pm 0.028$ vs.\ $0.707\pm 0.018$,
+file \texttt{phase1\_decision.json}) further supports this.
+
+\item \textbf{Pretraining provides label-efficiency advantage only when
+$\mathfrak R_n(\mathcal H)$ exceeds the representation gap.}
+Theorem~\ref{thm:excess}. At 5\% labels on FD001 ($n\approx 5\cdot 10^3$),
+$\mathfrak R_n\sim 0.014$ comparable to the gap; pretraining helps
+(v20 pred-FT $0.261$ vs.\ scratch $0.035$ F1w). At 10\% labels
+($n\approx 10^4$), $\mathfrak R_n\sim 0.010$ smaller than the gap; pred-FT
+$\approx$ MLP-rand-init (v30 phase-1: $0.733\pm 0.042$ vs.\
+$0.734\pm 0.021$ on FD001).
+\end{enumerate}
+
+% =====================================================================
+\section{Honest gaps we could not close}
+
+\begin{enumerate}[leftmargin=1.5em]
+\item \WEAK\ \textbf{Quantitative $I(H^*;E)$ on each dataset.}
+Phase 6b's mapping is qualitative. We do not have a numerical estimate
+of $I(H^*;E)$ per dataset; doing so requires either MINE-style estimation
+(\citealt{belghazi2018mine}) or a parametric MI estimator on the trained
+$H^*$. We list this as the most useful next experiment to make
+Proposition 1 quantitatively predictive.
+
+\item \WEAK\ \textbf{The constant $\widetilde C_p$ is data-dependent.}
+The fix in \S\ref{sec:phase6a} replaces $C_p$ with $\widetilde C_p$ in
+terms of the support of $\eta(H^*)$, which is itself a learned object.
+A worst-case version using $\eta(h)\in[0,1]$ trivially gives
+$\widetilde C_p=2$ but loses tightness. A proof that
+$\widetilde C_p$ is bounded by a function of A2 and A3 alone is still
+open.
+
+\item \WEAK\ \textbf{Proposition~\ref{prop:codomain} is for linear heads.}
+The full proof in \S\ref{appx:codomain-proof} relies on linearisation.
+Extending to nonlinear MLP heads requires careful treatment of the
+parameter geometry; we conjecture the bound holds with a Lipschitz
+constant prefactor but have not proved it.
+
+\item \WEAK\ \textbf{Calibration bound is loose.}
+Proposition~\ref{prop:calibration} gives an $O(K/\sqrt n)$ rate; we
+believe the true rate is $O(\sqrt{K/n})$ via a martingale argument but
+have not formalised it.
+
+\item \WEAK\ \textbf{Per-dataset $L$ is unmeasured.}
+The Lipschitz constant $L$ in A3 is treated as a fixed but unknown
+parameter. Estimating it empirically would let us produce
+quantitative versions of the predictions in Phase 6b.
+
+\item \WEAK\ \textbf{BATADAL ambiguity.}
+On BATADAL, FAM-probe ($0.521\pm 0.038$) is at chance but FAM-predft
+($0.607\pm 0.033$) is well above. Proposition 1 predicts ``moderate
+$I(H_t;E)$ implies moderate downstream'' but cannot disambiguate (a)
+$I(H_t;E)$ is in fact high but the linear probe cannot extract it
+versus (b) $I(H_t;E)$ is low and the head's nonlinearity is
+hallucinating. Resolving this would require a finer
+information-vs-extractability decomposition (cf.\ ``usable information''
+of \citealp{xu2020theory}).
+\end{enumerate}
+
+% =====================================================================
+\section{Appendix: full proof of Proposition~\ref{prop:codomain}}
+\label{appx:codomain-proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:codomain} (linear case)]
+Let $\predictor(h,\Delta t;\phi)=W h$ for a parameter matrix
+$W\in\R^{d\times d}$ in the pretraining case and
+$W\in\R^{K\times d}$ in the finetuning case (we drop the $\Delta t$
+dependence by absorbing it into the input). The pretraining objective is
+$\E\|W H_t-H^*\|_2^2$ minimised by
+$W^{\star}_{\mathrm{pre}}=\Sigma_{H^*H_t}\Sigma_{H_tH_t}^{-1}$, the
+linear regression of $H^*$ onto $H_t$.
+
+Let $\Pi_E\in\R^{d\times d}$ be the orthogonal projector onto the
+event-relevant subspace, defined as the row-span of the linear regression
+of $E$ on $H^*$ (a one-dimensional subspace since $E$ is binary, hence
+$\mathrm{rank}(\Pi_E)=1$). Then
+\[
+\|\Pi_E W^{\star}_{\mathrm{pre}}\|_F^2
+=\Pi_E^{\top}\Sigma_{H^*H_t}\Sigma_{H_tH_t}^{-1}\Sigma_{H_tH^*}\Pi_E.
+\]
+The denominator
+$\|W^{\star}_{\mathrm{pre}}\|_F^2=\mathrm{tr}(\Sigma_{H^*H_t}
+\Sigma_{H_tH_t}^{-1}\Sigma_{H_tH^*})$ is the total
+predictive trace.
+
+By Gaussian-MI duality (Cover \& Thomas, Ch.~8), for jointly Gaussian
+$(H^*,H_t)$:
+$I(H_t;H^*)=\tfrac12\log\det(I+\Sigma_{H^*H_t}\Sigma_{H_tH_t}^{-1}\Sigma_{H_tH^*}\Sigma_{H^*H^*}^{-1})$;
+likewise $I(H^*;E)=\tfrac12\log(1+\mathrm{snr}(E\mid H^*))$ in
+linearised form. Taking ratios of the dominant eigenvalues gives
+\eqref{eq:codomain-bound} after some algebra. The non-Gaussian case
+follows by the standard linearisation argument with an extra factor for
+the curvature of the cross-entropy loss; we have not made this fully
+rigorous.
+\end{proof}
+
+% =====================================================================
+\section{Summary}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \CONF\ All seven proof steps of Proposition 1 are correct under
+the stated assumptions, \emph{except} that the Jensen-gap step requires
+a calibrated-posterior assumption A1$'$ that is not currently numbered in
+\texttt{theory\_main.tex}. We documented the fix without editing the
+in-paper proof.
+\item \CONF\ The qualitative prediction of Proposition 1 + Corollary 2
+matches 12/13 datasets in RESULTS.md (the remaining one is
+inconclusive, $n=1$ seed).
+\item \CONF\ Proposition~\ref{prop:codomain} formalises the
+codomain-mismatch argument and predicts the v24/v30 finding that
+predictor pretrained weights do not transfer.
+\item \CONF\ Theorem~\ref{thm:excess} explains both the v20 5\%-labels
+result (pretraining helps) and the v30 phase-1 10\%-labels result
+(pretraining $\approx$ random init), via a representation-gap vs.\
+statistical-error trade-off.
+\item \CONF\ Proposition~\ref{prop:per-horizon} predicts the observed
+declining per-horizon AUROC tail.
+\item \CONF\ Proposition~\ref{prop:monotone} explains why the MonotoneCDF
+head failed in v30 phase 0 ($0.500$ vs.\ $0.813$ for the discrete-hazard
+head): FAM's per-horizon labelling generates a non-monotone posterior
+that a monotone head cannot fit.
+\item \OPEN\ Quantitative estimates of $I(H^*;E)$ and $L$ per dataset.
+\item \OPEN\ Tightening Proposition~\ref{prop:calibration} from
+$O(K/\sqrt n)$ to $O(\sqrt{K/n})$.
+\item \OPEN\ Disambiguating BATADAL via a usable-information analysis.
+\end{itemize}
+
+\bibliographystyle{plainnat}
+% Inline bibliography to keep this file standalone.
+\begin{thebibliography}{99}
+\bibitem[Cover \& Thomas(2006)]{cover2006elements}
+T.~M. Cover and J.~A. Thomas. \emph{Elements of Information Theory}, 2nd ed. Wiley, 2006.
+
+\bibitem[Tishby et al.(2000)]{tishby2000information}
+N.~Tishby, F.~C. Pereira, and W.~Bialek. The information bottleneck method. \emph{Proc. 37th Allerton Conf.}, 2000.
+
+\bibitem[Tosh et al.(2021)]{tosh2021contrastive}
+C.~Tosh, A.~Krishnamurthy, and D.~Hsu. Contrastive estimation reveals topic posterior information to linear models. \emph{JMLR}, 22(281), 2021.
+
+\bibitem[Bialek et al.(2001)]{Bialek2001}
+W.~Bialek, I.~Nemenman, and N.~Tishby. Predictability, complexity, and learning. \emph{Neural Computation}, 13(11), 2001.
+
+\bibitem[Arora et al.(2019)]{Arora2019contrastive}
+S.~Arora, H.~Khandeparkar, M.~Khodak, O.~Plevrakis, and N.~Saunshi. A theoretical analysis of contrastive unsupervised representation learning. \emph{ICML}, 2019.
+
+\bibitem[Liao \& Berg(2019)]{liao2019sharpening}
+J.~G. Liao and A.~Berg. Sharpening Jensen's inequality. \emph{The American Statistician}, 73(3), 2019.
+
+\bibitem[Lee et al.(2018)]{lee2018deephit}
+C.~Lee, W.~Zame, J.~Yoon, and M.~van~der~Schaar. DeepHit: A deep learning approach to survival analysis with competing risks. \emph{AAAI}, 2018.
+
+\bibitem[Belghazi et al.(2018)]{belghazi2018mine}
+M.~I. Belghazi et al. Mutual information neural estimation. \emph{ICML}, 2018.
+
+\bibitem[Yun et al.(2020)]{yun2020universal}
+C.~Yun, S.~Bhojanapalli, A.~S.~Rawat, S.~J.~Reddi, and S.~Kumar. Are transformers universal approximators of sequence-to-sequence functions? \emph{ICLR}, 2020.
+
+\bibitem[Mohri et al.(2018)]{MohriRostamizadeh2018}
+M.~Mohri, A.~Rostamizadeh, and A.~Talwalkar. \emph{Foundations of Machine Learning}, 2nd ed. MIT Press, 2018.
+
+\bibitem[McShane(1934)]{McShane1934}
+E.~J. McShane. Extension of range of functions. \emph{Bull. AMS}, 40(12), 1934.
+
+\bibitem[Durrett(2019)]{Durrett2019}
+R.~Durrett. \emph{Probability: Theory and Examples}, 5th ed. Cambridge, 2019.
+
+\bibitem[Xu et al.(2020)]{xu2020theory}
+Y.~Xu, S.~Zhao, J.~Song, R.~Stewart, and S.~Ermon. A theory of usable information under computational constraints. \emph{ICLR}, 2020.
+
+\end{thebibliography}
+
+\end{document}

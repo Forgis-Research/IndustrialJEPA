@@ -1,0 +1,62 @@
+{
+  "datasets": {
+    "CHBMIT": {
+      "hauroc": [
+        0.5002,
+        0.4982,
+        0.4938
+      ],
+      "mean": 0.4974,
+      "decision": "skip (null confirmed v29)",
+      "reason": "v29 3-seed result with bug-fixed onset labels: 0.497 \u00b1 0.003 < base 0.513"
+    },
+    "MSL": {
+      "hauroc": [
+        0.4115239225415421,
+        0.30260672062975896,
+        0.3356372710216558
+      ],
+      "mean": 0.34992263806431895,
+      "std": 0.055846154762263955,
+      "tags": [
+        "MSL_revin_discrete_hazard_td20_p2_s42",
+        "MSL_revin_discrete_hazard_td20_p2_s123",
+        "MSL_revin_discrete_hazard_td20_p2_s456"
+      ],
+      "decision": "skip"
+    },
+    "SMD": {
+      "hauroc": [
+        0.6454383332412608,
+        0.6716385456827257,
+        0.6494297827883536
+      ],
+      "mean": 0.6555022205707801,
+      "std": 0.014116255114602952,
+      "tags": [
+        "SMD_revin_discrete_hazard_td20_p2_s42",
+        "SMD_revin_discrete_hazard_td20_p2_s123",
+        "SMD_revin_discrete_hazard_td20_p2_s456"
+      ],
+      "decision": "include"
+    },
+    "PhysioNet": {
+      "hauroc": [],
+      "mean": null,
+      "decision": "skip (no loader registered in LOADERS)",
+      "reason": "PhysioNet/sepsis not in v29 LOADERS dict; deferred to v31"
+    }
+  },
+  "horizons": [
+    1,
+    5,
+    10,
+    20,
+    50,
+    100,
+    150,
+    200
+  ],
+  "sparse_horizons_note": "sparse {1,5,10,20,50,100,150,200} for fast triage; Phase 3 uses dense K=150",
+  "time_total_s": 455.1786653995514
+}

@@ -1,6 +1,76 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v29 (2026-04-25). Update after every session.
+**Last updated**: v30 (2026-04-25 → 2026-04-26). Update after every session.
+
+---
+
+## v30 — dense K=150 head + fair ablation + uniform 13-dataset benchmark (2026-04-25 / 26)
+
+V30 locks the canonical FAM head (dense discrete CDF, K=150 horizons),
+disentangles encoder quality from head capacity via a 5-variant ablation,
+and replaces the v29 heterogeneous master table with a single uniform
+3-seed benchmark.
+
+### Phase 0 - head choice (FD001 s42, encoder reused from v29)
+
+| Variant | mean h-AUROC | pooled AUPRC | FT time | verdict |
+|---------|--------------|--------------|---------|---------|
+| Dense discrete K=150 (canonical) | **0.8130** | **0.9778** | 4.1s | adopted |
+| MonotoneCDF (Option A, hidden=64, 3 layers) | 0.5000 | 0.7767 | 1.5s | collapsed |
+
+The MonotoneCDF (positive softplus weights on Δt path; replaces only
+the event-head readout) failed to learn under pos-weighted BCE — train
+loss climbed across epochs, val h-AUROC stuck at chance. A negative-
+bias init did not rescue. The 1h cap was respected; module is in
+`model.py` as opt-in for v31 architectural exploration.
+
+Dense K=150 gives **+0.07 h-AUROC over the v29 sparse K=8 baseline**
+and visually eliminates the banding artifact in the probability surface.
+
+### Phase 1 - 5-variant ablation (FD001/FD003/MBA/BATADAL × 3 seeds, sparse horizons, 153s)
+
+|             | FD001 | FD003 | MBA | BATADAL |
+|-------------|-------|-------|-----|---------|
+| FAM-probe (FAM enc + Linear/horizon, 257 params/h) | **0.742 ± 0.012** | **0.812 ± 0.006** | 0.588 ± 0.012 | 0.521 ± 0.038 |
+| Chr2-probe (Chronos-2 enc + Linear/horizon, 769/h) | 0.622 ± 0.004 | 0.738 ± 0.002 | 0.659 ± 0.006 | 0.503 ± 0.040 |
+| FAM-predft (canonical pred-FT, 198K params) | 0.714 ± 0.028 | 0.802 ± 0.015 | **0.739 ± 0.014** | **0.607 ± 0.033** |
+| Chr2-mlp (Chronos-2 enc + dt-MLP, 198K random init) | 0.659 ± 0.000 | 0.760 ± 0.003 | 0.451 ± 0.017 | 0.534 ± 0.032 |
+| FAM-mlp-rand (FAM enc + dt-MLP, 198K random init) | 0.707 ± 0.018 | 0.788 ± 0.026 | 0.721 ± 0.021 | 0.566 ± 0.009 |
+
+**Findings:**
+
+1. **FAM encoder beats Chronos-2 encoder at MATCHED probe capacity** on
+   3/4 datasets (FD001 +0.12, FD003 +0.07, BATADAL +0.02). The original
+   "head capacity is doing all the work" critique is refuted: even with
+   257 trainable parameters per horizon, FAM (2.16M params) beats
+   Chronos-2 (120M params).
+
+2. **Pretrained predictor init helps a little** vs random init across
+   all 4 datasets (+0.007, +0.014, +0.018, +0.041 — larger gap where
+   supervised signal is weaker).
+
+3. **At 10% labels** (FD001, MBA): FAM-predft and FAM-mlp-rand tie
+   (0.733 vs 0.734 on FD001; 0.739 vs 0.721 on MBA). Pretraining does
+   not buy label efficiency at this ratio. Sub-5% is where it might
+   dominate — open for v31.
+
+4. **Chr2-mlp underperforms Chr2-probe on 3/4 datasets**: the
+   dt-conditioned MLP head doesn't fit Chronos-2's 768-d pooled
+   embeddings.
+
+main_table_variants chosen for Phase 3 reporting: **FAM-predft**
+(headline) + **Chr2-probe** (canonical fair comparison from v24).
+
+### Phase 2 - precursor check (sparse horizons, 1-3 seeds per dataset)
+
+| Dataset | mean h-AUROC | n seeds | base | decision | reason |
+|---------|--------------|---------|------|----------|--------|
+| **MSL**     | 0.350 (3 seeds: 0.412/0.303/0.336) | 3 | 0.498 | **skip** | below chance — refines v29 n=1 result of 0.438; FAM has no signal at this temporal resolution |
+| **SMD**     | TBD | 3 | 0.500 | TBD | pending |
+| **PhysioNet** | not run | 0 | — | **skip** | no LOADERS entry; deferred to v31 |
+| **CHB-MIT** | 0.497 ± 0.003 (v29) | 3 | 0.513 | **skip** | null confirmed v29 with bug-fixed labels |
+
+(Phase 2 SMD pending; Phase 3 launch follows.)
 
 ---
 
