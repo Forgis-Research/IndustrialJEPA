@@ -399,6 +399,7 @@ Under the canonical backbone (198K predictor, AUPRC metric, 3 seeds on FD001): p
   \item \textbf{FD003 regression.} AUPRC drops to $0.766$ under the canonical $P{=}16$ architecture; the multi-fault degradation mode may need finer temporal resolution or more predictor capacity.
   \item \textbf{Chronos-2 parity on well-covered domains.} On datasets whose distribution is close to the Chronos-2 pretraining corpus, a 120M frozen encoder matches FAM. FAM's advantage is on out-of-distribution domains.
   \item \textbf{Anomaly ``prediction'' vs detection.} On SMAP, the model detects ongoing anomaly segments rather than predicting onset with lead time. True early warning requires lead-time-aware evaluation.
+  \item \textbf{Adaptive tokenization.} We fix $P{=}16$ following PatchTST. The optimal patch size depends on sampling frequency and signal characteristics; a principled alternative would fix the token count (e.g., ${\sim}32$ tokens) and adapt $P$ to the context length.
 \end{itemize}
 
 % ============================================================
