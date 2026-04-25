@@ -118,7 +118,23 @@ for ds in DATASETS_P2:
 print(pd.DataFrame(table).to_string(index=False))
 ```
 
-**Verdict** (filled in after Phase 2 completes).
+**Verdict**: the transformer predictor and the MLP predictor are
+**statistically tied** on all three test datasets. FD001 transformer
+loses by 0.010 (within noise), FD003 transformer wins by 0.004 (within
+noise), MBA transformer wins by 0.031 but with a 22x larger standard
+deviation across seeds (one of three transformer seeds collapsed to
+chance, dragging the variance up).
+
+The hypothesis "the last-token bottleneck collapses information that the
+predictor needs" is **refuted** for these datasets - 2 layers of d=256
+self-attention in the encoder are enough to compress the full context
+into h_t. The MLP predictor stays as the canonical choice on both
+parsimony and parameter count grounds (197K vs 462K).
+
+This is the question ARCHITECTURE.md flagged ("the predictor may benefit
+from a small transformer architecture rather than MLP, especially for
+learning nonlinear regime transitions") - the answer is no, at least at
+the current encoder scale and the lifecycle/streaming horizons we test.
 
 # 3 — Master 13-dataset benchmark table
 
@@ -177,10 +193,23 @@ print(pd.DataFrame(rows).to_string(index=False))
 #| label: surface-gallery
 #| echo: false
 for ds in DATASETS_ALL:
+    display(Markdown(f"### {ds}"))
     p = PNG_DIR / f'panels_{ds}.png'
     if p.exists():
-        display(Markdown(f"### {ds}"))
         show_png(p, height_px=460)
+        continue
+    # Fallback: split FAM/Chronos PNGs (grid mismatch)
+    pf = PNG_DIR / f'panels_{ds}_fam.png'
+    pc = PNG_DIR / f'panels_{ds}_chr.png'
+    shown = False
+    if pf.exists():
+        display(Markdown("**FAM** (sparse-grid v27/v28):"))
+        show_png(pf, height_px=240); shown = True
+    if pc.exists():
+        display(Markdown("**Chronos-2** (dense K=150/200, single seed):"))
+        show_png(pc, height_px=240); shown = True
+    if not shown:
+        print(f"(no surfaces for {ds})")
 ```
 
 # 5 — Detection vs prediction (CHB-MIT lead-time analysis)
@@ -231,10 +260,23 @@ What needs caveats:
     closest baselines are forecasting MSE numbers, which measure a
     different task.
 
-  - CHB-MIT is per-subject, single-subject-only (chb01) due to PhysioNet
-    bandwidth constraints during the session window. The leave-one-seizure-
-    out split with 7 seizures gives only one test seizure — generalization
-    across subjects is a separate, larger study.
+  - **CHB-MIT is a null result.** Three seeds gave mean h-AUROC of
+    0.5002, 0.5050, 0.4989 — essentially chance (base rate gives 0.5009).
+    FAM at this configuration cannot extract pediatric seizure precursors.
+    Likely contributing factors:
+      1. Pretrain Δt_max capped at 960 (30s) for memory reasons —
+         the 30-min preictal window is 60x longer than anything the
+         predictor saw during pretraining.
+      2. Per-subject training without subject-conditioning likely averages
+         away inter-subject differences in seizure precursor patterns.
+      3. The 30-min preictal label is long; most of those samples are
+         indistinguishable from interictal background and dilute the signal.
+      4. EEG seizure prediction SOTA (Ozcan & Bhatt 2021, sensitivity
+         92.8% at FPR 0.06/h) uses subject-specific training with
+         seizure-aware data augmentation - neither of which v29 employs.
+    This null result is honest and worth keeping in the paper as
+    evidence that a generic event-prediction model does not transfer
+    out of the box to a domain with very specific physiological dynamics.
 
   - The transformer-predictor ablation is on three datasets only (FD001,
     FD003, MBA), not all 13. Promoting the winning predictor to all
