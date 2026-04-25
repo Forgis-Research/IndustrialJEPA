@@ -153,20 +153,50 @@ Always save surfaces as .npz on the VM. Push only PNGs to git.
 
 ---
 
-## Phase 2: Transformer predictor ablation (2.5 h)
+## Phase 2: Predictor architecture ablation (2.5 h)
 
-Replace the 2-layer MLP predictor with a small transformer predictor.
-Test on FD001 (norm_mode='none') and MBA (norm_mode='revin'), 3 seeds each.
+### Context: how JEPA papers do it
 
-### Architecture: full-sequence transformer predictor
+In I-JEPA (Assran+ CVPR 2023) and V-JEPA (Bardes+ 2024), the predictor
+is a **narrow transformer operating on ALL encoder tokens** — not an MLP
+on a pooled summary. Key design: encoder d=1280, predictor d=384 (narrow
+bottleneck). Target positions are communicated via learnable mask tokens
+with positional embeddings appended to the encoder output sequence.
 
-The current MLP predictor sees only h_t (last encoder token) — a single
-256-d vector. It throws away 31 of 32 encoder outputs. A transformer
-predictor can attend over ALL encoder tokens:
+Our FAM deviates in two ways:
+1. We pass only the last encoder token (h_t) to a 2-layer MLP
+2. We KEEP and finetune the predictor (JEPA papers discard it)
 
+Deviation #2 is our contribution (predictor finetuning). Deviation #1
+may be losing information. This ablation tests whether aligning with
+canonical JEPA predictor design (narrow transformer over all tokens) helps.
+
+### Three variants to test
+
+Run all three on FD001 (norm_mode='none'), FD003 (norm_mode='none'),
+and MBA (norm_mode='revin'), 3 seeds each:
+
+**Variant A: MLP on last token (current baseline)**
+```python
+# No change. h_t = encoder(x)[:, -1, :] → MLP(cat(h_t, Δt)) → ĥ
+# This is what we have. 198K params.
+```
+
+**Variant B: MLP on mean-pooled tokens (cheap control)**
+```python
+# Mean-pool all encoder tokens instead of taking last
+h_mean = encoder(x, return_all=True).mean(dim=1)  # (B, d)
+h_hat = mlp_predictor(cat(h_mean, Δt))             # same MLP as variant A
+```
+Same 198K params. Tests whether last-token compression is the bottleneck
+(if B beats A, the issue is information loss in last-token, not predictor
+architecture).
+
+**Variant C: Narrow transformer on all tokens (canonical JEPA design)**
 ```python
 class TransformerPredictor(nn.Module):
-    """Transformer predictor: attends over all encoder tokens + Δt query."""
+    """Narrow transformer over all encoder tokens + Δt query token.
+    Follows I-JEPA/V-JEPA predictor design."""
 
     def __init__(self, d_model=256, n_heads=4, n_layers=1):
         super().__init__()
@@ -182,49 +212,42 @@ class TransformerPredictor(nn.Module):
     def forward(self, h_all, delta_t):
         """h_all: (B, N, d) — ALL encoder tokens. delta_t: (B,)."""
         dt_tok = self.dt_embed(delta_t.float().unsqueeze(-1))  # (B, d)
-        # Append Δt as query token after all encoder tokens
         tokens = torch.cat([h_all, dt_tok.unsqueeze(1)], dim=1)  # (B, N+1, d)
         out = self.transformer(tokens)       # (B, N+1, d)
-        return self.out_proj(out[:, -1])     # Δt token attends to all h
+        return self.out_proj(out[:, -1])     # Δt query attends to all h
 ```
+~200K params (matched). The Δt token appended last acts as a learned
+query: "given these N token representations and this horizon, predict
+the future." This mirrors I-JEPA's mask tokens with positional embeddings,
+but conditioned on Δt instead of spatial position.
 
-The Δt token is appended last and attends to all encoder positions — it
-acts as a learned query: "given these N representations and this horizon,
-what will the future look like?" Output from the Δt position.
-
-**Interface change required**: The encoder currently returns `h_t` (last
-token only). For this ablation, it must return `h_all` (all tokens).
-Add a flag to `CausalEncoder.forward()`:
+**Interface change**: Add `return_all` flag to `CausalEncoder.forward()`:
 ```python
 def forward(self, x, mask=None, return_all=False):
     ...
     if return_all:
-        return h  # (B, N, d) — all tokens
-    return h[:, -1, :]  # (B, d) — last token only
+        return h  # (B, N, d)
+    return h[:, -1, :]  # (B, d)
 ```
-The MLP predictor uses `return_all=False` (unchanged). The transformer
-predictor uses `return_all=True`.
+Variant A uses `return_all=False`. Variants B and C use `return_all=True`.
 
-**Param count**: ~200K (1-layer, d=256, H=4, d_ff=256). Matched to MLP.
+**Note on pretraining**: During pretraining the predictor must also use
+the same input (all tokens for C, last token for A). This means variants
+B and C need a full pretrain run — they cannot reuse the variant A
+checkpoint. Budget accordingly.
 
-**Why this might help**: The MLP sees one compressed summary. The
-transformer sees the full sequence of encoder states — it can detect
-the drift *gradient* across positions (how fast sensors change), local
-anomalies in specific positions, and multi-scale patterns. For FD003
-(two fault modes), distinct spatial patterns across the token sequence
-might be visible to the transformer but collapsed by the last-token
-bottleneck.
+### What the results tell us
 
-**Why it might not help**: The causal encoder's last token has already
-attended to all earlier tokens via 2 layers of self-attention. In
-theory h_t contains everything. Whether 2 layers at d=256 is enough
-to losslessly compress 32 tokens is the empirical question this
-ablation answers.
+| If B ≈ A, C ≈ A | Last-token compression is fine. MLP is fine. No change needed. |
+|---|---|
+| If B > A, C ≈ B | Last-token loses info. Mean-pool recovers it. No need for transformer predictor — just change pooling. |
+| If C > B > A | Both compression AND predictor expressivity matter. The transformer over all tokens is worth the complexity. |
+| If C > A, B ≈ A | The transformer predictor adds expressivity beyond what mean-pooling gives. The sequence structure matters, not just the average. |
 
 ### What to measure
 
-| Metric | MLP (v27 baseline) | Transformer predictor | Δ |
-|--------|--------------------|-----------------------|---|
+| Metric | A: MLP last | B: MLP mean | C: Transformer all |
+|--------|-------------|-------------|---------------------|
 | FD001 mean h-AUROC | 0.72 | ? | ? |
 | MBA mean h-AUROC | 0.58 | ? | ? |
 | FD003 mean h-AUROC | 0.85 | ? | ? |
