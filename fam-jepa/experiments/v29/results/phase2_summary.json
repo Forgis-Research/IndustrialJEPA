@@ -1,0 +1,44 @@
+{
+  "FD001": {
+    "mlp": {
+      "mean_h_auroc_mean": 0.7138516673038535,
+      "mean_h_auroc_std": 0.027704421494798896,
+      "pooled_auprc_mean": 0.9452575213614495,
+      "n_seeds": 3
+    },
+    "transformer": {
+      "mean_h_auroc_mean": 0.7037818757824154,
+      "mean_h_auroc_std": 0.029092880903398878,
+      "pooled_auprc_mean": 0.945433541318939,
+      "n_seeds": 3
+    }
+  },
+  "FD003": {
+    "mlp": {
+      "mean_h_auroc_mean": 0.8072796964730674,
+      "mean_h_auroc_std": 0.015005550070768743,
+      "pooled_auprc_mean": 0.9028619161790811,
+      "n_seeds": 3
+    },
+    "transformer": {
+      "mean_h_auroc_mean": 0.8116892735081801,
+      "mean_h_auroc_std": 0.01860715278550159,
+      "pooled_auprc_mean": 0.9048183585671729,
+      "n_seeds": 3
+    }
+  },
+  "MBA": {
+    "mlp": {
+      "mean_h_auroc_mean": 0.746219061755922,
+      "mean_h_auroc_std": 0.005925863491772883,
+      "pooled_auprc_mean": 0.9493261732499848,
+      "n_seeds": 3
+    },
+    "transformer": {
+      "mean_h_auroc_mean": 0.7776634238939965,
+      "mean_h_auroc_std": 0.06716426774137542,
+      "pooled_auprc_mean": 0.9315074326563918,
+      "n_seeds": 3
+    }
+  }
+}

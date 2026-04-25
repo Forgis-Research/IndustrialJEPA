@@ -228,13 +228,21 @@ def run_one(dataset: str, seed: int,
         torch.save(model.state_dict(), pre_ckpt)
 
     # 2. Finetune
-    train_ft = _build_event_concat(bundle['ft_train'], stride=4,
+    # CHB-MIT @ 32Hz has ~8M training samples at stride=4 → 13min/epoch.
+    # Use stride=32 (gives ~250K samples → ~3min/epoch) for tractable
+    # 30-epoch training. Test stride=8 keeps the dense 32Hz evaluation
+    # while bringing one seed under ~5 min instead of 44 min.
+    if dataset == 'CHBMIT':
+        train_stride, val_stride, test_stride = 32, 16, 8
+    else:
+        train_stride, val_stride, test_stride = 4, 4, 1
+    train_ft = _build_event_concat(bundle['ft_train'], stride=train_stride,
                                    max_context=max_context,
                                    max_future=eval_max_future)
-    val_ft = _build_event_concat(bundle['ft_val'], stride=4,
+    val_ft = _build_event_concat(bundle['ft_val'], stride=val_stride,
                                  max_context=max_context,
                                  max_future=eval_max_future)
-    test_ft = _build_event_concat(bundle['ft_test'], stride=1,
+    test_ft = _build_event_concat(bundle['ft_test'], stride=test_stride,
                                   max_context=max_context,
                                   max_future=eval_max_future)
     print(f"  [ft] train={len(train_ft)}, val={len(val_ft)}, "

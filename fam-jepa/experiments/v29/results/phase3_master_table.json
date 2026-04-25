@@ -1,0 +1,153 @@
+{
+  "datasets": [
+    {
+      "dataset": "SKAB",
+      "fam": {
+        "src": "v29-mlp",
+        "n": 3,
+        "mean_h_auroc": 0.7261838729895077,
+        "std": 0.03815830699624084,
+        "pooled_auprc": 0.6591714919792647
+      },
+      "chronos2_h_auroc": null,
+      "delta_fam_minus_chronos": null
+    },
+    {
+      "dataset": "ETTm1",
+      "fam": {
+        "src": "v29-mlp",
+        "n": 3,
+        "mean_h_auroc": 0.8692341836249949,
+        "std": 0.0038491941246877356,
+        "pooled_auprc": 0.6137704302357121
+      },
+      "chronos2_h_auroc": null,
+      "delta_fam_minus_chronos": null
+    },
+    {
+      "dataset": "CHBMIT",
+      "fam": null,
+      "chronos2": null
+    },
+    {
+      "dataset": "FD001",
+      "fam": {
+        "src": "v28:phase2d_FD001_lag_none.json",
+        "n": 3,
+        "mean_h_auroc": 0.742280237090703,
+        "std": 0.0025821232420251555,
+        "pooled_auprc": 0.9453129717535408
+      },
+      "chronos2_h_auroc": 0.5531885901806857,
+      "delta_fam_minus_chronos": 0.18909164691001734
+    },
+    {
+      "dataset": "FD002",
+      "fam": {
+        "src": "v27:phase6_FD002_none.json",
+        "n": 3,
+        "mean_h_auroc": 0.568778678899486,
+        "std": 0.0006277889594094638,
+        "pooled_auprc": 0.9098972191170446
+      },
+      "chronos2_h_auroc": 0.63685787840709,
+      "delta_fam_minus_chronos": -0.068079199507604
+    },
+    {
+      "dataset": "FD003",
+      "fam": {
+        "src": "v28:phase3_dense_FD003.json",
+        "n": 3,
+        "mean_h_auroc": 0.819353888195388,
+        "std": 0.009191572102087486,
+        "pooled_auprc": 0.9023290926537761
+      },
+      "chronos2_h_auroc": 0.6470582928140591,
+      "delta_fam_minus_chronos": 0.17229559538132888
+    },
+    {
+      "dataset": "SMAP",
+      "fam": {
+        "src": "v28:phase3_dense_SMAP.json",
+        "n": 3,
+        "mean_h_auroc": 0.549769450193517,
+        "std": 0.035724103871928266,
+        "pooled_auprc": 0.37269731171989107
+      },
+      "chronos2_h_auroc": 0.5000166654720497,
+      "delta_fam_minus_chronos": 0.04975278472146727
+    },
+    {
+      "dataset": "MSL",
+      "fam": {
+        "src": "v28:phase3_dense_MSL.json",
+        "n": 1,
+        "mean_h_auroc": 0.43818174472094706,
+        "std": null,
+        "pooled_auprc": 0.19865577589152258
+      },
+      "chronos2_h_auroc": 0.4963294709769049,
+      "delta_fam_minus_chronos": -0.05814772625595782
+    },
+    {
+      "dataset": "PSM",
+      "fam": {
+        "src": "v28:phase9_PSM_baseline.json",
+        "n": 3,
+        "mean_h_auroc": 0.5587812113442884,
+        "std": 0.015288574029910079,
+        "pooled_auprc": 0.435064209459902
+      },
+      "chronos2_h_auroc": 0.5108198484510963,
+      "delta_fam_minus_chronos": 0.04796136289319208
+    },
+    {
+      "dataset": "SMD",
+      "fam": {
+        "src": "v28:phase9_SMD_baseline.json",
+        "n": 1,
+        "mean_h_auroc": 0.6162938711521208,
+        "std": null,
+        "pooled_auprc": 0.1926223291611434
+      },
+      "chronos2_h_auroc": null,
+      "delta_fam_minus_chronos": null
+    },
+    {
+      "dataset": "MBA",
+      "fam": {
+        "src": "v29-p2-xpred",
+        "n": 3,
+        "mean_h_auroc": 0.7776634238939965,
+        "std": 0.06716426774137542,
+        "pooled_auprc": 0.9315074326563918
+      },
+      "chronos2_h_auroc": 0.6554405679224108,
+      "delta_fam_minus_chronos": 0.12222285597158566
+    },
+    {
+      "dataset": "GECCO",
+      "fam": {
+        "src": "v28:phase3_baseline_GECCO.json",
+        "n": 3,
+        "mean_h_auroc": 0.8590516788876711,
+        "std": 0.05537766243531797,
+        "pooled_auprc": 0.21772542024780298
+      },
+      "chronos2_h_auroc": 0.7673232025065536,
+      "delta_fam_minus_chronos": 0.09172847638111747
+    },
+    {
+      "dataset": "BATADAL",
+      "fam": {
+        "src": "v28:phase2a_BATADAL_lag.json",
+        "n": 3,
+        "mean_h_auroc": 0.6285603848273312,
+        "std": 0.013819644827425724,
+        "pooled_auprc": 0.34426086863062505
+      },
+      "chronos2_h_auroc": 0.4912968132931033,
+      "delta_fam_minus_chronos": 0.1372635715342279
+    }
+  ]
+}

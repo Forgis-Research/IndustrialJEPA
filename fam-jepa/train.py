@@ -244,8 +244,12 @@ def pretrain(model: FAM, train_loader, val_loader=None,
             tgt, tgt_m = tgt.to(device), tgt_m.to(device)
             dt = dt.to(device)
 
-            h_t = model.encoder(ctx, ctx_m)
-            h_pred_raw = model.predictor(h_t, dt)
+            if getattr(model, 'predictor_kind', 'mlp') == 'transformer':
+                h_all, h_kpm = model.encoder(ctx, ctx_m, return_all=True)
+                h_pred_raw = model.predictor(h_all, dt, key_padding_mask=h_kpm)
+            else:
+                h_t = model.encoder(ctx, ctx_m)
+                h_pred_raw = model.predictor(h_t, dt)
 
             with torch.no_grad():
                 h_target = model.target_encoder(tgt, tgt_m)

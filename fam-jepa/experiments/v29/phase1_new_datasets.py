@@ -36,15 +36,21 @@ def main():
     datasets = [d.strip() for d in args.datasets.split(',') if d.strip()]
     seeds = [int(s) for s in args.seeds.split(',')]
 
+    # Per-dataset overrides for very large streams (CHB-MIT @ 32Hz, 7.7M steps).
+    overrides = {
+        'CHBMIT': dict(pre_epochs=15, ft_epochs=12, n_cuts_train=80,
+                       n_cuts_val=20, ft_batch=128),
+    }
+
     for ds in datasets:
         out_json = RES_DIR / f'phase1_{ds}_{args.predictor}.json'
+        kw = dict(predictor_kind=args.predictor,
+                  pre_epochs=args.pre_epochs, ft_epochs=args.ft_epochs)
+        kw.update(overrides.get(ds, {}))
         print(f"\n{'#'*70}\n# Phase 1: {ds}  predictor={args.predictor}  "
-              f"seeds={seeds}\n{'#'*70}", flush=True)
+              f"seeds={seeds}  kw={kw}\n{'#'*70}", flush=True)
         try:
-            run_and_persist(ds, seeds=seeds, out_json=out_json,
-                            predictor_kind=args.predictor,
-                            pre_epochs=args.pre_epochs,
-                            ft_epochs=args.ft_epochs)
+            run_and_persist(ds, seeds=seeds, out_json=out_json, **kw)
         except FileNotFoundError as e:
             print(f"  SKIP {ds}: {e}", flush=True)
         except Exception as e:
