@@ -310,19 +310,33 @@ re-computed by `experiments/v28/compute_dense_surfaces.py` after Phase 3
 finishes. If `experiments/v28/surfaces_dense/dense_fam_v28_<ds>_s42.npz`
 exists, it appears in the surface gallery below.
 
-## 4. Surface gallery (FAM | Chronos-2 | ground truth)
+## 4. Surface gallery — predicted p stacked over grayscale |p − y| delta
 
-Linear y-axis, viridis colormap, [0, 1] scale. Top panel is FAM, middle
-is Chronos-2, bottom is ground truth. PNGs stay in
-`experiments/v28/results/surface_pngs/`.
+Two figures per dataset:
+
+  - **Triplet** (FAM | Chronos-2 | ground truth, viridis, linear-y): the
+    raw prediction surfaces side-by-side. Easy comparison of overall
+    structure.
+  - **Dense + delta** (predicted p in viridis on top, `|p − y|` in
+    `gray_r` on bottom): white = perfect, black = wrong. Per-panel mean
+    `|p − y|` in the title is an interpretable per-pixel L1 metric. The
+    grayscale row immediately shows which model's predictions are closer
+    to ground truth without needing to compare pooled metrics in your
+    head.
+
+The delta panels follow the `feedback_dense_delta_surfaces.md` agent
+pattern: dense Δt re-evaluation (K=150 / 200), log-Δt y-axis, and per-
+panel pooled AUPRC + mean `|p − y|` in the titles.
 
 ```{python}
 #| label: surface-gallery
 
 for ds in DATASETS:
-    png = PNG_DIR / f'triplet_{ds}.png'
     print(f"\n### {ds}\n")
-    show_png(png, height_px=420)
+    print("**Triplet (FAM | Chronos-2 | ground truth):**\n")
+    show_png(PNG_DIR / f'triplet_{ds}.png', height_px=380)
+    print("\n**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):\n")
+    show_png(PNG_DIR / f'dense_delta_{ds}.png', height_px=440)
 ```
 
 ## 5. Detection vs prediction (lead-time analysis)

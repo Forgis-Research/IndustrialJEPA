@@ -58,7 +58,7 @@ ul.task-list li input[type="checkbox"] {
   <ul class="collapse">
   <li><a href="#note-on-grid-mismatch" id="toc-note-on-grid-mismatch" class="nav-link" data-scroll-target="#note-on-grid-mismatch">Note on grid mismatch</a></li>
   </ul></li>
-  <li><a href="#surface-gallery-fam-chronos-2-ground-truth" id="toc-surface-gallery-fam-chronos-2-ground-truth" class="nav-link" data-scroll-target="#surface-gallery-fam-chronos-2-ground-truth">4. Surface gallery (FAM | Chronos-2 | ground truth)</a></li>
+  <li><a href="#surface-gallery-predicted-p-stacked-over-grayscale-p-y-delta" id="toc-surface-gallery-predicted-p-stacked-over-grayscale-p-y-delta" class="nav-link" data-scroll-target="#surface-gallery-predicted-p-stacked-over-grayscale-p-y-delta">4. Surface gallery — predicted p stacked over grayscale |p − y| delta</a></li>
   <li><a href="#detection-vs-prediction-lead-time-analysis" id="toc-detection-vs-prediction-lead-time-analysis" class="nav-link" data-scroll-target="#detection-vs-prediction-lead-time-analysis">5. Detection vs prediction (lead-time analysis)</a></li>
   <li><a href="#per-dataset-sota-references" id="toc-per-dataset-sota-references" class="nav-link" data-scroll-target="#per-dataset-sota-references">6. Per-dataset SOTA references</a></li>
   <li><a href="#honest-assessment" id="toc-honest-assessment" class="nav-link" data-scroll-target="#honest-assessment">7. Honest assessment</a></li>
@@ -177,127 +177,272 @@ Notes:
 <p>For a fully-matched comparison, the dense FAM v28 surfaces are re-computed by <code>experiments/v28/compute_dense_surfaces.py</code> after Phase 3 finishes. If <code>experiments/v28/surfaces_dense/dense_fam_v28_&lt;ds&gt;_s42.npz</code> exists, it appears in the surface gallery below.</p>
 </section>
 </section>
-<section id="surface-gallery-fam-chronos-2-ground-truth" class="level2">
-<h2 class="anchored" data-anchor-id="surface-gallery-fam-chronos-2-ground-truth">4. Surface gallery (FAM | Chronos-2 | ground truth)</h2>
-<p>Linear y-axis, viridis colormap, [0, 1] scale. Top panel is FAM, middle is Chronos-2, bottom is ground truth. PNGs stay in <code>experiments/v28/results/surface_pngs/</code>.</p>
+<section id="surface-gallery-predicted-p-stacked-over-grayscale-p-y-delta" class="level2">
+<h2 class="anchored" data-anchor-id="surface-gallery-predicted-p-stacked-over-grayscale-p-y-delta">4. Surface gallery — predicted p stacked over grayscale |p − y| delta</h2>
+<p>Two figures per dataset:</p>
+<ul>
+<li><strong>Triplet</strong> (FAM | Chronos-2 | ground truth, viridis, linear-y): the raw prediction surfaces side-by-side. Easy comparison of overall structure.</li>
+<li><strong>Dense + delta</strong> (predicted p in viridis on top, <code>|p − y|</code> in <code>gray_r</code> on bottom): white = perfect, black = wrong. Per-panel mean <code>|p − y|</code> in the title is an interpretable per-pixel L1 metric. The grayscale row immediately shows which model’s predictions are closer to ground truth without needing to compare pooled metrics in your head.</li>
+</ul>
+<p>The delta panels follow the <code>feedback_dense_delta_surfaces.md</code> agent pattern: dense Δt re-evaluation (K=150 / 200), log-Δt y-axis, and per- panel pooled AUPRC + mean <code>|p − y|</code> in the titles.</p>
 <div id="surface-gallery" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### FD001
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-2.png" id="surface-gallery-1" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-2.png" id="surface-gallery-1" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-4.png" id="surface-gallery-2" width="927" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### FD002
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-4.png" id="surface-gallery-2" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-6.png" id="surface-gallery-3" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-8.png" id="surface-gallery-4" width="927" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### FD003
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-6.png" id="surface-gallery-3" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-10.png" id="surface-gallery-5" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-12.png" id="surface-gallery-6" width="927" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### SMAP
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-8.png" id="surface-gallery-4" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-14.png" id="surface-gallery-7" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-16.png" id="surface-gallery-8" width="927" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### MSL
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-10.png" id="surface-gallery-5" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-18.png" id="surface-gallery-9" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-20.png" id="surface-gallery-10" width="929" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### PSM
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-12.png" id="surface-gallery-6" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-22.png" id="surface-gallery-11" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-24.png" id="surface-gallery-12" width="927" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### SMD
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-14.png" id="surface-gallery-7" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-26.png" id="surface-gallery-13" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-28.png" id="surface-gallery-14" width="473" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### MBA
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-16.png" id="surface-gallery-8" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-30.png" id="surface-gallery-15" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-32.png" id="surface-gallery-16" width="927" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### GECCO
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-18.png" id="surface-gallery-9" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-34.png" id="surface-gallery-17" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-36.png" id="surface-gallery-18" width="699" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### BATADAL
+
+**Triplet (FAM | Chronos-2 | ground truth):**
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-20.png" id="surface-gallery-10" width="504" height="446" class="figure-img"></p>
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-38.png" id="surface-gallery-19" width="459" height="406" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Dense Δt + grayscale |p − y| delta** (white = perfect, black = wrong):
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-40.png" id="surface-gallery-20" width="699" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
