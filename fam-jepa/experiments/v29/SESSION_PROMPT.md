@@ -23,14 +23,27 @@ Use the v27 canonical architecture throughout:
 | Finetuning horizons | Sparse {1,5,10,20,50,100,150} (streaming) or {1,5,10,20,50,100,150,200} | Proven sufficient |
 | Output | h_t = last token of causal encoder | Standard for causal transformers |
 
-**Normalization (the one dataset-dependent choice):**
+**Two dataset-dependent choices (independent of each other):**
 
-| Data type | norm_mode | Context | Rationale |
-|-----------|-----------|---------|-----------|
-| Lifecycle (entity born → fails) | `none` + global z-score | Full history | Drift IS the signal |
-| Streaming (continuous monitoring) | `revin` | Sliding 512 | Cross-entity scale varies; shape IS the signal |
+| Choice | Criterion | Options |
+|--------|-----------|---------|
+| **Context length** | Does the entity have a known start? | Full history (lifecycle) / Sliding 512 (streaming) |
+| **Normalization** | Is the predictive signal in drift or shape? | `none` + global z-score (drift) / `revin` (shape) |
 
-This is a structural decision from the data description, not a tuned hyperparameter.
+These happen to correlate in our datasets (lifecycle = drift, streaming = shape)
+but are logically independent. A streaming sensor with slow drift (e.g., ETTm
+seasonal trend) might need `none`; a lifecycle entity with abrupt shape-based
+faults might need `revin`.
+
+| Dataset | Context | norm_mode | Signal type |
+|---------|---------|-----------|-------------|
+| C-MAPSS | Full history | `none` | Slow sensor drift |
+| SMAP/MSL/PSM/SMD | Sliding 512 | `revin` | Local anomaly patterns |
+| MBA | Sliding 512 | `revin` | Waveform shape |
+| GECCO/BATADAL | Sliding 512 | `revin` | Local anomaly patterns |
+| CHB-MIT | Sliding 512 | `revin` | Preictal spectral changes (shape) |
+| SKAB | Sliding 512 | `revin` | Pressure/vibration patterns |
+| ETTm1 | Sliding 512 | `revin` | Thermal shape (try `none` too if drift suspected) |
 
 **IMPORTANT**: `finetune_forward` returns CDF probabilities. Do NOT apply sigmoid.
 
