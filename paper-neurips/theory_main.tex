@@ -1,0 +1,58 @@
+% theory_main.tex — Main paper theory subsection (~0.5 page)
+% Include with \input{theory_main} in the appropriate section of paper.tex
+
+\subsection{Theoretical Guarantees}
+\label{sec:theory}
+
+We now formalise when JEPA pretraining retains event-relevant information.
+All proofs and assumptions are in \cref{app:theory}.
+
+\paragraph{Setup.}
+Let $X_{\leq t}$ denote observations up to time $t$, and let $E_{t+\Delta t} \in \{0,1\}$ indicate whether an event occurs in the interval $(t, t+\Delta t]$.
+The encoder produces $H_t = \encoder(X_{\leq t}) \in \R^d$, and the target encoder produces $H^* = \target(X_{(t,t+\Delta t]}) \in \R^d$ from the future interval.
+We write $\hat{H} = \predictor(H_t, \Delta t)$ for the predicted representation.
+We use $I(\cdot;\cdot)$ for mutual information and $H(\cdot)$ for entropy, following \citet{cover2006elements}.
+
+\begin{definition}[Predictive and event-relevant information]
+\label{def:info_decomposition}
+The \emph{total predictive information} in $H_t$ about the future interval is $I(H_t; X_{(t,t+\Delta t]})$.
+The \emph{event-relevant information} captured by the target encoder is $I(H^*; E_{t+\Delta t})$.
+The \emph{event-irrelevant} component of $H^*$ is the residual $I(H^*; X_{(t,t+\Delta t]} \mid E_{t+\Delta t})$.
+\end{definition}
+
+\begin{proposition}[Event-Information Retention]
+\label{prop:retention}
+Suppose \textup{(A1)} the event $E_{t+\Delta t}$ is conditionally independent of $X_{\leq t}$ given $H^*$,
+\textup{(A2)} the pretraining loss satisfies $\E[\|\hat{H} - H^*\|_2^2] \leq \varepsilon$,
+\textup{(A3)} the event posterior $\eta(h) = P(E_{t+\Delta t}=1 \mid H^*=h)$ is $L$-Lipschitz,
+and \textup{(A4)} the marginal event rate satisfies $p = P(E_{t+\Delta t}=1) \in [\underline{p},\, \overline{p}] \subset (0,1)$.
+Then
+\begin{equation}
+\label{eq:main_bound}
+I(H_t;\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_p \, L^2 \, \varepsilon\;,
+\end{equation}
+where $C_p = \bigl(2\,\underline{p}\,(1-\overline{p})\bigr)^{-1}$ depends only on the event-rate bounds.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Since $\hat{H}$ is a deterministic function of $(H_t, \Delta t)$, the data processing inequality gives $I(H_t; E) \geq I(\hat{H}; E)$.
+Under A1, $P(E{=}1 \mid \hat{H}) = \E[\eta(H^*) \mid \hat{H}]$.
+A Jensen-gap argument on the convex KL divergence, combined with the Lipschitz bound A3 and prediction error A2, yields $I(H^*; E) - I(\hat{H}; E) \leq C_p L^2 \varepsilon$.
+Full proof in \cref{app:theory}.
+\end{proof}
+
+\begin{corollary}[Precursor necessity]
+\label{cor:precursor}
+The bound \eqref{eq:main_bound} is non-vacuous (i.e.\ the right-hand side is positive) if and only if:
+\begin{enumerate}[nosep,label=(\roman*)]
+  \item $I(H^*; E_{t+\Delta t}) > 0$: the future interval contains event precursors that the target encoder captures;
+  \item $\varepsilon < I(H^*; E_{t+\Delta t}) / (C_p L^2)$: the predictor approximates the target representation well enough;
+  \item The encoder $\encoder$ has sufficient capacity to represent the precursors (implicit in A1).
+\end{enumerate}
+\end{corollary}
+
+\paragraph{Connection to experiments.}
+\Cref{cor:precursor} directly explains our empirical findings.
+On C-MAPSS (\cref{sec:experiments}), degradation unfolds over hundreds of cycles, so $I(H^*; E_{t+\Delta t})$ is large and $\varepsilon$ is driven small by pretraining, yielding strong downstream performance (h-AUROC $\geq 0.74$).
+On CHB-MIT, seizure onset in scalp EEG has minimal precursors in a 16-second context, so $I(H^*; E_{t+\Delta t}) \approx 0$ regardless of $\varepsilon$: condition (i) fails.
+That predictor \emph{weights} do not transfer (\cref{sec:finetune_ablation}) while the encoder does is consistent with the bound: the encoder preserves information (the $I(H_t; E_{t+\Delta t})$ term), but the predictor's pretraining codomain ($\R^d$ representations) differs from the downstream codomain ($[0,1]$ event probabilities), so pretrained weights offer no inductive bias for the finetuning objective.

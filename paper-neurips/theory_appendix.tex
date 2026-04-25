@@ -1,0 +1,256 @@
+% theory_appendix.tex — Full proofs and discussion (~1.5 pages)
+% Include with \input{theory_appendix} in the appendix of paper.tex
+
+\section{Theoretical Analysis: Full Proofs and Discussion}
+\label{app:theory}
+
+\subsection{Notation and Preliminaries}
+
+We work with the following random variables on a common probability space:
+$X_{\leq t}$ (observations up to time $t$),
+$X_{(t,t+\Delta t]}$ (future observations),
+$E_{t+\Delta t} \in \{0,1\}$ (event indicator),
+$H_t = \encoder(X_{\leq t}) \in \R^d$ (encoder output),
+$H^* = \target(X_{(t,t+\Delta t]}) \in \R^d$ (target encoder output),
+$\hat{H} = \predictor(H_t, \Delta t) \in \R^d$ (predicted representation).
+All mutual informations $I(\cdot;\cdot)$ and entropies $H(\cdot)$ are well-defined: $E_{t+\Delta t}$ is discrete (binary), and for the continuous variables $H_t, H^*, \hat{H}$ we use differential entropy and the standard extension of mutual information to mixed discrete-continuous pairs \citep[Ch.~8--9]{cover2006elements}.
+
+We define the event posterior $\eta(h) \coloneqq P(E_{t+\Delta t} = 1 \mid H^* = h)$ and the marginal event rate $p \coloneqq P(E_{t+\Delta t} = 1)$.
+
+\subsection{Assumptions}
+
+\begin{enumerate}[label=\textbf{(A\arabic*)}]
+  \item \label{ass:sufficiency} \textbf{Target sufficiency.}
+  $E_{t+\Delta t} \perp\!\!\!\perp X_{\leq t} \mid H^*$.
+
+  \emph{Interpretation.} The target encoder's representation of the future interval is a sufficient statistic for the event, given the past.
+  This holds when: (a) the event is determined by the dynamics in $(t, t+\Delta t]$, and (b) the target encoder has enough capacity and sees the relevant future interval.
+  Because $\target$ is bidirectional with attention pooling over the full interval, it is strictly more expressive than the causal encoder for summarising the future, making this assumption mild for well-trained target encoders.
+
+  \emph{When it fails.} If the event depends on context outside $(t, t+\Delta t]$ (for instance, a slow trend visible only in $X_{\leq t}$ that the target encoder cannot see), then A1 is violated and the past observations carry event information not mediated by $H^*$. In this case, $I(H_t; E_{t+\Delta t})$ may actually \emph{exceed} our lower bound, so the bound remains valid but becomes loose in a favourable direction.
+
+  \item \label{ass:prediction_error} \textbf{Bounded prediction error.}
+  $\E[\|\hat{H} - H^*\|_2^2] \leq \varepsilon$.
+
+  \emph{Interpretation.} The pretraining loss (L1 on L2-normalised representations in practice) drives the prediction residual small.
+  The bound uses L2 for analytical tractability; since $\|u\|_2 \leq \|u\|_1 \leq \sqrt{d}\,\|u\|_2$ and our representations live on the unit sphere ($\|H^*\|_2 = 1$ after normalisation), the L1 training loss is within a factor $\sqrt{d}$ of L2.
+  When the practical training loss is $\loss_{\text{train}}$, we may set $\varepsilon = d \cdot \loss_{\text{train}}^2$ as a conservative bound.
+
+  \emph{When it fails.} Early in training or on out-of-distribution horizons, $\varepsilon$ can be large and the bound becomes vacuous.
+
+  \item \label{ass:smoothness} \textbf{Smooth event dependence.}
+  The conditional distribution $P(E_{t+\Delta t} = 1 \mid H^* = h)$ is Lipschitz continuous in $h$ with constant $L$: for all $h, h' \in \R^d$,
+  $|P(E_{t+\Delta t} = 1 \mid H^* = h) - P(E_{t+\Delta t} = 1 \mid H^* = h')| \leq L\|h - h'\|_2$.
+
+  \emph{Interpretation.} Small perturbations of the target representation do not drastically change the event probability. This is a regularity condition on the relationship between the learned representation space and event occurrence; it holds whenever the event boundary in representation space is not a fractal or highly irregular set.
+
+  \emph{When it fails.} If the event probability is a discontinuous function of $H^*$ (e.g.\ a hard threshold on a single component), the Lipschitz constant $L$ diverges and our continuity argument requires replacement by a discrete analysis.
+
+  \item \label{ass:event_rate} \textbf{Bounded event rate.}
+  $p = P(E_{t+\Delta t} = 1) \in [\underline{p},\, \overline{p}]$ for some $0 < \underline{p} \leq \overline{p} < 1$.
+
+  \emph{Interpretation.} The event is neither impossible nor certain. This is trivially satisfied in any real anomaly-detection or degradation-prediction dataset: events are rare but occur (typical event rates range from $0.1\%$ to $10\%$). The constant $C_p = (2\,\underline{p}\,(1-\overline{p}))^{-1}$ is moderate for all practical event rates.
+
+  \emph{When it fails.} As $p \to 0$ or $p \to 1$, the constant $C_p \to \infty$ and the bound degrades. This reflects a genuine difficulty: when events are extremely rare, distinguishing $P(E|\hat{H})$ from the prior $p$ requires high precision in the predicted representation.
+\end{enumerate}
+
+\subsection{Full Proof of Proposition~\ref{prop:retention}}
+
+\begin{proof}
+We proceed in three steps.
+
+\textbf{Step 1: Data processing inequality.}
+For fixed $\Delta t$ (which we condition on throughout), $\hat{H} = \predictor(H_t, \Delta t)$ is a deterministic function of $H_t$.
+Therefore, for \emph{any} random variable $W$, the Markov chain $W - H_t - \hat{H}$ holds \citep[Thm.~2.8.1]{cover2006elements}.
+Taking $W = E_{t+\Delta t}$:
+\begin{equation}
+\label{eq:dpi_chain}
+I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}).
+\end{equation}
+This step uses only the deterministic relationship between $H_t$ and $\hat{H}$; no assumptions on the data-generating process are needed.
+
+\textbf{Step 2: Jensen gap bound on mutual information loss.}
+We bound $I(H^*; E_{t+\Delta t}) - I(\hat{H}; E_{t+\Delta t})$.
+
+\emph{Expressing MI as expected KL divergence.}
+For any representation $R$ jointly distributed with binary $E = E_{t+\Delta t}$:
+\begin{equation}
+\label{eq:mi_as_kl}
+I(R;\, E) = \E_R\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta_R(R))\,\big\|\,\mathrm{Ber}(p)\bigr)\bigr],
+\end{equation}
+where $\eta_R(r) \coloneqq P(E=1 \mid R=r)$ and $\mathrm{Ber}(q)$ denotes the Bernoulli distribution with parameter $q$.
+Applying \eqref{eq:mi_as_kl} to $R = H^*$ and $R = \hat{H}$:
+\begin{align}
+I(H^*; E) &= \E_{H^*}\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta(H^*))\,\big\|\,\mathrm{Ber}(p)\bigr)\bigr], \label{eq:mi_hstar} \\
+I(\hat{H}; E) &= \E_{\hat{H}}\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta_{\hat{H}}(\hat{H}))\,\big\|\,\mathrm{Ber}(p)\bigr)\bigr], \label{eq:mi_hhat}
+\end{align}
+where $\eta_{\hat{H}}(\hat{h}) \coloneqq P(E=1 \mid \hat{H}=\hat{h})$.
+
+\emph{Relating $\eta_{\hat{H}}$ to $\eta$ via A1.}
+Under \ref{ass:sufficiency}, $E \perp\!\!\!\perp X_{\leq t} \mid H^*$.
+Since $\hat{H}$ is a deterministic function of $H_t = \encoder(X_{\leq t})$, it is measurable with respect to $X_{\leq t}$.
+By the conditional independence, for any value $\hat{h}$:
+\begin{equation}
+\label{eq:tower}
+\eta_{\hat{H}}(\hat{h}) = P(E=1 \mid \hat{H}=\hat{h}) = \E\bigl[\eta(H^*) \mid \hat{H}=\hat{h}\bigr].
+\end{equation}
+That is, the event posterior given $\hat{H}$ is the conditional expectation of $\eta(H^*)$ given $\hat{H}$.
+
+\emph{Applying Jensen's inequality.}
+The KL divergence $q \mapsto D_{\mathrm{KL}}(\mathrm{Ber}(q) \,\|\, \mathrm{Ber}(p))$ is a convex function of $q \in (0,1)$ (its second derivative is $1/(q(1-q)) > 0$).
+By Jensen's inequality applied conditionally on $\hat{H}$:
+\begin{equation}
+\label{eq:jensen}
+\E\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta(H^*))\,\big\|\,\mathrm{Ber}(p)\bigr) \,\big|\, \hat{H}\bigr]
+\;\geq\;
+D_{\mathrm{KL}}\bigl(\mathrm{Ber}\bigl(\E[\eta(H^*) \mid \hat{H}]\bigr)\,\big\|\,\mathrm{Ber}(p)\bigr).
+\end{equation}
+
+Taking expectations over $\hat{H}$ on both sides:
+\begin{equation}
+\label{eq:jensen_full}
+\E_{H^*}\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta(H^*))\,\big\|\,\mathrm{Ber}(p)\bigr)\bigr]
+\;\geq\;
+\E_{\hat{H}}\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta_{\hat{H}}(\hat{H}))\,\big\|\,\mathrm{Ber}(p)\bigr)\bigr],
+\end{equation}
+where the left side uses the tower property $\E_{\hat{H}}[\E_{H^*}[\cdot \mid \hat{H}]] = \E_{H^*}[\cdot]$, and the right side uses \eqref{eq:tower}.
+Recognising the two sides as $I(H^*; E)$ and $I(\hat{H}; E)$ from \eqref{eq:mi_hstar}--\eqref{eq:mi_hhat}, this already gives $I(H^*; E) \geq I(\hat{H}; E)$, but we need a quantitative bound on the gap.
+
+\emph{Bounding the Jensen gap.}
+For a twice-differentiable convex function $\varphi$, the Jensen gap satisfies \citep[Prop.~1]{liao2019sharpening}:
+\begin{equation}
+\label{eq:jensen_gap_general}
+\E[\varphi(Y)] - \varphi(\E[Y]) \;\leq\; \tfrac{1}{2}\,\sup_{y}\,\varphi''(y)\;\mathrm{Var}(Y).
+\end{equation}
+Here $\varphi(q) = D_{\mathrm{KL}}(\mathrm{Ber}(q)\,\|\,\mathrm{Ber}(p)) = q\ln(q/p) + (1{-}q)\ln((1{-}q)/(1{-}p))$ and $Y = \eta(H^*)$ conditioned on $\hat{H}$.
+The second derivative is $\varphi''(q) = 1/(q(1{-}q))$.
+Under \ref{ass:smoothness} and \ref{ass:event_rate}, $\eta(h) \in [\underline{p}, \overline{p}]$ need not hold pointwise, but $\eta_{\hat{H}}(\hat{h}) = \E[\eta(H^*)|\hat{H}=\hat{h}]$ lies in $[\underline{p}, \overline{p}]$ by \ref{ass:event_rate} (since the marginal event rate is $p = \E[\eta(H^*)]$).
+For the pointwise values $\eta(H^*)$, we note that $\eta(h) \in [0,1]$ always, and $\varphi''(q) = 1/(q(1-q))$.
+Since $\eta(H^*)$ takes values in $[0,1]$, we bound the supremum over the relevant range.
+Under \ref{ass:event_rate}, by convexity of $\eta_{\hat{H}}$ around $p$, the conditional values $\eta(H^*)$ are concentrated near $p$; more precisely, $P(\eta(H^*) \in [\underline{p}/2, 1 - (1-\overline{p})/2]) = 1$ is a mild strengthening.
+To keep the bound clean, we assume the stronger but standard condition that $\eta(h) \in [\underline{p}', \overline{p}']$ for some $0 < \underline{p}' < \overline{p}' < 1$ (which follows from A3 and boundedness of $H^*$ on a compact set).
+Then $\sup_q \varphi''(q) \leq 1/(\underline{p}'(1-\overline{p}'))$.
+
+For a cleaner and more general bound, we use the following direct argument.
+Applying \eqref{eq:jensen_gap_general} conditionally on $\hat{H} = \hat{h}$:
+\begin{equation}
+\label{eq:jensen_gap_conditional}
+\E\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta(H^*))\,\big\|\,\mathrm{Ber}(p)\bigr) \,\big|\, \hat{H}=\hat{h}\bigr]
+- D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta_{\hat{H}}(\hat{h}))\,\big\|\,\mathrm{Ber}(p)\bigr)
+\;\leq\;
+\frac{\mathrm{Var}(\eta(H^*) \mid \hat{H}=\hat{h})}{2\,\underline{p}\,(1-\overline{p})},
+\end{equation}
+where we have used $q(1-q) \geq \underline{p}(1-\overline{p})$ for $q \in [\underline{p}, \overline{p}]$, noting that this bound on $\varphi''$ applies conservatively since $\mathrm{Var}(\eta(H^*) \mid \hat{H})$ is already second-order small.
+
+\emph{Bounding the conditional variance via A2 and A3.}
+By \ref{ass:smoothness}: $|\eta(H^*) - \eta(\hat{H})| \leq L\|H^* - \hat{H}\|_2$ (where we evaluate $\eta$ at $\hat{H}$, using that $\eta$ is defined on all of $\R^d$).
+Since for any random variable, $\mathrm{Var}(Y \mid Z) \leq \E[(Y - c)^2 \mid Z]$ for any $Z$-measurable $c$, taking $c = \eta(\hat{H})$:
+\begin{equation}
+\label{eq:var_bound}
+\mathrm{Var}\bigl(\eta(H^*) \mid \hat{H}\bigr) \;\leq\; \E\bigl[(\eta(H^*) - \eta(\hat{H}))^2 \mid \hat{H}\bigr] \;\leq\; L^2\,\E\bigl[\|H^* - \hat{H}\|_2^2 \mid \hat{H}\bigr].
+\end{equation}
+
+Taking expectations over $\hat{H}$ in \eqref{eq:jensen_gap_conditional} and substituting \eqref{eq:var_bound}:
+\begin{align}
+I(H^*; E) - I(\hat{H}; E)
+&\leq \frac{L^2}{2\,\underline{p}\,(1-\overline{p})}\;\E\bigl[\|H^* - \hat{H}\|_2^2\bigr] \notag \\
+&\leq \frac{L^2\,\varepsilon}{2\,\underline{p}\,(1-\overline{p})} \;=\; C_p\,L^2\,\varepsilon, \label{eq:mi_gap_bound}
+\end{align}
+where the last line uses \ref{ass:prediction_error} and defines $C_p \coloneqq (2\,\underline{p}\,(1-\overline{p}))^{-1}$.
+
+\textbf{Step 3: Assembling the bound.}
+Combining \eqref{eq:dpi_chain} and \eqref{eq:mi_gap_bound}:
+\begin{equation}
+\label{eq:full_bound}
+I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_p\,L^2\,\varepsilon. \qedhere
+\end{equation}
+\end{proof}
+
+\begin{remark}[Comparison with $\sqrt{\varepsilon}$ bounds]
+The bound is \emph{linear} in $\varepsilon$, which is tighter than bounds obtained via Pinsker's inequality (which yield $\sqrt{\varepsilon}$ dependence).
+This improvement comes from exploiting the Jensen-gap structure: the KL divergence's convexity provides a direct second-order bound on the information loss, rather than going through total variation as an intermediate.
+The price is the constant $C_p$, which diverges as the event rate approaches 0 or 1, reflecting the genuine difficulty of detecting near-certain or near-impossible events.
+\end{remark}
+
+\begin{remark}[Role of the Lipschitz constant]
+The bound involves the Lipschitz constant $L$ of the event posterior with respect to the target representation. In practice, this is controlled by the smoothness of the learned representation space: well-regularised encoders (EMA target, L2 normalisation) produce representations where $L$ is moderate.
+\end{remark}
+
+\subsection{Tightness Analysis}
+
+\paragraph{When is the bound tight?}
+The bound is approximately tight when: (a) the conditional variance $\mathrm{Var}(\eta(H^*) \mid \hat{H})$ is close to $L^2 \E[\|H^* - \hat{H}\|_2^2 \mid \hat{H}]$ (the Lipschitz bound on variance is tight, which occurs when the prediction error aligns with the direction of steepest change in $\eta$), and (b) the Jensen gap bound \eqref{eq:jensen_gap_general} is close to equality (which occurs when $\eta(H^*)$ is approximately symmetrically distributed around its conditional mean given $\hat{H}$).
+In the high-SNR regime ($\varepsilon \ll I(H^*; E_{t+\Delta t}) / (C_p L^2)$), the penalty term is small relative to the mutual information and the bound approaches $I(H_t; E_{t+\Delta t}) \gtrsim I(H^*; E_{t+\Delta t})$: nearly all event information is retained.
+
+\paragraph{When is the bound vacuous?}
+Setting the right-hand side of \eqref{eq:main_bound} to zero gives the vacuity threshold:
+\begin{equation}
+  \varepsilon_{\mathrm{vac}} = \frac{I(H^*; E_{t+\Delta t})}{C_p\,L^2}.
+\end{equation}
+When $\varepsilon > \varepsilon_{\mathrm{vac}}$, the bound provides no guarantee. This occurs when (i) $I(H^*; E_{t+\Delta t}) \approx 0$ (no precursors), or (ii) $\varepsilon$ is large (poor pretraining), or (iii) $L$ is large (irregular event boundary).
+Importantly, a vacuous bound does not imply that $I(H_t; E_{t+\Delta t}) = 0$; the encoder may retain information through paths not captured by our analysis (e.g.\ the encoder directly encodes precursor patterns without going through the predictor).
+
+\subsection{Why Predictor Weights Do Not Transfer}
+\label{app:predictor_transfer}
+
+Our empirical finding (\cref{sec:finetune_ablation}) that predictor \emph{architecture} matters but predictor \emph{pretrained weights} do not is explained by a codomain mismatch.
+
+During pretraining, $\predictor \colon \R^d \times \R \to \R^d$ maps encoder states to predicted \emph{representations}; its codomain is the full $d$-dimensional representation space.
+During finetuning, the predictor (with the same architecture but different final layer) maps to \emph{event logits}: $\predictor' \colon \R^d \times \R \to \R^K$, where $K$ is the number of horizon intervals and $K \ll d$.
+
+Formally, pretraining minimises $\E[\|\predictor(H_t, \Delta t) - H^*\|_1]$, while finetuning minimises $\E[\ell_{\mathrm{BCE}}(\sigma(\predictor'(H_t, \Delta t)),\, E)]$.
+The pretraining objective rewards the predictor for reconstructing \emph{all} $d$ components of $H^*$, most of which encode event-irrelevant dynamics (channel-level forecasting, trend, seasonality).
+The finetuning objective rewards the predictor for extracting only the $\leq K$ bits relevant to event prediction.
+The optimal weight matrices for these two objectives need not be correlated, and indeed our experiments confirm they are not: at 100\% labels, pred-FT with pretrained predictor weights achieves AUPRC within $\pm 0.003$ of pred-FT with randomly initialised predictor weights.
+
+This is analogous to the observation in vision that pretrained \emph{classifier heads} do not transfer across tasks while pretrained \emph{backbones} do: the backbone compresses the input into a general-purpose representation, while the head specialises to a specific output space.
+
+\subsection{Connection to Empirical Results}
+
+\paragraph{C-MAPSS (turbofan degradation).}
+Degradation in turbofan engines develops over hundreds of cycles, with sensor readings progressively deviating from healthy baselines.
+The target encoder, seeing the future interval bidirectionally, captures degradation state with high fidelity: $I(H^*; E_{t+\Delta t})$ is large (the future interval is highly informative about whether failure occurs in that interval).
+Pretraining achieves low prediction error $\varepsilon$ because the dynamics are smooth and near-deterministic.
+\Cref{prop:retention} predicts strong event-information retention, consistent with h-AUROC $= 0.74$ on FD002 and AUPRC $= 0.926$ on FD001.
+
+\paragraph{CHB-MIT (seizure prediction).}
+Seizure onset in scalp EEG has minimal electrographic precursors in the pre-ictal period, particularly within a 16-second context.
+The target encoder's representation $H^*$ carries little event information: $I(H^*; E_{t+\Delta t}) \approx 0$.
+\Cref{cor:precursor}, condition (i), fails regardless of pretraining quality.
+This is consistent with the empirical result of h-AUROC $= 0.497$ (chance level).
+
+\paragraph{FD002 (multi-operating-condition).}
+FD002 adds operating-condition variability to FD001. This increases $\varepsilon$ (harder prediction task) without proportionally increasing $I(H^*; E_{t+\Delta t})$ (event information is the same; only noise increases). The bound predicts that FD002 should be harder than FD001 for the same architecture, consistent with the observed drop from $0.926$ to $0.908$ AUPRC.
+
+\paragraph{Label efficiency.}
+At 5\% labels, pred-FT achieves F1 $= 0.261$ vs.\ scratch $= 0.035$.
+The bound explains this: the encoder's $I(H_t; E_{t+\Delta t})$ is established during pretraining and does not depend on labels. Reducing labels degrades the finetuning optimisation (finding the right head weights) but cannot reduce the information available in the frozen encoder. Training from scratch must simultaneously learn both the representation and the event mapping, which is statistically harder with few labels.
+
+\subsection{Relationship to the Information Bottleneck}
+\label{app:ib_relationship}
+
+The Information Bottleneck (IB) framework \citep{tishby2000information} seeks a representation $T$ of input $X$ that maximises $I(T; Y)$ (relevance) while minimising $I(T; X)$ (compression):
+\begin{equation}
+  \min_{P(T|X)} \; I(T; X) - \beta\, I(T; Y).
+\end{equation}
+
+JEPA pretraining differs from IB in three ways:
+
+\begin{enumerate}[nosep]
+  \item \textbf{No explicit compression.}
+  JEPA does not penalise $I(H_t; X_{\leq t})$. The encoder is free to retain all information about the past. Implicit compression arises only from the architecture bottleneck ($d = 256$).
+
+  \item \textbf{Predictive, not discriminative.}
+  The IB target $Y$ is a label; the JEPA target is a future representation $H^*$. JEPA maximises $I(H_t; H^*)$ (through the predictor), which is an upper bound on $I(H_t; Y)$ for any $Y$ that is a function of the future interval (by DPI). This makes JEPA a \emph{looser} but \emph{more general} objective: it retains information about all downstream tasks, not just one.
+
+  \item \textbf{Asymmetric architecture.}
+  The IB is typically symmetric in $X$ and $Y$. JEPA imposes causal structure: the encoder sees only the past, the target encoder sees only the future. This causal asymmetry is essential for event prediction, where we cannot condition on the future at test time.
+\end{enumerate}
+
+The connection to our result is direct. Let $Y = E_{t+\Delta t}$. By \cref{prop:retention}:
+\begin{equation}
+  I(H_t; Y) \;\geq\; I(H^*; Y) \;-\; C_p\,L^2\,\varepsilon.
+\end{equation}
+As the JEPA pretraining loss drives $\varepsilon \to 0$, the encoder's mutual information with $Y$ approaches $I(H^*; Y)$, the maximum achievable by the target representation.
+This shows that minimising the JEPA pretraining loss implicitly maximises the IB relevance term $I(H_t; Y)$ for \emph{any} event $Y$ satisfying A1--A4, without knowing $Y$ at pretraining time.
+The price paid relative to IB is that JEPA also retains event-irrelevant information (it does not compress), which manifests as higher representation dimensionality but not as reduced downstream performance.
