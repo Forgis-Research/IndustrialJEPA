@@ -151,7 +151,8 @@ FAM v26 'revin' for anomaly. Chronos-2 is the v27 dense re-evaluation
 | FD003   | 0.821 ± 0.021 | **0.847 ± 0.004 (dense_ft)**     | +0.027 | t=2.47 (p=0.13) | 0.647 | **+0.200** |
 | SMAP    | **0.588 ± 0.056** | (v28 dense_ft regresses)     | (—) | — | 0.500 | **+0.088** |
 | MSL     | 0.394 ± 0.022 | (both poor) | — | — | **0.496** | -0.10 |
-| PSM     | 0.558 ± 0.018 | (no v28 ckpt) | — | — | 0.511 | **+0.047** |
+| PSM     | 0.558 ± 0.018 | 0.558 ± 0.018 (baseline) | +0.000 | — | 0.511 | **+0.054** |
+| SMD     | (no v27 dense) | 0.591 (s42 only)            | new   | — | (no Chr surface) | — |
 | MBA     | 0.581 ± 0.001 | 0.577 ± 0.044 (lag+revin) | -0.004 | t=-0.14 (p=0.90) | 0.655 | -0.078 |
 | GECCO   | (NEW)         | 0.685 ± 0.067 (baseline revin) | new | — | **0.767** | -0.082 |
 | BATADAL | (NEW)         | **0.564 ± 0.005 (lag+revin)** | new | — | 0.491 | **+0.073** |
