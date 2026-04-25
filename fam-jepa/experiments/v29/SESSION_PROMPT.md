@@ -158,18 +158,19 @@ Always save surfaces as .npz on the VM. Push only PNGs to git.
 Replace the 2-layer MLP predictor with a small transformer predictor.
 Test on FD001 (norm_mode='none') and MBA (norm_mode='revin'), 3 seeds each.
 
-### Architecture
+### Architecture: full-sequence transformer predictor
+
+The current MLP predictor sees only h_t (last encoder token) — a single
+256-d vector. It throws away 31 of 32 encoder outputs. A transformer
+predictor can attend over ALL encoder tokens:
 
 ```python
 class TransformerPredictor(nn.Module):
-    """Small transformer that predicts future embedding from (h_t, Δt)."""
+    """Transformer predictor: attends over all encoder tokens + Δt query."""
 
     def __init__(self, d_model=256, n_heads=4, n_layers=1):
         super().__init__()
-        self.dt_embed = nn.Sequential(
-            nn.Linear(1, d_model),
-            nn.GELU(),
-        )
+        self.dt_embed = nn.Sequential(nn.Linear(1, d_model), nn.GELU())
         layer = nn.TransformerEncoderLayer(
             d_model=d_model, nhead=n_heads,
             dim_feedforward=d_model, dropout=0.0,
@@ -178,28 +179,47 @@ class TransformerPredictor(nn.Module):
         self.transformer = nn.TransformerEncoder(layer, num_layers=n_layers)
         self.out_proj = nn.Linear(d_model, d_model)
 
-    def forward(self, h, delta_t):
-        """h: (B, d). delta_t: (B,). Returns (B, d)."""
+    def forward(self, h_all, delta_t):
+        """h_all: (B, N, d) — ALL encoder tokens. delta_t: (B,)."""
         dt_tok = self.dt_embed(delta_t.float().unsqueeze(-1))  # (B, d)
-        # Two tokens: [h_t, dt_embedding]. Self-attend.
-        tokens = torch.stack([h, dt_tok], dim=1)  # (B, 2, d)
-        out = self.transformer(tokens)             # (B, 2, d)
-        return self.out_proj(out[:, 0])            # take h_t position
+        # Append Δt as query token after all encoder tokens
+        tokens = torch.cat([h_all, dt_tok.unsqueeze(1)], dim=1)  # (B, N+1, d)
+        out = self.transformer(tokens)       # (B, N+1, d)
+        return self.out_proj(out[:, -1])     # Δt token attends to all h
 ```
 
-**Param count**: ~200K (1-layer transformer with d=256, H=4, d_ff=256).
-Matched to MLP predictor for fair comparison.
+The Δt token is appended last and attends to all encoder positions — it
+acts as a learned query: "given these N representations and this horizon,
+what will the future look like?" Output from the Δt position.
 
-**Why this might help**: The MLP concatenates Δt as a scalar and mixes it
-in the first linear layer — the horizon conditioning is "shallow." A
-transformer cross-attends between h_t and a Δt embedding, potentially
-learning richer horizon-dependent dynamics. MTS-JEPA used a transformer
-predictor and it's the only other JEPA for time series.
+**Interface change required**: The encoder currently returns `h_t` (last
+token only). For this ablation, it must return `h_all` (all tokens).
+Add a flag to `CausalEncoder.forward()`:
+```python
+def forward(self, x, mask=None, return_all=False):
+    ...
+    if return_all:
+        return h  # (B, N, d) — all tokens
+    return h[:, -1, :]  # (B, d) — last token only
+```
+The MLP predictor uses `return_all=False` (unchanged). The transformer
+predictor uses `return_all=True`.
 
-**Why it might not help**: With only 2 tokens (h_t and dt_tok), the
-self-attention is essentially a learned bilinear interaction — not much
-richer than an MLP. The bottleneck may not be the predictor architecture
-but the encoder representation (h_t).
+**Param count**: ~200K (1-layer, d=256, H=4, d_ff=256). Matched to MLP.
+
+**Why this might help**: The MLP sees one compressed summary. The
+transformer sees the full sequence of encoder states — it can detect
+the drift *gradient* across positions (how fast sensors change), local
+anomalies in specific positions, and multi-scale patterns. For FD003
+(two fault modes), distinct spatial patterns across the token sequence
+might be visible to the transformer but collapsed by the last-token
+bottleneck.
+
+**Why it might not help**: The causal encoder's last token has already
+attended to all earlier tokens via 2 layers of self-attention. In
+theory h_t contains everything. Whether 2 layers at d=256 is enough
+to losslessly compress 32 tokens is the empirical question this
+ablation answers.
 
 ### What to measure
 
