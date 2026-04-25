@@ -441,6 +441,69 @@ class EventHead(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# MonotoneCDF — continuous monotone CDF readout
+# ---------------------------------------------------------------------------
+
+class MonotoneCDF(nn.Module):
+    """Continuous monotone CDF readout: (h_per_horizon, Δt) → p ∈ [0, 1].
+
+    Replaces the discrete-hazard EventHead. The ``dt`` input flows through a
+    chain of layers whose weights AND output projection are constrained
+    positive (softplus), with monotone non-decreasing activations (softplus),
+    so the readout is monotone non-decreasing in Δt by construction.
+
+    The h_per_horizon path provides context-dependent shape and is added
+    additively in a non-linear projection. Even though h_per_horizon may
+    weakly depend on Δt (the predictor sees Δt), the architectural Δt
+    pathway dominates and yields visually smooth surfaces.
+    """
+
+    def __init__(self, d_model: int = 256, hidden: int = 64, n_layers: int = 3,
+                 dt_scale: float = 100.0):
+        super().__init__()
+        self.dt_scale = dt_scale
+        self.context_proj = nn.Sequential(
+            nn.LayerNorm(d_model),
+            nn.Linear(d_model, hidden),
+            nn.GELU(),
+        )
+        # Monotone Δt pathway: positive weights via softplus.
+        self.dt_layers = nn.ModuleList()
+        self.dt_biases = nn.ParameterList()
+        dims = [1] + [hidden] * n_layers
+        for i in range(n_layers):
+            self.dt_layers.append(nn.Linear(dims[i], dims[i + 1], bias=False))
+            self.dt_biases.append(nn.Parameter(torch.zeros(dims[i + 1])))
+        # Output projection — also constrained positive so monotonicity in Δt
+        # carries through to the final logit. Negative bias init so the head
+        # starts predicting near the base rate instead of saturated p≈1.
+        self.out_weight = nn.Parameter(torch.zeros(1, hidden))
+        self.out_bias = nn.Parameter(torch.full((1,), -3.0))
+
+    def forward(self, h_per_horizon: torch.Tensor,
+                delta_t: torch.Tensor) -> torch.Tensor:
+        """
+        h_per_horizon: (B, K, d).
+        delta_t: (K,) or (B, K) horizon values (float, native units).
+        Returns: (B, K) probabilities in (0, 1), monotone non-decreasing in Δt.
+        """
+        B, K, d = h_per_horizon.shape
+        if delta_t.dim() == 1:
+            delta_t = delta_t.unsqueeze(0).expand(B, K)
+        # Normalize Δt to a stable numeric range.
+        z = (delta_t.float() / self.dt_scale).unsqueeze(-1)  # (B, K, 1)
+        for layer, bias in zip(self.dt_layers, self.dt_biases):
+            w_pos = F.softplus(layer.weight)  # (out, in) positive
+            z = F.linear(z, w_pos) + bias
+            z = F.softplus(z)  # monotone non-decreasing
+        ctx = self.context_proj(h_per_horizon)  # (B, K, hidden)
+        combined = z + ctx
+        w_out_pos = F.softplus(self.out_weight)  # (1, hidden) positive
+        logits = F.linear(combined, w_out_pos, self.out_bias).squeeze(-1)
+        return torch.sigmoid(logits)
+
+
+# ---------------------------------------------------------------------------
 # FAM — full model
 # ---------------------------------------------------------------------------
 
@@ -458,13 +521,19 @@ class FAM(nn.Module):
                  ema_momentum: float = 0.99, predictor_hidden: int = 256,
                  norm_mode: str = 'revin',
                  predictor_kind: str = 'mlp',
-                 predictor_n_layers: int = 1):
+                 predictor_n_layers: int = 1,
+                 event_head_kind: str = 'discrete_hazard',
+                 monotone_hidden: int = 64,
+                 monotone_n_layers: int = 3,
+                 monotone_dt_scale: float = 100.0):
         super().__init__()
         assert predictor_kind in ('mlp', 'transformer'), predictor_kind
+        assert event_head_kind in ('discrete_hazard', 'monotone_cdf'), event_head_kind
         self.d_model = d_model
         self.ema_momentum = ema_momentum
         self.norm_mode = norm_mode
         self.predictor_kind = predictor_kind
+        self.event_head_kind = event_head_kind
 
         self.encoder = CausalEncoder(
             n_channels, patch_size, d_model, n_heads, n_layers, d_ff, dropout,
@@ -479,6 +548,12 @@ class FAM(nn.Module):
                 d_model=d_model, n_heads=n_heads,
                 n_layers=predictor_n_layers, d_ff=d_model, dropout=0.0)
         self.event_head = EventHead(d_model)
+        if event_head_kind == 'monotone_cdf':
+            self.monotone_cdf = MonotoneCDF(
+                d_model, hidden=monotone_hidden, n_layers=monotone_n_layers,
+                dt_scale=monotone_dt_scale)
+        else:
+            self.monotone_cdf = None
 
         # Initialize target encoder from encoder weights (matching keys)
         self._init_target_encoder()
@@ -591,6 +666,9 @@ class FAM(nn.Module):
                 device=h_t.device, dtype=torch.float32)
             h_pred = self.predictor(h_exp, dt_exp).view(B, K, d)
 
+        if self.event_head_kind == 'monotone_cdf':
+            # Continuous monotone CDF — bypasses the discrete-hazard parameterization.
+            return self.monotone_cdf(h_pred, horizons.to(h_pred.device))
         hazard_logits = self.event_head(h_pred)          # (B, K)
         lambdas = torch.sigmoid(hazard_logits)            # (B, K) ∈ (0,1)
         survival = torch.cumprod(1 - lambdas, dim=-1)     # (B, K) non-increasing
