@@ -22,7 +22,14 @@ import numpy as np
 import pandas as pd
 from IPython.display import Image, display, Markdown
 
-REPO = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa')
+try:
+    REPO = Path(__file__).resolve().parent.parent
+except NameError:
+    # Quarto/Jupyter: resolve relative to notebook location
+    REPO = Path('.').resolve().parent
+# Fallback for VM
+if not (REPO / 'experiments').exists():
+    REPO = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa')
 V29 = REPO / 'experiments/v29'
 RES = V29 / 'results'
 PNG_DIR = RES / 'surface_pngs'
@@ -187,47 +194,24 @@ high-variance v29 transformer-predictor results in the table — MBA is
 # Build the master table by pulling best mean_h_auroc per dataset across all
 # v27/v28/v29 result jsons.
 
-def best_h_auroc(*candidates):
-    best, best_src = None, None
-    for label, jp in candidates:
-        d = load_json(jp)
-        if d is None or not d.get('results'):
-            continue
-        rs = d['results']
-        aurocs = [r['mean_h_auroc'] for r in rs]
-        if not aurocs:
-            continue
-        m = float(np.mean(aurocs))
-        if best is None or m > best:
-            best = m
-            best_src = label
-    return best, best_src
-
-V27_RES = REPO / 'experiments/v27/results'
-V28_RES = REPO / 'experiments/v28/results'
-
-rows = []
-# v29 new
-for ds in DATASETS_NEW:
-    h, src = best_h_auroc(
-        ('v29-mlp', RES / f'phase1_{ds}_mlp.json'),
-        ('v29-xpred', RES / f'phase1_{ds}_transformer.json'),
-    )
-    rows.append({'dataset': ds, 'fam_h_auroc': h, 'fam_source': src})
-
-# Legacy: prefer v29 if present, fallback to v28 best, then v27
-for ds in DATASETS_LEGACY:
-    h, src = best_h_auroc(
-        ('v29-mlp', RES / f'phase3_{ds}_mlp.json'),
-        ('v29-xpred', RES / f'phase3_{ds}_transformer.json'),
-        ('v28-best', V28_RES / f'phase2a_{ds}_lag.json'),
-        ('v28-baseline', V28_RES / f'phase9_{ds}_baseline.json'),
-        ('v27', V27_RES / f'{ds}_none.json'),
-        ('v27-revin', V27_RES / f'{ds}_revin.json'),
-    )
-    rows.append({'dataset': ds, 'fam_h_auroc': h, 'fam_source': src})
-
-print(pd.DataFrame(rows).to_string(index=False))
+# Use the pre-computed master table (aggregated on the VM across v27-v29)
+master_path = RES / 'phase3_master_table.json'
+if master_path.exists():
+    master = json.load(open(master_path))
+    rows = []
+    for entry in master['datasets']:
+        row = {
+            'dataset': entry['dataset'],
+            'FAM h-AUROC': (f"{entry['fam']['mean_h_auroc']:.3f} +/- {entry['fam']['std']:.3f}" if entry['fam'].get('std') is not None else f"{entry['fam']['mean_h_auroc']:.3f} (n=1)") if entry.get('fam') and entry['fam'].get('mean_h_auroc') is not None else '-',
+            'n': entry['fam']['n'] if entry.get('fam') else 0,
+            'source': entry['fam']['src'] if entry.get('fam') else '-',
+            'Chronos-2': f"{entry['chronos2_h_auroc']:.3f}" if entry.get('chronos2_h_auroc') is not None else '-',
+            'Δ FAM-Chr': f"{entry['delta_fam_minus_chronos']:+.3f}" if entry.get('delta_fam_minus_chronos') is not None else '-',
+        }
+        rows.append(row)
+    print(pd.DataFrame(rows).to_string(index=False))
+else:
+    print("(master table JSON not found — view the pre-rendered HTML instead)")
 ```
 
 # 4 — Surface gallery
