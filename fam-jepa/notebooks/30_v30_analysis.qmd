@@ -1,0 +1,332 @@
+---
+title: "FAM v30 — uniform benchmark, fair ablation, monotone-CDF check"
+author: "FAM team"
+date: today
+format:
+  html:
+    self-contained: true
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    fig-width: 10
+    fig-height: 4
+jupyter: python3
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| label: setup
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import Image, Markdown
+
+REPO = Path('/home/sagemaker-user/IndustrialJEPA')
+V30 = REPO / 'fam-jepa/experiments/v30'
+RES = V30 / 'results'
+PNG = RES / 'surface_pngs'
+
+def load(path):
+    p = Path(path)
+    if not p.exists():
+        return None
+    return json.load(open(p))
+
+def show_png(path, alt='surface', caption=''):
+    p = Path(path)
+    if not p.exists():
+        return Markdown(f"*(missing PNG: {p.name})*")
+    return Image(filename=str(p), alt=alt)
+```
+
+## 1. Executive summary
+
+V30 delivered three things in priority order:
+
+1. **Phase 0 — head choice locked.** Dense discrete hazard CDF at K=150
+   (every integer horizon 1..150) is the canonical FAM head from v30
+   onwards. The MonotoneCDF alternative collapsed to chance under
+   pos-weighted BCE across the architecture variants tried (cap-1h
+   ablation; documented as a negative result with notes on what would
+   need to change for monotonicity to be the right inductive bias).
+
+2. **Phase 1 — fair ablation refines the headline.** A 2x2-plus-one
+   ablation (FAM-probe / Chr2-probe / FAM-predft / Chr2-mlp /
+   FAM-mlp-rand) on FD001/FD003/MBA/BATADAL × 3 seeds shows the FAM
+   encoder beats Chronos-2 even at matched (linear-probe) head capacity
+   on 3/4 datasets. Pretrained predictor init helps a little on top.
+
+3. **Phase 3 — uniform benchmark across all confirmed datasets.**
+   Single set of hyperparameters (only Δt_max varies). 3 seeds, 100%
+   and 10% labels. Headline numbers in §5; gallery in §6.
+
+```{python}
+#| label: phase0-table
+p0 = load(RES / 'phase0_decision.json') or {}
+if p0:
+    rows = [
+        ['Dense discrete K=150',
+         p0['variant_a_dense_discrete']['mean_h_auroc'],
+         p0['variant_a_dense_discrete']['pooled_auprc']],
+        ['MonotoneCDF (hidden=64, 3 layers)',
+         p0['variant_b_monotone_cdf']['mean_h_auroc'],
+         p0['variant_b_monotone_cdf']['pooled_auprc']],
+    ]
+    print(pd.DataFrame(rows, columns=['head', 'mean_h_AUROC', 'pooled_AUPRC'])
+          .to_string(index=False))
+    print(f"\nchosen: {p0['chosen_head']}\nreason: {p0['reason']}")
+```
+
+## 2. Phase 0 — Dense K=150 vs MonotoneCDF on FD001 (s42)
+
+The sparse K=8 v29 horizons produced a banded surface artifact; v30 fixes
+that by training and evaluating at every integer horizon 1..150. The
+MonotoneCDF was tried as a continuous alternative whose architecture
+guarantees monotonicity in Δt by construction (positive softplus weights
+on the Δt path). With pos-weighted BCE under heavy class imbalance, the
+MonotoneCDF parameterisation as implemented (Option A: replaces only the
+event-head readout, predictor still runs per-horizon) failed to learn —
+the train loss climbed across epochs and validation h-AUROC stayed at
+0.500. A negative-bias init did not rescue it, and the prompt's 1h cap
+was respected.
+
+Decision: discrete hazard CDF stays as the canonical head. The MonotoneCDF
+module is in `model.py` for future architectural exploration but is not
+adopted as the v30 default.
+
+::: {.panel-tabset}
+### Dense discrete K=150
+```{python}
+show_png(PNG / 'FD001_none_discrete_hazard_td20_p0_s42.png',
+         alt='dense K=150')
+```
+### MonotoneCDF
+```{python}
+show_png(PNG / 'FD001_none_monotone_cdf_td20_p0_s42.png',
+         alt='monotone CDF (collapsed)')
+```
+:::
+
+## 3. Phase 1 — fair ablation, 2x2 + extra
+
+Five variants × four datasets × three seeds (42, 123, 456). Sparse
+horizons (matching v24 cached Chronos-2 protocol). Encoder is frozen
+in every variant; only the head differs.
+
+```{python}
+#| label: phase1-table
+p1 = load(RES / 'phase1_decision.json')
+def fmt(d):
+    if d is None or d.get('mean') is None:
+        return '—'
+    s = d.get('std')
+    return f"{d['mean']:.3f}" + (f" ± {s:.3f}" if s else '')
+
+if p1:
+    variants = ['fam-probe', 'chr2-probe', 'fam-predft', 'chr2-mlp', 'fam-mlp-rand']
+    rows = []
+    for ds in p1['datasets']:
+        rows.append([ds] + [fmt(p1[v + '_hauroc'].get(ds)) for v in variants])
+    print(pd.DataFrame(rows, columns=['Dataset'] + variants).to_string(index=False))
+```
+
+### Interpretation
+
+- **FAM encoder beats Chronos-2 encoder at MATCHED probe capacity** on
+  FD001 (+0.12), FD003 (+0.07), BATADAL (+0.02). MBA is the lone
+  exception (Chr2-probe 0.66 > FAM-probe 0.59). This refutes the
+  original "head capacity is doing the work" critique: even with 257
+  trainable params per horizon (a single linear layer), the FAM 2.16M
+  encoder produces representations that beat Chronos-2's 120M encoder.
+
+- **Pretrained predictor init helps a little** vs random init on all 4
+  datasets (+0.007 FD001, +0.014 FD003, +0.018 MBA, +0.041 BATADAL).
+  Larger gap where supervised signal is weaker — consistent with the
+  "predictor finetuning provides representation transfer" framing.
+
+- **At 10% labels** (FD001, MBA): FAM-predft and FAM-mlp-rand essentially
+  tie (FD001 0.733 vs 0.734; MBA 0.739 vs 0.721). Pretraining does not
+  buy label efficiency at this ratio. Sub-5% is where it might dominate
+  — open for v31.
+
+- **Chr2-mlp underperforms Chr2-probe on 3/4 datasets**: the
+  dt-conditioned MLP head does not fit Chronos-2's pooled 768-d
+  embeddings well. Chronos-2's natural head is the per-horizon linear
+  probe.
+
+### FD001 surface gallery — all 5 variants
+
+::: {.panel-tabset}
+### FAM-probe
+```{python}
+show_png(PNG / 'FD001_fam-probe_s42.png', alt='FAM probe')
+```
+### Chr2-probe
+```{python}
+show_png(PNG / 'FD001_chr2-linear_s42.png', alt='Chronos-2 linear probe')
+```
+### FAM-predft
+```{python}
+show_png(PNG / 'FD001_fam-predft_s42.png', alt='FAM predFT')
+```
+### Chr2-mlp
+```{python}
+show_png(PNG / 'FD001_chr2-mlp_s42.png', alt='Chronos-2 MLP')
+```
+### FAM-mlp-rand
+```{python}
+show_png(PNG / 'FD001_fam-mlp-rand_s42.png', alt='FAM random predictor')
+```
+:::
+
+## 4. Phase 2 — Precursor check
+
+```{python}
+#| label: phase2-table
+p2 = load(RES / 'phase2_precursor_check.json')
+if p2:
+    rows = []
+    for ds, info in p2['datasets'].items():
+        rows.append([ds, info.get('mean'), info.get('std'),
+                     len(info.get('hauroc', [])), info['decision']])
+    print(pd.DataFrame(rows, columns=['Dataset', 'mean h-AUROC', 'std',
+                                      'n_seeds', 'decision'])
+          .to_string(index=False))
+else:
+    print('phase2_precursor_check.json missing — Phase 2 still running')
+```
+
+## 5. Phase 3 — uniform benchmark
+
+```{python}
+#| label: phase3-table
+mt = load(RES / 'master_table.json')
+if mt and 'datasets' in mt:
+    rows = []
+    for ds, row in mt['datasets'].items():
+        lf100 = row.get('lf100', {})
+        lf10 = row.get('lf10', {})
+        rows.append([
+            ds,
+            f"{lf100.get('mean_h_auroc', 0):.4f}" + (f" ± {lf100['std_h_auroc']:.4f}"
+                if lf100.get('std_h_auroc') else ''),
+            f"{lf10.get('mean_h_auroc', 0):.4f}" + (f" ± {lf10['std_h_auroc']:.4f}"
+                if lf10.get('std_h_auroc') else '') if lf10 else '—',
+            lf100.get('n_seeds', 0),
+        ])
+    print(pd.DataFrame(rows, columns=['Dataset', 'h-AUROC 100%',
+                                       'h-AUROC 10%', 'n']).to_string(index=False))
+else:
+    print('master_table.json missing — Phase 3 still running')
+```
+
+## 6. Surface gallery (Phase 3, seed 42, dense K=150)
+
+```{python}
+#| label: gallery
+import os
+mt = load(RES / 'master_table.json')
+if mt and 'datasets' in mt:
+    for ds in mt['datasets']:
+        # Best matching p3 png
+        candidates = sorted(PNG.glob(f'{ds}_*_p3_s42.png'))
+        if candidates:
+            display(Markdown(f'### {ds}'))
+            display(Image(filename=str(candidates[0])))
+```
+
+## 7. Per-horizon AUROC curves
+
+```{python}
+#| label: per-horizon
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score
+SURF = V30 / 'surfaces'
+
+mt = load(RES / 'master_table.json')
+if mt and 'datasets' in mt:
+    fig, axes = plt.subplots(3, 4, figsize=(16, 10), sharey=True)
+    axes = axes.flatten()
+    i = 0
+    for ds in mt['datasets']:
+        if i >= len(axes): break
+        ax = axes[i]; i += 1
+        for sd, color in zip([42, 123, 456], ['tab:blue', 'tab:orange', 'tab:green']):
+            files = sorted(SURF.glob(f'{ds}_*_p3_s{sd}.npz'))
+            if not files: continue
+            d = np.load(files[0], allow_pickle=True)
+            p = d['p_surface']; y = d['y_surface']; h = d['horizons']
+            curve = []
+            for k in range(len(h)):
+                yi = y[:, k]
+                if 0 < yi.mean() < 1:
+                    curve.append((h[k], roc_auc_score(yi, p[:, k])))
+            if curve:
+                xs, ys = zip(*curve)
+                ax.plot(xs, ys, '-', color=color, alpha=0.6, label=f's{sd}')
+        ax.axhline(0.5, ls=':', color='gray')
+        ax.set_title(ds); ax.set_xlabel('Δt'); ax.set_ylim(0, 1.0)
+        ax.legend(fontsize=8)
+    for j in range(i, len(axes)):
+        axes[j].axis('off')
+    plt.tight_layout()
+    plt.show()
+```
+
+## 8. Label efficiency: 100% vs 10%
+
+```{python}
+mt = load(RES / 'master_table.json')
+if mt and 'datasets' in mt:
+    rows = []
+    for ds, r in mt['datasets'].items():
+        f = r.get('lf100', {}).get('mean_h_auroc')
+        t = r.get('lf10', {}).get('mean_h_auroc')
+        if f and t:
+            rows.append([ds, f, t, t - f, t / f])
+    if rows:
+        df = pd.DataFrame(rows, columns=['Dataset', 'h-AUROC 100%',
+                                          'h-AUROC 10%', 'Δ', 'ratio'])
+        print(df.to_string(index=False))
+```
+
+## 9. Phase 4 — SOTA + legacy metrics
+
+```{python}
+p4 = load(RES / 'phase4_legacy_metrics.json')
+if p4:
+    for ds, info in p4.items():
+        print(f"\n{ds}: {json.dumps(info, indent=2, default=str)}")
+sota = load(RES / 'phase4a_sota.json')
+if sota:
+    rows = [(ds, v.get('sota_metric'), v.get('sota_value'),
+             v.get('venue_year'), v.get('our_value'),
+             v.get('protocol_match', '?'))
+            for ds, v in sota.items()]
+    print(pd.DataFrame(rows, columns=['Dataset', 'metric', 'SOTA',
+                                       'venue/year', 'ours',
+                                       'protocol match?']).to_string(index=False))
+```
+
+## 10. Honest assessment
+
+(filled in by `experiments/v30/SESSION_SUMMARY.md` after Phase 7)
+
+## 11. Phase 8 — new dataset scouting
+
+```{python}
+p8 = load(RES / 'phase8_dataset_scouting.json')
+if p8:
+    cands = p8.get('candidates', [])
+    rows = [(c['name'], c.get('event'), c.get('sota_value'),
+             c.get('integration_effort_hours'), c.get('recommendation'))
+            for c in cands]
+    print(pd.DataFrame(rows, columns=['Candidate', 'Event', 'SOTA',
+                                       'eff (h)', 'rec']).to_string(index=False))
+    print(f"\ntop 4: {p8.get('top_4_picks', [])}")
+```
