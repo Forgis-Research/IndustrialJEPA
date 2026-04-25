@@ -109,12 +109,14 @@ ul.task-list li input[type="checkbox"] {
 ------------------------------------------------------------------------------------------
 FD001 / Try A lag+revin                 3     0.501 ±0.005     -0.016          0.924
 FD001 / Try B stat+revin                3     0.496 ±0.001     -0.021          0.924
+FD001 / Try B v2 statz+revin (z-scored)     3     0.524 ±0.009     +0.007          0.926
 FD001 / Try C dense FT                  3     0.729 ±0.007     +0.212          0.945
 FD001 / Try A* lag+none                 3     0.742 ±0.002     +0.225          0.945
 FD002 / Try A* lag+none                 3     0.558 ±0.001     +0.056          0.909
 FD003 / Try A* lag+none                 3     0.808 ±0.008     +0.306          0.905
 MBA / Try A lag+revin                   3     0.742 ±0.086     +0.262          0.942
 MBA / Try B stat+revin                  3     0.740 ±0.021     +0.260          0.948
+MBA / Try B v2 statz+revin (z-scored)     3     0.737 ±0.009     +0.257          0.947
 MBA / Try C dense FT                    3     0.707 ±0.007     +0.226          0.937
 GECCO / Try A lag+revin                 3     0.699 ±0.067     +0.213          0.008
 BATADAL / Try A lag+revin               3     0.629 ±0.011     +0.139          0.344
@@ -151,8 +153,10 @@ FD003           0.821±0.021      0.847±0.004      +0.0265 t=+2.47 (p=0.132)   
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>MSL             0.394±0.022        0.403±nan            —                —             0.4963     -0.0934
-PSM             0.558±0.018                —            —                —             0.5108     +0.0468
-SMD                       —                —            —                —                  —           —
+PSM             0.558±0.018      0.558±0.018      +0.0000                —             0.5108     +0.0468</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>SMD                       —        0.591±nan            —                —                  —           —
 MBA             0.581±0.001      0.577±0.044      -0.0036 t=-0.14 (p=0.900)             0.6554     -0.0745
 GECCO                     —      0.686±0.066            —                —             0.7673     -0.0818
 BATADAL                   —      0.564±0.005            —                —             0.4913     +0.0725
@@ -252,10 +256,6 @@ Notes:
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ### SMD
-
-[png missing: ../experiments/v28/results/surface_pngs/triplet_SMD.png]
-
-### MBA
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
@@ -267,7 +267,7 @@ Notes:
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-### GECCO
+### MBA
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
@@ -279,13 +279,25 @@ Notes:
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-### BATADAL
+### GECCO
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
 <p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-18.png" id="surface-gallery-9" width="504" height="446" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+### BATADAL
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="28_v28_analysis_files/figure-html/surface-gallery-output-20.png" id="surface-gallery-10" width="504" height="446" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -303,8 +315,8 @@ FD002      v28 dense                 0.000    0.000    0.000    0.000    0.000
 FD003      v28 dense                 0.000    0.000    0.000    0.000    0.000
 SMAP       v28 dense                 0.105    0.053    0.053    0.053    0.053
 MSL        v28 dense                 0.000    0.000    0.000    0.000    0.000
-PSM        v26 revin dense           0.400    0.400    0.400    0.400    0.350
-SMD        —                             —        —        —        —        —
+PSM        v28 dense                 0.150    0.150    0.200    0.200    0.150
+SMD        v28 dense                 0.383    0.280    0.327    0.318    0.308
 MBA        v28 dense                 0.000    0.000    0.000    0.000    0.000
 GECCO      v28 dense                 0.000    0.000    0.000    0.000    0.000
 BATADAL    v28 dense                 0.000    0.000    0.000    0.000    0.000</code></pre>

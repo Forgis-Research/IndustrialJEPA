@@ -1,54 +1,12 @@
 {
-  "FD001": {
-    "pooled_auprc": 0.9764095220496933,
-    "mean_h_auroc": 0.779294388354946,
-    "variant": [
-      10,
-      50,
-      100
-    ]
-  },
-  "FD002": {
-    "pooled_auprc": 0.9176317351604287,
-    "mean_h_auroc": 0.5372079751857125,
-    "variant": "dense_ft"
-  },
-  "FD003": {
-    "pooled_auprc": 0.9133028554275789,
-    "mean_h_auroc": 0.8435453562448175,
-    "variant": "dense_ft"
-  },
-  "SMAP": {
-    "pooled_auprc": 0.3462859159927292,
-    "mean_h_auroc": 0.5426382150766593,
-    "variant": "dense_ft"
-  },
-  "MSL": {
-    "pooled_auprc": 0.20276251862600875,
-    "mean_h_auroc": 0.402968854811313,
-    "variant": "dense_ft"
-  },
-  "MBA": {
-    "pooled_auprc": 0.9582637530080949,
-    "mean_h_auroc": 0.619716664164578,
-    "variant": [
-      10,
-      50,
-      100
-    ]
-  },
-  "GECCO": {
-    "pooled_auprc": 0.008082323098188198,
-    "mean_h_auroc": 0.7532026631221999,
+  "PSM": {
+    "pooled_auprc": 0.45551800304260204,
+    "mean_h_auroc": 0.5643189082425993,
     "variant": "baseline"
   },
-  "BATADAL": {
-    "pooled_auprc": 0.32014621992650094,
-    "mean_h_auroc": 0.5639902830155014,
-    "variant": [
-      10,
-      50,
-      100
-    ]
+  "SMD": {
+    "pooled_auprc": 0.15316461576329798,
+    "mean_h_auroc": 0.5910100532675548,
+    "variant": "baseline"
   }
 }

@@ -133,19 +133,32 @@ Dense surfaces (gitignored, on VM):
   - `4073efe` v28 phase 3 partial: lag+none extension, dense FT on 5 datasets, surface PNGs
   - `9872a00` v28 phase 4-5: dense surfaces, master comparison table, full notebook
   - `ff0ee04` v28 phase 6+7: ml-researcher critique fixes — paired-seed dense, GECCO correction, Try B reframing
-  - This commit (RESULTS.md final + SESSION_SUMMARY)
+  - `efbfb74` v28 SESSION_SUMMARY (this file's first version)
+  - `576045a` v28 phase 8: Try B v2 with z-scored stats — properly configured aux loss; still does not help (the experiment that ml-researcher demanded)
+  - PSM/SMD baseline (Phase 9) and final notebook update — pending commit
 
 ## Next-session pickup
 
 Highest-value pickups in priority order:
 
-  1. **Re-run Try B with z-scored target stats**. The v28 implementation
-     was misconfigured. The hypothesis is not refuted yet.
-  2. **Compare against Chronos-2's native forecast output** on FD001 + MBA
-     (small datasets, fast iteration). Reviewer will demand this.
-  3. **Acquire HAI from Zenodo** (record 8106109) and CHB-MIT (subset of
+  1. **Compare against Chronos-2's native forecast output** on FD001 + MBA.
+     The v28 master table uses a linear probe on frozen Chronos-2 features
+     — reviewer will (correctly) point out this is not how Chronos-2 is
+     designed to be used. Convert the forecast distribution into event
+     probabilities via quantile thresholding instead.
+  2. **Acquire HAI from Zenodo** (record 8106109) and CHB-MIT (subset of
      subjects, stream + downsample).
-  4. **Investigate why dense_ft + 'revin' anti-correlates on MSL**
-     (mean h-AUROC ≈ 0.40, below chance).
-  5. **Run v28 baseline + dense FT on PSM and SMD** — currently absent
-     from the v28 master table.
+  3. **Investigate why dense_ft + 'revin' anti-correlates on MSL**
+     (mean h-AUROC ≈ 0.40, below chance). May be a per-entity pos_weight
+     calibration issue.
+  4. **Lag features at finer granularity** — v28 lag+none used [10,50,100].
+     Worth trying [5,15,50,150] or learnable lags to see if FD001's +0.059
+     can be pushed further. Worth ~1h of compute.
+  5. **Cross-architecture predictor** — replace the 2-layer MLP predictor
+     with a small transformer; ARCHITECTURE.md flagged this as an open
+     question and v28 didn't touch it.
+
+Closed in v28 phase 8: Try B (aux stat-prediction loss) was re-run with
+properly z-scored target stats. Still doesn't help on FD001 (-0.20 vs
+v27 baseline) or meaningfully on MBA (+0.008, within noise). The
+direction is now genuinely refuted, not just misconfigured.

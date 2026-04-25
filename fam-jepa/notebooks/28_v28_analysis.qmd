@@ -100,6 +100,7 @@ phase2 = []
 for ds in ['FD001', 'FD002', 'FD003', 'MBA', 'SMD', 'GECCO', 'BATADAL']:
     for try_name, fname in [('A lag+revin', f'phase2a_{ds}_lag.json'),
                             ('B stat+revin', f'phase2b_{ds}_stat.json'),
+                            ('B v2 statz+revin (z-scored)', f'phase8_{ds}_statz.json'),
                             ('C dense FT', f'phase2c_{ds}_dense.json'),
                             ('A* lag+none', f'phase2d_{ds}_lag_none.json')]:
         s = summary(f'{ds} / Try {try_name}', V28 / 'results' / fname)

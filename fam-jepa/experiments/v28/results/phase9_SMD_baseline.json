@@ -1,0 +1,118 @@
+{
+  "dataset": "SMD",
+  "norm_mode": "revin",
+  "options": {
+    "lag_features": null,
+    "aux_stat": null,
+    "dense_ft": null,
+    "k_dense": null,
+    "tag_suffix": null
+  },
+  "seeds": [
+    42
+  ],
+  "results": [
+    {
+      "tag": "SMD_revin_s42",
+      "dataset": "SMD",
+      "norm_mode": "revin",
+      "seed": 42,
+      "lag_features": null,
+      "aux_stat": false,
+      "dense_ft": false,
+      "k_dense": 0,
+      "n_params": 2349569,
+      "pretrain_best_loss": 0.03393277898430824,
+      "pretrain_epochs_run": 15,
+      "pretrain_time_s": 5.501935005187988,
+      "ft_best_val": 2.0784045958093236,
+      "ft_time_s": 128.99215507507324,
+      "eval_time_s": 14.839599370956421,
+      "pooled_auprc": 0.1926223291611434,
+      "pooled_auroc": 0.6472276862534134,
+      "pooled_auprc_base": 0.13552580180371485,
+      "pooled_auprc_above_base": 0.05709652735742857,
+      "mean_h_auroc": 0.6162938711521208,
+      "mean_h_auroc_base": 0.49959041989075376,
+      "mean_h_auroc_above_base": 0.116703451261367,
+      "monotonicity_violation_rate": 0.0,
+      "per_horizon": [
+        {
+          "dt": 1,
+          "auroc": 0.6319140238680163,
+          "auprc": 0.16073731255594265,
+          "pos_rate": 0.0618753759872698,
+          "pred_gap": 0.15561866760253906,
+          "n_pos": 12754,
+          "n_neg": 193370
+        },
+        {
+          "dt": 5,
+          "auroc": 0.6305694062019445,
+          "auprc": 0.1626238832251858,
+          "pos_rate": 0.06395179600628748,
+          "pred_gap": 0.15910661220550537,
+          "n_pos": 13182,
+          "n_neg": 192942
+        },
+        {
+          "dt": 10,
+          "auroc": 0.6294751192044536,
+          "auprc": 0.16572182931487672,
+          "pos_rate": 0.06654732103005957,
+          "pred_gap": 0.15342262387275696,
+          "n_pos": 13717,
+          "n_neg": 192407
+        },
+        {
+          "dt": 20,
+          "auroc": 0.6292915787244704,
+          "auprc": 0.17140537272788045,
+          "pos_rate": 0.07173837107760377,
+          "pred_gap": 0.146356463432312,
+          "n_pos": 14787,
+          "n_neg": 191337
+        },
+        {
+          "dt": 50,
+          "auroc": 0.622494603727419,
+          "auprc": 0.1827526501579017,
+          "pos_rate": 0.08727756107973841,
+          "pred_gap": 0.12887108325958252,
+          "n_pos": 17990,
+          "n_neg": 188134
+        },
+        {
+          "dt": 100,
+          "auroc": 0.6093258690619272,
+          "auprc": 0.20044636596913745,
+          "pos_rate": 0.11274766645320293,
+          "pred_gap": 0.10147738456726074,
+          "n_pos": 23240,
+          "n_neg": 182884
+        },
+        {
+          "dt": 150,
+          "auroc": 0.5957597163862538,
+          "auprc": 0.21699937845245265,
+          "pos_rate": 0.13773262696241098,
+          "pred_gap": 0.0745190978050232,
+          "n_pos": 28390,
+          "n_neg": 177734
+        },
+        {
+          "dt": 200,
+          "auroc": 0.5815206520424813,
+          "auprc": 0.23266621314347324,
+          "pos_rate": 0.16165512021889736,
+          "pred_gap": 0.051416993141174316,
+          "n_pos": 33321,
+          "n_neg": 172803
+        }
+      ],
+      "surface_path": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v28/surfaces/SMD_revin_s42.npz",
+      "pretrain_ckpt": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v28/ckpts/SMD_revin_s42_pretrain.pt",
+      "ft_ckpt": "/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v28/ckpts/SMD_revin_s42_pred_ft.pt"
+    }
+  ]
+}
