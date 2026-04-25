@@ -159,7 +159,32 @@
       "Bash(python3:*)",
       "Bash(quarto render:*)",
       "Bash(pdflatex -interaction=nonstopmode fig_architecture.tex)",
-      "WebFetch(domain:proceedings.mlr.press)"
+      "WebFetch(domain:proceedings.mlr.press)",
+      "WebFetch(domain:research.google)",
+      "WebFetch(domain:timesfm.googleblog.com)",
+      "WebFetch(domain:archive.ics.uci.edu)",
+      "WebFetch(domain:data.nasa.gov)",
+      "WebFetch(domain:www.ngdc.noaa.gov)",
+      "WebFetch(domain:zenodo.org)",
+      "WebFetch(domain:www.cs.ucr.edu)",
+      "WebFetch(domain:www.nrel.gov)",
+      "WebFetch(domain:openei.org)",
+      "WebFetch(domain:ieee-dataport.org)",
+      "WebFetch(domain:data.neonscience.org)",
+      "WebFetch(domain:www.aemc.gov.au)",
+      "WebFetch(domain:sites.google.com)",
+      "WebFetch(domain:www.synchrophasor.info)",
+      "WebFetch(domain:c3.nasa.gov)",
+      "WebFetch(domain:c3.ndc.nasa.gov)",
+      "WebFetch(domain:www.scedc.caltech.edu)",
+      "WebFetch(domain:paperswithcode.com)",
+      "WebFetch(domain:www.research-collection.ethz.ch)",
+      "WebFetch(domain:www.fraunhofer.de)",
+      "WebFetch(domain:data.mendeley.com)",
+      "Bash(iconv -f utf-8 -t ascii//TRANSLIT)",
+      "Bash(rm -f paper.aux paper.bbl paper.blg paper.log paper.out paper.synctex.gz paper.fls paper.fdb_latexmk)",
+      "Bash(latexmk -pdf paper.tex)",
+      "Bash(git status:*)"
     ]
   }
 }

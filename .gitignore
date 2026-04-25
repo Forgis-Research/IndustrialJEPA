@@ -145,6 +145,8 @@ hf_cache/
 
 /.quarto/
 **/*.quarto_ipynb
+**/*.quarto_ipynb_*
+.claude/projects/
 archive/mechanical-jepa-data-v8/bearings/raw/
 archive/mechanical-jepa-data-v8/bearings/*.parquet
 archive/mechanical-jepa-data-v8/bearings/*.json

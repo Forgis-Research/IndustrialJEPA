@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.9.36">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -33,7 +33,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="28_v28_analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="28_v28_analysis_files/libs/quarto-html/anchor.min.js"></script>
 <link href="28_v28_analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="28_v28_analysis_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="28_v28_analysis_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="28_v28_analysis_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="28_v28_analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="28_v28_analysis_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -144,22 +144,16 @@ v27 sparse baselines (mean per-horizon AUROC, same eval protocol):
 <div class="cell-output cell-output-stdout">
 <pre><code>Dataset        v27 baseline         v28 best   Δ (paired)     paired t (p)    Chronos-2 (s42)  v28 vs Chr
 --------------------------------------------------------------------------------------------------------------
-FD001           0.713±0.054      0.772±0.014      +0.0589 t=+2.13 (p=0.166)             0.5532     +0.2191
-FD002           0.520±0.001      0.535±0.002      +0.0146 t=+18.16 (p=0.003)             0.6369     -0.1020
-FD003           0.821±0.021      0.847±0.004      +0.0265 t=+2.47 (p=0.132)             0.6471     +0.2000</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>SMAP            0.588±0.056        0.543±nan            —                —             0.5000     +0.0880</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>MSL             0.394±0.022        0.403±nan            —                —             0.4963     -0.0934
-PSM             0.558±0.018      0.558±0.018      +0.0000                —             0.5108     +0.0468</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>SMD                       —        0.591±nan            —                —                  —           —
-MBA             0.581±0.001      0.577±0.044      -0.0036 t=-0.14 (p=0.900)             0.6554     -0.0745
-GECCO                     —      0.686±0.066            —                —             0.7673     -0.0818
-BATADAL                   —      0.564±0.005            —                —             0.4913     +0.0725
+FD001                     —                —            —                —                  —           —
+FD002                     —                —            —                —                  —           —
+FD003                     —                —            —                —                  —           —
+SMAP                      —                —            —                —                  —           —
+MSL                       —                —            —                —                  —           —
+PSM                       —                —            —                —                  —           —
+SMD                       —                —            —                —                  —           —
+MBA                       —                —            —                —                  —           —
+GECCO                     —                —            —                —                  —           —
+BATADAL                   —                —            —                —                  —           —
 
 Notes:
   - v27 baseline: FAM v27 'none' for C-MAPSS, FAM v26 'revin' for anomaly.
@@ -455,16 +449,16 @@ Notes:
 <div class="cell-output cell-output-stdout">
 <pre><code>Dataset    source                  gap=  0  gap=  5  gap= 10  gap= 20  gap= 50
 ------------------------------------------------------------------------------------------
-FD001      v28 dense                 0.000    0.000    0.000    0.000    0.000
-FD002      v28 dense                 0.000    0.000    0.000    0.000    0.000
-FD003      v28 dense                 0.000    0.000    0.000    0.000    0.000
-SMAP       v28 dense                 0.105    0.053    0.053    0.053    0.053
-MSL        v28 dense                 0.000    0.000    0.000    0.000    0.000
-PSM        v28 dense                 0.150    0.150    0.200    0.200    0.150
-SMD        v28 dense                 0.383    0.280    0.327    0.318    0.308
-MBA        v28 dense                 0.000    0.000    0.000    0.000    0.000
-GECCO      v28 dense                 0.000    0.000    0.000    0.000    0.000
-BATADAL    v28 dense                 0.000    0.000    0.000    0.000    0.000</code></pre>
+FD001      —                             —        —        —        —        —
+FD002      —                             —        —        —        —        —
+FD003      —                             —        —        —        —        —
+SMAP       —                             —        —        —        —        —
+MSL        —                             —        —        —        —        —
+PSM        —                             —        —        —        —        —
+SMD        —                             —        —        —        —        —
+MBA        —                             —        —        —        —        —
+GECCO      —                             —        —        —        —        —
+BATADAL    —                             —        —        —        —        —</code></pre>
 </div>
 </div>
 </section>
