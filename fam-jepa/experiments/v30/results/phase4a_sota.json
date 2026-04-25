@@ -1,0 +1,326 @@
+{
+  "_meta": {
+    "compiled": "2026-04-25",
+    "compiled_by": "v30 Phase 4a SOTA research agent",
+    "note": "All SOTA values are best-effort from web search as of 2026-04-25. Where multiple competing numbers exist the most credible top-venue result is cited; ranges and caveats are noted inline. Protocol-gap flags are the primary output."
+  },
+
+  "FD001": {
+    "sota_method": "EGG-Transformer / various deep-learning ensembles",
+    "sota_metric": "RMSE",
+    "sota_value": 11.36,
+    "sota_value_range": "11.28-12.02 across recent 2023-2025 papers; some claim ~10.6 with unclear protocol",
+    "sota_paper": "Multiple competing papers; no single consensus 2024-2025 top-venue winner. EGG-Transformer (ACS Omega 2025) reports 11.36. CAPTAIN (Techscience CMC 2025) reports avg 12.02. Note: IndustrialJEPA v12-v13 session previously cited STAR (arXiv:2212.05772) at 10.61 but this is a 2022 preprint without confirmed NeurIPS/ICML publication.",
+    "venue_year": "ACS Omega 2025 / arXiv 2022 (STAR)",
+    "url": "https://arxiv.org/pdf/2212.05772",
+    "their_protocol": {
+      "train_split": "Standard NASA split: train engines + test engines (last-cycle only RUL from RUL_FD001.txt)",
+      "test_split": "Test set last window, ground truth from RUL_FD001.txt",
+      "rul_cap": 125,
+      "preprocessing": "14-15 sensor subset (standard), min-max or z-score per sensor on train set",
+      "scoring": "RMSE on capped RUL predictions; some papers also report asymmetric NASA score"
+    },
+    "our_protocol_uses": {
+      "train_split": "Same standard NASA split",
+      "test_split": "Same last-cycle test windows",
+      "rul_cap": 125,
+      "preprocessing": "z-score per sensor on train set",
+      "scoring": "AUROC on p(event within Dt) surface; RMSE computed from surface for legacy comparison"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "The RUL-RMSE SOTA is fragmented: papers from 2022-2025 report FD001 RMSE between 10.6 and 14.4. The lower values (10.6-11.4) tend to use more aggressive sensor selection, per-engine normalisation (data leakage risk), or are not peer-reviewed top-venue results. The safest conservative SOTA is ~11.4 RMSE. FAM uses a different primary metric (AUROC on a probability surface) so a direct RMSE comparison requires deriving a point estimate from the surface - this is do-able via argmax of the CDF. The RUL cap at 125 must match exactly. Do NOT compare against papers that use a different cap or full-sequence RMSE (some use RMSE over all timesteps, not just last window)."
+  },
+
+  "FD002": {
+    "sota_method": "EGG-Transformer / TMSCNN",
+    "sota_metric": "RMSE",
+    "sota_value": 14.79,
+    "sota_value_range": "14.79-16.0 across recent papers",
+    "sota_paper": "TMSCNN (domain-adaptation transformer, Scientific Reports 2024) reports ~14.79. EGG-Transformer claims 22.85% RMSE reduction vs prior SOTA on FD002/FD004.",
+    "venue_year": "Scientific Reports 2024",
+    "url": "https://www.nature.com/articles/s41598-024-59095-3",
+    "their_protocol": {
+      "train_split": "Standard NASA split",
+      "test_split": "Test set last window",
+      "rul_cap": 125,
+      "preprocessing": "Multi-condition dataset: 6 operating conditions; FD002 is harder than FD001",
+      "scoring": "RMSE on capped RUL"
+    },
+    "our_protocol_uses": {
+      "train_split": "Standard NASA split",
+      "test_split": "Last-cycle windows",
+      "rul_cap": 125,
+      "preprocessing": "z-score per sensor train set",
+      "scoring": "AUROC on p-surface; RMSE derived for comparison"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "FD002 is the 6-operating-condition dataset. FAM mean h-AUROC on FD002 was 0.566 (v30 Phase 3), barely above chance at 0.500. This is the weakest FAM result in the benchmark and should be reported honestly. The SOTA RMSE range is 14.79-16.0; FAM needs to demonstrate it can derive a competitive RUL estimate from its surface. The protocol gap to watch: some papers report per-engine RMSE averaged, others report aggregate RMSE across all test samples - these differ systematically."
+  },
+
+  "FD003": {
+    "sota_method": "EGG-Transformer / various transformer-based",
+    "sota_metric": "RMSE",
+    "sota_value": 11.28,
+    "sota_value_range": "11.28-13.40",
+    "sota_paper": "Multiple 2024-2025 papers report 11.28-11.36 on FD003. CAELSTM (Scientific Reports 2025) reports 13.40. No single dominant top-venue paper.",
+    "venue_year": "Scientific Reports 2025",
+    "url": "https://www.nature.com/articles/s41598-025-09155-z",
+    "their_protocol": {
+      "train_split": "Standard NASA split",
+      "test_split": "Test set last window",
+      "rul_cap": 125,
+      "preprocessing": "14-15 sensor subset; single operating condition like FD001",
+      "scoring": "RMSE on capped RUL"
+    },
+    "our_protocol_uses": {
+      "train_split": "Standard NASA split",
+      "test_split": "Last-cycle windows",
+      "rul_cap": 125,
+      "preprocessing": "z-score per sensor train set",
+      "scoring": "AUROC on p-surface; RMSE derived"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "FD003 is FAM's strongest C-MAPSS result (mean h-AUROC 0.853 at lf100, v30 Phase 3). RMSE comparison is still required for paper Table 2. Same caveats as FD001 regarding cap=125 and last-window-only vs full-sequence RMSE. FD003 SOTA is effectively the same level as FD001 (~11.3) because both are single-condition datasets."
+  },
+
+  "SMAP": {
+    "sota_method": "DCdetector (PA-F1); PatchAD (non-PA F1)",
+    "sota_metric": "F1 (with point adjustment)",
+    "sota_value_pa": 0.966,
+    "sota_value_non_pa": "~0.55-0.65 (PatchAD claims 50.5% classical F1 improvement over prior non-PA baselines)",
+    "sota_paper": "DCdetector: Tian et al. (2023) 'DCdetector: Dual Attention Contrastive Representation Learning for Time Series Anomaly Detection', KDD 2023. PatchAD: arXiv:2401.09793 (accepted 2025).",
+    "venue_year": "KDD 2023 (DCdetector); 2025 journal (PatchAD)",
+    "url": "https://arxiv.org/pdf/2306.10347",
+    "their_protocol": {
+      "train_split": "Unsupervised: train on normal data only",
+      "test_split": "Test set with anomaly labels",
+      "rul_cap": "N/A",
+      "preprocessing": "Min-max normalization; sliding window",
+      "scoring": "PA-F1 (point-adjust): if ANY prediction in an anomaly segment is positive, ALL points in that segment are counted as correctly detected. Kim et al. AAAI 2022 showed random scores can achieve high PA-F1."
+    },
+    "our_protocol_uses": {
+      "train_split": "Per-dataset train/val/test split",
+      "test_split": "Same labeled test set",
+      "rul_cap": "N/A",
+      "preprocessing": "RevIN or z-score per channel",
+      "scoring": "AUROC on p(event within Dt) surface, no point adjustment. Raw F1 at best threshold for legacy comparison."
+    },
+    "protocol_match": "no",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "CRITICAL PA-F1 TRAP: The overwhelming majority of anomaly detection papers on SMAP report PA-F1. DCdetector PA-F1 = 0.966 on SMAP is almost certainly inflated - Kim et al. (AAAI 2022, arXiv:2109.05257) proved that a random detector achieves competitive PA-F1. FAM does NOT use point adjustment. FAM's raw non-PA F1 is the correct comparison baseline; the appropriate SOTA competitor on non-PA F1 is PatchAD or the CLEANet average of 0.611. Do NOT cite DCdetector's PA-F1 as the SOTA we are competing against. The paper must make this distinction explicit and cite Kim et al. MSL was confirmed NULL in v30 Phase 2 (mean h-AUROC 0.350 < chance) and is excluded from the benchmark."
+  },
+
+  "PSM": {
+    "sota_method": "DCdetector (PA-F1); CLEANet (raw F1)",
+    "sota_metric": "F1 (PA) / F1 (raw)",
+    "sota_value_pa": 0.963,
+    "sota_value_non_pa": 0.611,
+    "sota_paper": "DCdetector (KDD 2023) for PA-F1. CLEANet: arXiv:2510.22619 (2025) for raw avg F1=0.611 across PSM/SMD/MSL. TranAD (VLDB 2022, arXiv:2201.07284) reports avg F1 0.8802 with PA.",
+    "venue_year": "KDD 2023 / VLDB 2022",
+    "url": "https://arxiv.org/pdf/2306.10347",
+    "their_protocol": {
+      "train_split": "Unsupervised on normal train split",
+      "test_split": "Labeled test set from PSM (Abdulaal et al. 2021)",
+      "rul_cap": "N/A",
+      "preprocessing": "Min-max normalization, window=100",
+      "scoring": "PA-F1 standard for most papers; some report F1* (non-PA)"
+    },
+    "our_protocol_uses": {
+      "train_split": "Same PSM train split",
+      "test_split": "Same PSM test split",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel on train",
+      "scoring": "AUROC + raw F1 (no PA)"
+    },
+    "protocol_match": "no",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "Same PA-F1 trap as SMAP. PSM is a server metrics dataset from Abdulaal et al. 2021. The PA-F1 'SOTA' of 0.96+ is untrustworthy per Kim et al. (AAAI 2022). FAM should compare against non-PA F1 from CLEANet (~0.61 average) or the PATE/Aff-F1 alternatives. The ICLR 2025 paper at arXiv:2405.15273 is also relevant as it reassesses evaluation protocols for non-stationary time series."
+  },
+
+  "SMD": {
+    "sota_method": "DCdetector (PA-F1); CLEANet or MODEM (raw F1)",
+    "sota_metric": "F1 (PA) / F1 (raw)",
+    "sota_value_pa": 0.91,
+    "sota_value_non_pa": "~0.61-0.84 depending on protocol",
+    "sota_paper": "AnomalyTransformer (ICLR 2022) PA-F1 = 0.91 on SMD; DCdetector comparable. MODEM (ICLR 2025, arXiv:2405.15273) avg raw F1 84.20% across high-non-stationarity subsets.",
+    "venue_year": "ICLR 2022 (AnomalyTransformer) / ICLR 2025 (MODEM)",
+    "url": "https://arxiv.org/pdf/2405.15273",
+    "their_protocol": {
+      "train_split": "Unsupervised; 28 server machines each treated separately",
+      "test_split": "Per-machine test split with labels",
+      "rul_cap": "N/A",
+      "preprocessing": "Min-max or z-score; results often averaged over all 28 sub-datasets",
+      "scoring": "PA-F1 dominates; PATE score showed AnomalyTransformer collapses from rank 1 (PA) to rank 4.5 (PATE)"
+    },
+    "our_protocol_uses": {
+      "train_split": "Concatenated or per-machine (clarify in paper)",
+      "test_split": "Same",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel",
+      "scoring": "AUROC + raw F1 (no PA)"
+    },
+    "protocol_match": "no",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "SMD has 28 sub-machines. There is wide variance in whether papers report per-machine average F1 or pooled F1. The PA trap is severe here: PATE evaluation shows top PA-F1 models (AnomalyTransformer, DCdetector) collapse to worst rank on proximity-aware metrics. FAM should report AUROC and raw F1, compare against MODEM (ICLR 2025) as the most rigorous recent non-PA result. v30 Phase 2 categorized SMD as TBD; if included, clarify aggregation method (per-machine vs pooled)."
+  },
+
+  "MBA": {
+    "sota_method": "BTAD / TranAD on MBA as anomaly detection task",
+    "sota_metric": "AUROC / F1",
+    "sota_value_auroc": 0.988,
+    "sota_value_f1": 0.977,
+    "sota_paper": "BTAD (arXiv, ~2022) reports AUC=0.9879, F1=0.9769 on MIT-BIH Supraventricular Arrhythmia (MBA). TranAD (VLDB 2022) also tests on MBA. MM-DANet (Wiley 2024) reports 98.83% accuracy on full MIT-BIH Arrhythmia (different dataset - the standard 48-record database, not the supraventricular subset).",
+    "venue_year": "VLDB 2022 (TranAD) / ~2022 (BTAD)",
+    "url": "https://arxiv.org/abs/2201.07284",
+    "their_protocol": {
+      "train_split": "Unsupervised anomaly detection on ECG; training on normal ECG segments",
+      "test_split": "Supraventricular arrhythmia segments labeled as anomalies",
+      "rul_cap": "N/A",
+      "preprocessing": "ECG time series; sliding window over raw waveform",
+      "scoring": "AUROC or F1 on binary anomaly/normal classification; NOT multi-class arrhythmia classification"
+    },
+    "our_protocol_uses": {
+      "train_split": "Same MBA dataset used as time series anomaly detection",
+      "test_split": "Same",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel",
+      "scoring": "AUROC on p(event within Dt) surface"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "IMPORTANT DISAMBIGUATION: There are two MIT-BIH databases. (1) MIT-BIH Supraventricular Arrhythmia Database (MBA) - 78 recordings, used in TranAD/DCdetector as an anomaly detection benchmark. (2) MIT-BIH Arrhythmia Database (MITDB) - 48 recordings, used for multi-class heartbeat classification where papers report 98-99% accuracy. FAM uses MBA (#1) as an anomaly detection task. The AUROC SOTA of ~0.988 from BTAD is on this exact dataset. FAM v30 mean h-AUROC on MBA is ~0.739-0.746 (Phase 1, Phase 3), which is below BTAD's 0.988. However: (a) BTAD likely uses PA or near-PA protocol; (b) FAM predicts a probability surface p(t, Dt) not a point anomaly score, which is a harder task; (c) FAM is not trained with class-specific supervision. The comparison must clarify that FAM's 0.74 is per-horizon event-prediction AUROC at Dt=1..150, averaged, not the standard anomaly-score AUROC."
+  },
+
+  "GECCO": {
+    "sota_method": "Gradient-boosted ensemble / LSTM",
+    "sota_metric": "F1",
+    "sota_value": 0.80,
+    "sota_value_note": "~0.80 from GECCO 2018 competition winner (automatic feature learning). No major 2024-2025 top-venue paper benchmarked on GECCO specifically.",
+    "sota_paper": "GECCO 2018 Industrial Challenge winners (no single arXiv paper; competition results at GECCO 2018 Kyoto). Mostafa et al. 2019 (Taylor & Francis) reports LSTM-based approaches on GECCO 2018/2019 data.",
+    "venue_year": "GECCO 2018 competition",
+    "url": "https://zenodo.org/records/3884398",
+    "their_protocol": {
+      "train_split": "Time series cross-validation; 2017-07 to 2017-09 data",
+      "test_split": "Held-out time windows (competition test set not public; offline evaluation by organizers)",
+      "rul_cap": "N/A",
+      "preprocessing": "8 water quality sensors; online anomaly detection; some competition entries used online learning",
+      "scoring": "F1 score; competition used both precision and recall equally weighted. No PA adjustment documented."
+    },
+    "our_protocol_uses": {
+      "train_split": "Same GECCO dataset",
+      "test_split": "Same",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel on train",
+      "scoring": "AUROC + raw F1 (no PA)"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "GECCO is a niche benchmark without a clear peer-reviewed SOTA table. The competition winner achieved F1 ~0.80 in 2018 using automatic feature learning. There is no NeurIPS/ICML/ICLR paper that uses GECCO as a primary benchmark in 2024-2025. This makes it an opportunity for FAM to be among the first SSL methods reported on this dataset, but the comparison floor is a competition result without a stable peer-reviewed citation. Recommend citing the Zenodo dataset entry (DOI: 10.5281/zenodo.3884398) and the Mostafa 2019 paper for the F1~0.80 reference. The FAM framing here is event-prediction (precursor) not post-hoc detection, so direct F1 comparison requires a threshold-at-best-F1 from the probability surface."
+  },
+
+  "BATADAL": {
+    "sota_method": "Hybrid stacked ensemble (RF + XGBoost + LSTM)",
+    "sota_metric": "F1",
+    "sota_value": 0.915,
+    "sota_value_range": "0.72-0.915 across published methods; original competition winner not publicly documented with F1",
+    "sota_paper": "arXiv:2512.14422 (2025) reports F1=0.915 with hybrid ensemble on BATADAL. Original competition paper: Taormina et al. (2018) JWRPM - 7 teams, but numerical F1 results for each team not fully published. XGBoost baseline: F1=0.747.",
+    "venue_year": "arXiv Dec 2025 / JWRPM 2018",
+    "url": "https://arxiv.org/abs/2512.14422",
+    "their_protocol": {
+      "train_split": "Attack-free training set (BATADAL Dataset 1) + labeled attack training (Dataset 2); Test = Dataset 3 (7 attacks)",
+      "test_split": "Dataset 3: 43 SCADA sensors, 1-hour resolution",
+      "rul_cap": "N/A",
+      "preprocessing": "43 sensor features; some methods use engineered features (flow/pressure residuals)",
+      "scoring": "F1 on binary attack/no-attack; some papers use time-to-detection TTD metric from original competition. No PA adjustment used (SCADA detection is point-based)."
+    },
+    "our_protocol_uses": {
+      "train_split": "Same BATADAL splits",
+      "test_split": "Same Dataset 3",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel on train",
+      "scoring": "AUROC on p-surface; F1 at best threshold for comparison"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "BATADAL is a SCADA cyber-attack benchmark (not PA-inflated - it uses point-level F1 natively). The recent hybrid ensemble (arXiv:2512.14422) achieves F1=0.915 with supervised training using labeled attacks. FAM is self-supervised and does not see attack labels during training - this is a meaningful comparison: FAM pre-trains on normal data only (or all data), finetunes with minimal labeled data. The 0.92 precision / 0.91 recall is with full supervised labels; the FAM 10% label regime comparison (lf10) is the more relevant row. v30 Phase 1 ablation showed FAM-predft BATADAL mean h-AUROC = 0.607 at 100% labels, 0.521 at probe level. The FAM paper should note that BATADAL SOTA uses fully supervised methods with all 43 engineered sensor features, while FAM uses raw time series."
+  },
+
+  "SKAB": {
+    "sota_method": "BiLSTM-VAE (deep learning); semi-supervised ensemble",
+    "sota_metric": "F1",
+    "sota_value": 0.882,
+    "sota_value_range": "0.787-0.960 depending on supervision level; unsupervised SOTA ~0.787 (ConvAE with feature-bagging)",
+    "sota_paper": "Katser & Kozitsin (2020/2022) original SKAB paper with baseline leaderboard on GitHub (github.com/waico/SKAB). Iliopoulos et al. (2023) semi-supervised stacking F1~0.85. BiLSTM-VAE (2024-2025, no top-venue venue identified) claims F1=0.96. Conservative unsupervised SOTA: F1~0.787.",
+    "venue_year": "GitHub leaderboard 2022; journal 2023",
+    "url": "https://github.com/waico/SKAB",
+    "their_protocol": {
+      "train_split": "SKAB consists of 34 experiments on a controlled water-pump hydraulic rig; train/test split per experiment",
+      "test_split": "Per-experiment test windows with anomaly labels (valve openings, pump failures)",
+      "rul_cap": "N/A",
+      "preprocessing": "8 sensors (pressure, flow rate, vibration, water temperature, etc.)",
+      "scoring": "F1 score; no PA adjustment. The official leaderboard on SKAB GitHub uses non-PA F1. Some recent papers may use PA - must check."
+    },
+    "our_protocol_uses": {
+      "train_split": "Same SKAB data",
+      "test_split": "Same",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel on train",
+      "scoring": "AUROC + raw F1 (no PA)"
+    },
+    "protocol_match": "partial",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "SKAB is relatively niche: no top-venue (NeurIPS/ICML/ICLR) paper uses it as a primary benchmark. The official leaderboard is on GitHub. The unsupervised F1 SOTA is ~0.787 (ConvAE); supervised/semi-supervised methods reach ~0.85-0.88. The BiLSTM-VAE claim of 0.96 has no confirmed peer-reviewed venue. FAM v29 reported mean h-AUROC = 0.726 ± 0.038 on SKAB, above chance (base=0.503). Since there is no clear top-venue SOTA, FAM should compare against the SKAB GitHub leaderboard unsupervised baseline (F1~0.787) and note FAM is the first JEPA-SSL method evaluated on this dataset."
+  },
+
+  "ETTm1": {
+    "sota_method": "iTransformer / PatchTST / TimesNet (FORECASTING benchmarks - not event prediction)",
+    "sota_metric": "MSE (forecasting)",
+    "sota_value_mse_96": 0.320,
+    "sota_value_mse_720": 0.430,
+    "sota_paper": "iTransformer: Liu et al. (ICLR 2024 Spotlight) arXiv:2310.06625. PatchTST: Nie et al. (ICLR 2023) arXiv:2211.14730. These are the canonical SOTA for ETTm1 forecasting.",
+    "venue_year": "ICLR 2024 (iTransformer); ICLR 2023 (PatchTST)",
+    "url": "https://arxiv.org/html/2310.06625v4",
+    "their_protocol": {
+      "train_split": "Standard ETT split: 12 months train / 4 months val / 4 months test",
+      "test_split": "Last 4 months of ETTm1 (15-min resolution, 7 features including OT)",
+      "rul_cap": "N/A",
+      "preprocessing": "Standard z-score normalization per channel on train set",
+      "scoring": "MSE and MAE on multi-step point forecasts at horizons 96/192/336/720"
+    },
+    "our_protocol_uses": {
+      "train_split": "Same standard ETT split",
+      "test_split": "Same 4-month test window",
+      "rul_cap": "N/A",
+      "preprocessing": "z-score per channel",
+      "scoring": "AUROC on p(event within Dt) using DERIVED event label: y=1 iff OT_t exceeds causal rolling 7-day baseline by >2sigma"
+    },
+    "protocol_match": "no",
+    "our_value_our_protocol": null,
+    "our_value_their_protocol": null,
+    "notes": "CRITICAL FRAMING FLAG: There is NO published SOTA for ETTm1 as an event-prediction task with FAM's derived threshold label. The entire ETTm1 SOTA literature is for multi-step point forecasting (MSE/MAE). FAM's task (predict whether OT will exceed a rolling 2-sigma threshold within Dt steps) is a derived binary event task not evaluated by any other method in the literature. This is simultaneously an OPPORTUNITY (FAM is first) and a RISK (no apples-to-apples comparison is possible). The paper must be explicit: 'We create a derived event-prediction task on ETTm1; no published SOTA exists for this exact formulation. For context, the SOTA forecasting MSE at horizon-96 is 0.320 (iTransformer, ICLR 2024).' Do NOT claim to beat forecasting SOTA on ETTm1 - the tasks are fundamentally different. The mean h-AUROC of 0.869 ± 0.004 (v29) is strong but incomparable to MSE."
+  },
+
+  "_protocol_mismatch_summary": {
+    "PA_F1_trap_datasets": ["SMAP", "PSM", "SMD"],
+    "PA_trap_citation": "Kim et al. AAAI 2022 arXiv:2109.05257 - proved random anomaly scores achieve competitive PA-F1",
+    "recommendation": "FAM must explicitly state it does NOT use point adjustment and compare against non-PA F1 baselines only. CLEANet avg F1=0.611 and MODEM avg F1=0.842 on high-non-stationarity subsets are the most honest non-PA comparators for server anomaly datasets.",
+    "ETTm1_no_SOTA": "ETTm1 event prediction has no published SOTA. Declare this explicitly in the paper.",
+    "GECCO_BATADAL_niche": "GECCO and BATADAL lack top-venue (NeurIPS/ICML/ICLR) SOTA papers. FAM may be first SSL method on these datasets.",
+    "SKAB_niche": "SKAB leaderboard is GitHub-only; no top-venue comparator. FAM is likely first JEPA-SSL method.",
+    "CMAPSS_fragmented": "C-MAPSS RMSE SOTA is fragmented across many papers with varying protocols. Use RMSE~11.3-11.4 as conservative SOTA for FD001/FD003, ~14.8 for FD002. Cite ACS Omega 2025 or arXiv:2511.19124 as recent representative.",
+    "MBA_task_mismatch": "FAM's MBA result (mean h-AUROC 0.739) is for a probability-surface event prediction task, not the standard anomaly score AUROC. Comparison against TranAD/BTAD requires clarifying the task formulation difference."
+  }
+}
