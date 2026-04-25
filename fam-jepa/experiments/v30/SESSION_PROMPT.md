@@ -83,203 +83,27 @@ Always save surfaces as .npz on the VM. Push only PNGs to git.
 
 ---
 
-## Phase 0: Monotone Neural CDF (~2h)
+## Phase 0: Dense horizons + MonotoneCDF quick ablation (~1h)
 
-### Goal
+### Default: Dense discrete hazard (K=150)
 
-Replace the discrete K-bin hazard parameterization with a continuous monotone
-neural CDF. The current sparse K=8 horizon bins produce banding artifacts
-in the probability surface. A monotone network that maps (h_t, Delta_t) to
-[0,1] would eliminate banding, produce smooth triangular shapes matching
-ground truth, and be evaluable at arbitrary horizons without retraining.
+The sparse K=8 horizon bins from v27-v29 produce banding artifacts. The fix is simple: increase K to 150 (every integer horizon from 1 to 150). This was already proven in v28 dense runs. No architecture change needed.
 
-### Implementation
+Implementation: pass `horizons = list(range(1, 151))` to finetune. Everything else unchanged.
 
-Add a `MonotoneCDF` module to `model.py`:
+Run on FD001, 1 seed (42). Render 3-panel surface PNG. Verify banding is gone. This is the Phase 3 default unless the MonotoneCDF ablation below beats it.
 
-```python
-class MonotoneCDF(nn.Module):
-    """Continuous monotone CDF: maps (h_t, Delta_t) -> p in [0,1].
+### Quick ablation: MonotoneCDF (30 min max)
 
-    Monotonicity in Delta_t is enforced architecturally:
-    - The Delta_t input path uses positive weights (softplus on raw params)
-    - Combined with the context embedding h_t through additive conditioning
-    - Final sigmoid ensures output in [0,1]
+Replace the discrete hazard event head with a MonotoneCDF module that takes (predictor_output, Delta_t) and outputs p in [0,1] with architecturally enforced monotonicity in Delta_t (positive weights via softplus). This sits on top of the predictor output (Option A: predictor still runs per-horizon, MonotoneCDF replaces only the event head readout).
 
-    This replaces the discrete hazard parameterization when
-    event_head_kind='monotone_cdf'.
-    """
+Run on FD001, 1 seed (42), same checkpoint. Compare h-AUROC and surface smoothness against dense discrete.
 
-    def __init__(self, d_model: int = 256, hidden: int = 64, n_layers: int = 3):
-        super().__init__()
-        self.d_model = d_model
+**Decision (spend at most 5 min on this):**
+- If MonotoneCDF h-AUROC >= dense discrete AND visually smoother: adopt it, worth a sentence in the paper.
+- Otherwise: use dense discrete K=150 for all subsequent phases. Move on.
 
-        # Context conditioning: h_t -> condition vector
-        self.context_proj = nn.Sequential(
-            nn.LayerNorm(d_model),
-            nn.Linear(d_model, hidden),
-            nn.GELU(),
-        )
-
-        # Monotone pathway for Delta_t: all weights constrained positive
-        # Raw (unconstrained) parameters - apply softplus at forward time
-        self.dt_layers = nn.ModuleList()
-        self.dt_biases = nn.ParameterList()
-        dims = [1] + [hidden] * n_layers
-        for i in range(n_layers):
-            # Store raw weights (unconstrained); softplus in forward
-            self.dt_layers.append(nn.Linear(dims[i], dims[i+1], bias=False))
-            self.dt_biases.append(nn.Parameter(torch.zeros(dims[i+1])))
-
-        # Output: combine context + monotone pathway -> scalar
-        self.out = nn.Linear(hidden, 1)
-
-    def forward(self, h_t: torch.Tensor, delta_t: torch.Tensor) -> torch.Tensor:
-        """
-        h_t: (B, d) context embedding.
-        delta_t: (B,) or (B, K) horizons (float, in native time units).
-
-        Returns: (B,) or (B, K) probabilities in [0, 1].
-        """
-        squeeze = False
-        if delta_t.dim() == 1:
-            delta_t = delta_t.unsqueeze(-1)  # (B, 1)
-            squeeze = True
-
-        B, K = delta_t.shape
-
-        # Context conditioning (shared across horizons)
-        ctx = self.context_proj(h_t)  # (B, hidden)
-        ctx = ctx.unsqueeze(1).expand(B, K, -1)  # (B, K, hidden)
-
-        # Monotone pathway: positive weights enforce monotonicity in dt
-        z = delta_t.unsqueeze(-1)  # (B, K, 1)
-        for layer, bias in zip(self.dt_layers, self.dt_biases):
-            # Positive weights via softplus
-            w_pos = F.softplus(layer.weight)  # (out, in), all positive
-            z = F.linear(z, w_pos, bias)
-            z = F.softplus(z)  # Monotone activation (non-negative, non-decreasing)
-
-        # Combine: additive conditioning
-        combined = z + ctx  # (B, K, hidden)
-        logits = self.out(combined).squeeze(-1)  # (B, K)
-        p = torch.sigmoid(logits)
-
-        if squeeze:
-            p = p.squeeze(-1)
-        return p
-
-
-    def forward_dense(self, h_t: torch.Tensor,
-                      dt_min: int = 1, dt_max: int = 150,
-                      dt_step: int = 1) -> torch.Tensor:
-        """Evaluate at a dense grid of horizons (for visualization).
-
-        h_t: (B, d). Returns: (B, n_horizons) probabilities.
-        """
-        device = h_t.device
-        dts = torch.arange(dt_min, dt_max + 1, dt_step,
-                           device=device, dtype=torch.float32)
-        # Broadcast: (B, n_horizons)
-        dt_grid = dts.unsqueeze(0).expand(h_t.shape[0], -1)
-        return self.forward(h_t, dt_grid)
-```
-
-### Integration into FAM
-
-Add `event_head_kind` parameter to `FAM.__init__`:
-
-```python
-class FAM(nn.Module):
-    def __init__(self, ..., event_head_kind: str = 'discrete_hazard'):
-        ...
-        self.event_head_kind = event_head_kind
-        if event_head_kind == 'discrete_hazard':
-            self.event_head = EventHead(d_model)
-        elif event_head_kind == 'monotone_cdf':
-            self.monotone_cdf = MonotoneCDF(d_model, hidden=64, n_layers=3)
-        else:
-            raise ValueError(f"Unknown event_head_kind: {event_head_kind}")
-```
-
-Update `finetune_forward` to dispatch on `event_head_kind`:
-
-```python
-def finetune_forward(self, context, horizons, context_mask=None, mode='pred_ft'):
-    # ... existing encoder + predictor code ...
-    if self.event_head_kind == 'monotone_cdf':
-        # MonotoneCDF takes (h_t, Delta_t) directly; monotonicity is architectural
-        p = self.monotone_cdf(h_t_for_head, horizons_float)  # (B, K)
-        return p  # Already in [0, 1], monotone by construction
-    else:
-        # Existing discrete hazard CDF path (unchanged)
-        ...
-```
-
-**Key detail**: The MonotoneCDF replaces BOTH the predictor-per-horizon loop
-AND the event head AND the hazard-to-CDF conversion. It maps directly from
-(h_t, Delta_t) to p. The pretraining path is UNCHANGED - it still uses the
-MLP predictor and L1 loss on embeddings. Only the finetuning head changes.
-
-**Training loss**: Same positive-weighted BCE as discrete hazard:
-```python
-loss = weighted_bce_loss(p, y_surface, pos_weight=pos_weight)
-```
-No change needed - the loss operates on p in [0,1] regardless of source.
-
-### Experiment protocol
-
-Run on FD001 and MBA, 3 seeds each (42, 43, 44):
-
-| Variant | Description | Finetuning head |
-|---------|-------------|-----------------|
-| discrete-K8 | Current baseline (K=8 sparse horizons) | Discrete hazard CDF |
-| monotone-64 | MonotoneCDF, hidden=64, 3 layers | Monotone neural CDF |
-
-For BOTH variants, use the SAME pretrained encoder checkpoint. Only the
-finetuning head differs. This isolates the head architecture.
-
-**Evaluation**: Evaluate both variants at a DENSE grid of horizons
-(every integer from 1 to 150). For the discrete variant, this means
-evaluating at 150 horizons using the trained hazard CDF. For the
-monotone variant, call `forward_dense(h_t, 1, 150, 1)`.
-
-For each variant, produce a 3-panel PNG:
-- Predicted p(t, Delta_t) at the dense 150-horizon grid
-- Ground truth y(t, Delta_t) at the same grid
-- Grayscale |p - y| error map
-
-Compute h-AUROC at the dense grid (mean AUROC over 150 horizons).
-
-### Self-check (end of Phase 0)
-
-Before proceeding: verify monotonicity holds at ALL Delta_t values. Sample 1000 random h_t vectors, check that p(h_t, dt) is non-decreasing in dt for every one. Verify CDF reaches near-0 at dt=1 and near-1 at dt=max for engines near failure. If any violation is found, the monotone pathway has a bug - fix before continuing.
-
-### Decision gate
-
-**IF** monotone CDF produces smoother surfaces AND equal or better h-AUROC:
-  - Adopt monotone CDF for ALL subsequent phases
-  - This becomes a paper contribution (Section 3.3)
-
-**IF** monotone CDF produces smoother surfaces BUT worse h-AUROC:
-  - Try hidden=128 or n_layers=4 (one retry)
-  - If still worse: fall back to dense discrete (K=150, same horizons as eval)
-
-**IF** monotone CDF is worse on both axes:
-  - Fall back to discrete hazard with K=150 dense horizons for Phase 3
-  - Document the negative result in SESSION_SUMMARY.md
-
-Save decision as: `results/phase0_decision.json`
-```json
-{
-  "chosen_head": "monotone_cdf" | "discrete_hazard",
-  "reason": "...",
-  "fd001_monotone_hauroc": 0.XXX,
-  "fd001_discrete_hauroc": 0.XXX,
-  "mba_monotone_hauroc": 0.XXX,
-  "mba_discrete_hauroc": 0.XXX
-}
-```
+Do NOT spend more than 1 hour total on Phase 0. The dense discrete baseline is the safe choice.
 
 ---
 
