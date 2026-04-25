@@ -858,6 +858,70 @@ Save structured results to `results/phase8_dataset_scouting.json`:
 
 ---
 
+## Phase 9 (Stretch Goal): Second Foundation Model Baseline (~3h)
+
+Goal: Repeat the entire Chronos-2 comparison protocol on a second open-source time series foundation model. This strengthens the results table by showing FAM's advantage is not specific to one baseline.
+
+#### Step 1: Identify the strongest current open-source model (~15min)
+
+Use web search to determine the current SOTA open-source time series foundation model. Candidates as of April 2026:
+- TimesFM 2.5 (Google, ~200M params, point forecasting)
+- Moirai 2.0 (Salesforce, universal forecasting)
+- MOMENT (CMU, multi-task time series)
+- Timer (Peking University, generative time series)
+- Lag-Llama (Kashif Rasul et al., probabilistic forecasting)
+- UniTS (unified time series model)
+- Any newer model released after May 2025
+
+Selection criteria:
+1. Open-source with available weights (HuggingFace or similar)
+2. Supports multivariate input
+3. Large pretrained corpus (the "foundation model" property)
+4. Published in a top venue or highly cited preprint
+5. Produces embeddings that can be probed (frozen encoder protocol)
+
+#### Step 2: Feature extraction (~1.5h)
+
+Follow the EXACT same protocol used for Chronos-2:
+1. Freeze the foundation model encoder
+2. Extract embeddings for all test samples across all datasets
+3. Cache embeddings to disk (one .pt file per dataset)
+4. Document the exact model checkpoint, version, and any preprocessing
+
+Important: match the input format to what the model expects. Some models expect univariate channels separately; others expect multivariate input. Document any adaptations.
+
+#### Step 3: Probe training and evaluation (~1h)
+
+Use the SAME head variants from the Phase 1 ablation:
+- Linear probe (d_model -> 1 per horizon)
+- MLP head (198K params, random init)
+
+Train with the same labels, horizons, splits, loss, and seeds as FAM and Chronos-2. This ensures a three-way apples-to-apples comparison.
+
+For each dataset with cached features, report h-AUROC at 100% and 10% labels.
+
+#### Step 4: Surface rendering and comparison (~30min)
+
+Produce 3-panel surface PNGs for the second baseline on all evaluated datasets. Add to the quarto notebook as a separate section.
+
+#### Output
+
+An appendix table (for paper-neurips/paper.tex) comparing all three models:
+
+| Dataset | FAM (2.16M) | Chronos-2 (120M) | [Model X] (YM) |
+|---------|-------------|-------------------|-----------------|
+
+This goes in the appendix, not the main table. The main table stays FAM vs Chronos-2 (the most recognizable baseline). The three-way comparison strengthens the appendix.
+
+Save features to: `data/[model_name]_features/`
+Save results to: `results/phase9_[model_name]/`
+
+#### Self-check
+
+Verify that the chosen model's embeddings are non-trivial: compute the variance of embeddings across samples. If variance is near-zero on any dataset (collapsed representations), flag it and investigate. Do not report results from collapsed embeddings.
+
+---
+
 ## Important rules
 
 1. **Decision gates are HARD gates.** Do NOT proceed to Phase 3 before
@@ -920,3 +984,5 @@ Save structured results to `results/phase8_dataset_scouting.json`:
     within the first epoch of finetuning, the dataset has no signal at
     this temporal resolution. Stop the run, document it, move on. Do not
     waste 30 minutes on a null result that is obvious after 2 minutes.
+
+15. **APPLES-TO-APPLES IS NON-NEGOTIABLE.** Every foundation model comparison must use the exact same downstream protocol: same labels, same horizons, same splits, same loss function, same seeds. The ONLY thing that changes is the frozen encoder. If a model requires different preprocessing (e.g. univariate-only input), document the adaptation clearly and flag it as a caveat.
