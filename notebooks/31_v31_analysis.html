@@ -95,6 +95,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#section-7-training-curves-summary" id="toc-section-7-training-curves-summary" class="nav-link" data-scroll-target="#section-7-training-curves-summary">Section 7: Training Curves Summary</a></li>
   <li><a href="#section-8-honest-assessment" id="toc-section-8-honest-assessment" class="nav-link" data-scroll-target="#section-8-honest-assessment">Section 8: Honest Assessment</a></li>
   <li><a href="#section-9-phase-2---sub-5-label-efficiency-curve" id="toc-section-9-phase-2---sub-5-label-efficiency-curve" class="nav-link" data-scroll-target="#section-9-phase-2---sub-5-label-efficiency-curve">Section 9: Phase 2 - Sub-5% Label Efficiency Curve</a></li>
+  <li><a href="#section-10-moment-1-large-baseline-341m-param-foundation-model" id="toc-section-10-moment-1-large-baseline-341m-param-foundation-model" class="nav-link" data-scroll-target="#section-10-moment-1-large-baseline-341m-param-foundation-model">Section 10: MOMENT-1-large Baseline (341M-param Foundation Model)</a></li>
   <li><a href="#appendix-gecco-alternative---random-window-sampling" id="toc-appendix-gecco-alternative---random-window-sampling" class="nav-link" data-scroll-target="#appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</a></li>
   </ul>
 </nav>
@@ -708,8 +709,8 @@ Paper implication:
 </section>
 <section id="section-9-phase-2---sub-5-label-efficiency-curve" class="level2">
 <h2 class="anchored" data-anchor-id="section-9-phase-2---sub-5-label-efficiency-curve">Section 9: Phase 2 - Sub-5% Label Efficiency Curve</h2>
-<p>Phase 2 extends the label efficiency analysis to FD001 at 5%, 2%, 1% and FD003 at 5%, 2%. This characterizes how steeply performance degrades below the 10% threshold.</p>
-<p><strong>Key finding</strong>: FD001 retains 92% of full-label performance with only 2 engines (2%). The h-AUROC curve is remarkably flat above 2% labels.</p>
+<p>Phase 2 extends the label efficiency analysis to FD001 at 5%, 2%, 1% and FD003 at 5%, 2%, 1%. This characterizes how steeply performance degrades below the 10% threshold.</p>
+<p><strong>Key finding</strong>: FD001 retains 92% of full-label performance with only 2 engines (2%). The h-AUROC curve is remarkably flat above 2% labels. FD003 lf1 (1 engine) collapses near chance (0.513 +/- 0.220), confirming multi-fault datasets require broader entity coverage.</p>
 <div id="phase2-results-table" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
@@ -761,7 +762,7 @@ Paper implication:
 <span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'lf1'</span>, <span class="st">'1%'</span>, <span class="bu">max</span>(<span class="dv">1</span>, <span class="bu">round</span>(n_engines_total <span class="op">*</span> <span class="fl">0.01</span>))),</span>
 <span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>    ]:</span>
 <span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="op">==</span> <span class="st">'FD003'</span> <span class="kw">and</span> lf_key <span class="op">==</span> <span class="st">'lf1'</span>:</span>
-<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span>  <span class="co"># not run</span></span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>            <span class="cf">pass</span>  <span class="co"># now run: 0.513 +/- 0.220 (near-chance, high variance)</span></span>
 <span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>        m, s <span class="op">=</span> get_p2(ds, lf_key)</span>
 <span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> m <span class="kw">is</span> <span class="va">None</span>:</span>
 <span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
@@ -783,6 +784,7 @@ FD003      100%        100     0.8530   0.0040       100%
             10%         10     0.8302   0.0178      97.3%
              5%          5     0.7094   0.1311      83.2%
              2%          2     0.6348   0.0646      74.4%
+             1%          1     0.5127   0.2198      60.1%
 </code></pre>
 </div>
 </div>
@@ -814,7 +816,7 @@ FD003      100%        100     0.8530   0.0040       100%
 <span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
 <span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>        fd003_curve.append((lf_pct, n_eng, m, s))</span>
 <span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> lf_key, pct, n_eng <span class="kw">in</span> [(<span class="st">'lf5'</span>, <span class="dv">5</span>, <span class="dv">5</span>), (<span class="st">'lf2'</span>, <span class="dv">2</span>, <span class="dv">2</span>)]:</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> lf_key, pct, n_eng <span class="kw">in</span> [(<span class="st">'lf5'</span>, <span class="dv">5</span>, <span class="dv">5</span>), (<span class="st">'lf2'</span>, <span class="dv">2</span>, <span class="dv">2</span>), (<span class="st">'lf1'</span>, <span class="dv">1</span>, <span class="dv">1</span>)]:</span>
 <span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>    m, s <span class="op">=</span> get_p2(<span class="st">'FD003'</span>, lf_key)</span>
 <span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
 <span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>        fd003_curve.append((pct, n_eng, m, s))</span>
@@ -878,15 +880,16 @@ FD003      100%        100     0.8530   0.0040       100%
 <span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="st">FD003 degrades faster:</span></span>
 <span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="st">  5% -&gt; 83</span><span class="sc">% r</span><span class="st">etention (multi-fault: fewer engines miss some fault modes)</span></span>
 <span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="st">  2% -&gt; 74</span><span class="sc">% r</span><span class="st">etention</span></span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a><span class="st">Theoretical interpretation (Proposition 1):</span></span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="st">  JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.</span></span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="st">  Downstream finetuning only needs to learn the mapping H_t -&gt; [0,1].</span></span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a><span class="st">  This mapping is low-dimensional: the encoder already contains the signal.</span></span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="st">  Hence, very few labeled examples suffice to find the right mapping.</span></span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a><span class="st">  The variance at 1% (single engine) reflects the sample complexity of</span></span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="st">  learning from a single degradation trajectory.</span></span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="st">  1% -&gt; 60</span><span class="sc">% r</span><span class="st">etention, std=0.220 (UNRELIABLE: s42=0.292 near-chance)</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="st">Theoretical interpretation (Proposition 1):</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="st">  JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a><span class="st">  Downstream finetuning only needs to learn the mapping H_t -&gt; [0,1].</span></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="st">  This mapping is low-dimensional: the encoder already contains the signal.</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a><span class="st">  Hence, very few labeled examples suffice to find the right mapping.</span></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="st">  The variance at 1% (single engine) reflects the sample complexity of</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a><span class="st">  learning from a single degradation trajectory.</span></span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -906,6 +909,7 @@ Going from 2 engines to 1 engine costs 7% with 8x higher variance.
 FD003 degrades faster:
   5% -&gt; 83% retention (multi-fault: fewer engines miss some fault modes)
   2% -&gt; 74% retention
+  1% -&gt; 60% retention, std=0.220 (UNRELIABLE: s42=0.292 near-chance)
 
 Theoretical interpretation (Proposition 1):
   JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.
@@ -918,19 +922,173 @@ Theoretical interpretation (Proposition 1):
 </div>
 </div>
 </section>
+<section id="section-10-moment-1-large-baseline-341m-param-foundation-model" class="level2">
+<h2 class="anchored" data-anchor-id="section-10-moment-1-large-baseline-341m-param-foundation-model">Section 10: MOMENT-1-large Baseline (341M-param Foundation Model)</h2>
+<p>This section shows the MOMENT-1-large baseline results. MOMENT is a 341M-parameter foundation model trained on a large general corpus. We use frozen MOMENT embeddings (1024-d, mean-pooled across channels) with the same 198K-param dt-conditioned MLP head as Chr2-mlp. This enables a direct comparison of per-dataset JEPA pretraining (FAM, 2.16M) vs.&nbsp;large-scale general pretraining (MOMENT, 341M) and vs.&nbsp;value- forecasting pretraining (Chronos-2, 120M).</p>
+<p>The key question: does scale or domain-specificity matter more for event prediction?</p>
+<div id="moment-baseline" class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> roc_auc_score</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>V31_DIR <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31'</span>)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>SURF_DIR <span class="op">=</span> V31_DIR <span class="op">/</span> <span class="st">'surfaces'</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Chr2-mlp reference values (from v31 corrected audit)</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>chr2_ref <span class="op">=</span> {</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: (<span class="fl">0.659</span>, <span class="fl">0.002</span>),</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD003'</span>: (<span class="fl">0.760</span>, <span class="fl">0.003</span>),</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>:   (<span class="fl">0.451</span>, <span class="fl">0.055</span>),</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BATADAL'</span>: (<span class="fl">0.534</span>, <span class="fl">0.026</span>),</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="co"># FAM pred-FT reference values (from v30 Phase 3 dense K=150)</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>fam_ref <span class="op">=</span> {</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: (<span class="fl">0.786</span>, <span class="fl">0.033</span>),</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD003'</span>: (<span class="fl">0.853</span>, <span class="fl">0.004</span>),</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>:   (<span class="fl">0.739</span>, <span class="fl">0.014</span>),</span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BATADAL'</span>: (<span class="fl">0.607</span>, <span class="fl">0.033</span>),</span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Load per-horizon AUROC directly from surfaces (more reliable than JSON)</span></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Uses same computation as baseline_moment.py: mean AUROC over valid horizons</span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compute_h_auroc_from_surface(npz_path):</span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> np.load(npz_path)</span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>    p, y <span class="op">=</span> d[<span class="st">'p_surface'</span>], d[<span class="st">'y_surface'</span>]</span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>    per_h <span class="op">=</span> []</span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(p.shape[<span class="dv">1</span>]):</span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>        yy, pp <span class="op">=</span> y[:, k], p[:, k]</span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> yy.<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> yy.<span class="bu">sum</span>() <span class="op">&lt;</span> <span class="bu">len</span>(yy):</span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a>            per_h.append(roc_auc_score(yy, pp))</span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(np.mean(per_h)) <span class="cf">if</span> per_h <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a>datasets_seeds <span class="op">=</span> {</span>
+<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>:   [<span class="st">'s42'</span>, <span class="st">'s123'</span>, <span class="st">'s456'</span>],</span>
+<span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD003'</span>:   [<span class="st">'s42'</span>, <span class="st">'s123'</span>, <span class="st">'s456'</span>],</span>
+<span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>:     [<span class="st">'s42'</span>, <span class="st">'s123'</span>, <span class="st">'s456'</span>],</span>
+<span id="cb26-40"><a href="#cb26-40" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BATADAL'</span>: [<span class="st">'s42'</span>, <span class="st">'s123'</span>, <span class="st">'s456'</span>],</span>
+<span id="cb26-41"><a href="#cb26-41" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb26-42"><a href="#cb26-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-43"><a href="#cb26-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MOMENT-1-large baseline (341.2M params, per-horizon mean AUROC from surfaces)"</span>)</span>
+<span id="cb26-44"><a href="#cb26-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Encoder: MOMENT-1-large frozen | Head: 198K dt-MLP | Same head as Chr2-mlp"</span>)</span>
+<span id="cb26-45"><a href="#cb26-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb26-46"><a href="#cb26-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-47"><a href="#cb26-47" aria-hidden="true" tabindex="-1"></a>moment_means <span class="op">=</span> {}</span>
+<span id="cb26-48"><a href="#cb26-48" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds, seeds <span class="kw">in</span> datasets_seeds.items():</span>
+<span id="cb26-49"><a href="#cb26-49" aria-hidden="true" tabindex="-1"></a>    seed_scores <span class="op">=</span> []</span>
+<span id="cb26-50"><a href="#cb26-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s <span class="kw">in</span> seeds:</span>
+<span id="cb26-51"><a href="#cb26-51" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> SURF_DIR <span class="op">/</span> <span class="ss">f'</span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">_moment-mlp_</span><span class="sc">{</span>s<span class="sc">}</span><span class="ss">.npz'</span></span>
+<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> p.exists():</span>
+<span id="cb26-53"><a href="#cb26-53" aria-hidden="true" tabindex="-1"></a>            score <span class="op">=</span> compute_h_auroc_from_surface(p)</span>
+<span id="cb26-54"><a href="#cb26-54" aria-hidden="true" tabindex="-1"></a>            seed_scores.append((s, score))</span>
+<span id="cb26-55"><a href="#cb26-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-56"><a href="#cb26-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> seed_scores:</span>
+<span id="cb26-57"><a href="#cb26-57" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss">: no surfaces yet (PENDING)"</span>)</span>
+<span id="cb26-58"><a href="#cb26-58" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb26-59"><a href="#cb26-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-60"><a href="#cb26-60" aria-hidden="true" tabindex="-1"></a>    scores <span class="op">=</span> [sc <span class="cf">for</span> _, sc <span class="kw">in</span> seed_scores]</span>
+<span id="cb26-61"><a href="#cb26-61" aria-hidden="true" tabindex="-1"></a>    mean <span class="op">=</span> np.mean(scores)</span>
+<span id="cb26-62"><a href="#cb26-62" aria-hidden="true" tabindex="-1"></a>    std <span class="op">=</span> np.std(scores, ddof<span class="op">=</span><span class="dv">1</span>) <span class="cf">if</span> <span class="bu">len</span>(scores) <span class="op">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> <span class="fl">0.0</span></span>
+<span id="cb26-63"><a href="#cb26-63" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(scores)</span>
+<span id="cb26-64"><a href="#cb26-64" aria-hidden="true" tabindex="-1"></a>    moment_means[ds] <span class="op">=</span> (mean, std, n, [<span class="ss">f'</span><span class="sc">{</span>s<span class="sc">}</span><span class="ss">=</span><span class="sc">{</span>sc<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> s, sc <span class="kw">in</span> seed_scores])</span>
+<span id="cb26-65"><a href="#cb26-65" aria-hidden="true" tabindex="-1"></a>    status <span class="op">=</span> <span class="st">"COMPLETE"</span> <span class="cf">if</span> n <span class="op">==</span> <span class="dv">3</span> <span class="cf">else</span> <span class="ss">f"PARTIAL (</span><span class="sc">{</span>n<span class="sc">}</span><span class="ss">/3 seeds)"</span></span>
+<span id="cb26-66"><a href="#cb26-66" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss">: </span><span class="sc">{</span>mean<span class="sc">:.4f}</span><span class="ss"> +/- </span><span class="sc">{</span>std<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>n<span class="sc">}</span><span class="ss">s) [</span><span class="sc">{</span>status<span class="sc">}</span><span class="ss">]"</span>)</span>
+<span id="cb26-67"><a href="#cb26-67" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"           per-seed: </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(moment_means[ds][<span class="dv">3</span>])<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb26-68"><a href="#cb26-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-69"><a href="#cb26-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb26-70"><a href="#cb26-70" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Comparison: FAM vs Chr2-mlp vs MOMENT-mlp (all 198K dt-MLP head)"</span>)</span>
+<span id="cb26-71"><a href="#cb26-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Chr2-mlp'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'MOMENT'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM&gt;MOMENT'</span><span class="sc">:&gt;12s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'MOMENT&gt;Chr2'</span><span class="sc">:&gt;14s}</span><span class="ss">"</span>)</span>
+<span id="cb26-72"><a href="#cb26-72" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb26-73"><a href="#cb26-73" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
+<span id="cb26-74"><a href="#cb26-74" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ds <span class="kw">not</span> <span class="kw">in</span> moment_means:</span>
+<span id="cb26-75"><a href="#cb26-75" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb26-76"><a href="#cb26-76" aria-hidden="true" tabindex="-1"></a>    fam_m, fam_s <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>), <span class="dv">0</span>))</span>
+<span id="cb26-77"><a href="#cb26-77" aria-hidden="true" tabindex="-1"></a>    chr2_m, chr2_s <span class="op">=</span> chr2_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>), <span class="dv">0</span>))</span>
+<span id="cb26-78"><a href="#cb26-78" aria-hidden="true" tabindex="-1"></a>    mom_m, mom_s, mom_n, _ <span class="op">=</span> moment_means[ds]</span>
+<span id="cb26-79"><a href="#cb26-79" aria-hidden="true" tabindex="-1"></a>    fam_over_mom <span class="op">=</span> fam_m <span class="op">-</span> mom_m</span>
+<span id="cb26-80"><a href="#cb26-80" aria-hidden="true" tabindex="-1"></a>    mom_over_chr2 <span class="op">=</span> mom_m <span class="op">-</span> chr2_m</span>
+<span id="cb26-81"><a href="#cb26-81" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>chr2_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>mom_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_over_mom<span class="sc">:&gt;+12.4f}</span><span class="ss"> </span><span class="sc">{</span>mom_over_chr2<span class="sc">:&gt;+14.4f}</span><span class="ss">"</span>)</span>
+<span id="cb26-82"><a href="#cb26-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-83"><a href="#cb26-83" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb26-84"><a href="#cb26-84" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FINDING: FAM (2.16M domain-specific JEPA) &gt;&gt; MOMENT-1-large (341M general)"</span>)</span>
+<span id="cb26-85"><a href="#cb26-85" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  FD003 MOMENT h-AUROC below chance (0.473) - per-channel univariate fails"</span>)</span>
+<span id="cb26-86"><a href="#cb26-86" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Cross-channel joint encoding is essential for industrial degradation signals"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>MOMENT-1-large baseline (341.2M params, per-horizon mean AUROC from surfaces)
+Encoder: MOMENT-1-large frozen | Head: 198K dt-MLP | Same head as Chr2-mlp
+
+FD001     : 0.5594 +/- 0.0095 (3s) [COMPLETE]
+           per-seed: s42=0.5678, s123=0.5612, s456=0.5491
+FD003     : 0.4732 +/- 0.0122 (3s) [COMPLETE]
+           per-seed: s42=0.4823, s123=0.4593, s456=0.4780
+MBA       : no surfaces yet (PENDING)
+BATADAL   : 0.5373 +/- 0.0658 (3s) [COMPLETE]
+           per-seed: s42=0.5682, s123=0.4617, s456=0.5818
+
+Comparison: FAM vs Chr2-mlp vs MOMENT-mlp (all 198K dt-MLP head)
+Dataset           FAM   Chr2-mlp     MOMENT   FAM&gt;MOMENT    MOMENT&gt;Chr2
+----------------------------------------------------------------------
+FD001          0.7860     0.6590     0.5594      +0.2266        -0.0996
+FD003          0.8530     0.7600     0.4732      +0.3798        -0.2868
+BATADAL        0.6070     0.5340     0.5373      +0.0697        +0.0033
+
+FINDING: FAM (2.16M domain-specific JEPA) &gt;&gt; MOMENT-1-large (341M general)
+  FD003 MOMENT h-AUROC below chance (0.473) - per-channel univariate fails
+  Cross-channel joint encoding is essential for industrial degradation signals</code></pre>
+</div>
+</div>
+<div id="moment-per-seed" class="cell" data-execution_count="15">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>moment_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moment_baseline.json'</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moment_path.exists():</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moment_path) <span class="im">as</span> f:</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>        moment_data <span class="op">=</span> json.load(f)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> moment_data.get(<span class="st">'results'</span>, [])</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> results:</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"MOMENT per-seed breakdown:"</span>)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Tag'</span><span class="sc">:40s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'h-AUROC'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'AUPRC'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">65</span>)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> r <span class="kw">in</span> results:</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'tag'</span>]<span class="sc">:40s}</span><span class="ss"> </span><span class="sc">{</span>r[<span class="st">'mean_h_auroc'</span>]<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>r<span class="sc">.</span>get(<span class="st">'pooled_auprc'</span>, <span class="bu">float</span>(<span class="st">'nan'</span>))<span class="sc">:&gt;8.4f}</span><span class="ss">"</span>)</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"No MOMENT results yet"</span>)</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"MOMENT results file not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>MOMENT per-seed breakdown:
+Tag                                         h-AUROC    AUPRC
+-----------------------------------------------------------------
+FD001_moment-mlp_s42                         0.5678   0.9286
+FD001_moment-mlp_s123                        0.5612   0.9293
+FD001_moment-mlp_s456                        0.5491   0.9294
+FD003_moment-mlp_s42                         0.4823   0.7634
+FD003_moment-mlp_s123                        0.4593   0.7584
+FD003_moment-mlp_s456                        0.4780   0.7660
+BATADAL_moment-mlp_s42                       0.5682   0.3701
+BATADAL_moment-mlp_s123                      0.4617   0.3680
+BATADAL_moment-mlp_s456                      0.5818   0.3744</code></pre>
+</div>
+</div>
+</section>
 <section id="appendix-gecco-alternative---random-window-sampling" class="level2">
 <h2 class="anchored" data-anchor-id="appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</h2>
 <p>A potential fix for GECCO: instead of taking the first 10% of the time series, randomly sample 10% of time windows that include both positive and negative examples. This is a future work item.</p>
-<div id="gecco-alternative" class="cell" data-execution_count="14">
+<div id="gecco-alternative" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>GECCO alternative label fraction strategy (not implemented in v31):
