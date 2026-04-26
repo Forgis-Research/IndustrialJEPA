@@ -103,7 +103,14 @@ Top 4 picks for v31 paper appendix:
 
 ## What did not ship
 
-- Phase 9 (second foundation model baseline): stretch goal not executed — TimesFM 2.5 / Moirai 2.0 feature extraction would take ~3h on top of Phase 3.
+- Phase 9 (second foundation model baseline): attempted MOMENT, TimesFM,
+  and Moirai (uni2ts) pip installs; all 3 hit Python 3.12 / torch
+  dependency conflicts on the SageMaker base image (MOMENT:
+  pkgutil.ImpImporter removed in py3.12; TimesFM: lingvo dependency
+  unavailable; uni2ts: torchvision circular-import after torch 2.4.1
+  downgrade). Documented as v31 work — needs a containerised env or
+  HuggingFace-hosted variant. Phase 3b's per-domain head-choice ablation
+  partly covers the appendix gap.
 - PhysioNet inclusion: data/sepsis.py + data/physionet2012.py exist but are not wired into _runner_v29.LOADERS.
 - MonotoneCDF Option B (predictor bypassed): would give strict monotonicity guarantee but requires a different finetuning loop (no per-horizon predictor pass). Deferred.
 
