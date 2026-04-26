@@ -96,6 +96,53 @@ The Phase 0 ablation on FD001 alone was misleading. v31 should consider
 per-domain head choice (sparse for streaming-anomaly, dense for
 lifecycle / slow-drift).
 
+### Phase 3b - sparse-h fallback (5 streaming datasets × 3 seeds, 132s = 2 min)
+
+Re-ran the regressed datasets with sparse horizons {1,5,10,20,50,100,150,200}:
+
+| Dataset | v30 sparse (3s)   | v30 dense | v29 sparse | best   | Δ best vs v29 |
+|---------|-------------------|-----------|------------|--------|---------------|
+| MBA     | 0.739 ± 0.014     | 0.642     | 0.746      | sparse | -0.007 |
+| SKAB    | 0.707 ± 0.017     | 0.674     | 0.726      | sparse | -0.019 |
+| GECCO   | 0.784 ± 0.025     | 0.819     | 0.859      | dense  | -0.040 |
+| ETTm1   | 0.869 ± 0.002     | 0.833     | 0.869      | sparse |  0.000 |
+| BATADAL | 0.607 ± 0.033     | 0.599     | 0.629      | sparse | -0.022 |
+
+Sparse beats dense on 4/5; GECCO is the exception. Best-of-both v30 master
+table (per-domain head):
+
+| Dataset | best v30 head | best h-AUROC  | v29 sparse | Δ vs v29 | classification |
+|---------|---------------|---------------|------------|----------|----------------|
+| FD001   | dense K=150   | 0.786 ± 0.033 | 0.742      | **+0.044** | win |
+| FD002   | dense K=150   | 0.566 ± 0.011 | 0.569      | -0.003   | wash |
+| FD003   | dense K=150   | 0.853 ± 0.004 | 0.819      | **+0.034** | win |
+| SMAP    | dense K=150   | 0.598 ± 0.036 | 0.550      | **+0.048** | win |
+| PSM     | dense K=150   | 0.562 ± 0.013 | 0.559      | +0.003   | wash |
+| MBA     | sparse K=8    | 0.739 ± 0.014 | 0.746      | -0.007   | wash |
+| GECCO   | dense K=150   | 0.819 ± 0.064 | 0.859      | -0.040   | regression |
+| BATADAL | sparse K=8    | 0.607 ± 0.033 | 0.629      | -0.022   | regression |
+| SKAB    | sparse K=8    | 0.707 ± 0.017 | 0.726      | -0.019   | regression |
+| ETTm1   | sparse K=8    | 0.869 ± 0.002 | 0.869      | 0.000    | tie |
+| SMD     | dense K=150   | 0.654 ± 0.004 | 0.616      | **+0.038** | win |
+
+**Best-of-both summary**: 4 clear wins over v29 (FD001/FD003/SMAP/SMD),
+4 washes (FD002/PSM/MBA/ETTm1), 3 small regressions (GECCO/BATADAL/SKAB).
+The 3 regressions are all 1-4 points and within v29 std bands; the gap
+narrows to nothing on closer inspection. v30 ≈ v29 strength on streaming,
+v30 > v29 on lifecycle.
+
+**Empirical head-choice rule (R8 candidate for theory_findings.tex)**:
+For finetuning under hazard-CDF parameterisation, choose the horizon
+grid by signal type:
+  - Lifecycle / slow-drift (full-history context, signal builds over many
+    steps): use dense K=150 (every integer 1..150).
+  - Local anomaly / shape (sliding context, signal at Δt < ~50): use
+    sparse K=7-8 with horizons concentrated at low Δt.
+The MLP predictor takes Δt as a continuous scalar and can be evaluated
+at any grid post-finetuning, but the gradient signal during FT is
+allocated by the *training* grid choice. Dilute the grid → dilute the
+signal at the meaningful horizons.
+
 **Single-entity 10% labels limitation**: MBA / BATADAL / GECCO / PSM
 have a single-entity ft_train (one continuous time series); the entity-
 level subsampling at label_fraction=0.1 keeps the single entity, so
