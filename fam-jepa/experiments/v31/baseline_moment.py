@@ -255,9 +255,9 @@ def train_moment_head(X_tr, y_tr, X_va, y_va, horizons, seed=42, max_epochs=100)
     h_t = torch.tensor(horizons, dtype=torch.float32)
     K = len(horizons)
 
-    # Build label surfaces
-    y_tr_surf = build_label_surface(y_tr.unsqueeze(1), h_t).to(DEVICE)
-    y_va_surf = build_label_surface(y_va.unsqueeze(1), h_t).to(DEVICE)
+    # Build label surfaces. build_label_surface returns (N, 1, K); squeeze to (N, K).
+    y_tr_surf = build_label_surface(y_tr.unsqueeze(1), h_t).squeeze(1).to(DEVICE)
+    y_va_surf = build_label_surface(y_va.unsqueeze(1), h_t).squeeze(1).to(DEVICE)
     X_tr = X_tr.to(DEVICE)
     X_va = X_va.to(DEVICE)
 
@@ -352,7 +352,8 @@ def run_moment_baseline(dataset: str, seed: int, extractor, results_list: list):
     # Evaluate
     head.eval()
     h_t = torch.tensor(horizons, dtype=torch.float32)
-    y_te_surf = build_label_surface(y_te.unsqueeze(1), h_t).numpy().astype(np.int32)
+    # build_label_surface returns (N, 1, K); squeeze to (N, K)
+    y_te_surf = build_label_surface(y_te.unsqueeze(1), h_t).squeeze(1).numpy().astype(np.int32)
 
     X_te_dev = X_te.to(DEVICE)
     dt_idx = torch.arange(K, device=DEVICE).unsqueeze(0).expand(X_te.shape[0], -1)

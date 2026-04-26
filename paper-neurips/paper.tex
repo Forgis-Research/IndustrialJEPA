@@ -334,7 +334,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     FD002         & Turbofan   & $.566${\scriptsize$\pm.011$} & $\mathbf{.734}${\scriptsize$\pm.001$} & $.513${\scriptsize$\pm.013$} & --- & RMSE $44.1${\scriptsize$\pm2.9$} & $13.47$ & \citep{fan2024star} \\
     FD003         & Turbofan   & $\mathbf{.853}${\scriptsize$\pm.004$} & $.760${\scriptsize$\pm.003$} & $\mathbf{.830}${\scriptsize$\pm.018$} & --- & RMSE $39.5${\scriptsize$\pm0.8$} & $10.71$ & \citep{fan2024star} \\
     \midrule
-    SMAP          & Spacecraft & $\mathbf{.598}${\scriptsize$\pm.036$} & $.534$ & $.580${\scriptsize$\pm.047$} & --- & F1 $.458$ & PA-F1 $.34$ & \citep{mtsjepa2026} \\
+    SMAP          & Spacecraft & $\mathbf{.598}${\scriptsize$\pm.036$} & $.534^{\S}$ & $.580${\scriptsize$\pm.047$} & --- & F1 $.458$ & PA-F1 $.34$ & \citep{mtsjepa2026} \\
     PSM           & Server     & $\mathbf{.562}${\scriptsize$\pm.013$} & $.506${\scriptsize$\pm.010$} & $.519${\scriptsize$\pm.010$} & --- & F1 $.495$ & PA-F1 $.62$ & \citep{mtsjepa2026} \\
     SMD           & Server     & $\mathbf{.654}${\scriptsize$\pm.004$} & --- & $.528${\scriptsize$\pm.054$}$^{\dagger}$ & --- & F1 $.264$ & PA-F1 $.93$ & \citep{xu2022anomalytransformer} \\
     MBA           & Cardiac    & $\mathbf{.739}${\scriptsize$\pm.014$} & $.451${\scriptsize$\pm.017$} & $.547${\scriptsize$\pm.065$} & --- & AUROC $.697$ & --- & --- \\
@@ -350,7 +350,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
   \vspace{2pt}
   \begin{minipage}{\linewidth}
     \scriptsize
-    Chr-2 h-AUROC from 198K dt-MLP head (chr2-mlp): FD001/FD002/FD003 use 3 seeds; SMAP uses 1 seed (only s42 features cached). Chr-2 linear probe (769\,params/horizon) included for reference: FD001 $0.622\pm0.004$, FD003 $0.738\pm0.002$, MBA $0.659\pm0.006$, BATADAL $0.503\pm0.040$. FAM-probe (257\,params/horizon): FD001 $0.742\pm0.012$, FD003 $0.812\pm0.006$, MBA $0.588\pm0.012$, BATADAL $0.521\pm0.038$. Probe comparison in \cref{app:chronos_full}. FAM and Chr-2 are compared as frozen feature extractors with identical downstream heads; Chr-2's native forecasting capability is not used. $^{\dagger}$SMD lf10: only 3 of 28 entities retained; performance near-chance reflects insufficient entity coverage. $^{\ddagger}$GECCO lf10: first anomaly occurs at $t{=}16{,}265$; 10\% temporal truncation ends at $t{=}6{,}978$ - zero positive labels in the truncated training set. This is a structural impossibility, not a model failure; GECCO is excluded from lf10 comparisons.
+    Chr-2 h-AUROC from 198K dt-MLP head (chr2-mlp): 3 seeds each except $^{\S}$SMAP (1 seed only; s42 cached). Chr-2 linear probe (769\,params/horizon) included for reference: FD001 $0.622\pm0.004$, FD003 $0.738\pm0.002$, MBA $0.659\pm0.006$, BATADAL $0.503\pm0.040$. FAM-probe (257\,params/horizon): FD001 $0.742\pm0.012$, FD003 $0.812\pm0.006$, MBA $0.588\pm0.012$, BATADAL $0.521\pm0.038$. Probe comparison in \cref{app:chronos_full}. FAM and Chr-2 are compared as frozen feature extractors with identical downstream heads; Chr-2's native forecasting capability is not used. $^{\dagger}$SMD lf10: only 3 of 28 entities retained; performance near-chance reflects insufficient entity coverage. $^{\ddagger}$GECCO lf10: first anomaly occurs at $t{=}16{,}265$; 10\% temporal truncation ends at $t{=}6{,}978$ - zero positive labels in the truncated training set. This is a structural impossibility, not a model failure; GECCO is excluded from lf10 comparisons.
   \end{minipage}
 \end{table}
 

@@ -634,6 +634,112 @@ Theoretical interpretation (Proposition 1):
 """)
 ```
 
+## Section 10: MOMENT-1-large Baseline (341M-param Foundation Model)
+
+This section shows the MOMENT-1-large baseline results. MOMENT is a 341M-parameter
+foundation model trained on a large general corpus. We use frozen MOMENT embeddings
+(1024-d, mean-pooled across channels) with the same 198K-param dt-conditioned MLP
+head as Chr2-mlp. This enables a direct comparison of per-dataset JEPA pretraining
+(FAM, 2.16M) vs. large-scale general pretraining (MOMENT, 341M) and vs. value-
+forecasting pretraining (Chronos-2, 120M).
+
+The key question: does scale or domain-specificity matter more for event prediction?
+
+```{python}
+#| label: moment-baseline
+import json
+import numpy as np
+from pathlib import Path
+
+V31_DIR = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31')
+moment_path = V31_DIR / 'results/moment_baseline.json'
+
+if not moment_path.exists():
+    print("MOMENT baseline not yet available (process still running)")
+else:
+    with open(moment_path) as f:
+        moment_data = json.load(f)
+    results = moment_data.get('results', [])
+
+    if not results:
+        print("MOMENT baseline: process completed but no results written yet")
+    else:
+        # Group by dataset
+        by_ds = {}
+        for r in results:
+            ds = r['dataset']
+            by_ds.setdefault(ds, []).append(r['mean_h_auroc'])
+
+        print(f"MOMENT-1-large baseline ({moment_data.get('model', 'MOMENT')})")
+        print(f"Encoder params: 341.2M | Head: 198K dt-MLP | Seeds: 3")
+        print()
+        print(f"{'Dataset':10s} {'h-AUROC':>10s} {'std':>8s} {'n_seeds':>8s}")
+        print("-" * 45)
+
+        # Chr2-mlp reference values (from v31 corrected audit)
+        chr2_ref = {
+            'FD001': (0.659, 0.000),
+            'FD003': (0.760, 0.003),
+            'MBA':   (0.451, 0.017),
+            'BATADAL': (0.534, 0.032),
+        }
+        # FAM pred-FT reference values (from v30 Phase 3 dense K=150)
+        fam_ref = {
+            'FD001': (0.786, 0.033),
+            'FD003': (0.853, 0.004),
+            'MBA':   (0.739, 0.014),
+            'BATADAL': (0.607, 0.033),
+        }
+
+        moment_means = {}
+        for ds, scores in by_ds.items():
+            mean = np.mean(scores)
+            std = np.std(scores, ddof=1) if len(scores) > 1 else 0.0
+            n = len(scores)
+            moment_means[ds] = (mean, std, n)
+            print(f"{ds:10s} {mean:>10.4f} {std:>8.4f} {n:>8d}")
+
+        print()
+        print("Comparison: FAM vs Chr2-mlp vs MOMENT-mlp (all 198K dt-MLP head)")
+        print(f"{'Dataset':10s} {'FAM':>10s} {'Chr2-mlp':>10s} {'MOMENT-mlp':>12s} {'FAM wins?':>10s} {'MOMENT wins?':>14s}")
+        print("-" * 65)
+        for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
+            if ds not in moment_means:
+                continue
+            fam_m, fam_s = fam_ref.get(ds, (float('nan'), 0))
+            chr2_m, chr2_s = chr2_ref.get(ds, (float('nan'), 0))
+            mom_m, mom_s, mom_n = moment_means[ds]
+            fam_wins = "YES" if fam_m > chr2_m else "NO"
+            mom_wins = "YES" if mom_m > chr2_m else "NO"
+            print(f"{ds:10s} {fam_m:>10.4f} {chr2_m:>10.4f} {mom_m:>12.4f} {fam_wins:>10s} {mom_wins:>14s}")
+
+        print()
+        print("Key comparison: FAM (2.16M, domain-specific JEPA) vs")
+        print("  MOMENT-1-large (341M, general pretraining) at matched 198K downstream head.")
+        print("  If FAM beats MOMENT: domain-specific JEPA > scale for event prediction.")
+        print("  If MOMENT beats FAM: scale matters more than domain-specificity.")
+```
+
+```{python}
+#| label: moment-per-seed
+moment_path = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moment_baseline.json')
+if moment_path.exists():
+    with open(moment_path) as f:
+        moment_data = json.load(f)
+    results = moment_data.get('results', [])
+
+    if results:
+        print("MOMENT per-seed breakdown:")
+        print(f"{'Tag':40s} {'h-AUROC':>10s} {'AUPRC':>8s}")
+        print("-" * 65)
+        for r in results:
+            print(f"{r['tag']:40s} {r['mean_h_auroc']:>10.4f} {r.get('pooled_auprc', float('nan')):>8.4f}")
+    else:
+        print("No MOMENT results yet")
+else:
+    print("MOMENT results file not found")
+```
+
 ## Appendix: GECCO Alternative - Random Window Sampling
 
 A potential fix for GECCO: instead of taking the first 10% of the time
