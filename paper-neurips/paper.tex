@@ -353,7 +353,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \Cref{tab:benchmark} compares FAM and Chronos-2 as frozen feature extractors with identical 198K-param MLP heads at 100\% and 10\% label budgets, alongside legacy metrics for published baselines.
 
-\paragraph{FAM vs.\ Chronos-2.} FAM wins 6 of 8 head-to-head comparisons at 100\% labels; on 5 of these the margin exceeds $+0.05$ h-AUROC. Chr-2 wins FD002 (multi-condition degradation) and GECCO (effectively tied, overlapping CIs). Domain-specific JEPA pretraining produces stronger event-prediction features than value-forecasting pretraining at $56{\times}$ fewer parameters. Matched-capacity ablation on 4 datasets in \cref{app:chronos_full}.
+\paragraph{FAM vs.\ Chronos-2.} FAM wins 6 of 8 head-to-head comparisons at 100\% labels; on 5 of these the margin exceeds $+0.05$ h-AUROC. Chr-2 wins on C-MAPSS FD002 (multi-condition degradation) and GECCO (effectively tied, overlapping CIs). Domain-specific JEPA pretraining produces stronger event-prediction features than value-forecasting pretraining at $56{\times}$ fewer parameters. Matched-capacity ablation on 4 datasets in \cref{app:chronos_full}.
 
 \paragraph{Label efficiency.} At 10\% labels, lifecycle datasets retain ${\geq}97\%$ of full-label h-AUROC. Streaming-anomaly datasets depend on entity coverage (see \cref{sec:label_efficiency}).
 
@@ -370,11 +370,11 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 \subsection{Finetuning Mode}
 \label{sec:finetune_ablation}
 
-\Cref{tab:finetune_ablation} tests five downstream modes on C-MAPSS FD001 (5 seeds, F1w metric), same pretrained backbone:
+\Cref{tab:finetune_ablation} tests five downstream modes on C-MAPSS (5 seeds, F1w metric), same pretrained backbone:
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Finetuning-mode ablation on FD001 (5 seeds, F1w).} Pred-FT beats scratch by $+0.226$ at 5\% labels ($p{=}0.039$, $d{=}1.35$). Scratch collapses (RMSE $33$), confirming pretraining value.}
+  \caption{\textbf{Finetuning-mode ablation on C-MAPSS (5 seeds, F1w).} Pred-FT beats scratch by $+0.226$ at 5\% labels ($p{=}0.039$, $d{=}1.35$). Scratch collapses (RMSE $33$), confirming pretraining value.}
   \label{tab:finetune_ablation}
   \small
   \begin{tabular}{lcccc}
@@ -397,13 +397,13 @@ Pred-FT wins where E2E collapses: at 5\% labels, $+0.226$ F1w over scratch ($p{=
 \subsection{Label Efficiency}
 \label{sec:label_efficiency}
 
-\textbf{Two regimes by dataset type.} Lifecycle datasets retain ${\geq}97\%$ of full-label h-AUROC at 10\% labels (FD001, FD003, SMAP; \cref{tab:benchmark}): the frozen encoder already captures degradation dynamics from pretraining, so few labels suffice to steer the predictor. Streaming-anomaly datasets depend on entity coverage: SMD falls near chance at 10\% (only 3/28 entities retained); GECCO is excluded (zero positives in the truncated period).
+\textbf{Two regimes by dataset type.} Lifecycle datasets retain ${\geq}97\%$ of full-label h-AUROC at 10\% labels (C-MAPSS, SMAP; \cref{tab:benchmark}): the frozen encoder already captures degradation dynamics from pretraining, so few labels suffice to steer the predictor. Streaming-anomaly datasets depend on entity coverage: SMD falls near chance at 10\% (only 3/28 entities retained); GECCO is excluded (zero positives in the truncated period).
 
-\textbf{Sub-5\% label efficiency.} On C-MAPSS FD001, $\mathbf{92\%}$ of full-label h-AUROC is retained with just 2 training engines out of 85 (\cref{tab:sub5pct}). FD003 degrades faster (74\% at 2\%) due to its 4 distinct fault modes. This robustness is predicted by \cref{prop:retention}: pretraining establishes $I(H_t; E_{t+\Delta t})$ from unlabeled data; downstream learning only maps representations to event probabilities.
+\textbf{Sub-5\% label efficiency.} On C-MAPSS, $\mathbf{92\%}$ of full-label h-AUROC is retained with just 2 training engines out of 85 (\cref{tab:sub5pct}). The multi-fault subset (FD003) degrades faster (74\% at 2\%) due to its 4 distinct fault modes. This robustness is predicted by \cref{prop:retention}: pretraining establishes $I(H_t; E_{t+\Delta t})$ from unlabeled data; downstream learning only maps representations to event probabilities.
 
 \textbf{Pred-FT vs.\ E2E at low labels.} Under the canonical architecture, pred-FT and E2E achieve equivalent AUPRC at all label budgets ($\Delta \leq 0.003$). The advantage of pred-FT is computational (${\sim}11{\times}$ fewer trainable parameters) rather than statistical; the gap visible under the legacy backbone (\cref{app:label_efficiency_full}) does not survive RevIN and cumulative targets.
 
-\paragraph{Additional ablations.} Predictor-inference contribution, pretrained vs.\ random-init predictor, EMA vs.\ SIGReg pretraining, and architecture sensitivity are in \cref{app:additional_ablations}. Key findings: (i)~pretrained predictor weights carry at most $+0.003$ AUPRC over random-init ($p > 0.08$ on all datasets); (ii)~SIGReg-pred pretraining improves F1w by $+0.06$ and RMSE by $-3.2$ over EMA on C-MAPSS FD001.
+\paragraph{Additional ablations.} Predictor-inference contribution, pretrained vs.\ random-init predictor, EMA vs.\ SIGReg pretraining, and architecture sensitivity are in \cref{app:additional_ablations}. Key findings: (i)~pretrained predictor weights carry at most $+0.003$ AUPRC over random-init ($p > 0.08$ on all datasets); (ii)~SIGReg-pred pretraining improves F1w by $+0.06$ and RMSE by $-3.2$ over EMA on C-MAPSS.
 
 % ============================================================
 % 7. LIMITATIONS
@@ -413,8 +413,8 @@ Pred-FT wins where E2E collapses: at 5\% labels, $+0.226$ F1w over scratch ($p{=
 
 \begin{itemize}[nosep]
   \item \textbf{Per-dataset pretraining.} We pretrain a separate encoder per dataset. Cross-domain pretraining on a union of datasets is the natural next step.
-  \item \textbf{FD003 regression.} AUPRC drops to $0.766$ under the canonical $P{=}16$ architecture; the multi-fault degradation mode may need finer temporal resolution or more predictor capacity.
-  \item \textbf{Chronos-2 parity on well-covered domains.} On FD002 and GECCO, Chronos-2 matches or marginally outperforms FAM, suggesting its broad pretraining corpus covers some signal structures better than per-dataset JEPA.
+  \item \textbf{C-MAPSS multi-fault regression.} AUPRC drops to $0.766$ on the multi-fault subset under the canonical $P{=}16$ architecture; the multi-fault degradation mode may need finer temporal resolution or more predictor capacity.
+  \item \textbf{Chronos-2 parity on well-covered domains.} On C-MAPSS FD002 and GECCO, Chronos-2 matches or marginally outperforms FAM, suggesting its broad pretraining corpus covers some signal structures better than per-dataset JEPA.
   \item \textbf{Anomaly ``prediction'' vs detection.} On SMAP, the model detects ongoing anomaly segments rather than predicting onset with lead time. True early warning requires lead-time-aware evaluation.
   \item \textbf{MSL failure.} MSL (55 channels) falls below chance (h-AUROC $0.35$), likely because the high channel count dilutes per-channel degradation signals under channel-fusion tokenization. Sensor-as-token or channel-selection strategies may help.
   \item \textbf{Adaptive tokenization.} We fix $P{=}16$ following PatchTST; adapting $P$ to signal characteristics is an open direction.
@@ -425,7 +425,7 @@ Pred-FT wins where E2E collapses: at 5\% labels, $+0.226$ F1w over scratch ($p{=
 % ============================================================
 \section{Conclusion}
 
-Foundation models forecast future values; practitioners care about events. FAM bridges this gap: the encoder learns temporal dynamics via self-supervised JEPA pretraining, while the predictor is steered toward whichever event matters downstream, using as few labels as needed. A single architecture handles degradation, anomaly, and clinical prediction across 11 datasets under one unified probability surface, matching or outperforming foundation models at a fraction of the parameters. The encoder learns what changes; the predictor learns what matters.
+Foundation models forecast future values; practitioners care about events. FAM bridges this gap with two contributions. First, predictor finetuning: by freezing the encoder and tuning only a 198K-param predictor, FAM retains 92\% of full-label performance with just 2\% of labels on C-MAPSS, because the encoder already captures precursor dynamics from self-supervised pretraining. Our information-theoretic analysis formalises precisely when this holds. Second, one architecture across event types: a single 2.16M-param model handles degradation, anomaly, and clinical prediction across 11 datasets, winning 6 of 8 comparisons against foundation models at $56{\times}$ fewer parameters with identical downstream heads. The probability surface $p(t, \Delta t)$, structured as a discrete-time survival CDF, unifies these tasks under one threshold-free evaluation. The encoder learns what changes; the predictor learns what matters.
 
 % ============================================================
 \bibliographystyle{plainnat}

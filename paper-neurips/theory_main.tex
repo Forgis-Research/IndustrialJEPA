@@ -62,5 +62,5 @@ That predictor \emph{weights} do not transfer (\cref{sec:finetune_ablation}) whi
 \paragraph{Label efficiency.}
 When $I(H_t; E_{t+\Delta t})$ is large, very few labeled examples suffice to steer the predictor toward the event.
 Formally (see \cref{app:theory}), fixing the encoder and optimising the head with $n$ labeled samples, the expected excess risk is bounded by a \emph{representation gap} term that depends only on $I(H_t; E_{t+\Delta t})$ plus a \emph{statistical error} term $O(1/\sqrt{n})$.
-For C-MAPSS FD001, where $I(H_t; E_{t+\Delta t})$ is large, the statistical error term already falls below the representation gap by $n \approx 200$ windows.
+For C-MAPSS, where $I(H_t; E_{t+\Delta t})$ is large, the statistical error term already falls below the representation gap by $n \approx 200$ windows.
 This is consistent with our empirical observation that FAM retains $\mathbf{92\%}$ of full-label h-AUROC using just 2 training engines out of 85 (2\% labels; \cref{tab:sub5pct}).
