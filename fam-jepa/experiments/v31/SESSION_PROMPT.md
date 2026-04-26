@@ -21,6 +21,23 @@ For all datasets with cached Chr2 features, run Chr2-probe at 10% labels, 3 seed
 
 ---
 
+## Priority 1b: Correct the comparison narrative (~30min)
+
+The v30 Phase 1 ablation revealed important findings that change the paper's framing. Apply these corrections throughout paper.tex:
+
+**Drop the probe comparison from the paper narrative.** The "FAM-probe vs Chr2-probe" comparison used 150 independent linear classifiers per model (38K params for FAM, 115K for Chr2). This is methodologically questionable: unmatched params, no monotonicity, no parameter sharing across horizons, no generalization to unseen horizons. Do NOT present this as "matched capacity."
+
+**The clean comparison is the MLP one.** FAM-mlp-rand (198K) vs Chr2-mlp (198K): identical head architecture, identical Dt conditioning, identical training. Only the frozen encoder differs. FAM wins 4/4 datasets (FD001 +0.048, FD003 +0.028, MBA +0.270, BATADAL +0.032). This proves encoder quality.
+
+**The comparison IS fair.** Both FAM and Chronos-2 get the same finetuning step (same labels, same head, same loss, same seeds). The finetuning defines "what the event means." The only difference is which pretraining objective produced the frozen encoder: JEPA (predict future representations) vs value forecasting (predict future values). FAM's 2.16M JEPA encoder beats Chronos-2's 120M forecasting encoder.
+
+**Updated paper framing:**
+1. JEPA pretraining produces encoder representations that beat foundation model representations at matched downstream capacity (MLP comparison, 4/4 wins).
+2. Predictor finetuning provides the Dt-conditioned, CDF-monotone readout that works across all domains without knowing the data type.
+3. The recipe (freeze encoder, finetune predictor with event labels) is what transfers across domains, not the weights.
+
+---
+
 ## Priority 2: Update paper.tex with v30/v31 numbers (~2h)
 
 Use the paper-writer agent. No em dashes. Update:
@@ -36,6 +53,14 @@ Use the paper-writer agent. No em dashes. Update:
 5. **Contributions list**: Verify each claim is backed by the actual numbers.
 
 6. **Results text**: Rewrite Section 5.1 to match the new table. Report wins/losses honestly.
+
+7. **Drop the probe comparison from Section 5/6.** Report FAM-mlp-rand vs Chr2-mlp as the main head-to-head.
+
+8. **Update Table 4 footnote**: "FAM: 2.16M total / 198K trainable. Chronos-2: 120M total / 198K trainable." (Both use 198K MLP heads now.)
+
+9. **Add honest caveat**: "We do not use Chronos-2's native forecasting capability; both models are compared as frozen feature extractors with identical downstream heads."
+
+10. **Move the probe ablation to the appendix** if worth reporting at all.
 
 Self-check: compile paper with `pdflatex` + `bibtex`. Zero undefined citations or references. Verify Table 4 numbers match `master_table.json` exactly.
 
@@ -76,6 +101,8 @@ Update `notebooks/31_v31_analysis.qmd` (or extend 30_v30_analysis.qmd):
 3. Check all `\cref{}` resolve
 4. Run `latexmk -pdf paper.tex` clean build
 5. Read the full paper start to finish. Flag any claim not backed by a number in the tables.
+6. Self-check: read every claim in the paper. For each "FAM beats Chronos-2" claim, verify it refers to the MLP comparison (198K vs 198K), not the probe comparison.
+7. Self-check: verify the abstract's "24x fewer trainable parameters" claim. With matched 198K heads, the parameter advantage is in TOTAL model size (2.16M vs 120M = 56x), not trainable params.
 
 ---
 
@@ -96,3 +123,4 @@ Update `notebooks/31_v31_analysis.qmd` (or extend 30_v30_analysis.qmd):
 5. **Honest numbers.** If 10% labels barely hurts, that IS the story (pretraining carries most of the signal). If it hurts a lot, report that too.
 6. **Paper-writer agent for all .tex edits.** No em dashes. Proper academic prose.
 7. **Self-check after every phase.** Reload .npz, recompute metric, verify to 4 decimals.
+16. **FILL THE QUARTO NOTEBOOK.** The v30 notebook was mostly empty placeholders. Every section must contain actual data, plots, and analysis. If a section says "still running," either run the experiment or remove the section. An empty notebook is worse than no notebook.
