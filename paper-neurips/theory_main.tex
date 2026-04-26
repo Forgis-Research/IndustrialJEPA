@@ -56,3 +56,9 @@ The bound \eqref{eq:main_bound} is non-vacuous (i.e.\ the right-hand side is pos
 On C-MAPSS (\cref{sec:experiments}), degradation unfolds over hundreds of cycles, so $I(H^*; E_{t+\Delta t})$ is large and $\varepsilon$ is driven small by pretraining, yielding strong downstream performance (h-AUROC $\geq 0.74$).
 On CHB-MIT, seizure onset in scalp EEG has minimal precursors in a 16-second context, so $I(H^*; E_{t+\Delta t}) \approx 0$ regardless of $\varepsilon$: condition (i) fails.
 That predictor \emph{weights} do not transfer (\cref{sec:finetune_ablation}) while the encoder does is consistent with the bound: the encoder preserves information (the $I(H_t; E_{t+\Delta t})$ term), but the predictor's pretraining codomain ($\R^d$ representations) differs from the downstream codomain ($[0,1]$ event probabilities), so pretrained weights offer no inductive bias for the finetuning objective.
+
+\paragraph{Label efficiency.}
+When $I(H_t; E_{t+\Delta t})$ is large, very few labeled examples suffice to steer the predictor toward the event.
+Formally (see \cref{app:theory}), fixing the encoder and optimising the head with $n$ labeled samples, the expected excess risk is bounded by a \emph{representation gap} term that depends only on $I(H_t; E_{t+\Delta t})$ plus a \emph{statistical error} term $O(1/\sqrt{n})$.
+For C-MAPSS FD001, where $I(H_t; E_{t+\Delta t})$ is large, the statistical error term already falls below the representation gap by $n \approx 200$ windows.
+This is consistent with our empirical observation that FAM retains $\mathbf{92\%}$ of full-label h-AUROC using just 2 training engines out of 85 (2\% labels; \cref{tab:sub5pct}).

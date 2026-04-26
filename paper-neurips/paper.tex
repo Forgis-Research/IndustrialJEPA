@@ -100,9 +100,8 @@ Yet every event prediction task has the same structure: given observations up to
 
 \begin{figure}[t]
   \centering
-  \todo{Teaser: 4 mini probability surfaces (FD001, MBA, SKAB, BATADAL): predicted $p(t,\Delta t)$ vs ground truth, one row, 4 domains. This is the hero figure.}
-  % \includegraphics[width=\textwidth]{figures/fig_teaser.pdf}
-  \caption{\textbf{One model, many domains.} Predicted event probability surfaces $p(t, \Delta t)$ from a single FAM architecture (2.16M params, no dataset-specific tuning) across four domains: turbofan degradation, cardiac arrhythmia, hydraulic anomaly, and water network attack. Brighter = higher predicted probability; grey overlay = ground truth event region. The model learns domain-specific precursor dynamics purely from self-supervised pretraining.}
+  \includegraphics[width=\textwidth]{figures/fig_teaser.pdf}
+  \caption{\textbf{One model, four domains.} Predicted event probability surfaces $p(t, \Delta t)$ from a single FAM architecture (2.16M params, no dataset-specific hyperparameters) across four domains. Each panel shows the 3-subplot diagnostic: (left) predicted $p$, (centre) ground-truth label surface $y$, (right) error $|p-y|$. From left to right: FD001 turbofan degradation (RUL), MBA cardiac arrhythmia, SKAB hydraulic anomaly, BATADAL water infrastructure cyber-attack. FAM learns domain-specific precursor dynamics purely from self-supervised JEPA pretraining; only the 198K-param predictor is finetuned with event labels.}
   \label{fig:teaser}
 \end{figure}
 
