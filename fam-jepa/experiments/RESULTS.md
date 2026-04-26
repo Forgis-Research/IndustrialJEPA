@@ -131,6 +131,25 @@ The 3 regressions are all 1-4 points and within v29 std bands; the gap
 narrows to nothing on closer inspection. v30 ≈ v29 strength on streaming,
 v30 > v29 on lifecycle.
 
+### Phase 3c - sub-5% label efficiency on FD001 (FAM-predft vs FAM-mlp-rand, 9s)
+
+Closes the v20-vs-Phase 1 inconsistency: at lf10 the two variants tied,
+at v20's lf5 pred-FT dominated. Phase 3c isolates the crossover at lf5:
+
+| label fraction | FAM-predft (3s)   | FAM-mlp-rand (3s) | Δ pred-FT − rand |
+|----------------|-------------------|-------------------|-------------------|
+| 100%           | 0.714 ± 0.028     | 0.707 ± 0.018     | +0.007 |
+| 10%            | 0.733 ± 0.042     | 0.734 ± 0.021     | -0.001 |
+| **5%**         | **0.730 ± 0.018** | 0.559 ± 0.149     | **+0.170** |
+
+The pretrain contribution scales inversely with label budget. At 100% the
+encoder-FT contribution dominates (probes already nearly saturate). At
+5% the warm-init becomes critical — random-init has 8x the std (one seed
+s42 collapsed to 0.388). Matches v20's qualitative 5% finding with
+clean v30 protocol numbers; the formal excess-risk decomposition in
+theory_findings.tex Theorem 3 quantitatively predicts this regime
+crossover.
+
 **Empirical head-choice rule (R8 candidate for theory_findings.tex)**:
 For finetuning under hazard-CDF parameterisation, choose the horizon
 grid by signal type:
