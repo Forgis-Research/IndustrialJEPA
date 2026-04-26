@@ -463,6 +463,174 @@ Paper implication:
 """)
 ```
 
+## Section 9: Phase 2 - Sub-5% Label Efficiency Curve
+
+Phase 2 extends the label efficiency analysis to FD001 at 5%, 2%, 1%
+and FD003 at 5%, 2%. This characterizes how steeply performance degrades
+below the 10% threshold.
+
+**Key finding**: FD001 retains 92% of full-label performance with only 2
+engines (2%). The h-AUROC curve is remarkably flat above 2% labels.
+
+```{python}
+#| label: phase2-results-table
+# Load Phase 2 results
+p2_path = V31_DIR / 'results/phase2_sub5pct.json'
+p2_results = {}
+if p2_path.exists():
+    with open(p2_path) as f:
+        p2_data = json.load(f)
+    p2_results = p2_data.get('results', {})
+
+# FD001 and FD003 across all label fractions
+fd001_100 = v30['FD001']['lf100']['mean_h_auroc']
+fd001_100_std = v30['FD001']['lf100']['std_h_auroc']
+fd001_10 = v31.get('FD001', {}).get('lf10', {})
+fd003_100 = v30['FD003']['lf100']['mean_h_auroc']
+fd003_10 = v31.get('FD003', {}).get('lf10', {})
+
+def get_p2(ds, lf_key):
+    """Get mean and std from phase 2 results."""
+    by_var = p2_results.get(ds, {}).get(lf_key, {})
+    runs = by_var.get('predft', [])
+    aurocs = [r['mean_h_auroc'] for r in runs if r]
+    if not aurocs:
+        return None, None
+    mean = np.mean(aurocs)
+    std = np.std(aurocs, ddof=1) if len(aurocs) > 1 else 0.0
+    return mean, std
+
+print("=== Label Efficiency Curve ===")
+print(f"{'Dataset':8s} {'lf%':>6s} {'n_engines':>10s} {'h-AUROC':>10s} {'std':>8s} {'retention':>10s}")
+print("-"*56)
+
+for ds, lf100, lf100_std, lf10_row in [
+    ('FD001', fd001_100, fd001_100_std, fd001_10),
+    ('FD003', fd003_100, 0.004, fd003_10)
+]:
+    n_engines_total = 85 if ds == 'FD001' else 100
+    print(f"{ds:8s} {'100%':>6s} {n_engines_total:>10d} {lf100:>10.4f} {lf100_std:>8.4f} {'100%':>10s}")
+
+    if lf10_row:
+        n10 = max(1, round(n_engines_total * 0.1))
+        retain = lf10_row['mean_h_auroc'] / lf100 * 100
+        print(f"{'':8s} {'10%':>6s} {n10:>10d} {lf10_row['mean_h_auroc']:>10.4f} {lf10_row['std_h_auroc']:>8.4f} {retain:>9.1f}%")
+
+    for lf_key, pct, n_eng in [
+        ('lf5', '5%', max(1, round(n_engines_total * 0.05))),
+        ('lf2', '2%', max(1, round(n_engines_total * 0.02))),
+        ('lf1', '1%', max(1, round(n_engines_total * 0.01))),
+    ]:
+        if ds == 'FD003' and lf_key == 'lf1':
+            continue  # not run
+        m, s = get_p2(ds, lf_key)
+        if m is None:
+            continue
+        retain = m / lf100 * 100
+        print(f"{'':8s} {pct:>6s} {n_eng:>10d} {m:>10.4f} {s:>8.4f} {retain:>9.1f}%")
+    print()
+```
+
+```{python}
+#| label: phase2-label-curve-plot
+#| fig-cap: "Sub-5% label efficiency curve for FD001 (turbofan). Each point is a label fraction (1%, 2%, 5%, 10%, 100%). Error bars = 3-seed std. The curve is remarkably flat: FAM retains 92% of performance with only 2 engines out of 85."
+
+# Build FD001 curve data
+fd001_curve = []
+for lf_pct, n_eng, m, s in [
+    (100, 85, fd001_100, fd001_100_std),
+    (10, 9, fd001_10['mean_h_auroc'] if fd001_10 else None, fd001_10.get('std_h_auroc', 0) if fd001_10 else 0),
+]:
+    if m is not None:
+        fd001_curve.append((lf_pct, n_eng, m, s))
+
+for lf_key, pct, n_eng in [('lf5', 5, 4), ('lf2', 2, 2), ('lf1', 1, 1)]:
+    m, s = get_p2('FD001', lf_key)
+    if m is not None:
+        fd001_curve.append((pct, n_eng, m, s))
+
+fd001_curve.sort(key=lambda x: x[0])
+
+# FD003 curve
+fd003_curve = []
+for lf_pct, n_eng, m, s in [
+    (100, 100, fd003_100, 0.004),
+    (10, 10, fd003_10['mean_h_auroc'] if fd003_10 else None, fd003_10.get('std_h_auroc', 0) if fd003_10 else 0),
+]:
+    if m is not None:
+        fd003_curve.append((lf_pct, n_eng, m, s))
+
+for lf_key, pct, n_eng in [('lf5', 5, 5), ('lf2', 2, 2)]:
+    m, s = get_p2('FD003', lf_key)
+    if m is not None:
+        fd003_curve.append((pct, n_eng, m, s))
+
+fd003_curve.sort(key=lambda x: x[0])
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+if fd001_curve:
+    lfs1 = [x[0] for x in fd001_curve]
+    means1 = [x[2] for x in fd001_curve]
+    stds1 = [x[3] for x in fd001_curve]
+    ax.errorbar(lfs1, means1, yerr=stds1, marker='o', color='#1f77b4',
+                label='FD001 (turbofan)', linewidth=2, markersize=8, capsize=5)
+
+if fd003_curve:
+    lfs3 = [x[0] for x in fd003_curve]
+    means3 = [x[2] for x in fd003_curve]
+    stds3 = [x[3] for x in fd003_curve]
+    ax.errorbar(lfs3, means3, yerr=stds3, marker='s', color='#ff7f0e',
+                label='FD003 (turbofan multi-fault)', linewidth=2, markersize=8, capsize=5)
+
+ax.set_xscale('log')
+ax.set_xlabel('Label Fraction (%)', fontsize=13)
+ax.set_ylabel('mean h-AUROC', fontsize=13)
+ax.set_title('Sub-5% Label Efficiency: FAM-predft (h-AUROC)', fontsize=14)
+ax.set_xticks([1, 2, 5, 10, 100])
+ax.set_xticklabels(['1%\n(1 eng)', '2%\n(2 eng)', '5%\n(4-5 eng)', '10%\n(9-10 eng)', '100%\n(85-100 eng)'])
+ax.axhline(0.5, color='gray', linestyle='--', alpha=0.4, label='Chance (0.5)')
+ax.legend(fontsize=12)
+ax.set_ylim(0.4, 1.0)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+png_path = NB_DIR / 'v31_sub5pct_curve.png'
+plt.savefig(png_path, dpi=120, bbox_inches='tight')
+plt.show()
+print(f"Saved: {png_path}")
+```
+
+```{python}
+#| label: phase2-interpretation
+print("""
+=== Phase 2 Interpretation ===
+
+FD001 label efficiency curve:
+  100%: 0.786 (baseline)
+  10%:  0.772 = 98% retention  (9 engines)
+  5%:   0.730 = 93% retention  (4 engines)
+  2%:   0.724 = 92% retention  (2 engines) <-- KEY RESULT
+  1%:   0.670 = 85% retention  (1 engine, high variance)
+
+KEY FINDING: The h-AUROC curve is flat between 2% and 100% labels.
+Going from 85 engines to 2 engines costs only 8% performance.
+Going from 2 engines to 1 engine costs 7% with 8x higher variance.
+
+FD003 degrades faster:
+  5% -> 83% retention (multi-fault: fewer engines miss some fault modes)
+  2% -> 74% retention
+
+Theoretical interpretation (Proposition 1):
+  JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.
+  Downstream finetuning only needs to learn the mapping H_t -> [0,1].
+  This mapping is low-dimensional: the encoder already contains the signal.
+  Hence, very few labeled examples suffice to find the right mapping.
+  The variance at 1% (single engine) reflects the sample complexity of
+  learning from a single degradation trajectory.
+""")
+```
+
 ## Appendix: GECCO Alternative - Random Window Sampling
 
 A potential fix for GECCO: instead of taking the first 10% of the time

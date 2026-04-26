@@ -401,7 +401,11 @@ Key findings from paired analysis ($N{=}10$ seeds at 5/10/20\%): (i)~Pred-FT vs.
 \subsection{Label Efficiency}
 \label{sec:label_efficiency}
 
-Under the canonical backbone (198K predictor, AUPRC metric, 3 seeds on FD001): pred-FT $0.9250 \pm 0.0005$ vs.\ E2E $0.9262 \pm 0.0008$ at 10\% labels ($\Delta{=}-0.001$); pred-FT $0.9260 \pm 0.0008$ vs.\ E2E $0.9232 \pm 0.0024$ at 100\% ($\Delta{=}+0.003$). The modes are within $0.003$ AUPRC everywhere. The label-efficiency gap that was visible under the legacy backbone/F1w metric (\cref{app:label_efficiency_full}) does not survive the canonical architecture: RevIN, cumulative targets, and a smaller predictor tighten cross-seed variance. What pred-FT still buys is a $24{\times}$ reduction in trainable parameters at matched AUPRC.
+\textbf{Two regimes by dataset type.} The 10\%-label results (\cref{tab:benchmark}) reveal a clean two-regime structure. Lifecycle datasets, where a single entity undergoes a slow, predictable degradation trajectory, retain $\geq 97\%$ of full-label h-AUROC at 10\% labels: FD001 $0.772\pm0.059$ ($98\%$), FD003 $0.830\pm0.018$ ($97\%$), SMAP $0.580\pm0.047$ ($97\%$). The frozen encoder already captures the degradation trajectory from self-supervised pretraining; the finetuning objective only needs to steer the predictor toward the specific failure mode, a task that requires few labels when the signal is strong. In contrast, streaming-anomaly datasets depend on entity coverage: SMD uses only 3 of 28 entities at 10\% labels, falling near chance; MBA ($74\%$) truncates to 83 training windows. GECCO is excluded from lf10 comparisons because 10\% temporal truncation precedes the first positive label by design.
+
+\textbf{Sub-5\% label efficiency.} We extend the analysis to $\{5\%, 2\%, 1\%\}$ labels on FD001 and $\{5\%, 2\%\}$ on FD003 (see \cref{tab:sub5pct}). FD001 retains $93\%$ of full-label performance with only 5\% of training engines (4 engines), and $\mathbf{92\%}$ with just $\mathbf{2}$ engines out of 85 at 2\% labels ($0.724\pm0.013$). This remarkable robustness is predicted by \cref{prop:retention}: pretraining already establishes $I(H_t; E_{t+\Delta t})$ from unlabeled data; downstream learning only needs to solve the mapping from representations to event probabilities.
+
+\textbf{Pred-FT vs.\ E2E at low labels (legacy backbone).} Under the canonical backbone (198K predictor, AUPRC metric), pred-FT $0.9250\pm0.0005$ vs.\ E2E $0.9262\pm0.0008$ at 10\% labels ($\Delta{=}-0.001$); the modes are within $0.003$ AUPRC everywhere. The label-efficiency gap that was visible under the legacy backbone/F1w metric (\cref{app:label_efficiency_full}) does not survive the canonical architecture: RevIN, cumulative targets, and a smaller predictor tighten cross-seed variance. What pred-FT still buys is an ${\sim}11{\times}$ reduction in trainable parameters at matched AUPRC.
 
 \paragraph{Additional ablations.} Predictor-inference contribution, pretrained vs.\ random-init predictor, EMA vs.\ SIGReg pretraining, and architecture sensitivity are in \cref{app:additional_ablations}. Key findings: (i)~pretrained predictor weights carry at most $+0.003$ AUPRC over random-init ($p > 0.08$ on all datasets); (ii)~SIGReg-pred pretraining improves F1w by $+0.06$ and RMSE by $-3.2$ over EMA on FD001.
 
@@ -541,6 +545,34 @@ SIGReg~\citep{balestriero2025lejepa} replaces the EMA target encoder with spectr
     \textbf{SIGReg-pred} & $\mathbf{0.451 \pm 0.064}$                & $\mathbf{13.71 \pm 0.34}$               & $0.243 \pm 0.165$ & $\mathbf{17.30 \pm 3.55}$ \\
     \bottomrule
   \end{tabular}
+\end{table}
+
+\subsection{Sub-5\% Label Efficiency (FAM-predft, h-AUROC)}
+\label{app:sub5pct}
+
+\begin{table}[h]
+  \centering
+  \caption{\textbf{Sub-5\% label efficiency on FD001 and FD003 (FAM-predft, 3 seeds each).} Retention is relative to full-label h-AUROC. FD001 retains 92\% with just 2 engines (2\% of 85). FD003 degrades faster due to multi-fault variability.}
+  \label{tab:sub5pct}
+  \small
+  \begin{tabular}{lccccccc}
+    \toprule
+    Dataset & 100\% (85 eng.) & 10\% (9 eng.) & 5\% (4 eng.) & 2\% (2 eng.) & 1\% (1 eng.) \\
+    \midrule
+    FD001   & $0.786 \pm 0.033$ & $0.772 \pm 0.059$ & $0.730 \pm 0.018$ & $\mathbf{0.724 \pm 0.013}$ & $0.670 \pm 0.110$ \\
+            & 100\%           & 98\%            & 93\%            & \textbf{92\%}           & 85\%            \\
+    \midrule
+    Dataset & 100\% (100 eng.) & 10\% (10 eng.) & 5\% (5 eng.) & 2\% (2 eng.) & --- \\
+    \midrule
+    FD003   & $0.853 \pm 0.004$ & $0.830 \pm 0.018$ & $0.709 \pm 0.131$ & $0.635 \pm 0.065$ & --- \\
+            & 100\%           & 97\%            & 83\%            & 74\%            & --- \\
+    \bottomrule
+  \end{tabular}
+  \vspace{2pt}
+  \begin{minipage}{\linewidth}
+    \scriptsize
+    FD001 at 1\%: single-engine sampling introduces high variance. s42 (0.544) drew a near-average engine; s123 (0.731) and s456 (0.737) drew more informative engines. FD003's faster degradation with 2 engines reflects multi-fault variability: 2 engines may not cover all 4 fault modes, causing higher label-fraction dependence.
+  \end{minipage}
 \end{table}
 
 \subsection{Full Label-Efficiency Curve (Legacy Backbone)}

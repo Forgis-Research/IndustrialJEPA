@@ -94,6 +94,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#section-6-paper-claims-verification" id="toc-section-6-paper-claims-verification" class="nav-link" data-scroll-target="#section-6-paper-claims-verification">Section 6: Paper Claims Verification</a></li>
   <li><a href="#section-7-training-curves-summary" id="toc-section-7-training-curves-summary" class="nav-link" data-scroll-target="#section-7-training-curves-summary">Section 7: Training Curves Summary</a></li>
   <li><a href="#section-8-honest-assessment" id="toc-section-8-honest-assessment" class="nav-link" data-scroll-target="#section-8-honest-assessment">Section 8: Honest Assessment</a></li>
+  <li><a href="#section-9-phase-2---sub-5-label-efficiency-curve" id="toc-section-9-phase-2---sub-5-label-efficiency-curve" class="nav-link" data-scroll-target="#section-9-phase-2---sub-5-label-efficiency-curve">Section 9: Phase 2 - Sub-5% Label Efficiency Curve</a></li>
   <li><a href="#appendix-gecco-alternative---random-window-sampling" id="toc-appendix-gecco-alternative---random-window-sampling" class="nav-link" data-scroll-target="#appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</a></li>
   </ul>
 </nav>
@@ -181,7 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>V30 datasets available: ['FD001', 'FD002', 'FD003', 'SMAP', 'PSM', 'MBA', 'GECCO', 'BATADAL', 'SKAB', 'ETTm1', 'SMD']
-V31 lf10 datasets available: ['FD001', 'FD002', 'FD003', 'SMAP', 'PSM', 'MBA', 'GECCO', 'BATADAL', 'SKAB', 'ETTm1']</code></pre>
+V31 lf10 datasets available: ['FD001', 'FD002', 'FD003', 'SMAP', 'PSM', 'MBA', 'GECCO', 'BATADAL', 'SKAB', 'ETTm1', 'SMD']</code></pre>
 </div>
 </div>
 </section>
@@ -335,7 +336,7 @@ GECCO          0.8187       0.3460  -0.4726     42.3%           ok
 BATADAL        0.5989       0.6382  +0.0393    106.6%        FIXED
 SKAB           0.6737       0.7330  +0.0593    108.8%          n/a
 ETTm1          0.8332       0.7685  -0.0647     92.2%           ok
-SMD            0.6536      pending</code></pre>
+SMD            0.6536       0.5281  -0.1255     80.8%          n/a</code></pre>
 </div>
 </div>
 </section>
@@ -490,7 +491,7 @@ GECCO        0.2102   0.4153   0.4126   0.3460   0.1177 [ZERO LABELS]
 BATADAL      0.7033   0.6032   0.6082   0.6382   0.0564
 SKAB         0.7031   0.7505   0.7454   0.7330   0.0261
 ETTm1        0.7705   0.7651   0.7698   0.7685   0.0029
-SMD         (pending)</code></pre>
+SMD          0.4884   0.5061   0.5899   0.5281   0.0542</code></pre>
 </div>
 </div>
 </section>
@@ -625,7 +626,7 @@ GECCO                  0.3460 [ZERO LABELS - meaningless] (3/3 seeds)
 BATADAL                0.6382            [OK] (3/3 seeds)
 SKAB                   0.7330            [OK] (3/3 seeds)
 ETTm1                  0.7685            [OK] (3/3 seeds)
-SMD         (not yet computed)</code></pre>
+SMD                    0.5281            [OK] (3/3 seeds)</code></pre>
 </div>
 </div>
 </section>
@@ -705,19 +706,231 @@ Paper implication:
 </div>
 </div>
 </section>
+<section id="section-9-phase-2---sub-5-label-efficiency-curve" class="level2">
+<h2 class="anchored" data-anchor-id="section-9-phase-2---sub-5-label-efficiency-curve">Section 9: Phase 2 - Sub-5% Label Efficiency Curve</h2>
+<p>Phase 2 extends the label efficiency analysis to FD001 at 5%, 2%, 1% and FD003 at 5%, 2%. This characterizes how steeply performance degrades below the 10% threshold.</p>
+<p><strong>Key finding</strong>: FD001 retains 92% of full-label performance with only 2 engines (2%). The h-AUROC curve is remarkably flat above 2% labels.</p>
+<div id="phase2-results-table" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load Phase 2 results</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>p2_path <span class="op">=</span> V31_DIR <span class="op">/</span> <span class="st">'results/phase2_sub5pct.json'</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>p2_results <span class="op">=</span> {}</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> p2_path.exists():</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(p2_path) <span class="im">as</span> f:</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        p2_data <span class="op">=</span> json.load(f)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    p2_results <span class="op">=</span> p2_data.get(<span class="st">'results'</span>, {})</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># FD001 and FD003 across all label fractions</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>fd001_100 <span class="op">=</span> v30[<span class="st">'FD001'</span>][<span class="st">'lf100'</span>][<span class="st">'mean_h_auroc'</span>]</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>fd001_100_std <span class="op">=</span> v30[<span class="st">'FD001'</span>][<span class="st">'lf100'</span>][<span class="st">'std_h_auroc'</span>]</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>fd001_10 <span class="op">=</span> v31.get(<span class="st">'FD001'</span>, {}).get(<span class="st">'lf10'</span>, {})</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>fd003_100 <span class="op">=</span> v30[<span class="st">'FD003'</span>][<span class="st">'lf100'</span>][<span class="st">'mean_h_auroc'</span>]</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>fd003_10 <span class="op">=</span> v31.get(<span class="st">'FD003'</span>, {}).get(<span class="st">'lf10'</span>, {})</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_p2(ds, lf_key):</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Get mean and std from phase 2 results."""</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    by_var <span class="op">=</span> p2_results.get(ds, {}).get(lf_key, {})</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    runs <span class="op">=</span> by_var.get(<span class="st">'predft'</span>, [])</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    aurocs <span class="op">=</span> [r[<span class="st">'mean_h_auroc'</span>] <span class="cf">for</span> r <span class="kw">in</span> runs <span class="cf">if</span> r]</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> aurocs:</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, <span class="va">None</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    mean <span class="op">=</span> np.mean(aurocs)</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>    std <span class="op">=</span> np.std(aurocs, ddof<span class="op">=</span><span class="dv">1</span>) <span class="cf">if</span> <span class="bu">len</span>(aurocs) <span class="op">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> <span class="fl">0.0</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> mean, std</span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Label Efficiency Curve ==="</span>)</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'lf%'</span><span class="sc">:&gt;6s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'n_engines'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'h-AUROC'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'retention'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span><span class="op">*</span><span class="dv">56</span>)</span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds, lf100, lf100_std, lf10_row <span class="kw">in</span> [</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'FD001'</span>, fd001_100, fd001_100_std, fd001_10),</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'FD003'</span>, fd003_100, <span class="fl">0.004</span>, fd003_10)</span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a>    n_engines_total <span class="op">=</span> <span class="dv">85</span> <span class="cf">if</span> ds <span class="op">==</span> <span class="st">'FD001'</span> <span class="cf">else</span> <span class="dv">100</span></span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'100%'</span><span class="sc">:&gt;6s}</span><span class="ss"> </span><span class="sc">{</span>n_engines_total<span class="sc">:&gt;10d}</span><span class="ss"> </span><span class="sc">{</span>lf100<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>lf100_std<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'100%'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> lf10_row:</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a>        n10 <span class="op">=</span> <span class="bu">max</span>(<span class="dv">1</span>, <span class="bu">round</span>(n_engines_total <span class="op">*</span> <span class="fl">0.1</span>))</span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>        retain <span class="op">=</span> lf10_row[<span class="st">'mean_h_auroc'</span>] <span class="op">/</span> lf100 <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'10%'</span><span class="sc">:&gt;6s}</span><span class="ss"> </span><span class="sc">{</span>n10<span class="sc">:&gt;10d}</span><span class="ss"> </span><span class="sc">{</span>lf10_row[<span class="st">'mean_h_auroc'</span>]<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>lf10_row[<span class="st">'std_h_auroc'</span>]<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>retain<span class="sc">:&gt;9.1f}</span><span class="ss">%"</span>)</span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lf_key, pct, n_eng <span class="kw">in</span> [</span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'lf5'</span>, <span class="st">'5%'</span>, <span class="bu">max</span>(<span class="dv">1</span>, <span class="bu">round</span>(n_engines_total <span class="op">*</span> <span class="fl">0.05</span>))),</span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'lf2'</span>, <span class="st">'2%'</span>, <span class="bu">max</span>(<span class="dv">1</span>, <span class="bu">round</span>(n_engines_total <span class="op">*</span> <span class="fl">0.02</span>))),</span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'lf1'</span>, <span class="st">'1%'</span>, <span class="bu">max</span>(<span class="dv">1</span>, <span class="bu">round</span>(n_engines_total <span class="op">*</span> <span class="fl">0.01</span>))),</span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>    ]:</span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="op">==</span> <span class="st">'FD003'</span> <span class="kw">and</span> lf_key <span class="op">==</span> <span class="st">'lf1'</span>:</span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span>  <span class="co"># not run</span></span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>        m, s <span class="op">=</span> get_p2(ds, lf_key)</span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> m <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a>        retain <span class="op">=</span> m <span class="op">/</span> lf100 <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:8s}</span><span class="ss"> </span><span class="sc">{</span>pct<span class="sc">:&gt;6s}</span><span class="ss"> </span><span class="sc">{</span>n_eng<span class="sc">:&gt;10d}</span><span class="ss"> </span><span class="sc">{</span>m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>s<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>retain<span class="sc">:&gt;9.1f}</span><span class="ss">%"</span>)</span>
+<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== Label Efficiency Curve ===
+Dataset     lf%  n_engines    h-AUROC      std  retention
+--------------------------------------------------------
+FD001      100%         85     0.7855   0.0331       100%
+            10%          8     0.7723   0.0587      98.3%
+             5%          4     0.7295   0.0183      92.9%
+             2%          2     0.7245   0.0129      92.2%
+             1%          1     0.6705   0.1099      85.4%
+
+FD003      100%        100     0.8530   0.0040       100%
+            10%         10     0.8302   0.0178      97.3%
+             5%          5     0.7094   0.1311      83.2%
+             2%          2     0.6348   0.0646      74.4%
+</code></pre>
+</div>
+</div>
+<div id="phase2-label-curve-plot" class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build FD001 curve data</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>fd001_curve <span class="op">=</span> []</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> lf_pct, n_eng, m, s <span class="kw">in</span> [</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">100</span>, <span class="dv">85</span>, fd001_100, fd001_100_std),</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">10</span>, <span class="dv">9</span>, fd001_10[<span class="st">'mean_h_auroc'</span>] <span class="cf">if</span> fd001_10 <span class="cf">else</span> <span class="va">None</span>, fd001_10.get(<span class="st">'std_h_auroc'</span>, <span class="dv">0</span>) <span class="cf">if</span> fd001_10 <span class="cf">else</span> <span class="dv">0</span>),</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        fd001_curve.append((lf_pct, n_eng, m, s))</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> lf_key, pct, n_eng <span class="kw">in</span> [(<span class="st">'lf5'</span>, <span class="dv">5</span>, <span class="dv">4</span>), (<span class="st">'lf2'</span>, <span class="dv">2</span>, <span class="dv">2</span>), (<span class="st">'lf1'</span>, <span class="dv">1</span>, <span class="dv">1</span>)]:</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    m, s <span class="op">=</span> get_p2(<span class="st">'FD001'</span>, lf_key)</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>        fd001_curve.append((pct, n_eng, m, s))</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>fd001_curve.sort(key<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="dv">0</span>])</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="co"># FD003 curve</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>fd003_curve <span class="op">=</span> []</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> lf_pct, n_eng, m, s <span class="kw">in</span> [</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">100</span>, <span class="dv">100</span>, fd003_100, <span class="fl">0.004</span>),</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">10</span>, <span class="dv">10</span>, fd003_10[<span class="st">'mean_h_auroc'</span>] <span class="cf">if</span> fd003_10 <span class="cf">else</span> <span class="va">None</span>, fd003_10.get(<span class="st">'std_h_auroc'</span>, <span class="dv">0</span>) <span class="cf">if</span> fd003_10 <span class="cf">else</span> <span class="dv">0</span>),</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>        fd003_curve.append((lf_pct, n_eng, m, s))</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> lf_key, pct, n_eng <span class="kw">in</span> [(<span class="st">'lf5'</span>, <span class="dv">5</span>, <span class="dv">5</span>), (<span class="st">'lf2'</span>, <span class="dv">2</span>, <span class="dv">2</span>)]:</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>    m, s <span class="op">=</span> get_p2(<span class="st">'FD003'</span>, lf_key)</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>        fd003_curve.append((pct, n_eng, m, s))</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>fd003_curve.sort(key<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="dv">0</span>])</span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> fd001_curve:</span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>    lfs1 <span class="op">=</span> [x[<span class="dv">0</span>] <span class="cf">for</span> x <span class="kw">in</span> fd001_curve]</span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>    means1 <span class="op">=</span> [x[<span class="dv">2</span>] <span class="cf">for</span> x <span class="kw">in</span> fd001_curve]</span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>    stds1 <span class="op">=</span> [x[<span class="dv">3</span>] <span class="cf">for</span> x <span class="kw">in</span> fd001_curve]</span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a>    ax.errorbar(lfs1, means1, yerr<span class="op">=</span>stds1, marker<span class="op">=</span><span class="st">'o'</span>, color<span class="op">=</span><span class="st">'#1f77b4'</span>,</span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">'FD001 (turbofan)'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, markersize<span class="op">=</span><span class="dv">8</span>, capsize<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> fd003_curve:</span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>    lfs3 <span class="op">=</span> [x[<span class="dv">0</span>] <span class="cf">for</span> x <span class="kw">in</span> fd003_curve]</span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a>    means3 <span class="op">=</span> [x[<span class="dv">2</span>] <span class="cf">for</span> x <span class="kw">in</span> fd003_curve]</span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a>    stds3 <span class="op">=</span> [x[<span class="dv">3</span>] <span class="cf">for</span> x <span class="kw">in</span> fd003_curve]</span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a>    ax.errorbar(lfs3, means3, yerr<span class="op">=</span>stds3, marker<span class="op">=</span><span class="st">'s'</span>, color<span class="op">=</span><span class="st">'#ff7f0e'</span>,</span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">'FD003 (turbofan multi-fault)'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, markersize<span class="op">=</span><span class="dv">8</span>, capsize<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a>ax.set_xscale(<span class="st">'log'</span>)</span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Label Fraction (%)'</span>, fontsize<span class="op">=</span><span class="dv">13</span>)</span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'mean h-AUROC'</span>, fontsize<span class="op">=</span><span class="dv">13</span>)</span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'Sub-5% Label Efficiency: FAM-predft (h-AUROC)'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>ax.set_xticks([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">100</span>])</span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a>ax.set_xticklabels([<span class="st">'1%</span><span class="ch">\n</span><span class="st">(1 eng)'</span>, <span class="st">'2%</span><span class="ch">\n</span><span class="st">(2 eng)'</span>, <span class="st">'5%</span><span class="ch">\n</span><span class="st">(4-5 eng)'</span>, <span class="st">'10%</span><span class="ch">\n</span><span class="st">(9-10 eng)'</span>, <span class="st">'100%</span><span class="ch">\n</span><span class="st">(85-100 eng)'</span>])</span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="fl">0.5</span>, color<span class="op">=</span><span class="st">'gray'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">'Chance (0.5)'</span>)</span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a>ax.legend(fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="fl">0.4</span>, <span class="fl">1.0</span>)</span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-60"><a href="#cb22-60" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb22-61"><a href="#cb22-61" aria-hidden="true" tabindex="-1"></a>png_path <span class="op">=</span> NB_DIR <span class="op">/</span> <span class="st">'v31_sub5pct_curve.png'</span></span>
+<span id="cb22-62"><a href="#cb22-62" aria-hidden="true" tabindex="-1"></a>plt.savefig(png_path, dpi<span class="op">=</span><span class="dv">120</span>, bbox_inches<span class="op">=</span><span class="st">'tight'</span>)</span>
+<span id="cb22-63"><a href="#cb22-63" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb22-64"><a href="#cb22-64" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Saved: </span><span class="sc">{</span>png_path<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Saved: /home/sagemaker-user/IndustrialJEPA/notebooks/v31_sub5pct_curve.png</code></pre>
+</div>
+</div>
+<div id="phase2-interpretation" class="cell" data-execution_count="13">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="st">=== Phase 2 Interpretation ===</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="st">FD001 label efficiency curve:</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="st">  100%: 0.786 (baseline)</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="st">  10%:  0.772 = 98</span><span class="sc">% r</span><span class="st">etention  (9 engines)</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="st">  5%:   0.730 = 93</span><span class="sc">% r</span><span class="st">etention  (4 engines)</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="st">  2%:   0.724 = 92</span><span class="sc">% r</span><span class="st">etention  (2 engines) &lt;-- KEY RESULT</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="st">  1%:   0.670 = 85</span><span class="sc">% r</span><span class="st">etention  (1 engine, high variance)</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="st">KEY FINDING: The h-AUROC curve is flat between 2% and 100% labels.</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="st">Going from 85 engines to 2 engines costs only 8% performance.</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="st">Going from 2 engines to 1 engine costs 7% with 8x higher variance.</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="st">FD003 degrades faster:</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="st">  5% -&gt; 83</span><span class="sc">% r</span><span class="st">etention (multi-fault: fewer engines miss some fault modes)</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="st">  2% -&gt; 74</span><span class="sc">% r</span><span class="st">etention</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a><span class="st">Theoretical interpretation (Proposition 1):</span></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="st">  JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="st">  Downstream finetuning only needs to learn the mapping H_t -&gt; [0,1].</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a><span class="st">  This mapping is low-dimensional: the encoder already contains the signal.</span></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="st">  Hence, very few labeled examples suffice to find the right mapping.</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a><span class="st">  The variance at 1% (single engine) reflects the sample complexity of</span></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="st">  learning from a single degradation trajectory.</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+=== Phase 2 Interpretation ===
+
+FD001 label efficiency curve:
+  100%: 0.786 (baseline)
+  10%:  0.772 = 98% retention  (9 engines)
+  5%:   0.730 = 93% retention  (4 engines)
+  2%:   0.724 = 92% retention  (2 engines) &lt;-- KEY RESULT
+  1%:   0.670 = 85% retention  (1 engine, high variance)
+
+KEY FINDING: The h-AUROC curve is flat between 2% and 100% labels.
+Going from 85 engines to 2 engines costs only 8% performance.
+Going from 2 engines to 1 engine costs 7% with 8x higher variance.
+
+FD003 degrades faster:
+  5% -&gt; 83% retention (multi-fault: fewer engines miss some fault modes)
+  2% -&gt; 74% retention
+
+Theoretical interpretation (Proposition 1):
+  JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.
+  Downstream finetuning only needs to learn the mapping H_t -&gt; [0,1].
+  This mapping is low-dimensional: the encoder already contains the signal.
+  Hence, very few labeled examples suffice to find the right mapping.
+  The variance at 1% (single engine) reflects the sample complexity of
+  learning from a single degradation trajectory.
+</code></pre>
+</div>
+</div>
+</section>
 <section id="appendix-gecco-alternative---random-window-sampling" class="level2">
 <h2 class="anchored" data-anchor-id="appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</h2>
 <p>A potential fix for GECCO: instead of taking the first 10% of the time series, randomly sample 10% of time windows that include both positive and negative examples. This is a future work item.</p>
-<div id="gecco-alternative" class="cell" data-execution_count="11">
+<div id="gecco-alternative" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>GECCO alternative label fraction strategy (not implemented in v31):

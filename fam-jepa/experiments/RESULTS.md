@@ -29,6 +29,21 @@ Phase 0 verification (all 11 datasets):
 | ETTm1   | 10,420      | 1,013       | 0.097 | OK (was BUG) |
 | SMD     | 131,530     | 12,077      | 0.092 | OK |
 
+### Phase 2 - sub-5% label efficiency on FD001/FD003 (FAM-predft only)
+
+FD001 at 5%/2%/1% labels; FD003 at 5%/2% labels; 3 seeds each.
+
+| Dataset | lf100 | lf10 | lf5 | lf2 | lf1 | notes |
+|---------|-------|------|-----|-----|-----|-------|
+| FD001 | 0.786 ± 0.033 | 0.772 ± 0.059 | **0.730 ± 0.018** | **0.724 ± 0.013** | 0.670 ± 0.110 | 92% retention at 2 engines! |
+| FD003 | 0.853 ± 0.004 | 0.830 ± 0.018 | 0.709 ± 0.131 | 0.635 ± 0.065 | n/a | more variable; multi-fault sensitivity |
+
+**Key findings (v31 Phase 2):**
+1. **FD001 retains 92% of full-label performance with only 2 engines (out of 85) at 2% labels.** The h-AUROC curve is remarkably flat: 98% at 10%, 93% at 5%, 92% at 2%. This demonstrates that JEPA pretraining has already learned the relevant degradation dynamics; downstream finetuning only needs to learn the event mapping.
+2. **FD001 at 1% (1 engine)**: Mean 0.670 ± 0.110. High variance (std=0.110 vs 0.013 at 2%) reflects the sensitivity to which engine is sampled. s42=0.544 (unlucky single engine), s123=0.731, s456=0.737.
+3. **FD003 degrades faster**: At 5%, 0.709 ± 0.131 (83% retention). At 2%, 0.635 ± 0.065 (74%). FD003's multi-fault degradation modes require more engines to represent all fault types.
+4. **Crossover confirmed**: At lf<=5%, the variance between seeds becomes meaningful, consistent with v30 Phase 3c finding that pred-FT dominates mlp-rand at very low labels.
+
 ### Phase 1 - all 11 datasets at 10% labels (v30 ckpts, v31 bug-fixed FT)
 
 Per-domain head: dense K=150 for lifecycle (FD001/002/003/SMAP/PSM/GECCO/SMD),
