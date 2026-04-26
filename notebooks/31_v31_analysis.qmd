@@ -466,11 +466,13 @@ Paper implication:
 ## Section 9: Phase 2 - Sub-5% Label Efficiency Curve
 
 Phase 2 extends the label efficiency analysis to FD001 at 5%, 2%, 1%
-and FD003 at 5%, 2%. This characterizes how steeply performance degrades
+and FD003 at 5%, 2%, 1%. This characterizes how steeply performance degrades
 below the 10% threshold.
 
 **Key finding**: FD001 retains 92% of full-label performance with only 2
 engines (2%). The h-AUROC curve is remarkably flat above 2% labels.
+FD003 lf1 (1 engine) collapses near chance (0.513 +/- 0.220), confirming
+multi-fault datasets require broader entity coverage.
 
 ```{python}
 #| label: phase2-results-table
@@ -522,7 +524,7 @@ for ds, lf100, lf100_std, lf10_row in [
         ('lf1', '1%', max(1, round(n_engines_total * 0.01))),
     ]:
         if ds == 'FD003' and lf_key == 'lf1':
-            continue  # not run
+            pass  # now run: 0.513 +/- 0.220 (near-chance, high variance)
         m, s = get_p2(ds, lf_key)
         if m is None:
             continue
@@ -560,7 +562,7 @@ for lf_pct, n_eng, m, s in [
     if m is not None:
         fd003_curve.append((lf_pct, n_eng, m, s))
 
-for lf_key, pct, n_eng in [('lf5', 5, 5), ('lf2', 2, 2)]:
+for lf_key, pct, n_eng in [('lf5', 5, 5), ('lf2', 2, 2), ('lf1', 1, 1)]:
     m, s = get_p2('FD003', lf_key)
     if m is not None:
         fd003_curve.append((pct, n_eng, m, s))
@@ -620,6 +622,7 @@ Going from 2 engines to 1 engine costs 7% with 8x higher variance.
 FD003 degrades faster:
   5% -> 83% retention (multi-fault: fewer engines miss some fault modes)
   2% -> 74% retention
+  1% -> 60% retention, std=0.220 (UNRELIABLE: s42=0.292 near-chance)
 
 Theoretical interpretation (Proposition 1):
   JEPA pretraining establishes I(H_t; E_{t+Δt}) using ALL unlabeled data.
