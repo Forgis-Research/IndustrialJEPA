@@ -342,7 +342,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     SKAB          & Hydraulic  & $\mathbf{.707}${\scriptsize$\pm.017$} & --- & $.733${\scriptsize$\pm.026$} & --- & F1 $.645$ & --- & --- \\
     ETTm1         & Power      & $\mathbf{.869}${\scriptsize$\pm.002$} & --- & $.768${\scriptsize$\pm.003$} & --- & --- & --- & --- \\
     GECCO         & Water      & $.819${\scriptsize$\pm.064$} & $\mathbf{.826}${\scriptsize$\pm.003$} & $.346${\scriptsize$\pm.118$}$^{\ddagger}$ & --- & F1 $.283$ & F1 $.71$ & \citep{batadal2018} \\
-    BATADAL       & ICS        & $\mathbf{.607}${\scriptsize$\pm.033$} & $.534${\scriptsize$\pm.026$} & $.638${\scriptsize$\pm.056$} & --- & F1 $.236$ & AUC $.97$ & \citep{batadal2018} \\
+    BATADAL       & ICS        & $\mathbf{.607}${\scriptsize$\pm.033$} & $.534${\scriptsize$\pm.032$} & $.638${\scriptsize$\pm.056$} & --- & F1 $.236$ & AUC $.97$ & \citep{batadal2018} \\
     \midrule
     \multicolumn{2}{@{}l}{\textit{FAM vs Chr-2 (198K head)}} & \multicolumn{2}{c}{\textbf{6\,/\,2 (FD002, GECCO)}} & \multicolumn{2}{c}{see \cref{sec:label_efficiency}} & & & \\
     \bottomrule
@@ -417,7 +417,7 @@ Key findings from paired analysis ($N{=}10$ seeds at 5/10/20\%): (i)~Pred-FT vs.
 \begin{itemize}[nosep]
   \item \textbf{Per-dataset pretraining.} We pretrain a separate encoder per dataset. Cross-domain pretraining on a union of datasets is the natural next step.
   \item \textbf{FD003 regression.} AUPRC drops to $0.766$ under the canonical $P{=}16$ architecture; the multi-fault degradation mode may need finer temporal resolution or more predictor capacity.
-  \item \textbf{Chronos-2 parity on well-covered domains.} On datasets whose distribution is close to the Chronos-2 pretraining corpus, a 120M frozen encoder matches FAM. FAM's advantage is on out-of-distribution domains.
+  \item \textbf{Chronos-2 parity on well-covered domains.} On FD002 (multi-condition turbofan) and GECCO (water quality monitoring), Chronos-2 matches or marginally outperforms FAM. On GECCO the difference is $0.826$ vs $0.819$ (within FAM's $\pm0.064$ confidence interval). The pattern suggests that Chronos-2's broad pretraining corpus covers some signal structures better than per-dataset JEPA, particularly when the domain is represented in standard forecasting benchmarks.
   \item \textbf{Anomaly ``prediction'' vs detection.} On SMAP, the model detects ongoing anomaly segments rather than predicting onset with lead time. True early warning requires lead-time-aware evaluation.
   \item \textbf{Adaptive tokenization.} We fix $P{=}16$ following PatchTST. The optimal patch size depends on sampling frequency and signal characteristics; a principled alternative would fix the token count (e.g., ${\sim}32$ tokens) and adapt $P$ to the context length.
 \end{itemize}
