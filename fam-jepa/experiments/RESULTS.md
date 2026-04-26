@@ -203,6 +203,38 @@ Honest finding: FEMTO shows FAM generalizes to new domain but needs more pretrai
 
 Results in: fam-jepa/experiments/v31/results/femto_baseline.json
 
+### Phase 7 - Baseline Extension to All 11 Datasets (v31 continuation, 2026-04-26)
+
+Goal: Extend MOMENT/TimesFM/Moirai from 4 datasets to all 11 for apples-to-apples comparison.
+
+#### Phase 7a - MOMENT-1-large extension (PARTIAL - inference time constraint)
+
+MOMENT processes B*C=batch*channels in one call (no sub-batching). With 25 channels (SMAP, PSM) and 38ch (SMD), a single dataset would take 5+ hours. Terminated after SMAP extraction started at 2.5 hours. Only 5 datasets covered.
+
+Additional dataset: FD002 (lf=1.0)
+| Dataset | MOMENT h-AUROC | FAM h-AUROC | Winner |
+|---------|---------------|-------------|--------|
+| FD002   | 0.703 +/- 0.003 (3s) | 0.566 +/- 0.011 | **MOMENT (+0.138)** |
+
+**MOMENT total (5 datasets, lf=1.0):**
+| Dataset | MOMENT h-AUROC | FAM h-AUROC | Winner |
+|---------|---------------|-------------|--------|
+| FD001   | 0.559 +/- 0.008 | 0.786 +/- 0.033 | FAM |
+| FD002   | 0.703 +/- 0.003 | 0.566 +/- 0.011 | MOMENT (+0.138) |
+| FD003   | 0.473 +/- 0.010 | 0.853 +/- 0.004 | FAM |
+| MBA     | 0.791 +/- 0.009 | 0.739 +/- 0.014 | MOMENT (+0.052) |
+| BATADAL | 0.537 +/- 0.054 | 0.607 +/- 0.033 | FAM |
+
+FAM wins 3/5. MOMENT wins FD002 and MBA. SMAP/PSM/GECCO/SKAB/ETTm1/SMD excluded due to >5h inference time per high-channel dataset (MOMENT architecture limitation: no sub-batching for multi-channel).
+
+#### Phase 7b - TimesFM-1.0-200M extension (RUNNING as of 2026-04-26 21:42)
+
+TimesFM uses BS=32 mini-batching for channel processing, faster than MOMENT.
+Running: --datasets FD002 SMAP PSM GECCO SKAB ETTm1 SMD --label-fractions 1.0 0.1
+FD002 (lf=1.0): 0.601 +/- 0.008 (3s) - new result [FAM=0.566, TimesFM wins +0.035]
+FD002 (lf=0.1): 0.548 +/- 0.051 (3s) - new result
+Remaining datasets pending...
+
 ---
 
 ## v30 — dense K=150 head + fair ablation + uniform 13-dataset benchmark (2026-04-25 / 26)
