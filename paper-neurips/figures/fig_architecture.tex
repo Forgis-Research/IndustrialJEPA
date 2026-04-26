@@ -1,13 +1,13 @@
 % FAM Architecture Diagram — NeurIPS 2026
 % Compile: pdflatex fig_architecture.tex
 %
-% FIGURE DESIGN
+% FIGURE DESIGN (v2 — simplified)
 % Message: "FAM pretrains a causal encoder via horizon-aware representation
 %           prediction, then finetunes only the predictor+head to produce
 %           monotonic event probability surfaces via discrete hazard CDF."
 % Type: Architecture diagram (two-part: pretraining + finetuning)
 % Layout: Two rows separated by dashed line. Left-to-right flow.
-%         Tokenizer compressed. Encoder is central. Predictor+head on right.
+%         Tokenizer compressed to single box. No dimension annotations.
 % Colors: Blue=encoder, Green=target encoder, Orange=predictor, Red=event head
 % Size: NeurIPS single column (5.5in / ~14cm)
 %
@@ -40,20 +40,20 @@
 \tikzset{
   blk/.style={
     draw=#1!70!black, fill=#1!10, rectangle, rounded corners=1.5pt,
-    minimum height=0.5cm, minimum width=1.2cm,
-    font=\sffamily\fontsize{6.5}{8}\selectfont, align=center, line width=0.4pt,
+    minimum height=0.55cm, minimum width=1.4cm,
+    font=\sffamily\fontsize{7}{8.5}\selectfont, align=center, line width=0.4pt,
   },
   blk/.default=okBlue,
   frozen/.style={
     draw=frozenGray, fill=grayFill, rectangle, rounded corners=1.5pt,
-    minimum height=0.5cm, minimum width=1.2cm,
-    font=\sffamily\fontsize{6.5}{8}\selectfont, align=center, line width=0.4pt,
+    minimum height=0.55cm, minimum width=1.4cm,
+    font=\sffamily\fontsize{7}{8.5}\selectfont, align=center, line width=0.4pt,
     text=frozenGray!60!black,
   },
   emb/.style={
     draw=#1!70!black, fill=#1!18, circle,
-    minimum size=0.42cm, inner sep=0pt,
-    font=\fontsize{6}{7}\selectfont, align=center, line width=0.4pt,
+    minimum size=0.45cm, inner sep=0pt,
+    font=\fontsize{6.5}{7.5}\selectfont, align=center, line width=0.4pt,
   },
   emb/.default=okBlue,
   arr/.style={
@@ -64,25 +64,30 @@
   },
   inp/.style={
     draw=black!50, fill=black!4, rectangle,
-    minimum height=0.5cm, minimum width=0.8cm,
-    font=\sffamily\fontsize{5.5}{7}\selectfont, align=center, line width=0.3pt,
+    minimum height=0.55cm, minimum width=0.9cm,
+    font=\sffamily\fontsize{7}{8.5}\selectfont, align=center, line width=0.3pt,
   },
-  lbl/.style={font=\sffamily\fontsize{6}{7}\selectfont, black!75},
-  lbls/.style={font=\sffamily\fontsize{5.5}{6.5}\selectfont, black!55},
-  sechd/.style={font=\sffamily\bfseries\fontsize{7.5}{9}\selectfont, black!85},
+  lbl/.style={font=\sffamily\fontsize{7}{8.5}\selectfont, black!75},
+  lbls/.style={font=\sffamily\fontsize{6}{7}\selectfont, black!55},
+  sechd/.style={font=\sffamily\bfseries\fontsize{8}{9.5}\selectfont, black!85},
   lossn/.style={
     draw=okVermillion!70!black, fill=okVermillion!10, rectangle,
-    rounded corners=1.5pt, minimum height=0.42cm, minimum width=0.55cm,
-    font=\sffamily\fontsize{6.5}{8}\selectfont, align=center, line width=0.4pt,
+    rounded corners=1.5pt, minimum height=0.45cm, minimum width=0.6cm,
+    font=\sffamily\fontsize{7}{8.5}\selectfont, align=center, line width=0.4pt,
   },
   gbox/.style={
-    draw=#1!30, fill=#1!3, rounded corners=3pt, inner sep=3.5pt,
+    draw=#1!30, fill=#1!3, rounded corners=3pt, inner sep=4pt,
     line width=0.3pt,
+  },
+  smallblk/.style={
+    draw=#1!70!black, fill=#1!10, rectangle, rounded corners=1.5pt,
+    minimum height=0.45cm, minimum width=0.7cm,
+    font=\sffamily\fontsize{6.5}{8}\selectfont, align=center, line width=0.4pt,
   },
 }
 
 \begin{document}
-\begin{tikzpicture}[node distance=4mm and 5mm]
+\begin{tikzpicture}[node distance=4.5mm and 5.5mm]
 
 % =====================================================================
 %  PRETRAINING — CONTEXT PATH
@@ -91,75 +96,67 @@
 \node[sechd] (pt_lbl) at (0, 0) {Pretraining};
 
 % Input
-\node[inp, below=2.5mm of pt_lbl.south west, anchor=north west,
-      minimum width=0.9cm, minimum height=0.6cm]
-  (xctx) {$\mathbf{x}_{\leq t}$\\[-1pt]{\fontsize{4.5}{5.5}\selectfont$(T,\!C)$}};
+\node[inp, below=3mm of pt_lbl.south west, anchor=north west]
+  (xctx) {$\mathbf{x}_{\leq t}$};
 
-% Tokenizer (compact: RevIN + Patch + PE in one block)
-\node[blk=okBlue, right=4mm of xctx, minimum width=1.9cm]
-  (tok_ctx) {RevIN $\!\to\!$ Patch $\!\to\!$ PE\\[-1pt]
-  {\fontsize{4.5}{5.5}\selectfont$P\!=\!16\;\to\;(\lceil T/16\rceil,\,d)$}};
+% Tokenizer (simplified)
+\node[smallblk=okBlue, right=5mm of xctx] (tok_ctx) {Tokenize};
 
 % Causal Transformer
-\node[blk=okBlue, right=4mm of tok_ctx, minimum width=1.8cm]
-  (enc) {Causal Transformer\\[-1pt]
-  {\fontsize{4.5}{5.5}\selectfont$d\!=\!256,\; L\!=\!2,\; H\!=\!4$}};
+\node[blk=okBlue, right=5mm of tok_ctx, minimum width=1.8cm]
+  (enc) {Causal Transformer};
 
 % h_t
-\node[emb=okBlue, right=4mm of enc] (ht) {$\mathbf{h}_t$};
+\node[emb=okBlue, right=5mm of enc] (ht) {$\mathbf{h}_t$};
 
 % Predictor
-\node[blk=okOrange, right=5mm of ht, minimum width=1.3cm]
-  (pred) {Predictor $g_\phi$\\[-1pt]{\fontsize{4.5}{5.5}\selectfont MLP}};
+\node[blk=okOrange, right=6mm of ht, minimum width=1.3cm]
+  (pred) {Predictor $g_\phi$};
 
 % Delta-t input
-\node[inp, above=2.5mm of pred, minimum width=0.6cm, minimum height=0.35cm,
+\node[inp, above=3mm of pred, minimum width=0.6cm, minimum height=0.38cm,
       draw=okOrange!50, fill=okOrange!5]
   (dt_in) {$\Delta t$};
 
 % h-hat
-\node[emb=okOrange, right=4mm of pred] (hhat) {$\hat{\mathbf{h}}$};
+\node[emb=okOrange, right=5mm of pred] (hhat) {$\hat{\mathbf{h}}$};
 
 % Loss
-\node[lossn, right=4mm of hhat] (loss) {$\mathcal{L}_1$};
+\node[lossn, right=5mm of hhat] (loss) {$\mathcal{L}_1$};
 
 % Context path arrows
 \draw[arr] (xctx) -- (tok_ctx);
 \draw[arr] (tok_ctx) -- (enc);
-\draw[arr] (enc) -- node[lbls, above, inner sep=1pt] {last} (ht);
+\draw[arr] (enc) -- (ht);
 \draw[arr] (ht) -- (pred);
 \draw[arr] (dt_in) -- (pred);
 \draw[arr] (pred) -- (hhat);
 \draw[arr] (hhat) -- (loss);
 
 % Encoder label
-\node[lbl, text=okBlue!80!black, above=0.5mm of enc.north] {$f_\theta$};
+\node[lbl, text=okBlue!80!black, above=1mm of enc.north] {$f_\theta$};
 
 % =====================================================================
 %  PRETRAINING — TARGET PATH
 % =====================================================================
 
 % Target input (below context input)
-\node[inp, below=11mm of xctx, minimum width=0.9cm, minimum height=0.6cm]
-  (xtgt) {$\mathbf{x}_{(t,t{+}\Delta t]}$\\[-1pt]
-  {\fontsize{4.5}{5.5}\selectfont$(\Delta t,\!C)$}};
+\node[inp, below=13mm of xctx]
+  (xtgt) {$\mathbf{x}_{(t,t{+}\Delta t]}$};
 
-% Tokenizer
-\node[blk=okGreen, right=4mm of xtgt, minimum width=1.9cm]
-  (tok_tgt) {RevIN $\!\to\!$ Patch $\!\to\!$ PE\\[-1pt]
-  {\fontsize{4.5}{5.5}\selectfont same tokenizer}};
+% Tokenizer (simplified)
+\node[smallblk=okGreen, right=5mm of xtgt] (tok_tgt) {Tokenize};
 
 % Bidirectional Transformer
-\node[blk=okGreen, right=4mm of tok_tgt, minimum width=1.8cm]
-  (tgt_enc) {Bidir.\ Transformer\\[-1pt]
-  {\fontsize{4.5}{5.5}\selectfont$d\!=\!256,\; L\!=\!2,\; H\!=\!4$}};
+\node[blk=okGreen, right=5mm of tok_tgt, minimum width=1.8cm]
+  (tgt_enc) {Bidir.\ Transformer};
 
 % Attention pool
-\node[blk=okGreen, right=4mm of tgt_enc, minimum width=0.8cm]
-  (apool) {Attn\\[-1pt]Pool};
+\node[blk=okGreen, right=5mm of tgt_enc, minimum width=0.9cm]
+  (apool) {Attn Pool};
 
 % h*
-\node[emb=okGreen, right=4mm of apool] (hstar) {$\mathbf{h}^*$};
+\node[emb=okGreen, right=5mm of apool] (hstar) {$\mathbf{h}^*$};
 
 % Target path arrows
 \draw[arr] (xtgt) -- (tok_tgt);
@@ -168,40 +165,39 @@
 \draw[arr] (apool) -- (hstar);
 
 % Target encoder label
-\node[lbl, text=okGreen!80!black, above=0.5mm of tgt_enc.north] {$\bar{f}_\xi$};
+\node[lbl, text=okGreen!80!black, above=1mm of tgt_enc.north] {$\bar{f}_\xi$};
 
 % h* to loss: route upward
-\draw[arr] (hstar.north) -- ++(0, 0.22)
-  -| node[lbls, pos=0.25, above, inner sep=1pt] {sg} (loss.south);
+\draw[arr] (hstar.north) -- ++(0, 0.25)
+  -| (loss.south);
+\node[lbls, inner sep=1pt] at ($(loss.south) + (-0.35, -0.22)$) {sg};
 
 % --- EMA arrow (encoder -> target encoder) ---
 \draw[arrd, okGreen!70!black]
-  ($(enc.south) + (-0.15, 0)$) -- ++(0, -0.22)
-  -| node[lbls, pos=0.3, left=0.5pt] {EMA $\tau\!=\!0.99$}
-  ($(tgt_enc.north) + (-0.15, 0)$);
+  ($(enc.south) + (-0.2, 0)$) -- ++(0, -0.25)
+  -| node[lbls, pos=0.3, left=0.5pt] {EMA}
+  ($(tgt_enc.north) + (-0.2, 0)$);
 
-% --- Interval annotations ---
-% Small timeline showing context | target (no gap)
-\coordinate (tl_start) at ($(xctx.south west) + (0, -0.55)$);
+% --- Timeline annotation ---
+\coordinate (tl_start) at ($(xctx.south west) + (0, -0.6)$);
 \draw[black!40, line width=0.3pt]
-  (tl_start) -- ++(2.2, 0);
+  (tl_start) -- ++(2.4, 0);
 \draw[okBlue!70, line width=2pt]
-  (tl_start) -- ++(1.1, 0)
-  node[lbls, midway, below=1.5pt, text=okBlue!80!black] {$\mathbf{x}[0\!:\!t]$};
+  (tl_start) -- ++(1.2, 0)
+  node[lbls, midway, below=1.5pt, text=okBlue!80!black] {context};
 \draw[okGreen!70, line width=2pt]
-  ($(tl_start) + (1.1, 0)$) -- ++(1.1, 0)
-  node[lbls, midway, below=1.5pt, text=okGreen!80!black] {$\mathbf{x}(t\!:\!t{+}\Delta t]$};
+  ($(tl_start) + (1.2, 0)$) -- ++(1.2, 0)
+  node[lbls, midway, below=1.5pt, text=okGreen!80!black] {target};
 % Tick at boundary
 \draw[black!50, line width=0.3pt]
-  ($(tl_start) + (1.1, 0.07)$) -- ++(0, -0.14)
+  ($(tl_start) + (1.2, 0.07)$) -- ++(0, -0.14)
   node[lbls, above=1pt] {$t$};
-% (removed "no gap" annotation)
 
 % =====================================================================
 %  DASHED SEPARATOR
 % =====================================================================
 
-\coordinate (sep_y) at ($(xtgt.south) + (0, -0.85)$);
+\coordinate (sep_y) at ($(xtgt.south) + (0, -0.9)$);
 \draw[draw=black!20, dashed, line width=0.35pt]
   (pt_lbl.west |- sep_y) -- (loss.east |- sep_y);
 
@@ -210,56 +206,53 @@
 % =====================================================================
 
 \node[sechd, anchor=west] (ft_lbl)
-  at (pt_lbl.west |- sep_y) [yshift=-4mm] {Finetuning (pred-FT)};
+  at (pt_lbl.west |- sep_y) [yshift=-4.5mm] {Finetuning};
 
 % Input
-\node[inp, below=2.5mm of ft_lbl.south west, anchor=north west,
-      minimum width=0.9cm, minimum height=0.6cm]
-  (ft_x) {$\mathbf{x}_{\leq t}$\\[-1pt]{\fontsize{4.5}{5.5}\selectfont$(T,\!C)$}};
+\node[inp, below=3mm of ft_lbl.south west, anchor=north west]
+  (ft_x) {$\mathbf{x}_{\leq t}$};
 
-% Frozen encoder (single compressed block)
-\node[frozen, right=4mm of ft_x, minimum width=3.2cm, minimum height=0.6cm]
-  (ft_enc) {Encoder $f_\theta$\quad
-  {\fontsize{4.5}{5.5}\selectfont(RevIN $\to$ Patch $\to$ Causal Transf.)}};
+% Frozen encoder (single compressed block — no internal detail)
+\node[frozen, right=5mm of ft_x, minimum width=2.6cm, minimum height=0.6cm]
+  (ft_enc) {Encoder $f_\theta$};
 
 % Frozen label
-\node[lbls, text=frozenGray, above=-0.5mm of ft_enc.north, anchor=south]
+\node[lbls, text=frozenGray, above=0.5mm of ft_enc.north, anchor=south]
   {\textbf{frozen}};
 
 % h_t
-\node[emb=okBlue, right=4mm of ft_enc] (ft_ht) {$\mathbf{h}_t$};
+\node[emb=okBlue, right=5mm of ft_enc] (ft_ht) {$\mathbf{h}_t$};
 
 % Predictor (trainable)
-\node[blk=okOrange, right=4mm of ft_ht, minimum width=1.2cm]
-  (ft_pred) {Predictor\\[-1pt]{\fontsize{4.5}{5.5}\selectfont trainable}};
+\node[blk=okOrange, right=5mm of ft_ht, minimum width=1.3cm]
+  (ft_pred) {Predictor $g_\phi$};
 
 % Horizons input
-\node[inp, above=2.5mm of ft_pred, minimum width=1.0cm, minimum height=0.35cm,
+\node[inp, above=3mm of ft_pred, minimum width=1.1cm, minimum height=0.38cm,
       draw=okOrange!50, fill=okOrange!5]
   (ft_dt) {$\Delta t_1\!,\ldots,\!\Delta t_K$};
 
 % h-hat at each horizon
-\node[emb=okOrange, right=4mm of ft_pred] (ft_hk) {$\hat{\mathbf{h}}_k$};
+\node[emb=okOrange, right=5mm of ft_pred] (ft_hk) {$\hat{\mathbf{h}}_k$};
 
 % Event head
-\node[blk=okVermillion, right=3.5mm of ft_hk, minimum width=1.1cm]
-  (ehead) {Event Head\\[-1pt]{\fontsize{4.5}{5.5}\selectfont LN\,+\,Linear}};
+\node[blk=okVermillion, right=5mm of ft_hk, minimum width=1.1cm]
+  (ehead) {Event Head};
 
 % Sigma
-\node[blk=okVermillion, right=3mm of ehead, minimum width=0.5cm, minimum height=0.42cm]
+\node[smallblk=okVermillion, right=4mm of ehead, minimum height=0.45cm]
   (sig) {$\sigma$};
 
 % Lambda
-\node[emb=okVermillion, right=3mm of sig, minimum size=0.38cm]
+\node[emb=okVermillion, right=4mm of sig, minimum size=0.4cm]
   (lam) {$\lambda_k$};
 
 % Survival CDF
-\node[blk=okVermillion, right=3mm of lam, minimum width=1.5cm]
-  (cdf) {${\displaystyle\prod_{j\leq k}}(1{-}\lambda_j)$\\[-2pt]
-  {\fontsize{4.5}{5.5}\selectfont$S_k \;\to\; 1{-}S_k$}};
+\node[blk=okVermillion, right=4mm of lam, minimum width=1.3cm]
+  (cdf) {$\displaystyle\prod_{j\leq k}\!(1{-}\lambda_j)$};
 
-% Output surface
-\node[emb=okVermillion, right=4mm of cdf, minimum size=0.42cm]
+% Output
+\node[emb=okVermillion, right=5mm of cdf, minimum size=0.45cm]
   (pout) {$p$};
 
 % Finetuning arrows
@@ -275,11 +268,11 @@
 \draw[arr] (cdf) -- (pout);
 
 % Annotations
-\node[lbls, below=0.5mm of lam.south, text width=1.2cm, align=center]
+\node[lbls, below=1mm of lam.south, align=center]
   {hazard};
-\node[lbls, below=0.5mm of pout.south] {$p(t,\!\Delta t_k)$};
+\node[lbls, below=1mm of pout.south] {$p(t,\!\Delta t_k)$};
 
-\node[lbl, text=okOrange!80!black, above=0.5mm of ft_pred.north] {$g_\phi$};
+% g_phi label omitted — already inside the predictor box text
 
 % =====================================================================
 %  GROUP BOXES (background)
@@ -287,16 +280,16 @@
 
 \begin{scope}[on background layer]
   % Context encoder group
-  \node[gbox=okBlue, fit=(tok_ctx)(enc), inner sep=3pt] {};
+  \node[gbox=okBlue, fit=(tok_ctx)(enc), inner sep=3.5pt] {};
   % Target encoder group
-  \node[gbox=okGreen, fit=(tok_tgt)(tgt_enc)(apool), inner sep=3pt] {};
+  \node[gbox=okGreen, fit=(tok_tgt)(tgt_enc)(apool), inner sep=3.5pt] {};
   % Hazard-CDF chain
-  \node[gbox=okVermillion, fit=(ehead)(sig)(lam)(cdf)(pout), inner sep=3pt] (cdf_group) {};
+  \node[gbox=okVermillion, fit=(ehead)(sig)(lam)(cdf)(pout), inner sep=3.5pt] (cdf_group) {};
 \end{scope}
 
 % CDF group label
-\node[lbls, text=okVermillion!70!black, above=0.5mm of cdf_group.north]
-  {discrete survival $\to$ CDF};
+\node[lbls, text=okVermillion!70!black, above=1mm of cdf_group.north]
+  {discrete hazard $\to$ survival CDF};
 
 \end{tikzpicture}
 \end{document}

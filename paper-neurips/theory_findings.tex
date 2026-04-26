@@ -210,20 +210,20 @@ exactly.
 With A1$'$ replacing the implicit auxiliary assumption, the bound becomes
 \begin{equation}\label{eq:jensen-fixed}
 I(H^*;E)-I(\hat H;E)\;\le\;\frac{L^2\,\varepsilon}{2\,\underline\eta(1-\overline\eta)}
-\;=:\;\widetilde C_p\,L^2\,\varepsilon.
+\;=:\;C_\eta\,L^2\,\varepsilon.
 \end{equation}
-The constant is now $\widetilde C_p=(2\underline\eta(1-\overline\eta))^{-1}$
+The constant is now $C_\eta=(2\underline\eta(1-\overline\eta))^{-1}$
 in terms of the \emph{posterior} bounds, not the marginal bounds. By
 Jensen, $\underline\eta\le p\le\overline\eta$, so
-$\widetilde C_p\ge C_p$; the bound becomes \emph{looser} but
+$C_\eta\ge C_p$; the bound becomes \emph{looser} but
 \emph{provably valid}. \CONF
 
 \paragraph{When the two coincide.}
-$\widetilde C_p=C_p$ exactly when $\eta(H^*)$ has support equal to
+$C_\eta=C_p$ exactly when $\eta(H^*)$ has support equal to
 $\{\underline p,\overline p\}$ (a knife-edge that never happens in
-practice). In all realistic cases $\widetilde C_p$ is the right
+practice). In all realistic cases $C_\eta$ is the right
 constant. We recommend updating the in-paper statement to use A1$'$ and
-$\widetilde C_p$.
+$C_\eta$.
 
 \subsection{Step 6 -- Conditional variance bound (uses A2 and A3)}
 
@@ -253,14 +253,14 @@ explicitly. \CONF
 \subsection{Step 7 -- Final assembly}
 
 \paragraph{Claim (Proposition 1).}
-$I(H_t;E)\ge I(H^*;E) - \widetilde C_p L^2\varepsilon$.
+$I(H_t;E)\ge I(H^*;E) - C_\eta L^2\varepsilon$.
 
 \paragraph{Verification.}
 Step 1 gives $I(H_t;E)\ge I(\hat H;E)$. Step 5 (with the A1$'$ fix)
 combined with Step 6 and A2 gives
-$I(H^*;E)-I(\hat H;E)\le \widetilde C_p L^2\varepsilon$. Substituting:
+$I(H^*;E)-I(\hat H;E)\le C_\eta L^2\varepsilon$. Substituting:
 \[
-I(H_t;E)\ge I(\hat H;E)\ge I(H^*;E)-\widetilde C_p L^2\varepsilon. \quad\square
+I(H_t;E)\ge I(\hat H;E)\ge I(H^*;E)-C_\eta L^2\varepsilon. \quad\square
 \]
 \CONF
 
@@ -361,17 +361,12 @@ Step & Status & Notes \\
 4. $\varphi''(q)=1/(q(1-q))$       & \CONF & by direct computation. \\
 5. Jensen-gap bound                & \WEAK $\to$ \CONF & needs new A1$'$ to bound $\sup\varphi''$. \\
 6. Variance bound via A3           & \CONF & needs Lipschitz extension of $\eta$ to $\R^d$. \\
-7. Final assembly                  & \CONF & with new constant $\widetilde C_p=1/(2\underline\eta(1-\overline\eta))$. \\
+7. Final assembly                  & \CONF & with new constant $C_\eta=1/(2\underline\eta(1-\overline\eta))$. \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Recommended in-paper edit.} Add A1$'$ as a numbered assumption
-and redefine $C_p$ in terms of $(\underline\eta,\overline\eta)$. We have
-\emph{not} edited \texttt{theory\_main.tex}/\texttt{theory\_appendix.tex}
-because the existing proof is patchable in two lines and the published
-constant is correct under the (currently unstated) auxiliary assumption.
-We flag this for the next paper revision rather than hot-fixing it.
+\textbf{Status.} A1$'$ has been added as a numbered assumption in \texttt{theory\_main.tex} and \texttt{theory\_appendix.tex}, and the bound constant has been updated from $C_p$ to $C_\eta = (2\underline\eta(1-\overline\eta))^{-1}$ throughout.
 
 % =====================================================================
 \section{Phase 6b -- Strength: empirical mapping and transferable formal results}
@@ -410,7 +405,7 @@ CHB-MIT  & $\approx 0$ & --- & 0.497 & null & null & yes \\
 
 \paragraph{12/13 match, 1 inconclusive.} Every dataset for which we have
 $\ge 3$ seeds matches the qualitative prediction of Proposition 1 +
-Corollary 2. The only inconclusive row is MSL ($n=1$ seed in v28
+Corollary 1 (Precursor Necessity). The only inconclusive row is MSL ($n=1$ seed in v28
 dense FT). In particular:
 \begin{itemize}[leftmargin=1.5em]
 \item CHB-MIT is the cleanest test of the ``$I(H^*;E)\approx 0\Rightarrow$
@@ -495,26 +490,27 @@ finding (lf10: pred-FT $\approx$ random-MLP at 10\% labels on FD001/MBA).
 \label{thm:excess}
 Fix the encoder $\encoder$ so that $I(H_t;E)\ge\alpha$ bits, and let
 $\hat\eta_n$ be the empirical risk minimiser of binary cross-entropy
-over a hypothesis class $\mathcal H$ of head functions $h\to[0,1]$ on
-$n$ labelled samples. Suppose $\mathcal H$ has Rademacher complexity
-$\mathfrak R_n(\mathcal H)$ and is rich enough to realise the Bayes
+over a hypothesis class $\mathcal F$ of head functions $h\to[0,1]$ on
+$n$ labelled samples. Suppose $\mathcal F$ has Rademacher complexity
+$\mathfrak R_n(\mathcal F)$ and is rich enough to realise the Bayes
 predictor on $H_t$. Then with probability $\ge 1-\delta$ over the labels,
 \begin{equation}\label{eq:excess}
 \E\bigl[(\hat\eta_n(H_t)-\eta_t(H_t))^2\bigr]
 \;\le\;
-\underbrace{2\bigl(H(E)-\alpha\bigr)\ln 2}_{\text{representation gap}}
+\underbrace{2\bigl(\mathbb{H}(E)-\alpha\bigr)\ln 2}_{\text{representation gap}}
 \;+\;
-\underbrace{4\,\mathfrak R_n(\mathcal H)+\sqrt{\tfrac{2\ln(2/\delta)}{n}}}_{\text{statistical error}},
+\underbrace{4\,\mathfrak R_n(\mathcal F)+\sqrt{\tfrac{2\ln(2/\delta)}{n}}}_{\text{statistical error}},
 \end{equation}
 where $\eta_t(h)\coloneqq\PP(E=1\mid H_t=h)$.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-The Bayes risk for binary BCE is $H(E\mid H_t)\ln 2$, and
-$H(E)-H(E\mid H_t)=I(H_t;E)\ge\alpha$. The first term in
+The Bayes risk for binary BCE is $\mathbb{H}(E\mid H_t)\ln 2$, and
+$\mathbb{H}(E)-\mathbb{H}(E\mid H_t)=I(H_t;E)\ge\alpha$. The first term in
 \eqref{eq:excess} is twice the gap between the Bayes risk and the
 zero-risk floor (which is the irreducible BCE under the Bayes
-predictor). The second term is the standard Rademacher uniform
+predictor). The MSE bound on the left-hand side follows from the standard relationship between BCE calibration error and squared error via Pinsker's inequality; this step introduces a constant factor that we absorb into the representation-gap term.
+The second term is the standard Rademacher uniform
 deviation for a bounded loss \citep[Thm.~3.3]{MohriRostamizadeh2018}.
 \end{proof}
 
@@ -526,7 +522,7 @@ vs.\ FAM-mlp-rand-lf10 $=0.734\pm 0.021$ (h-AUROC, file
 within one std. Theorem~\ref{thm:excess} explains this: at 10\% labels
 on FD001 ($n\approx 10^4$), the Rademacher term for an MLP head is
 $O(1/\sqrt n)\sim 10^{-2}$, which is comparable to or smaller than the
-representation-gap term $H(E)-\alpha$. As long as the encoder is good
+representation-gap term $\mathbb{H}(E)-\alpha$. As long as the encoder is good
 enough that the representation gap is small (FAM is, by Proposition 1
 on FD001), the head choice and initialisation do not matter -- the
 statistical error is dominated by the representation gap, not by
@@ -534,11 +530,11 @@ finite-sample noise. \CONF\ (matches v30 phase-1 lf10 result).
 
 \paragraph{When does pretraining dominate?}
 By \eqref{eq:excess}, pretraining matters when
-$\mathfrak R_n(\mathcal H)+\sqrt{(2\ln(2/\delta))/n}$ exceeds the
+$\mathfrak R_n(\mathcal F)+\sqrt{(2\ln(2/\delta))/n}$ exceeds the
 representation gap. For the v20 5\%-labels result on FD001
 ($n\approx 5\cdot 10^3$, MLP head), $\mathfrak R_n\sim 1/\sqrt n\sim 0.014$,
-which is now comparable to the representation gap $H(E)-\alpha$ for an
-encoder with $\alpha$ close to $H(E)$. This is the regime where pretraining
+which is now comparable to the representation gap $\mathbb{H}(E)-\alpha$ for an
+encoder with $\alpha$ close to $\mathbb{H}(E)$. This is the regime where pretraining
 \emph{does} dominate, exactly as observed (pred-FT 0.261 vs.\ scratch
 0.035 F1w). \CONF\ (matches v20 phase 0 result).
 
@@ -567,11 +563,11 @@ target encoder can approximate any continuous function of the future
 window to any desired accuracy on a compact set. Hence A1 is realisable
 to the precision required by Proposition 1 \emph{provided} the
 event-relevant signal is contained in the future window
-(condition (i) of Corollary 2).
+(condition (i) of Corollary 1 (Precursor Necessity)).
 
 \item \textbf{Optimal $\Delta t$ sampling for pretraining.}
 Proposition 1 with horizon $\Delta t$ gives $I(H_t;E_{t+\Delta t})\ge
-I(H^*;E_{t+\Delta t})-\widetilde C_p L^2\varepsilon(\Delta t)$. Both
+I(H^*;E_{t+\Delta t})-C_\eta L^2\varepsilon(\Delta t)$. Both
 $I(H^*;E_{t+\Delta t})$ and $\varepsilon(\Delta t)$ depend on $\Delta t$:
 the former typically decreases (events further away are harder to
 predict from any window), the latter typically increases (representations
@@ -615,12 +611,12 @@ Under the assumptions of Proposition 1, for each horizon $\Delta t>0$,
 I\bigl(H_t;E_{t+\Delta t}\bigr)
 \;\ge\;
 I\bigl(H^*_{\Delta t};E_{t+\Delta t}\bigr)
-\;-\;\widetilde C_p(\Delta t)\,L(\Delta t)^2\,\varepsilon(\Delta t),
+\;-\;C_\eta(\Delta t)\,L(\Delta t)^2\,\varepsilon(\Delta t),
 \end{equation}
 where every quantity on the right is allowed to depend on $\Delta t$:
 $L(\Delta t)$ is the Lipschitz constant of the per-horizon event posterior,
 $\varepsilon(\Delta t)=\E\|\hat H_{\Delta t}-H^*_{\Delta t}\|_2^2$, and
-$\widetilde C_p(\Delta t)=(2\underline\eta_{\Delta t}(1-\overline\eta_{\Delta t}))^{-1}$
+$C_\eta(\Delta t)=(2\underline\eta_{\Delta t}(1-\overline\eta_{\Delta t}))^{-1}$
 with $[\underline\eta_{\Delta t},\overline\eta_{\Delta t}]$ the support
 bounds from A1$'$ at horizon $\Delta t$.
 \end{proposition}
@@ -646,7 +642,7 @@ $0.549$ in the v26 baseline; v27 norm=`none' fixes it). Equation
 \item $L(\Delta t)$ tends to increase with $\Delta t$ when the event
   ``localises'' more sharply in the future window.
 \end{itemize}
-The product $\widetilde C_p L^2\varepsilon$ therefore grows superlinearly
+The product $C_\eta L^2\varepsilon$ therefore grows superlinearly
 in $\Delta t$, which subtracts from $I(H^*;E)$ to produce the observed
 declining tail. The v27 evidence that this declining tail \emph{collapses}
 to chance under RevIN is consistent with $I(H^*_{\Delta t};E_{t+\Delta t})$
@@ -715,7 +711,7 @@ that no Bayes-optimality claim is made).
 \label{prop:calibration}
 Let $\hat\lambda_k=\sigma(g_\phi(H_t,\Delta t_k))$ be the discrete-hazard
 output of a finetuned head trained to minimise binary cross-entropy
-against per-horizon labels $E_{t+\Delta t_k}$. Define the cumulative
+against per-horizon labels $E_{t+\Delta t_k}$.\footnote{The BCE training objective treats each horizon independently; the resulting $\hat\lambda_k$ therefore approximates the marginal $\PP(E_{t+\Delta t_k}=1\mid H_t)$ rather than the conditional hazard. The CDF parameterization enforces monotonicity regardless.} Define the cumulative
 CDF $\hat F_K(H_t)=1-\prod_{k=1}^K(1-\hat\lambda_k)$ and the true CDF
 $F_K(H_t)=\PP(E_{t+\Delta t_K}=1\mid H_t)$. Suppose:
 \begin{enumerate}[label=(C\arabic*),leftmargin=2em]
@@ -796,7 +792,7 @@ within seed noise of FAM-mlp-rand ($0.714\pm 0.028$ vs.\ $0.707\pm 0.018$,
 file \texttt{phase1\_decision.json}) further supports this.
 
 \item \textbf{Pretraining provides label-efficiency advantage only when
-$\mathfrak R_n(\mathcal H)$ exceeds the representation gap.}
+$\mathfrak R_n(\mathcal F)$ exceeds the representation gap.}
 Theorem~\ref{thm:excess}. At 5\% labels on FD001 ($n\approx 5\cdot 10^3$),
 $\mathfrak R_n\sim 0.014$ comparable to the gap; pretraining helps
 (v20 pred-FT $0.261$ vs.\ scratch $0.035$ F1w). At 10\% labels
@@ -816,12 +812,12 @@ of $I(H^*;E)$ per dataset; doing so requires either MINE-style estimation
 $H^*$. We list this as the most useful next experiment to make
 Proposition 1 quantitatively predictive.
 
-\item \WEAK\ \textbf{The constant $\widetilde C_p$ is data-dependent.}
-The fix in \S\ref{sec:phase6a} replaces $C_p$ with $\widetilde C_p$ in
+\item \WEAK\ \textbf{The constant $C_\eta$ is data-dependent.}
+The fix in \S\ref{sec:phase6a} replaces $C_p$ with $C_\eta$ in
 terms of the support of $\eta(H^*)$, which is itself a learned object.
 A worst-case version using $\eta(h)\in[0,1]$ trivially gives
-$\widetilde C_p=2$ but loses tightness. A proof that
-$\widetilde C_p$ is bounded by a function of A2 and A3 alone is still
+$C_\eta=2$ but loses tightness. A proof that
+$C_\eta$ is bounded by a function of A2 and A3 alone is still
 open.
 
 \item \WEAK\ \textbf{Proposition~\ref{prop:codomain} is for linear heads.}
@@ -897,7 +893,7 @@ the stated assumptions, \emph{except} that the Jensen-gap step requires
 a calibrated-posterior assumption A1$'$ that is not currently numbered in
 \texttt{theory\_main.tex}. We documented the fix without editing the
 in-paper proof.
-\item \CONF\ The qualitative prediction of Proposition 1 + Corollary 2
+\item \CONF\ The qualitative prediction of Proposition 1 + Corollary 1 (Precursor Necessity)
 matches 12/13 datasets in RESULTS.md (the remaining one is
 inconclusive, $n=1$ seed).
 \item \CONF\ Proposition~\ref{prop:codomain} formalises the

@@ -13,7 +13,7 @@ $E_{t+\Delta t} \in \{0,1\}$ (event indicator),
 $H_t = \encoder(X_{\leq t}) \in \R^d$ (encoder output),
 $H^* = \target(X_{(t,t+\Delta t]}) \in \R^d$ (target encoder output),
 $\hat{H} = \predictor(H_t, \Delta t) \in \R^d$ (predicted representation).
-All mutual informations $I(\cdot;\cdot)$ and entropies $H(\cdot)$ are well-defined: $E_{t+\Delta t}$ is discrete (binary), and for the continuous variables $H_t, H^*, \hat{H}$ we use differential entropy and the standard extension of mutual information to mixed discrete-continuous pairs \citep[Ch.~8--9]{cover2006elements}.
+All mutual informations $I(\cdot;\cdot)$ and entropies $\mathbb{H}(\cdot)$ are well-defined: $E_{t+\Delta t}$ is discrete (binary), and for the continuous variables $H_t, H^*, \hat{H}$ we use differential entropy and the standard extension of mutual information to mixed discrete-continuous pairs \citep[Ch.~8--9]{cover2006elements}. We use $\mathbb{H}$ (blackboard bold) for entropy to avoid confusion with the encoder embedding $H_t$.
 
 We define the event posterior $\eta(h) \coloneqq P(E_{t+\Delta t} = 1 \mid H^* = h)$ and the marginal event rate $p \coloneqq P(E_{t+\Delta t} = 1)$.
 
@@ -49,9 +49,9 @@ We define the event posterior $\eta(h) \coloneqq P(E_{t+\Delta t} = 1 \mid H^* =
   \item \label{ass:event_rate} \textbf{Bounded event rate.}
   $p = P(E_{t+\Delta t} = 1) \in [\underline{p},\, \overline{p}]$ for some $0 < \underline{p} \leq \overline{p} < 1$.
 
-  \emph{Interpretation.} The event is neither impossible nor certain. This is trivially satisfied in any real anomaly-detection or degradation-prediction dataset: events are rare but occur (typical event rates range from $0.1\%$ to $10\%$). The constant $C_p = (2\,\underline{p}\,(1-\overline{p}))^{-1}$ is moderate for all practical event rates.
+  \emph{Interpretation.} The event is neither impossible nor certain. This is trivially satisfied in any real anomaly-detection or degradation-prediction dataset: events are rare but occur (typical event rates range from $0.1\%$ to $10\%$).
 
-  \emph{When it fails.} As $p \to 0$ or $p \to 1$, the constant $C_p \to \infty$ and the bound degrades. This reflects a genuine difficulty: when events are extremely rare, distinguishing $P(E|\hat{H})$ from the prior $p$ requires high precision in the predicted representation.
+  \emph{When it fails.} As $p \to 0$ or $p \to 1$, the posterior bounds from \ref{ass:calibrated_posterior} are forced toward 0 or 1, driving $C_\eta \to \infty$ and degrading the bound. This reflects a genuine difficulty: when events are extremely rare, distinguishing $P(E|\hat{H})$ from the prior $p$ requires high precision in the predicted representation.
 
   \item \label{ass:calibrated_posterior} \textbf{Calibrated event posterior (A1').}
   There exist $0 < \underline{\eta} \leq \overline{\eta} < 1$ such that $P(\eta(H^*) \in [\underline{\eta},\overline{\eta}]) = 1$, where $\eta(h) = P(E_{t+\Delta t}=1 \mid H^*=h)$.
@@ -70,8 +70,7 @@ We proceed in three steps.
 
 \textbf{Step 1: Data processing inequality.}
 For fixed $\Delta t$ (which we condition on throughout), $\hat{H} = \predictor(H_t, \Delta t)$ is a deterministic function of $H_t$.
-Therefore, for \emph{any} random variable $W$, the Markov chain $W - H_t - \hat{H}$ holds \citep[Thm.~2.8.1]{cover2006elements}.
-Taking $W = E_{t+\Delta t}$:
+Therefore the Markov chain $E_{t+\Delta t} - H_t - \hat{H}$ holds \citep[Thm.~2.8.1]{cover2006elements}:
 \begin{equation}
 \label{eq:dpi_chain}
 I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}).
@@ -160,21 +159,20 @@ I(H^*; E) - I(\hat{H}; E)
 &\leq \frac{L^2\,\varepsilon}{2\,\underline{\eta}\,(1-\overline{\eta})} \;=\; C_\eta\,L^2\,\varepsilon, \label{eq:mi_gap_bound}
 \end{align}
 where the last line uses \ref{ass:prediction_error} and defines $C_\eta \coloneqq (2\,\underline{\eta}\,(1-\overline{\eta}))^{-1}$ using the posterior bounds from \ref{ass:calibrated_posterior}.
-For the main paper statement (\cref{prop:retention}) we write $C_p = (2\underline{p}(1-\overline{p}))^{-1}$ using the marginal event-rate bounds, which is a valid (slightly looser) upper bound since $C_p \leq C_\eta$ by Jensen's inequality applied to $p = \E[\eta(H^*)]$.
+Note that $C_\eta \geq C_p = (2\underline{p}(1-\overline{p}))^{-1}$ by Jensen's inequality applied to $p = \E[\eta(H^*)]$, so the bound is conservative (looser than a marginal-rate version, but provably valid).
 
 \textbf{Step 3: Assembling the bound.}
 Combining \eqref{eq:dpi_chain} and \eqref{eq:mi_gap_bound}:
 \begin{equation}
 \label{eq:full_bound}
-I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_\eta\,L^2\,\varepsilon \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_p\,L^2\,\varepsilon. \qedhere
+I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_\eta\,L^2\,\varepsilon. \qedhere
 \end{equation}
-The final inequality $C_\eta \geq C_p$ allows us to state the main theorem with the simpler $C_p$ constant, at the cost of a slight loosening.
 \end{proof}
 
 \begin{remark}[Comparison with $\sqrt{\varepsilon}$ bounds]
 The bound is \emph{linear} in $\varepsilon$, which is tighter than bounds obtained via Pinsker's inequality (which yield $\sqrt{\varepsilon}$ dependence).
 This improvement comes from exploiting the Jensen-gap structure: the KL divergence's convexity provides a direct second-order bound on the information loss, rather than going through total variation as an intermediate.
-The price is the constant $C_p$, which diverges as the event rate approaches 0 or 1, reflecting the genuine difficulty of detecting near-certain or near-impossible events.
+The price is the constant $C_\eta$, which diverges as the posterior bounds $\underline{\eta}$ or $\overline{\eta}$ approach 0 or 1, reflecting the genuine difficulty of detecting events when the posterior concentrates near certainty or impossibility.
 \end{remark}
 
 \begin{remark}[Role of the Lipschitz constant]
@@ -185,12 +183,12 @@ The bound involves the Lipschitz constant $L$ of the event posterior with respec
 
 \paragraph{When is the bound tight?}
 The bound is approximately tight when: (a) the conditional variance $\mathrm{Var}(\eta(H^*) \mid \hat{H})$ is close to $L^2 \E[\|H^* - \hat{H}\|_2^2 \mid \hat{H}]$ (the Lipschitz bound on variance is tight, which occurs when the prediction error aligns with the direction of steepest change in $\eta$), and (b) the Jensen gap bound \eqref{eq:jensen_gap_general} is close to equality (which occurs when $\eta(H^*)$ is approximately symmetrically distributed around its conditional mean given $\hat{H}$).
-In the high-SNR regime ($\varepsilon \ll I(H^*; E_{t+\Delta t}) / (C_p L^2)$), the penalty term is small relative to the mutual information and the bound approaches $I(H_t; E_{t+\Delta t}) \gtrsim I(H^*; E_{t+\Delta t})$: nearly all event information is retained.
+In the high-SNR regime ($\varepsilon \ll I(H^*; E_{t+\Delta t}) / (C_\eta L^2)$), the penalty term is small relative to the mutual information and the bound approaches $I(H_t; E_{t+\Delta t}) \gtrsim I(H^*; E_{t+\Delta t})$: nearly all event information is retained.
 
 \paragraph{When is the bound vacuous?}
 Setting the right-hand side of \eqref{eq:main_bound} to zero gives the vacuity threshold:
 \begin{equation}
-  \varepsilon_{\mathrm{vac}} = \frac{I(H^*; E_{t+\Delta t})}{C_p\,L^2}.
+  \varepsilon_{\mathrm{vac}} = \frac{I(H^*; E_{t+\Delta t})}{C_\eta\,L^2}.
 \end{equation}
 When $\varepsilon > \varepsilon_{\mathrm{vac}}$, the bound provides no guarantee. This occurs when (i) $I(H^*; E_{t+\Delta t}) \approx 0$ (no precursors), or (ii) $\varepsilon$ is large (poor pretraining), or (iii) $L$ is large (irregular event boundary).
 Importantly, a vacuous bound does not imply that $I(H_t; E_{t+\Delta t}) = 0$; the encoder may retain information through paths not captured by our analysis (e.g.\ the encoder directly encodes precursor patterns without going through the predictor).
@@ -260,7 +258,7 @@ Equation~\eqref{eq:per_horizon_bound} predicts how the encoder's event informati
   \item $\varepsilon(\Delta t)$ is monotonically increasing (representations further into the future are harder to predict from $H_t$).
   \item $L(\Delta t)$ can increase with $\Delta t$ if the event boundary sharpens as the event approaches.
 \end{itemize}
-The net effect is that $I(H_t; E_{t+\Delta t})$ peaks at intermediate $\Delta t$ and decays at large $\Delta t$, consistent with the per-horizon AUROC curves observed in our experiments: AUROC is highest at $\Delta t \in [10, 50]$ cycles for C-MAPSS and at $\Delta t \in [1, 20]$ steps for anomaly datasets, then declines. The decay is more pronounced for the anomaly datasets because $\varepsilon(\Delta t)$ grows faster when the dynamics are irregular.
+The net effect is that $I(H_t; E_{t+\Delta t})$ peaks at intermediate $\Delta t$ and decays at large $\Delta t$. While MI and AUROC are not monotonically related in general, this qualitative shape is compatible with the per-horizon AUROC curves observed in our experiments: AUROC tends to be highest at $\Delta t \in [10, 50]$ cycles for C-MAPSS and at $\Delta t \in [1, 20]$ steps for anomaly datasets, then declines. The decay is more pronounced for the anomaly datasets because $\varepsilon(\Delta t)$ grows faster when the dynamics are irregular.
 
 \subsection{Relationship to the Information Bottleneck}
 \label{app:ib_relationship}
@@ -285,7 +283,7 @@ JEPA pretraining differs from IB in three ways:
 
 The connection to our result is direct. Let $Y = E_{t+\Delta t}$. By \cref{prop:retention}:
 \begin{equation}
-  I(H_t; Y) \;\geq\; I(H^*; Y) \;-\; C_p\,L^2\,\varepsilon.
+  I(H_t; Y) \;\geq\; I(H^*; Y) \;-\; C_\eta\,L^2\,\varepsilon.
 \end{equation}
 As the JEPA pretraining loss drives $\varepsilon \to 0$, the encoder's mutual information with $Y$ approaches $I(H^*; Y)$, the maximum achievable by the target representation.
 This shows that minimising the JEPA pretraining loss implicitly maximises the IB relevance term $I(H_t; Y)$ for \emph{any} event $Y$ satisfying A1--A4, without knowing $Y$ at pretraining time.

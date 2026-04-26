@@ -11,7 +11,9 @@ All proofs and assumptions are in \cref{app:theory}.
 Let $X_{\leq t}$ denote observations up to time $t$, and let $E_{t+\Delta t} \in \{0,1\}$ indicate whether an event occurs in the interval $(t, t+\Delta t]$.
 The encoder produces $H_t = \encoder(X_{\leq t}) \in \R^d$, and the target encoder produces $H^* = \target(X_{(t,t+\Delta t]}) \in \R^d$ from the future interval.
 We write $\hat{H} = \predictor(H_t, \Delta t)$ for the predicted representation.
-We use $I(\cdot;\cdot)$ for mutual information and $H(\cdot)$ for entropy, following \citet{cover2006elements}.
+We write $p = P(E_{t+\Delta t}=1)$ for the marginal event rate; the probability surface $p(t, \Delta t)$ in other sections is a distinct quantity.
+We use $I(\cdot;\cdot)$ for mutual information, following \citet{cover2006elements}.
+Entropy is denoted $\mathbb{H}(\cdot)$ to avoid confusion with the embedding $H_t$; see \cref{app:theory} for full notation.
 
 \begin{definition}[Predictive and event-relevant information]
 \label{def:info_decomposition}
@@ -25,19 +27,20 @@ The \emph{event-irrelevant} component of $H^*$ is the residual $I(H^*; X_{(t,t+\
 Suppose \textup{(A1)} the event $E_{t+\Delta t}$ is conditionally independent of $X_{\leq t}$ given $H^*$,
 \textup{(A2)} the pretraining loss satisfies $\E[\|\hat{H} - H^*\|_2^2] \leq \varepsilon$,
 \textup{(A3)} the event posterior $\eta(h) = P(E_{t+\Delta t}=1 \mid H^*=h)$ is $L$-Lipschitz,
-and \textup{(A4)} the marginal event rate satisfies $p = P(E_{t+\Delta t}=1) \in [\underline{p},\, \overline{p}] \subset (0,1)$.
+\textup{(A4)} the marginal event rate satisfies $p = P(E_{t+\Delta t}=1) \in [\underline{p},\, \overline{p}] \subset (0,1)$,
+and \textup{(A1')} the event posterior $\eta(h) = P(E_{t+\Delta t}=1 \mid H^*=h)$ is bounded: $\eta(H^*) \in [\underline{\eta}, \overline{\eta}] \subset (0,1)$ a.s.
 Then
 \begin{equation}
 \label{eq:main_bound}
-I(H_t;\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_p \, L^2 \, \varepsilon\;,
+I(H_t;\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_\eta \, L^2 \, \varepsilon\;,
 \end{equation}
-where $C_p = \bigl(2\,\underline{p}\,(1-\overline{p})\bigr)^{-1}$ depends only on the event-rate bounds.
+where $C_\eta = \bigl(2\,\underline{\eta}\,(1-\overline{\eta})\bigr)^{-1}$ depends on the posterior bounds from A1'.
 \end{proposition}
 
 \begin{proof}[Proof sketch]
 Since $\hat{H}$ is a deterministic function of $(H_t, \Delta t)$, the data processing inequality gives $I(H_t; E) \geq I(\hat{H}; E)$.
 Under A1, $P(E{=}1 \mid \hat{H}) = \E[\eta(H^*) \mid \hat{H}]$.
-A Jensen-gap argument on the convex KL divergence, combined with the calibrated-posterior bound A1', the Lipschitz bound A3, and prediction error A2, yields $I(H^*; E) - I(\hat{H}; E) \leq C_p L^2 \varepsilon$, where $C_p = (2\underline{p}(1-\overline{p}))^{-1}$ is an upper bound for the tighter constant $C_\eta = (2\underline{\eta}(1-\overline{\eta}))^{-1}$ in terms of posterior bounds (\cref{ass:calibrated_posterior} in \cref{app:theory}).
+A Jensen-gap argument on the convex KL divergence, combined with the calibrated-posterior bound A1', the Lipschitz bound A3, and prediction error A2, yields $I(H^*; E) - I(\hat{H}; E) \leq C_\eta L^2 \varepsilon$, where $C_\eta = (2\underline{\eta}(1-\overline{\eta}))^{-1}$ depends on the posterior bounds from \ref{ass:calibrated_posterior} in \cref{app:theory}.
 Full proof in \cref{app:theory}.
 \end{proof}
 
@@ -46,7 +49,7 @@ Full proof in \cref{app:theory}.
 The bound \eqref{eq:main_bound} is non-vacuous (i.e.\ the right-hand side is positive) if and only if:
 \begin{enumerate}[nosep,label=(\roman*)]
   \item $I(H^*; E_{t+\Delta t}) > 0$: the future interval contains event precursors that the target encoder captures;
-  \item $\varepsilon < I(H^*; E_{t+\Delta t}) / (C_p L^2)$: the predictor approximates the target representation well enough;
+  \item $\varepsilon < I(H^*; E_{t+\Delta t}) / (C_\eta L^2)$: the predictor approximates the target representation well enough;
   \item The encoder $\encoder$ has sufficient capacity to represent the precursors (implicit in A1).
 \end{enumerate}
 \end{corollary}
@@ -54,7 +57,6 @@ The bound \eqref{eq:main_bound} is non-vacuous (i.e.\ the right-hand side is pos
 \paragraph{Connection to experiments.}
 \Cref{cor:precursor} directly explains our empirical findings.
 On C-MAPSS (\cref{sec:experiments}), degradation unfolds over hundreds of cycles, so $I(H^*; E_{t+\Delta t})$ is large and $\varepsilon$ is driven small by pretraining, yielding strong downstream performance (h-AUROC $\geq 0.74$).
-On CHB-MIT, seizure onset in scalp EEG has minimal precursors in a 16-second context, so $I(H^*; E_{t+\Delta t}) \approx 0$ regardless of $\varepsilon$: condition (i) fails.
 That predictor \emph{weights} do not transfer (\cref{sec:finetune_ablation}) while the encoder does is consistent with the bound: the encoder preserves information (the $I(H_t; E_{t+\Delta t})$ term), but the predictor's pretraining codomain ($\R^d$ representations) differs from the downstream codomain ($[0,1]$ event probabilities), so pretrained weights offer no inductive bias for the finetuning objective.
 
 \paragraph{Label efficiency.}
