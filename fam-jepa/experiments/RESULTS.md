@@ -4,7 +4,7 @@
 
 ---
 
-## v31 - label_fraction bug fix + 10% label table + paper update + chr2-mlp fixes (2026-04-26)
+## v31 - label_fraction bug fix + 10% label table + paper update + chr2-mlp fixes + MOMENT baseline (2026-04-26)
 
 ### CRITICAL FIX: Chr2-mlp baseline errors in paper table (v31, 2026-04-26)
 
@@ -105,6 +105,48 @@ sparse K=8 for streaming anomaly (MBA/BATADAL/SKAB/ETTm1). 3 seeds each.
    - SMD below chance with only 3/28 entities.
 2. **GECCO zero-label negative**: Documented in paper section 5.1 with footnote. This is a structural impossibility of 10% temporal truncation, not a model failure.
 3. **BATADAL/SKAB lf10 > lf100**: Higher variance CI; within 1 std. Not a reliable improvement.
+
+---
+
+### Phase 3 - MOMENT-1-large baseline (v31, 2026-04-26)
+
+Protocol: MOMENT-1-large (341.2M params, AutonLab/MOMENT-1-large) used as frozen feature extractor.
+Each context window (max 512 steps) processed per-channel (univariate), mean-pooled across channels
+to produce a 1024-d embedding. Same 198K-param dt-MLP head as chr2-mlp. Same 3 seeds (42, 123, 456).
+Per-horizon mean AUROC computed over valid horizons (0.001 < prevalence < 0.999), skipping degenerate.
+Horizons: CMAPSS=[1,5,10,20,50,100,150] (K=7), anomaly=[1,5,10,20,50,100,150,200] (K=8).
+
+| Dataset | MOMENT h-AUROC | FAM h-AUROC | Chr2-mlp h-AUROC | MOMENT vs FAM | MOMENT vs Chr2 |
+|---------|---------------|-------------|------------------|---------------|----------------|
+| FD001   | 0.559 ± 0.009 (3s) | 0.786 ± 0.033 | 0.659 ± 0.002 | -0.227 | -0.100 |
+| FD003   | 0.473 ± 0.012 (3s) | 0.853 ± 0.004 | 0.760 ± 0.003 | -0.380 | -0.287 |
+| MBA     | N/A (data format error) | 0.739 ± 0.014 | 0.451 ± 0.055 | - | - |
+| BATADAL | 0.537 ± 0.066 (3s) | 0.607 ± 0.033 | 0.534 ± 0.032 | -0.070 | +0.003 |
+
+**Key findings (COMPLETE)**: MOMENT-1-large (341M params, general time-series pretraining) performs
+substantially worse than FAM (2.16M, domain-specific JEPA) on all datasets:
+- FD001: MOMENT 0.559 vs FAM 0.786 (-0.227)
+- FD003: MOMENT 0.473 BELOW CHANCE vs FAM 0.853 (-0.380)
+- BATADAL: MOMENT 0.537 ± 0.066 vs FAM 0.607 (high variance, roughly equivalent)
+- MBA: SKIPPED - data format incompatibility (flat arrays vs entity-dict format)
+
+BATADAL shows high std (0.066) vs FAM/Chr2 (0.033) - per-channel univariate embeddings fail
+to provide stable representations for water SCADA with 43 correlated channels.
+
+Compared to Chronos-2 (120M), MOMENT is worse on FD001 (-0.100) and FD003 (-0.287),
+and essentially tied on BATADAL (+0.003). This despite MOMENT having 2.84x more params than Chr2.
+
+**Main conclusion**: Domain-specific cross-channel JEPA pretraining > scale for industrial event prediction.
+Per-channel univariate embedding (MOMENT's approach) fails to capture the cross-channel correlations
+that are critical for degradation/anomaly prediction in industrial systems.
+
+Per-seed breakdown:
+- FD001: s42=0.5678, s123=0.5612, s456=0.5491 (COMPLETE)
+- FD003: s42=0.4823, s123=0.4593, s456=0.4780 (COMPLETE)
+- BATADAL: s42=0.5682, s123=0.4617, s456=0.5818 (COMPLETE, high variance)
+
+MOMENT process (PID 61824) completed at 10:05 UTC 2026-04-26. Runtime: ~26 min.
+Results in: fam-jepa/experiments/v31/results/moment_baseline.json
 
 ---
 

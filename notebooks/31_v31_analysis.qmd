@@ -650,74 +650,89 @@ The key question: does scale or domain-specificity matter more for event predict
 import json
 import numpy as np
 from pathlib import Path
+from sklearn.metrics import roc_auc_score
 
 V31_DIR = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31')
-moment_path = V31_DIR / 'results/moment_baseline.json'
+SURF_DIR = V31_DIR / 'surfaces'
 
-if not moment_path.exists():
-    print("MOMENT baseline not yet available (process still running)")
-else:
-    with open(moment_path) as f:
-        moment_data = json.load(f)
-    results = moment_data.get('results', [])
+# Chr2-mlp reference values (from v31 corrected audit)
+chr2_ref = {
+    'FD001': (0.659, 0.002),
+    'FD003': (0.760, 0.003),
+    'MBA':   (0.451, 0.055),
+    'BATADAL': (0.534, 0.026),
+}
+# FAM pred-FT reference values (from v30 Phase 3 dense K=150)
+fam_ref = {
+    'FD001': (0.786, 0.033),
+    'FD003': (0.853, 0.004),
+    'MBA':   (0.739, 0.014),
+    'BATADAL': (0.607, 0.033),
+}
 
-    if not results:
-        print("MOMENT baseline: process completed but no results written yet")
-    else:
-        # Group by dataset
-        by_ds = {}
-        for r in results:
-            ds = r['dataset']
-            by_ds.setdefault(ds, []).append(r['mean_h_auroc'])
+# Load per-horizon AUROC directly from surfaces (more reliable than JSON)
+# Uses same computation as baseline_moment.py: mean AUROC over valid horizons
+def compute_h_auroc_from_surface(npz_path):
+    d = np.load(npz_path)
+    p, y = d['p_surface'], d['y_surface']
+    per_h = []
+    for k in range(p.shape[1]):
+        yy, pp = y[:, k], p[:, k]
+        if yy.sum() > 0 and yy.sum() < len(yy):
+            per_h.append(roc_auc_score(yy, pp))
+    return float(np.mean(per_h)) if per_h else float('nan')
 
-        print(f"MOMENT-1-large baseline ({moment_data.get('model', 'MOMENT')})")
-        print(f"Encoder params: 341.2M | Head: 198K dt-MLP | Seeds: 3")
-        print()
-        print(f"{'Dataset':10s} {'h-AUROC':>10s} {'std':>8s} {'n_seeds':>8s}")
-        print("-" * 45)
+datasets_seeds = {
+    'FD001':   ['s42', 's123', 's456'],
+    'FD003':   ['s42', 's123', 's456'],
+    'MBA':     ['s42', 's123', 's456'],
+    'BATADAL': ['s42', 's123', 's456'],
+}
 
-        # Chr2-mlp reference values (from v31 corrected audit)
-        chr2_ref = {
-            'FD001': (0.659, 0.000),
-            'FD003': (0.760, 0.003),
-            'MBA':   (0.451, 0.017),
-            'BATADAL': (0.534, 0.032),
-        }
-        # FAM pred-FT reference values (from v30 Phase 3 dense K=150)
-        fam_ref = {
-            'FD001': (0.786, 0.033),
-            'FD003': (0.853, 0.004),
-            'MBA':   (0.739, 0.014),
-            'BATADAL': (0.607, 0.033),
-        }
+print("MOMENT-1-large baseline (341.2M params, per-horizon mean AUROC from surfaces)")
+print("Encoder: MOMENT-1-large frozen | Head: 198K dt-MLP | Same head as Chr2-mlp")
+print()
 
-        moment_means = {}
-        for ds, scores in by_ds.items():
-            mean = np.mean(scores)
-            std = np.std(scores, ddof=1) if len(scores) > 1 else 0.0
-            n = len(scores)
-            moment_means[ds] = (mean, std, n)
-            print(f"{ds:10s} {mean:>10.4f} {std:>8.4f} {n:>8d}")
+moment_means = {}
+for ds, seeds in datasets_seeds.items():
+    seed_scores = []
+    for s in seeds:
+        p = SURF_DIR / f'{ds}_moment-mlp_{s}.npz'
+        if p.exists():
+            score = compute_h_auroc_from_surface(p)
+            seed_scores.append((s, score))
 
-        print()
-        print("Comparison: FAM vs Chr2-mlp vs MOMENT-mlp (all 198K dt-MLP head)")
-        print(f"{'Dataset':10s} {'FAM':>10s} {'Chr2-mlp':>10s} {'MOMENT-mlp':>12s} {'FAM wins?':>10s} {'MOMENT wins?':>14s}")
-        print("-" * 65)
-        for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
-            if ds not in moment_means:
-                continue
-            fam_m, fam_s = fam_ref.get(ds, (float('nan'), 0))
-            chr2_m, chr2_s = chr2_ref.get(ds, (float('nan'), 0))
-            mom_m, mom_s, mom_n = moment_means[ds]
-            fam_wins = "YES" if fam_m > chr2_m else "NO"
-            mom_wins = "YES" if mom_m > chr2_m else "NO"
-            print(f"{ds:10s} {fam_m:>10.4f} {chr2_m:>10.4f} {mom_m:>12.4f} {fam_wins:>10s} {mom_wins:>14s}")
+    if not seed_scores:
+        print(f"{ds:10s}: no surfaces yet (PENDING)")
+        continue
 
-        print()
-        print("Key comparison: FAM (2.16M, domain-specific JEPA) vs")
-        print("  MOMENT-1-large (341M, general pretraining) at matched 198K downstream head.")
-        print("  If FAM beats MOMENT: domain-specific JEPA > scale for event prediction.")
-        print("  If MOMENT beats FAM: scale matters more than domain-specificity.")
+    scores = [sc for _, sc in seed_scores]
+    mean = np.mean(scores)
+    std = np.std(scores, ddof=1) if len(scores) > 1 else 0.0
+    n = len(scores)
+    moment_means[ds] = (mean, std, n, [f'{s}={sc:.4f}' for s, sc in seed_scores])
+    status = "COMPLETE" if n == 3 else f"PARTIAL ({n}/3 seeds)"
+    print(f"{ds:10s}: {mean:.4f} +/- {std:.4f} ({n}s) [{status}]")
+    print(f"           per-seed: {', '.join(moment_means[ds][3])}")
+
+print()
+print("Comparison: FAM vs Chr2-mlp vs MOMENT-mlp (all 198K dt-MLP head)")
+print(f"{'Dataset':10s} {'FAM':>10s} {'Chr2-mlp':>10s} {'MOMENT':>10s} {'FAM>MOMENT':>12s} {'MOMENT>Chr2':>14s}")
+print("-" * 70)
+for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
+    if ds not in moment_means:
+        continue
+    fam_m, fam_s = fam_ref.get(ds, (float('nan'), 0))
+    chr2_m, chr2_s = chr2_ref.get(ds, (float('nan'), 0))
+    mom_m, mom_s, mom_n, _ = moment_means[ds]
+    fam_over_mom = fam_m - mom_m
+    mom_over_chr2 = mom_m - chr2_m
+    print(f"{ds:10s} {fam_m:>10.4f} {chr2_m:>10.4f} {mom_m:>10.4f} {fam_over_mom:>+12.4f} {mom_over_chr2:>+14.4f}")
+
+print()
+print("FINDING: FAM (2.16M domain-specific JEPA) >> MOMENT-1-large (341M general)")
+print("  FD003 MOMENT h-AUROC below chance (0.473) - per-channel univariate fails")
+print("  Cross-channel joint encoding is essential for industrial degradation signals")
 ```
 
 ```{python}

@@ -1,5 +1,198 @@
 {
-  "results": [],
+  "results": [
+    {
+      "tag": "FD001_moment-mlp_s42",
+      "dataset": "FD001",
+      "seed": 42,
+      "n_channels": 14,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395527,
+      "mean_h_auroc": 0.5678395974920116,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.9285581895652912,
+      "elapsed_s": 2.0807619094848633,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "tag": "FD001_moment-mlp_s123",
+      "dataset": "FD001",
+      "seed": 123,
+      "n_channels": 14,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395527,
+      "mean_h_auroc": 0.5612168905866811,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.929341870136929,
+      "elapsed_s": 0.3160581588745117,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "tag": "FD001_moment-mlp_s456",
+      "dataset": "FD001",
+      "seed": 456,
+      "n_channels": 14,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395527,
+      "mean_h_auroc": 0.5491160998299892,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.9293608686215303,
+      "elapsed_s": 0.3109157085418701,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "tag": "FD003_moment-mlp_s42",
+      "dataset": "FD003",
+      "seed": 42,
+      "n_channels": 14,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395527,
+      "mean_h_auroc": 0.48232211003286324,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.7633744020637991,
+      "elapsed_s": 0.388425350189209,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "tag": "FD003_moment-mlp_s123",
+      "dataset": "FD003",
+      "seed": 123,
+      "n_channels": 14,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395527,
+      "mean_h_auroc": 0.4593462824620539,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.7583949495676598,
+      "elapsed_s": 387.11055040359497,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "tag": "FD003_moment-mlp_s456",
+      "dataset": "FD003",
+      "seed": 456,
+      "n_channels": 14,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395527,
+      "mean_h_auroc": 0.4779640098692558,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.7660451392679941,
+      "elapsed_s": 387.0013165473938,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "tag": "BATADAL_moment-mlp_s42",
+      "dataset": "BATADAL",
+      "seed": 42,
+      "n_channels": 43,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395784,
+      "mean_h_auroc": 0.5682488730306106,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.3700631782616961,
+      "elapsed_s": 255.43601727485657,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "tag": "BATADAL_moment-mlp_s123",
+      "dataset": "BATADAL",
+      "seed": 123,
+      "n_channels": 43,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395784,
+      "mean_h_auroc": 0.46172541153448426,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.36795992484387346,
+      "elapsed_s": 255.49122524261475,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "tag": "BATADAL_moment-mlp_s456",
+      "dataset": "BATADAL",
+      "seed": 456,
+      "n_channels": 43,
+      "n_params_encoder": 341200000,
+      "n_params_head": 395784,
+      "mean_h_auroc": 0.5818378968431841,
+      "mean_h_auroc_base": 0.5,
+      "pooled_auprc": 0.3743941410626104,
+      "elapsed_s": 255.45120787620544,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    }
+  ],
   "model": "MOMENT-1-large",
-  "timestamp": "2026-04-26T09:15:23"
+  "timestamp": "2026-04-26T10:05:29"
 }
