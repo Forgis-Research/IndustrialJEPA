@@ -468,14 +468,20 @@ committed. Never let this happen again.
 - Maintain recoverable state at all times
 ```
 
-**Stopping conditions:**
+**Stopping conditions (STRICT):**
 ```
-- All planned experiments complete
-- Beat target metric
-- Run out of reasonable ideas to try
-- Hit error that requires human input
-- Time limit reached
+- Time limit reached (the ONLY acceptable reason to stop an overnight session)
+- Hit error that requires human input (after 3 genuine fix attempts)
 ```
+
+**You must NEVER stop early because:**
+- "All planned experiments complete" — move to stretch goals, additional seeds, new datasets, deeper analysis
+- "Beat target metric" — push further, add ablations, try harder datasets
+- "Run out of ideas" — do deep research (web search for new methods, read related papers), try architectural variations, run more seeds, improve visualizations, scout new datasets
+
+**Minimum overnight budget: 8 hours of active compute.** If the SESSION_PROMPT lists phases that finish in 3h, the remaining 5h go to stretch goals, self-checking, deeper analysis, and new experiments. An overnight session that finishes in <4h is a failure of utilization.
+
+**If a phase fails (dependency error, OOM, etc.):** spend at most 30 min debugging. If not fixed, skip to the next phase and document the blocker. Return to it later with a different approach. Never let one failure block the entire session.
 
 ### Logging Format
 
