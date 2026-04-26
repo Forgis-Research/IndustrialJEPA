@@ -1,0 +1,104 @@
+{
+  "diagnosis": [
+    {
+      "dataset": "FD001",
+      "n_entities_orig": 85,
+      "n_entities_lf10": 8,
+      "windows_lf100": 1702,
+      "windows_lf10": 169,
+      "ratio": 0.09929494712103408,
+      "fix_ok": true
+    },
+    {
+      "dataset": "FD002",
+      "n_entities_orig": 221,
+      "n_entities_lf10": 22,
+      "windows_lf100": 4428,
+      "windows_lf10": 523,
+      "ratio": 0.11811201445347787,
+      "fix_ok": true
+    },
+    {
+      "dataset": "FD003",
+      "n_entities_orig": 85,
+      "n_entities_lf10": 8,
+      "windows_lf100": 2651,
+      "windows_lf10": 312,
+      "ratio": 0.11769143719351188,
+      "fix_ok": true
+    },
+    {
+      "dataset": "SMAP",
+      "n_entities_orig": 55,
+      "n_entities_lf10": 6,
+      "windows_lf100": 64846,
+      "windows_lf10": 7427,
+      "ratio": 0.11453289331647287,
+      "fix_ok": true
+    },
+    {
+      "dataset": "PSM",
+      "n_entities_orig": 1,
+      "n_entities_lf10": 1,
+      "windows_lf100": 13144,
+      "windows_lf10": 1286,
+      "ratio": 0.09783931832014607,
+      "fix_ok": true
+    },
+    {
+      "dataset": "MBA",
+      "n_entities_orig": 1,
+      "n_entities_lf10": 1,
+      "windows_lf100": 1120,
+      "windows_lf10": 83,
+      "ratio": 0.07410714285714286,
+      "fix_ok": true
+    },
+    {
+      "dataset": "GECCO",
+      "n_entities_orig": 1,
+      "n_entities_lf10": 1,
+      "windows_lf100": 17414,
+      "windows_lf10": 1713,
+      "ratio": 0.0983691282875847,
+      "fix_ok": true
+    },
+    {
+      "dataset": "BATADAL",
+      "n_entities_orig": 1,
+      "n_entities_lf10": 1,
+      "windows_lf100": 595,
+      "windows_lf10": 32,
+      "ratio": 0.05378151260504202,
+      "fix_ok": true
+    },
+    {
+      "dataset": "SKAB",
+      "n_entities_orig": 20,
+      "n_entities_lf10": 2,
+      "windows_lf100": 4981,
+      "windows_lf10": 495,
+      "ratio": 0.0993776350130496,
+      "fix_ok": true
+    },
+    {
+      "dataset": "ETTm1",
+      "n_entities_orig": 1,
+      "n_entities_lf10": 1,
+      "windows_lf100": 10420,
+      "windows_lf10": 1013,
+      "ratio": 0.0972168905950096,
+      "fix_ok": true
+    },
+    {
+      "dataset": "SMD",
+      "n_entities_orig": 28,
+      "n_entities_lf10": 3,
+      "windows_lf100": 105364,
+      "windows_lf10": 12076,
+      "ratio": 0.11461220151095251,
+      "fix_ok": true
+    }
+  ],
+  "bugs": []
+}
