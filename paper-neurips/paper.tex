@@ -335,23 +335,23 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     FD002         & Turbofan   & $.566${\scriptsize$\pm.011$} & $\mathbf{.760}${\scriptsize$\pm.003$} & $.513${\scriptsize$\pm.013$} & --- & RMSE $44.1${\scriptsize$\pm2.9$} & $13.47$ & \citep{fan2024star} \\
     FD003         & Turbofan   & $\mathbf{.853}${\scriptsize$\pm.004$} & $.760${\scriptsize$\pm.003$} & $\mathbf{.830}${\scriptsize$\pm.018$} & --- & RMSE $39.5${\scriptsize$\pm0.8$} & $10.71$ & \citep{fan2024star} \\
     \midrule
-    SMAP          & Spacecraft & $\mathbf{.598}${\scriptsize$\pm.036$} & $.500$ & --- & --- & F1 $.458$ & PA-F1 $.34$ & \citep{mtsjepa2026} \\
-    PSM           & Server     & $\mathbf{.562}${\scriptsize$\pm.013$} & $.534${\scriptsize$\pm.032$} & --- & --- & F1 $.495$ & PA-F1 $.62$ & \citep{mtsjepa2026} \\
-    SMD           & Server     & $\mathbf{.654}${\scriptsize$\pm.004$} & --- & --- & --- & F1 $.264$ & PA-F1 $.93$ & \citep{xu2022anomalytransformer} \\
-    MBA           & Cardiac    & $\mathbf{.739}${\scriptsize$\pm.014$} & $.451${\scriptsize$\pm.017$} & $\mathbf{.699}${\scriptsize$\pm.031$} & --- & AUROC $.697$ & --- & --- \\
+    SMAP          & Spacecraft & $\mathbf{.598}${\scriptsize$\pm.036$} & $.500$ & $.580${\scriptsize$\pm.047$} & --- & F1 $.458$ & PA-F1 $.34$ & \citep{mtsjepa2026} \\
+    PSM           & Server     & $\mathbf{.562}${\scriptsize$\pm.013$} & $.534${\scriptsize$\pm.032$} & $.519${\scriptsize$\pm.010$} & --- & F1 $.495$ & PA-F1 $.62$ & \citep{mtsjepa2026} \\
+    SMD           & Server     & $\mathbf{.654}${\scriptsize$\pm.004$} & --- & $.528${\scriptsize$\pm.054$}$^{\dagger}$ & --- & F1 $.264$ & PA-F1 $.93$ & \citep{xu2022anomalytransformer} \\
+    MBA           & Cardiac    & $\mathbf{.739}${\scriptsize$\pm.014$} & $.451${\scriptsize$\pm.017$} & $.547${\scriptsize$\pm.065$} & --- & AUROC $.697$ & --- & --- \\
     \midrule
-    SKAB          & Hydraulic  & $\mathbf{.707}${\scriptsize$\pm.017$} & --- & --- & --- & F1 $.645$ & --- & --- \\
-    ETTm1         & Power      & $\mathbf{.869}${\scriptsize$\pm.002$} & --- & --- & --- & --- & --- & --- \\
-    GECCO         & Water      & $\mathbf{.819}${\scriptsize$\pm.064$} & $.503${\scriptsize$\pm.040$} & --- & --- & F1 $.283$ & F1 $.71$ & \citep{batadal2018} \\
-    BATADAL       & ICS        & $\mathbf{.607}${\scriptsize$\pm.033$} & $.521${\scriptsize$\pm.038$} & $\mathbf{.564}${\scriptsize$\pm.031$} & --- & F1 $.236$ & AUC $.97$ & \citep{batadal2018} \\
+    SKAB          & Hydraulic  & $\mathbf{.707}${\scriptsize$\pm.017$} & --- & $.733${\scriptsize$\pm.026$} & --- & F1 $.645$ & --- & --- \\
+    ETTm1         & Power      & $\mathbf{.869}${\scriptsize$\pm.002$} & --- & $.768${\scriptsize$\pm.003$} & --- & --- & --- & --- \\
+    GECCO         & Water      & $\mathbf{.819}${\scriptsize$\pm.064$} & $.503${\scriptsize$\pm.040$} & $.346${\scriptsize$\pm.118$}$^{\ddagger}$ & --- & F1 $.283$ & F1 $.71$ & \citep{batadal2018} \\
+    BATADAL       & ICS        & $\mathbf{.607}${\scriptsize$\pm.033$} & $.521${\scriptsize$\pm.038$} & $.638${\scriptsize$\pm.056$} & --- & F1 $.236$ & AUC $.97$ & \citep{batadal2018} \\
     \midrule
-    \multicolumn{2}{@{}l}{\textit{FAM vs Chr-2 (198K head)}} & \multicolumn{2}{c}{\textbf{7\,/\,1 (FD002)}} & \multicolumn{2}{c}{lf10 pending} & & & \\
+    \multicolumn{2}{@{}l}{\textit{FAM vs Chr-2 (198K head)}} & \multicolumn{2}{c}{\textbf{7\,/\,1 (FD002)}} & \multicolumn{2}{c}{see \cref{sec:label_efficiency}} & & & \\
     \bottomrule
   \end{tabular}
   \vspace{2pt}
   \begin{minipage}{\linewidth}
     \scriptsize
-    Chr-2 h-AUROC from 198K dt-MLP head (chr2-mlp variant, v30 Phase 1). Chr-2 probe (769\,params/horizon) included for reference: FD001 $0.622\pm0.004$, FD003 $0.738\pm0.002$, MBA $0.659\pm0.006$, BATADAL $0.503\pm0.040$. FAM-probe (257\,params/horizon): FD001 $0.742\pm0.012$, FD003 $0.812\pm0.006$, MBA $0.588\pm0.012$, BATADAL $0.521\pm0.038$. Probe comparison in \cref{app:chronos_full}. FAM and Chr-2 are compared as frozen feature extractors with identical downstream heads; Chr-2's native forecasting capability is not used. lf10 column for PSM/SMAP/SMD/SKAB/ETTm1/GECCO: pending v31 run completion.
+    Chr-2 h-AUROC from 198K dt-MLP head (chr2-mlp variant, v30 Phase 1). Chr-2 probe (769\,params/horizon) included for reference: FD001 $0.622\pm0.004$, FD003 $0.738\pm0.002$, MBA $0.659\pm0.006$, BATADAL $0.503\pm0.040$. FAM-probe (257\,params/horizon): FD001 $0.742\pm0.012$, FD003 $0.812\pm0.006$, MBA $0.588\pm0.012$, BATADAL $0.521\pm0.038$. Probe comparison in \cref{app:chronos_full}. FAM and Chr-2 are compared as frozen feature extractors with identical downstream heads; Chr-2's native forecasting capability is not used. $^{\dagger}$SMD lf10: only 3 of 28 entities retained; performance near-chance reflects insufficient entity coverage. $^{\ddagger}$GECCO lf10: first anomaly occurs at $t{=}16{,}265$; 10\% temporal truncation ends at $t{=}6{,}978$ - zero positive labels in the truncated training set. This is a structural impossibility, not a model failure; GECCO is excluded from lf10 comparisons.
   \end{minipage}
 \end{table}
 
@@ -359,7 +359,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \paragraph{FAM vs.\ Chronos-2 (matched head, 100\% labels).} The fair comparison is \textbf{FAM-mlp-rand vs.\ Chr2-mlp}: both use a 198K-param MLP head with identical architecture, initialisation, training procedure, and label budget. Only the frozen encoder differs. FAM wins 7 of 8 head-to-head comparisons ($+0.048$ FD001, $+0.028$ FD003, $+0.288$ MBA, $+0.086$ GECCO, $+0.028$ PSM, $+0.086$ BATADAL). The sole loss is FD002 ($-0.194$), the multi-condition subset where pretraining on mixed degradation modes per-dataset is insufficient. This demonstrates that domain-specific JEPA pretraining produces stronger event-prediction representations than value-forecasting pretraining at 120M scale - at $56{\times}$ lower total model size (2.16M vs.\ 120M).
 
-\paragraph{Label efficiency.} At 10\% labels, FAM retains strong performance on the lifecycle datasets (FD001 $0.772\pm0.059$ vs.\ $0.786\pm0.033$ at 100\%; FD003 $0.830\pm0.018$ vs.\ $0.853\pm0.004$). For single-entity anomaly datasets (MBA, BATADAL), 10\% labels corresponds to truncating the training time series to the first 10\% of the operational period. The full 10\%-label table (all 11 datasets) is in v31 results; \cref{sec:label_efficiency} discusses the two-regime story in detail.
+\paragraph{Label efficiency.} At 10\% labels, FAM retains strong performance on lifecycle datasets: FD001 $0.772\pm0.059$ (98\% of full-label), FD003 $0.830\pm0.018$ (97\%), SMAP $0.580\pm0.047$ (97\%). For single-entity anomaly datasets, 10\% labels corresponds to truncating the training time series to the first 10\% of the operational period; GECCO has zero positive labels in the truncated period (excluded) and SMD uses only 3/28 entities (near-chance). Two exceptions: BATADAL lf10 $0.638\pm0.056$ slightly exceeds lf100, within the confidence interval. The two-regime story is discussed in \cref{sec:label_efficiency}.
 
 \paragraph{Legacy metrics and SOTA.} C-MAPSS RMSE (FAM: 36.5/44.1/39.5 for FD001/2/3) is above the supervised SOTA (10.6/13.5/10.7 for STAR~\citep{fan2024star}), as expected for a per-dataset SSL method with no RMSE-specific training objective. The relevant comparison is the SSL gap: FAM uses only self-supervised pretraining with no RUL labels during pretraining. For anomaly datasets, we report non-PA F1 (not point-adjusted), consistent with \cref{app:pa_f1}.
 

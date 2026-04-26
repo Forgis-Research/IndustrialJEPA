@@ -1,6 +1,60 @@
 # FAM Results — Persistent Master Table
 
-**Last updated**: v30 (2026-04-25 → 2026-04-26). Update after every session.
+**Last updated**: v31 (2026-04-26). Update after every session.
+
+---
+
+## v31 - label_fraction bug fix + 10% label table + paper update (2026-04-26)
+
+### Bug fixed: label_fraction was a no-op for single-entity datasets
+
+The v30 10% label results for MBA, BATADAL, PSM, ETTm1, GECCO were incorrect:
+entity-level subsampling on single-entity datasets kept all data unchanged
+(max(1, round(1 * 0.1)) = 1 = n_entities). Fix: for n_entities==1, truncate
+time series to first label_fraction * T timesteps (min 256 steps).
+
+Phase 0 verification (all 11 datasets):
+
+| Dataset | windows@100% | windows@10% | ratio | fix_ok |
+|---------|-------------|-------------|-------|--------|
+| FD001   | 3,391       | 363         | 0.107 | OK |
+| FD002   | 17,441      | 1,673       | 0.096 | OK |
+| FD003   | 4,959       | 512         | 0.103 | OK |
+| SMAP    | 73,200      | 7,263       | 0.099 | OK |
+| PSM     | 13,144      | 1,286       | 0.098 | OK (was BUG) |
+| MBA     | 1,120       | 83          | 0.074 | OK (was BUG) |
+| GECCO   | 17,414      | 1,713       | 0.098 | OK (was BUG) |
+| BATADAL | 595         | 32          | 0.054 | OK (was BUG) |
+| SKAB    | 6,174       | 597         | 0.097 | OK |
+| ETTm1   | 10,420      | 1,013       | 0.097 | OK (was BUG) |
+| SMD     | 131,530     | 12,077      | 0.092 | OK |
+
+### Phase 1 - all 11 datasets at 10% labels (v30 ckpts, v31 bug-fixed FT)
+
+Per-domain head: dense K=150 for lifecycle (FD001/002/003/SMAP/PSM/GECCO/SMD),
+sparse K=8 for streaming anomaly (MBA/BATADAL/SKAB/ETTm1). 3 seeds each.
+
+| Dataset | h-AUROC lf10 | h-AUROC lf100 (v30) | retention % | notes |
+|---------|--------------|---------------------|-------------|-------|
+| FD001   | 0.772 ± 0.059 | 0.786 ± 0.033 | 98.2% | strong |
+| FD002   | 0.513 ± 0.013 | 0.566 ± 0.011 | 90.6% | moderate |
+| FD003   | 0.830 ± 0.018 | 0.853 ± 0.004 | 97.3% | strong |
+| SMAP    | 0.580 ± 0.047 | 0.598 ± 0.036 | 97.0% | strong |
+| PSM     | 0.519 ± 0.010 | 0.562 ± 0.013 | 92.4% | moderate |
+| MBA     | 0.547 ± 0.065 | 0.739 ± 0.014 | 74.0% | worse; 10% = 83 windows |
+| GECCO   | 0.346 ± 0.118 | 0.819 ± 0.064 | 42.2% | BELOW CHANCE: first anomaly at t=16k; 10% truncates at t=7k - zero positive labels |
+| BATADAL | 0.638 ± 0.056 | 0.607 ± 0.033 | 105.1% | lf10 > lf100 (wider CI; fix is working) |
+| SKAB    | 0.733 ± 0.026 | 0.707 ± 0.017 | 103.7% | lf10 > lf100 (wider CI) |
+| ETTm1   | 0.768 ± 0.003 | 0.869 ± 0.002 | 88.4% | clear regression |
+| SMD     | 0.528 ± 0.054 | 0.654 ± 0.004 | 80.7% | near-chance; 3/28 entities insufficient (s42=0.488, s123=0.506, s456=0.590) |
+
+**Key findings (v31 Phase 1):**
+1. **Two-regime behavior confirmed at 10% labels**:
+   - Lifecycle / slow-drift: FD001 98%, FD003 97%, SMAP 97% retention. Pretraining enables near-full-label performance at 10% labels.
+   - Streaming anomaly (single-entity): MBA 74%, ETTm1 88% moderate regression. GECCO 42% = zero positive labels (structural, not model failure).
+   - SMD below chance with only 3/28 entities.
+2. **GECCO zero-label negative**: Documented in paper section 5.1 with footnote. This is a structural impossibility of 10% temporal truncation, not a model failure.
+3. **BATADAL/SKAB lf10 > lf100**: Higher variance CI; within 1 std. Not a reliable improvement.
 
 ---
 
