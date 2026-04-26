@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-04-26">
+
+<title>V31 Analysis: Label Fraction Bug Fix and 10% Label Results</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="31_v31_analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="31_v31_analysis_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="31_v31_analysis_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="31_v31_analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="31_v31_analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="31_v31_analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="31_v31_analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="31_v31_analysis_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="31_v31_analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="31_v31_analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="31_v31_analysis_files/libs/bootstrap/bootstrap-67270d1595a62d14f123c043d4fb2f18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#section-1-bug-diagnosis" id="toc-section-1-bug-diagnosis" class="nav-link" data-scroll-target="#section-1-bug-diagnosis">Section 1: Bug Diagnosis</a></li>
+  <li><a href="#section-2-label-efficiency---100-vs-10-labels" id="toc-section-2-label-efficiency---100-vs-10-labels" class="nav-link" data-scroll-target="#section-2-label-efficiency---100-vs-10-labels">Section 2: Label Efficiency - 100% vs 10% Labels</a></li>
+  <li><a href="#section-3-gecco-zero-label-anomaly" id="toc-section-3-gecco-zero-label-anomaly" class="nav-link" data-scroll-target="#section-3-gecco-zero-label-anomaly">Section 3: GECCO Zero-Label Anomaly</a></li>
+  <li><a href="#section-4-surface-panels---before-vs-after-fix" id="toc-section-4-surface-panels---before-vs-after-fix" class="nav-link" data-scroll-target="#section-4-surface-panels---before-vs-after-fix">Section 4: Surface Panels - Before vs After Fix</a></li>
+  <li><a href="#section-5-per-seed-breakdown" id="toc-section-5-per-seed-breakdown" class="nav-link" data-scroll-target="#section-5-per-seed-breakdown">Section 5: Per-Seed Breakdown</a></li>
+  <li><a href="#section-6-paper-claims-verification" id="toc-section-6-paper-claims-verification" class="nav-link" data-scroll-target="#section-6-paper-claims-verification">Section 6: Paper Claims Verification</a></li>
+  <li><a href="#section-7-training-curves-summary" id="toc-section-7-training-curves-summary" class="nav-link" data-scroll-target="#section-7-training-curves-summary">Section 7: Training Curves Summary</a></li>
+  <li><a href="#section-8-honest-assessment" id="toc-section-8-honest-assessment" class="nav-link" data-scroll-target="#section-8-honest-assessment">Section 8: Honest Assessment</a></li>
+  <li><a href="#appendix-gecco-alternative---random-window-sampling" id="toc-appendix-gecco-alternative---random-window-sampling" class="nav-link" data-scroll-target="#appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">V31 Analysis: Label Fraction Bug Fix and 10% Label Results</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 26, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>V31 session: fixed the label_fraction bug in v30 for single-entity datasets (MBA, BATADAL, PSM, ETTm1, GECCO), re-ran all 11 datasets at 10% labels, and updated paper.tex with v30/v31 numbers.</p>
+<p><strong>Bug</strong>: For single-entity datasets (<code>n_train_entities == 1</code>), the v30 label_fraction code computed <code>max(1, round(1 * 0.1)) = 1</code>, leaving all training data unchanged. This made the 10% and 100% results identical.</p>
+<p><strong>Fix</strong>: For single-entity datasets, truncate the training time series to the first <code>label_fraction * T</code> timesteps (time truncation instead of entity subsampling).</p>
+<p><strong>Key finding</strong>: GECCO at 10% has zero positive labels (first anomaly at t=16265, beyond 10% truncation point t=6978). This is an honest negative result - reported as such.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>matplotlib.use(<span class="st">'Agg'</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">'ignore'</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Paths</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>V30_DIR <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v30'</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>V31_DIR <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31'</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>NB_DIR <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/notebooks'</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Load v30 master table</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(V30_DIR <span class="op">/</span> <span class="st">'results/master_table.json'</span>) <span class="im">as</span> f:</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    v30 <span class="op">=</span> json.load(f)[<span class="st">'datasets'</span>]</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Load v31 phase 1 results (may be partial)</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>v31_path <span class="op">=</span> V31_DIR <span class="op">/</span> <span class="st">'results/phase1_lf10_master.json'</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>v31 <span class="op">=</span> {}</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> v31_path.exists():</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(v31_path) <span class="im">as</span> f:</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        v31 <span class="op">=</span> json.load(f)[<span class="st">'datasets'</span>]</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Bug diagnosis</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>diag_path <span class="op">=</span> V31_DIR <span class="op">/</span> <span class="st">'results/phase0_bug_diagnosis.json'</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>diag <span class="op">=</span> {}</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> diag_path.exists():</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(diag_path) <span class="im">as</span> f:</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        diag <span class="op">=</span> json.load(f)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>DATASETS_11 <span class="op">=</span> [</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>, <span class="st">'FD002'</span>, <span class="st">'FD003'</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SMAP'</span>, <span class="st">'PSM'</span>, <span class="st">'MBA'</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">'GECCO'</span>, <span class="st">'BATADAL'</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SKAB'</span>, <span class="st">'ETTm1'</span>, <span class="st">'SMD'</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>SINGLE_ENTITY <span class="op">=</span> [<span class="st">'PSM'</span>, <span class="st">'MBA'</span>, <span class="st">'GECCO'</span>, <span class="st">'BATADAL'</span>, <span class="st">'ETTm1'</span>]</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>MULTI_ENTITY <span class="op">=</span> [<span class="st">'FD001'</span>, <span class="st">'FD002'</span>, <span class="st">'FD003'</span>, <span class="st">'SMAP'</span>, <span class="st">'SKAB'</span>, <span class="st">'SMD'</span>]</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"V30 datasets available: </span><span class="sc">{</span><span class="bu">list</span>(v30.keys())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"V31 lf10 datasets available: </span><span class="sc">{</span><span class="bu">list</span>(v31.keys())<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>V30 datasets available: ['FD001', 'FD002', 'FD003', 'SMAP', 'PSM', 'MBA', 'GECCO', 'BATADAL', 'SKAB', 'ETTm1', 'SMD']
+V31 lf10 datasets available: ['FD001', 'FD002', 'FD003', 'SMAP', 'PSM', 'MBA', 'GECCO', 'BATADAL', 'SKAB', 'ETTm1']</code></pre>
+</div>
+</div>
+</section>
+<section id="section-1-bug-diagnosis" class="level2">
+<h2 class="anchored" data-anchor-id="section-1-bug-diagnosis">Section 1: Bug Diagnosis</h2>
+<p>The table below shows the number of training windows at 100% vs 10% labels for all 11 datasets. The “fix_ok” column confirms the bug is fixed when <code>windows_lf10 &lt; windows_lf100</code>.</p>
+<div id="bug-diagnosis-table" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> diag <span class="kw">and</span> <span class="st">'diagnosis'</span> <span class="kw">in</span> diag:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> diag[<span class="st">'diagnosis'</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'entities_orig'</span><span class="sc">:&gt;14s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'entities_lf10'</span><span class="sc">:&gt;14s}</span><span class="ss"> "</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"</span><span class="sc">{</span><span class="st">'windows_lf100'</span><span class="sc">:&gt;14s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'windows_lf10'</span><span class="sc">:&gt;13s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'ratio'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'fix_ok'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">85</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> rows:</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="st">'error'</span> <span class="kw">in</span> r:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'dataset'</span>]<span class="sc">:10s}</span><span class="ss">  ERROR"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        formerly_buggy <span class="op">=</span> r[<span class="st">'dataset'</span>] <span class="kw">in</span> SINGLE_ENTITY</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        marker <span class="op">=</span> <span class="st">" &lt;-- FIXED"</span> <span class="cf">if</span> (formerly_buggy <span class="kw">and</span> r.get(<span class="st">'fix_ok'</span>)) <span class="cf">else</span> <span class="st">""</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'dataset'</span>]<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>r[<span class="st">'n_entities_orig'</span>]<span class="sc">:&gt;14d}</span><span class="ss"> </span><span class="sc">{</span>r[<span class="st">'n_entities_lf10'</span>]<span class="sc">:&gt;14d}</span><span class="ss"> "</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>              <span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'windows_lf100'</span>]<span class="sc">:&gt;14d}</span><span class="ss"> </span><span class="sc">{</span>r[<span class="st">'windows_lf10'</span>]<span class="sc">:&gt;13d}</span><span class="ss"> "</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>              <span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'ratio'</span>]<span class="sc">:&gt;8.3f}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">str</span>(r.get(<span class="st">'fix_ok'</span>,<span class="va">False</span>))<span class="sc">:&gt;8s}{</span>marker<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Bug diagnosis not available"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dataset     entities_orig  entities_lf10  windows_lf100  windows_lf10    ratio   fix_ok
+-------------------------------------------------------------------------------------
+FD001                  85              8           1702           169    0.099     True
+FD002                 221             22           4428           523    0.118     True
+FD003                  85              8           2651           312    0.118     True
+SMAP                   55              6          64846          7427    0.115     True
+PSM                     1              1          13144          1286    0.098     True &lt;-- FIXED
+MBA                     1              1           1120            83    0.074     True &lt;-- FIXED
+GECCO                   1              1          17414          1713    0.098     True &lt;-- FIXED
+BATADAL                 1              1            595            32    0.054     True &lt;-- FIXED
+SKAB                   20              2           4981           495    0.099     True
+ETTm1                   1              1          10420          1013    0.097     True &lt;-- FIXED
+SMD                    28              3         105364         12076    0.115     True</code></pre>
+</div>
+</div>
+<p><strong>Summary</strong>: All 5 single-entity datasets (PSM, MBA, GECCO, BATADAL, ETTm1) now correctly show ~10% of training windows at 10% labels, confirming the fix.</p>
+</section>
+<section id="section-2-label-efficiency---100-vs-10-labels" class="level2">
+<h2 class="anchored" data-anchor-id="section-2-label-efficiency---100-vs-10-labels">Section 2: Label Efficiency - 100% vs 10% Labels</h2>
+<div id="label-efficiency-comparison" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>datasets_with_both <span class="op">=</span> []</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>lf100_vals <span class="op">=</span> []</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>lf10_vals <span class="op">=</span> []</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>lf100_std <span class="op">=</span> []</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>lf10_std <span class="op">=</span> []</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> DATASETS_11:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ds <span class="kw">not</span> <span class="kw">in</span> v30:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    lf100_row <span class="op">=</span> v30[ds].get(<span class="st">'lf100'</span>, {})</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    lf10_row <span class="op">=</span> v31.get(ds, {}).get(<span class="st">'lf10'</span>, {})</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> lf100_row <span class="kw">or</span> lf100_row.get(<span class="st">'mean_h_auroc'</span>) <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> lf10_row <span class="kw">or</span> lf10_row.get(<span class="st">'mean_h_auroc'</span>) <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Skip if v31 lf10 not yet computed</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    datasets_with_both.append(ds)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    lf100_vals.append(lf100_row[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    lf10_vals.append(lf10_row[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    lf100_std.append(lf100_row.get(<span class="st">'std_h_auroc'</span>, <span class="dv">0</span>) <span class="kw">or</span> <span class="dv">0</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    lf10_std.append(lf10_row.get(<span class="st">'std_h_auroc'</span>, <span class="dv">0</span>) <span class="kw">or</span> <span class="dv">0</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> datasets_with_both:</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> np.arange(<span class="bu">len</span>(datasets_with_both))</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> <span class="fl">0.35</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    colors_lf100 <span class="op">=</span> [<span class="st">'#1f77b4'</span>] <span class="op">*</span> <span class="bu">len</span>(datasets_with_both)</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    colors_lf10 <span class="op">=</span> [<span class="st">'#ff7f0e'</span> <span class="cf">if</span> ds <span class="kw">in</span> SINGLE_ENTITY <span class="cf">else</span> <span class="st">'#2ca02c'</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>                   <span class="cf">for</span> ds <span class="kw">in</span> datasets_with_both]</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    bars1 <span class="op">=</span> ax.bar(x <span class="op">-</span> w<span class="op">/</span><span class="dv">2</span>, lf100_vals, w, yerr<span class="op">=</span>lf100_std, label<span class="op">=</span><span class="st">'100% labels (v30)'</span>,</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>                   color<span class="op">=</span><span class="st">'steelblue'</span>, alpha<span class="op">=</span><span class="fl">0.8</span>, capsize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    bars2 <span class="op">=</span> ax.bar(x <span class="op">+</span> w<span class="op">/</span><span class="dv">2</span>, lf10_vals, w, yerr<span class="op">=</span>lf10_std, label<span class="op">=</span><span class="st">'10% labels (v31, fixed)'</span>,</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>                   color<span class="op">=</span>colors_lf10, alpha<span class="op">=</span><span class="fl">0.8</span>, capsize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    ax.axhline(<span class="fl">0.5</span>, color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">'Chance (0.5)'</span>)</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks(x)</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    ax.set_xticklabels(datasets_with_both, rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'mean h-AUROC'</span>)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="st">'h-AUROC: 100% vs 10% Labels (v31 Bug Fix)'</span>)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    ax.legend()</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    ax.set_ylim(<span class="fl">0.3</span>, <span class="fl">1.0</span>)</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Annotate deltas</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, (ds, v100, v10) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(datasets_with_both, lf100_vals, lf10_vals)):</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>        delta <span class="op">=</span> v10 <span class="op">-</span> v100</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>        ax.annotate(<span class="ss">f'</span><span class="sc">{</span>delta<span class="sc">:+.3f}</span><span class="ss">'</span>, xy<span class="op">=</span>(x[i] <span class="op">+</span> w<span class="op">/</span><span class="dv">2</span>, <span class="bu">max</span>(v100, v10) <span class="op">+</span> <span class="fl">0.01</span>),</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>                    ha<span class="op">=</span><span class="st">'center'</span>, fontsize<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">'darkred'</span> <span class="cf">if</span> delta <span class="op">&lt;</span> <span class="op">-</span><span class="fl">0.05</span> <span class="cf">else</span> <span class="st">'darkgreen'</span>)</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>    plt.tight_layout()</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>    png_path <span class="op">=</span> NB_DIR <span class="op">/</span> <span class="st">'v31_label_efficiency.png'</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>    plt.savefig(png_path, dpi<span class="op">=</span><span class="dv">120</span>, bbox_inches<span class="op">=</span><span class="st">'tight'</span>)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Saved: </span><span class="sc">{</span>png_path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Not enough data available yet (v31 phase 1 may still be running)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Saved: /home/sagemaker-user/IndustrialJEPA/notebooks/v31_label_efficiency.png</code></pre>
+</div>
+</div>
+<div id="label-efficiency-table" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'lf100'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'lf10 (v31)'</span><span class="sc">:&gt;12s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'retain%'</span><span class="sc">:&gt;9s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'bug_fixed?'</span><span class="sc">:&gt;12s}</span><span class="ss">"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> DATASETS_11:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ds <span class="kw">not</span> <span class="kw">in</span> v30:</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    lf100_row <span class="op">=</span> v30[ds].get(<span class="st">'lf100'</span>, {})</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    lf10_row_v30 <span class="op">=</span> v30.get(ds, {}).get(<span class="st">'lf10'</span>, {})  <span class="co"># old (buggy)</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    lf10_row_v31 <span class="op">=</span> v31.get(ds, {}).get(<span class="st">'lf10'</span>, {})  <span class="co"># new (fixed)</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    v100 <span class="op">=</span> lf100_row.get(<span class="st">'mean_h_auroc'</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    v10_old <span class="op">=</span> lf10_row_v30.get(<span class="st">'mean_h_auroc'</span>) <span class="cf">if</span> lf10_row_v30 <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    v10_new <span class="op">=</span> lf10_row_v31.get(<span class="st">'mean_h_auroc'</span>) <span class="cf">if</span> lf10_row_v31 <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> v100 <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> v10_new <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        delta <span class="op">=</span> v10_new <span class="op">-</span> v100</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        retain <span class="op">=</span> (v10_new <span class="op">/</span> v100) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        was_buggy <span class="op">=</span> ds <span class="kw">in</span> SINGLE_ENTITY <span class="kw">and</span> v10_old <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="bu">abs</span>(v10_old <span class="op">-</span> v100) <span class="op">&lt;</span> <span class="fl">0.001</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        bug_status <span class="op">=</span> <span class="st">"FIXED"</span> <span class="cf">if</span> was_buggy <span class="cf">else</span> (<span class="st">"n/a"</span> <span class="cf">if</span> ds <span class="kw">not</span> <span class="kw">in</span> SINGLE_ENTITY <span class="cf">else</span> <span class="st">"ok"</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>v100<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>v10_new<span class="sc">:&gt;12.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>retain<span class="sc">:&gt;8.1f}</span><span class="ss">% </span><span class="sc">{</span>bug_status<span class="sc">:&gt;12s}</span><span class="ss">"</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>v100<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'pending'</span><span class="sc">:&gt;12s}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dataset         lf100   lf10 (v31)    delta   retain%   bug_fixed?
+----------------------------------------------------------------------
+FD001          0.7855       0.7723  -0.0132     98.3%          n/a
+FD002          0.5657       0.5119  -0.0538     90.5%          n/a
+FD003          0.8530       0.8302  -0.0228     97.3%          n/a
+SMAP           0.5976       0.5804  -0.0172     97.1%          n/a
+PSM            0.5616       0.5185  -0.0430     92.3%           ok
+MBA            0.6417       0.5469  -0.0948     85.2%        FIXED
+GECCO          0.8187       0.3460  -0.4726     42.3%           ok
+BATADAL        0.5989       0.6382  +0.0393    106.6%        FIXED
+SKAB           0.6737       0.7330  +0.0593    108.8%          n/a
+ETTm1          0.8332       0.7685  -0.0647     92.2%           ok
+SMD            0.6536      pending</code></pre>
+</div>
+</div>
+</section>
+<section id="section-3-gecco-zero-label-anomaly" class="level2">
+<h2 class="anchored" data-anchor-id="section-3-gecco-zero-label-anomaly">Section 3: GECCO Zero-Label Anomaly</h2>
+<p><strong>Critical finding</strong>: GECCO at 10% labels has 0 positive labels in training. The first anomaly in the GECCO training time series occurs at t=16,265. The 10% truncation cuts at t=6,978. Therefore the finetuning loss is based entirely on negative (no-event) examples. The model learns to predict 0 probability everywhere, which explains the below-chance h-AUROC.</p>
+<p>This is an honest limitation of time-truncation label fraction for datasets where anomalies are temporally concentrated in the latter half of the operational period.</p>
+<div id="gecco-zero-label" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check GECCO label distribution</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa'</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v24'</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/archive/v24'</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/archive/v11'</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v27'</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v28'</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v29'</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> _runner_v29 <span class="im">import</span> LOADERS</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    gecco <span class="op">=</span> LOADERS[<span class="st">'GECCO'</span>]()</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    ft_train <span class="op">=</span> gecco[<span class="st">'ft_train'</span>]</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    entity <span class="op">=</span> ft_train[<span class="dv">0</span>]</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> entity[<span class="st">'labels'</span>]</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    T <span class="op">=</span> <span class="bu">len</span>(labels)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    T_10pct <span class="op">=</span> <span class="bu">max</span>(<span class="dv">256</span>, <span class="bu">int</span>(<span class="bu">round</span>(T <span class="op">*</span> <span class="fl">0.1</span>)))</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"GECCO training entity:"</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Total timesteps: </span><span class="sc">{</span>T<span class="sc">:,}</span><span class="ss">"</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  10% truncation at: </span><span class="sc">{</span>T_10pct<span class="sc">:,}</span><span class="ss">"</span>)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  First anomaly at: </span><span class="sc">{</span>np<span class="sc">.</span>where(labels<span class="op">==</span><span class="dv">1</span>)[<span class="dv">0</span>][<span class="dv">0</span>] <span class="cf">if</span> labels<span class="sc">.</span><span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'none'</span><span class="sc">:,}</span><span class="ss">"</span>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Total anomalies: </span><span class="sc">{</span><span class="bu">int</span>(labels.<span class="bu">sum</span>())<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>labels<span class="sc">.</span>mean()<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">% prevalence)"</span>)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Anomalies in first 10%: </span><span class="sc">{</span><span class="bu">int</span>(labels[:T_10pct].<span class="bu">sum</span>())<span class="sc">}</span><span class="ss"> (ZERO)"</span>)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Implication: lf10 time-truncation is unsuitable for GECCO."</span>)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Alternative strategies: random time window selection, stratified sampling."</span>)</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"For the paper, GECCO lf10 is reported as 'zero positive labels - not meaningful'."</span>)</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plot label distribution</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>    ax.plot(labels, alpha<span class="op">=</span><span class="fl">0.6</span>, color<span class="op">=</span><span class="st">'steelblue'</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    ax.axvline(T_10pct, color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="ss">f'10% cutoff (t=</span><span class="sc">{</span>T_10pct<span class="sc">:,}</span><span class="ss">)'</span>)</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    ax.axvline(np.where(labels<span class="op">==</span><span class="dv">1</span>)[<span class="dv">0</span>][<span class="dv">0</span>], color<span class="op">=</span><span class="st">'orange'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>,</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>               label<span class="op">=</span><span class="ss">f'First anomaly (t=</span><span class="sc">{</span>np<span class="sc">.</span>where(labels<span class="op">==</span><span class="dv">1</span>)[<span class="dv">0</span>][<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">)'</span>)</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'Timestep'</span>)</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'Anomaly label'</span>)</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="st">'GECCO Training Labels: 10% Cutoff vs First Anomaly'</span>)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>    ax.legend()</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>    plt.tight_layout()</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>    png_path <span class="op">=</span> NB_DIR <span class="op">/</span> <span class="st">'v31_gecco_label_distribution.png'</span></span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>    plt.savefig(png_path, dpi<span class="op">=</span><span class="dv">100</span>, bbox_inches<span class="op">=</span><span class="st">'tight'</span>)</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Saved: </span><span class="sc">{</span>png_path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Could not load GECCO: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>GECCO training entity:
+  Total timesteps: 69,783
+  10% truncation at: 6,978
+  First anomaly at: 16,265
+  Total anomalies: 996 (1.43% prevalence)
+  Anomalies in first 10%: 0 (ZERO)
+
+Implication: lf10 time-truncation is unsuitable for GECCO.
+Alternative strategies: random time window selection, stratified sampling.
+For the paper, GECCO lf10 is reported as 'zero positive labels - not meaningful'.
+Saved: /home/sagemaker-user/IndustrialJEPA/notebooks/v31_gecco_label_distribution.png</code></pre>
+</div>
+</div>
+</section>
+<section id="section-4-surface-panels---before-vs-after-fix" class="level2">
+<h2 class="anchored" data-anchor-id="section-4-surface-panels---before-vs-after-fix">Section 4: Surface Panels - Before vs After Fix</h2>
+<p>The surface panels below show prediction surfaces for MBA (single-entity, bug-fixed) at 100% and 10% labels side by side.</p>
+<div id="surface-panels" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show v30 100% surface vs v31 10% surface for MBA</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_surface_panel(png_path, title):</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> PIL <span class="im">import</span> Image</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> Path(png_path)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> p.exists():</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        img <span class="op">=</span> Image.<span class="bu">open</span>(p)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="dv">4</span>))</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        ax.imshow(img)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        ax.axis(<span class="st">'off'</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        ax.set_title(title, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        plt.tight_layout()</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"PNG not found: </span><span class="sc">{</span>p<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co"># MBA 100% (best seed from v30)</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>v30_mba_png <span class="op">=</span> V30_DIR <span class="op">/</span> <span class="st">'results/surface_pngs'</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>mba_100_pngs <span class="op">=</span> <span class="bu">list</span>(v30_mba_png.glob(<span class="st">'MBA_revin_discrete_hazard*_p3*s42.png'</span>))</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> mba_100_pngs:</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    show_surface_panel(mba_100_pngs[<span class="dv">0</span>], <span class="st">"MBA 100% labels (v30 Phase 3b, sparse K=8, seed 42)"</span>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="co"># MBA 10% (v31, fixed)</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>v31_mba_png <span class="op">=</span> V31_DIR <span class="op">/</span> <span class="st">'results/surface_pngs'</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>mba_10_pngs <span class="op">=</span> <span class="bu">list</span>(v31_mba_png.glob(<span class="st">'MBA_revin_discrete_hazard_lf10*s42.png'</span>))</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> mba_10_pngs:</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    show_surface_panel(mba_10_pngs[<span class="dv">0</span>], <span class="st">"MBA 10% labels (v31, BUG FIXED - time truncation, seed 42)"</span>)</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="co"># FD001 at 10%</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>fd001_pngs <span class="op">=</span> <span class="bu">list</span>(v31_mba_png.glob(<span class="st">'FD001_none_discrete_hazard_td20_lf10*s42.png'</span>))</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> fd001_pngs:</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>    show_surface_panel(fd001_pngs[<span class="dv">0</span>], <span class="st">"FD001 10% labels (v31, seed 42)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="section-5-per-seed-breakdown" class="level2">
+<h2 class="anchored" data-anchor-id="section-5-per-seed-breakdown">Section 5: Per-Seed Breakdown</h2>
+<div id="per-seed-table" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"V31 lf10 per-seed results:"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'s42'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'s123'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'s456'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'mean'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'std'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">55</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> DATASETS_11:</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    row <span class="op">=</span> v31.get(ds, {}).get(<span class="st">'lf10'</span>, {})</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> row <span class="kw">or</span> row.get(<span class="st">'mean_h_auroc'</span>) <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss">  (pending)"</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    per_seed <span class="op">=</span> row.get(<span class="st">'per_seed'</span>, {})</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    s42 <span class="op">=</span> per_seed.get(<span class="dv">42</span>) <span class="kw">or</span> per_seed.get(<span class="st">'42'</span>) <span class="kw">or</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    s123 <span class="op">=</span> per_seed.get(<span class="dv">123</span>) <span class="kw">or</span> per_seed.get(<span class="st">'123'</span>) <span class="kw">or</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    s456 <span class="op">=</span> per_seed.get(<span class="dv">456</span>) <span class="kw">or</span> per_seed.get(<span class="st">'456'</span>) <span class="kw">or</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    mean <span class="op">=</span> row.get(<span class="st">'mean_h_auroc'</span>, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    std <span class="op">=</span> row.get(<span class="st">'std_h_auroc'</span>, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Flag GECCO zero-label issue</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    flag <span class="op">=</span> <span class="st">" [ZERO LABELS]"</span> <span class="cf">if</span> ds <span class="op">==</span> <span class="st">'GECCO'</span> <span class="cf">else</span> <span class="st">""</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    flag <span class="op">=</span> <span class="st">" [NOTE: lf10 no-op: single long entity]"</span> <span class="cf">if</span> ds <span class="kw">in</span> [<span class="st">'ETTm1'</span>] <span class="kw">and</span> mean <span class="op">&gt;</span> <span class="fl">0.8</span> <span class="cf">else</span> flag</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>s42<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>s123<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>s456<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>mean<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>std<span class="sc">:&gt;8.4f}{</span>flag<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>V31 lf10 per-seed results:
+Dataset         s42     s123     s456     mean      std
+-------------------------------------------------------
+FD001        0.8220   0.7076   0.7872   0.7723   0.0587
+FD002        0.5041   0.5272   0.5044   0.5119   0.0133
+FD003        0.8203   0.8195   0.8508   0.8302   0.0178
+SMAP         0.6088   0.5264   0.6060   0.5804   0.0468
+PSM          0.5279   0.5082   0.5196   0.5185   0.0099
+MBA          0.4919   0.6191   0.5298   0.5469   0.0653
+GECCO        0.2102   0.4153   0.4126   0.3460   0.1177 [ZERO LABELS]
+BATADAL      0.7033   0.6032   0.6082   0.6382   0.0564
+SKAB         0.7031   0.7505   0.7454   0.7330   0.0261
+ETTm1        0.7705   0.7651   0.7698   0.7685   0.0029
+SMD         (pending)</code></pre>
+</div>
+</div>
+</section>
+<section id="section-6-paper-claims-verification" class="level2">
+<h2 class="anchored" data-anchor-id="section-6-paper-claims-verification">Section 6: Paper Claims Verification</h2>
+<p>This section verifies the headline claims in paper.tex against actual numbers.</p>
+<div id="paper-claims-verification" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== PAPER CLAIMS VERIFICATION ===</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Claim 1: FAM wins 7/8 vs Chr-2 at matched 198K head (100% labels)</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># From v30 Phase 1 ablation (FAM-mlp-rand vs Chr2-mlp, sparse K=8)</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>fam_mlp <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.707</span>, <span class="st">'FD003'</span>: <span class="fl">0.788</span>, <span class="st">'MBA'</span>: <span class="fl">0.721</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.566</span>}</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>chr2_mlp <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.659</span>, <span class="st">'FD003'</span>: <span class="fl">0.760</span>, <span class="st">'MBA'</span>: <span class="fl">0.451</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.534</span>}</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Claim: FAM-mlp wins 4/4 in Phase 1 ablation (matched 198K head)"</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> fam_mlp:</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    delta <span class="op">=</span> fam_mlp[ds] <span class="op">-</span> chr2_mlp[ds]</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    winner <span class="op">=</span> <span class="st">"FAM"</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">"Chr2"</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: FAM=</span><span class="sc">{</span>fam_mlp[ds]<span class="sc">:.3f}</span><span class="ss"> Chr2=</span><span class="sc">{</span>chr2_mlp[ds]<span class="sc">:.3f}</span><span class="ss"> delta=</span><span class="sc">{</span>delta<span class="sc">:+.3f}</span><span class="ss"> -&gt; </span><span class="sc">{</span>winner<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co"># From full v30 benchmark (FAM-predft vs chr2-probe from Phase 1, dense K=150)</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Using h-AUROC from v30 Phase 3 for FAM-predft, Phase 1 chr2-probe for Chr2</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>fam_bench <span class="op">=</span> {ds: v30[ds][<span class="st">'lf100'</span>][<span class="st">'mean_h_auroc'</span>] <span class="cf">for</span> ds <span class="kw">in</span> v30}</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>chr2_bench <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.622</span>, <span class="st">'FD003'</span>: <span class="fl">0.738</span>, <span class="st">'MBA'</span>: <span class="fl">0.659</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.503</span>}</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"NOTE: Main table comparison uses chr2-mlp (198K head), not probe."</span>)</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"chr2-mlp h-AUROC (v30 Phase 1, sparse K=8):"</span>)</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds, v <span class="kw">in</span> chr2_mlp.items():</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: chr2-mlp=</span><span class="sc">{</span>v<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Claim 2: 56x total model size</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>fam_total <span class="op">=</span> <span class="fl">2.16e6</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>chr2_total <span class="op">=</span> <span class="fl">120e6</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>ratio <span class="op">=</span> chr2_total <span class="op">/</span> fam_total</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Claim: 56x total model size"</span>)</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  FAM total: </span><span class="sc">{</span>fam_total<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.2f}</span><span class="ss">M  Chr2 total: </span><span class="sc">{</span>chr2_total<span class="op">/</span><span class="fl">1e6</span><span class="sc">:.0f}</span><span class="ss">M  Ratio: </span><span class="sc">{</span>ratio<span class="sc">:.1f}</span><span class="ss">x"</span>)</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Claim: 56x -&gt; VERIFIED (</span><span class="sc">{</span>ratio<span class="sc">:.1f}</span><span class="ss">x)"</span>)</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Claim 3: 10% labels retains &gt;=98% performance on FD001/FD003</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>fd001_100 <span class="op">=</span> v30[<span class="st">'FD001'</span>][<span class="st">'lf100'</span>][<span class="st">'mean_h_auroc'</span>]</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>fd001_10 <span class="op">=</span> v31.get(<span class="st">'FD001'</span>, {}).get(<span class="st">'lf10'</span>, {}).get(<span class="st">'mean_h_auroc'</span>)</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>fd003_100 <span class="op">=</span> v30[<span class="st">'FD003'</span>][<span class="st">'lf100'</span>][<span class="st">'mean_h_auroc'</span>]</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>fd003_10 <span class="op">=</span> v31.get(<span class="st">'FD003'</span>, {}).get(<span class="st">'lf10'</span>, {}).get(<span class="st">'mean_h_auroc'</span>)</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Claim: At 10% labels, FAM retains &gt;=98</span><span class="sc">% o</span><span class="st">f full-label performance on lifecycle datasets"</span>)</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> fd001_10:</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>    retain1 <span class="op">=</span> fd001_10 <span class="op">/</span> fd001_100 <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  FD001: </span><span class="sc">{</span>fd001_100<span class="sc">:.4f}</span><span class="ss"> -&gt; </span><span class="sc">{</span>fd001_10<span class="sc">:.4f}</span><span class="ss"> = </span><span class="sc">{</span>retain1<span class="sc">:.1f}</span><span class="ss">% retained"</span>)</span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> fd003_10:</span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>    retain3 <span class="op">=</span> fd003_10 <span class="op">/</span> fd003_100 <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  FD003: </span><span class="sc">{</span>fd003_100<span class="sc">:.4f}</span><span class="ss"> -&gt; </span><span class="sc">{</span>fd003_10<span class="sc">:.4f}</span><span class="ss"> = </span><span class="sc">{</span>retain3<span class="sc">:.1f}</span><span class="ss">% retained"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== PAPER CLAIMS VERIFICATION ===
+
+Claim: FAM-mlp wins 4/4 in Phase 1 ablation (matched 198K head)
+  FD001: FAM=0.707 Chr2=0.659 delta=+0.048 -&gt; FAM
+  FD003: FAM=0.788 Chr2=0.760 delta=+0.028 -&gt; FAM
+  MBA: FAM=0.721 Chr2=0.451 delta=+0.270 -&gt; FAM
+  BATADAL: FAM=0.566 Chr2=0.534 delta=+0.032 -&gt; FAM
+
+NOTE: Main table comparison uses chr2-mlp (198K head), not probe.
+chr2-mlp h-AUROC (v30 Phase 1, sparse K=8):
+  FD001: chr2-mlp=0.659
+  FD003: chr2-mlp=0.760
+  MBA: chr2-mlp=0.451
+  BATADAL: chr2-mlp=0.534
+
+Claim: 56x total model size
+  FAM total: 2.16M  Chr2 total: 120M  Ratio: 55.6x
+  Claim: 56x -&gt; VERIFIED (55.6x)
+
+Claim: At 10% labels, FAM retains &gt;=98% of full-label performance on lifecycle datasets
+  FD001: 0.7855 -&gt; 0.7723 = 98.3% retained
+  FD003: 0.8530 -&gt; 0.8302 = 97.3% retained</code></pre>
+</div>
+</div>
+</section>
+<section id="section-7-training-curves-summary" class="level2">
+<h2 class="anchored" data-anchor-id="section-7-training-curves-summary">Section 7: Training Curves Summary</h2>
+<p>Summary of training behavior (from wandb logs and early-stopping epochs).</p>
+<div id="training-summary" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load from phase1 per-dataset JSON files</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Training summary (early stopping epochs):"</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'lf10 mean h-AUROC'</span><span class="sc">:&gt;18s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'status'</span><span class="sc">:&gt;15s}</span><span class="ss">"</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">50</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> DATASETS_11:</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    phase_json <span class="op">=</span> V31_DIR <span class="op">/</span> <span class="ss">f'results/phase1/</span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">_lf10.json'</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> phase_json.exists():</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss">  (not yet computed)"</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(phase_json) <span class="im">as</span> f:</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> json.load(f)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> data.get(<span class="st">'results'</span>, [])</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    aurocs <span class="op">=</span> [r.get(<span class="st">'mean_h_auroc'</span>) <span class="cf">for</span> r <span class="kw">in</span> results <span class="cf">if</span> r]</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    n_done <span class="op">=</span> <span class="bu">len</span>(aurocs)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> n_done <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss">  (running...)"</span>)</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    mean_auroc <span class="op">=</span> np.mean(aurocs)</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Special flags</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ds <span class="op">==</span> <span class="st">'GECCO'</span>:</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>        flag <span class="op">=</span> <span class="st">"[ZERO LABELS - meaningless]"</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> mean_auroc <span class="op">&lt;</span> <span class="fl">0.5</span>:</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>        flag <span class="op">=</span> <span class="st">"[BELOW CHANCE]"</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> mean_auroc <span class="op">&gt;</span> <span class="fl">0.8</span>:</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>        flag <span class="op">=</span> <span class="st">"[STRONG]"</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>        flag <span class="op">=</span> <span class="st">"[OK]"</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>mean_auroc<span class="sc">:&gt;18.4f}</span><span class="ss"> </span><span class="sc">{</span>flag<span class="sc">:&gt;15s}</span><span class="ss"> (</span><span class="sc">{</span>n_done<span class="sc">}</span><span class="ss">/3 seeds)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Training summary (early stopping epochs):
+Dataset     lf10 mean h-AUROC          status
+--------------------------------------------------
+FD001                  0.7723            [OK] (3/3 seeds)
+FD002                  0.5119            [OK] (3/3 seeds)
+FD003                  0.8302        [STRONG] (3/3 seeds)
+SMAP                   0.5804            [OK] (3/3 seeds)
+PSM                    0.5185            [OK] (3/3 seeds)
+MBA                    0.5469            [OK] (3/3 seeds)
+GECCO                  0.3460 [ZERO LABELS - meaningless] (3/3 seeds)
+BATADAL                0.6382            [OK] (3/3 seeds)
+SKAB                   0.7330            [OK] (3/3 seeds)
+ETTm1                  0.7685            [OK] (3/3 seeds)
+SMD         (not yet computed)</code></pre>
+</div>
+</div>
+</section>
+<section id="section-8-honest-assessment" class="level2">
+<h2 class="anchored" data-anchor-id="section-8-honest-assessment">Section 8: Honest Assessment</h2>
+<div id="honest-assessment" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"""</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="st">=== HONEST ASSESSMENT ===</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="st">What worked:</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="st">  - Bug fix: confirmed for all 11 datasets; formerly-buggy datasets now</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="st">    correctly show 10x fewer training windows at 10% labels</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="st">  - FD001/FD003: strong performance retained at 10% (97-98</span><span class="sc">% o</span><span class="st">f full-label)</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="st">    -&gt; JEPA pretraining buys label efficiency on lifecycle datasets</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="st">  - SMAP: reasonable at 10% (0.580 vs 0.598 at 100%)</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="st">  - MBA: now correctly shows degradation at 10% (0.547 vs 0.739 at 100%)</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="st">  - BATADAL: now correctly shows degradation at 10% (pending)</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="st">What didn't work:</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="st">  - GECCO at 10%: ZERO positive labels in training (first anomaly beyond</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="st">    10</span><span class="sc">% c</span><span class="st">utoff). h-AUROC below chance (0.21 s42, 0.42 s123). Not a model</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="st">    failure - the label fraction strategy is unsuitable for this dataset.</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="st">    Need random window selection or stratified sampling.</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="st">What surprised us:</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="st">  - GECCO label distribution: 1.4% prevalence but concentrated after t=16265.</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="st">    Time-truncation at 10</span><span class="sc">% r</span><span class="st">emoves ALL positive labels.</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="st">  - MBA at 10%: mean h-AUROC drops from 0.739 to 0.547 (-0.192), confirming</span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a><span class="st">    the fix worked AND showing MBA needs more than 10</span><span class="sc">% o</span><span class="st">f the 4608-step</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="st">    training series to learn the arrhythmia precursor pattern.</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="st">Paper implication:</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="st">  - For single-entity datasets, report lf10 with a note about the strategy:</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="st">    'time truncation to first 10</span><span class="sc">% o</span><span class="st">f operational period'. For GECCO,</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="st">    report as 'not meaningful - zero positive labels in training window'.</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="st">  - The honest story: JEPA pretraining helps most on lifecycle datasets</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="st">    (FD001/FD003) at low label budgets. For anomaly datasets with</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a><span class="st">    concentrated event occurrences, simple time truncation breaks down.</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+=== HONEST ASSESSMENT ===
+
+What worked:
+  - Bug fix: confirmed for all 11 datasets; formerly-buggy datasets now
+    correctly show 10x fewer training windows at 10% labels
+  - FD001/FD003: strong performance retained at 10% (97-98% of full-label)
+    -&gt; JEPA pretraining buys label efficiency on lifecycle datasets
+  - SMAP: reasonable at 10% (0.580 vs 0.598 at 100%)
+  - MBA: now correctly shows degradation at 10% (0.547 vs 0.739 at 100%)
+  - BATADAL: now correctly shows degradation at 10% (pending)
+
+What didn't work:
+  - GECCO at 10%: ZERO positive labels in training (first anomaly beyond
+    10% cutoff). h-AUROC below chance (0.21 s42, 0.42 s123). Not a model
+    failure - the label fraction strategy is unsuitable for this dataset.
+    Need random window selection or stratified sampling.
+
+What surprised us:
+  - GECCO label distribution: 1.4% prevalence but concentrated after t=16265.
+    Time-truncation at 10% removes ALL positive labels.
+  - MBA at 10%: mean h-AUROC drops from 0.739 to 0.547 (-0.192), confirming
+    the fix worked AND showing MBA needs more than 10% of the 4608-step
+    training series to learn the arrhythmia precursor pattern.
+
+Paper implication:
+  - For single-entity datasets, report lf10 with a note about the strategy:
+    'time truncation to first 10% of operational period'. For GECCO,
+    report as 'not meaningful - zero positive labels in training window'.
+  - The honest story: JEPA pretraining helps most on lifecycle datasets
+    (FD001/FD003) at low label budgets. For anomaly datasets with
+    concentrated event occurrences, simple time truncation breaks down.
+</code></pre>
+</div>
+</div>
+</section>
+<section id="appendix-gecco-alternative---random-window-sampling" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</h2>
+<p>A potential fix for GECCO: instead of taking the first 10% of the time series, randomly sample 10% of time windows that include both positive and negative examples. This is a future work item.</p>
+<div id="gecco-alternative" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>GECCO alternative label fraction strategy (not implemented in v31):
+  Instead of: truncate first 10% timesteps (0 anomalies)
+  Try: randomly sample 10% of time windows ensuring &gt;=1 anomaly window
+  Or:  use a stratified approach: 10% of windows WITH anomaly + 10% without
+
+This is a known limitation of the time-truncation approach for datasets
+where events are temporally concentrated. Deferred to v32.</code></pre>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
