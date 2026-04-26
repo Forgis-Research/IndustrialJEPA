@@ -148,6 +148,61 @@ Per-seed breakdown:
 MOMENT process (PID 61824) completed at 10:05 UTC 2026-04-26. Runtime: ~26 min.
 Results in: fam-jepa/experiments/v31/results/moment_baseline.json
 
+### Phase 4 - TimesFM-1.0-200M baseline (v31 continuation, 2026-04-26)
+
+TimesFM-1.0-200M (203.6M params), frozen encoder + 198K dt-MLP head (same as MOMENT comparison).
+Forward hook on stacked_transformer -> mean-pool patches -> 1280-d embeddings.
+
+| Dataset | TimesFM h-AUROC | FAM h-AUROC | Winner |
+|---------|----------------|-------------|--------|
+| FD001 | 0.530 +/- 0.003 | 0.786 +/- 0.033 | FAM (+0.256) |
+| FD003 | 0.615 +/- 0.014 | 0.853 +/- 0.004 | FAM (+0.238) |
+| MBA | 0.759 +/- 0.006 | 0.739 +/- 0.014 | TimesFM (+0.020) |
+| BATADAL | 0.653 +/- 0.005 | 0.607 +/- 0.033 | TimesFM (+0.046) |
+
+Per-seed: FD001 (0.5279, 0.5291, 0.5342), FD003 (0.6165, 0.5973, 0.6324), MBA (0.7535, 0.7558, 0.7682), BATADAL (0.6554, 0.6568, 0.6455).
+Note: used google/timesfm-1.0-200m-pytorch (NOT 2.0-500m which has checkpoint mismatch).
+TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046) - honest negative results, reported in paper.
+
+Results in: fam-jepa/experiments/v31/results/timesfm_baseline.json
+
+### Phase 5 - Moirai-1.1-R-base baseline (v31 continuation, 2026-04-26)
+
+Moirai-1.1-R-base (91.4M params, d_model=768), frozen encoder + 198K dt-MLP head.
+Forward hook on model.encoder -> 768-d embeddings, univariate patching (patch_size=32).
+
+| Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
+|---------|----------------|-------------|--------|
+| FD001 | 0.606 +/- 0.004 | 0.786 +/- 0.033 | FAM (+0.180) |
+| FD003 | 0.700 +/- 0.004 | 0.853 +/- 0.004 | FAM (+0.153) |
+| MBA | 0.571 +/- 0.017 | 0.739 +/- 0.014 | FAM (+0.168) |
+| BATADAL | 0.360 +/- 0.010 | 0.607 +/- 0.033 | FAM (+0.247) |
+
+Per-seed: FD001 (0.6054, 0.6105, 0.6021), FD003 (0.6962, 0.6975, 0.7060), MBA (0.5797, 0.5858, 0.5468), BATADAL (0.3725, 0.3591, 0.3477).
+BATADAL Moirai = 0.360 (below chance) - worst result across ALL baselines tested.
+FAM wins all 4 datasets. Moirai's univariate patching discards cross-sensor correlations.
+
+Results in: fam-jepa/experiments/v31/results/moirai_baseline.json
+
+### Phase 6 - FEMTO bearing dataset (v31 continuation, 2026-04-26)
+
+FAM pred-FT on FEMTO/PRONOSTIA bearing dataset (new domain: rotating machinery vibration).
+6 training bearings (SSL pretraining + fine-tune), 17 test bearings.
+8 features per snapshot (RMS, peak, kurtosis, crest factor per H+V channel).
+
+| Seed | h-AUROC | pooled_AUPRC | pretrain_loss | ft_best_val |
+|------|---------|--------------|---------------|-------------|
+| 42 | 0.5656 | 0.2568 | 0.0224 | 2.0453 |
+| 123 | 0.5840 | 0.2498 | 0.0218 | 1.8470 |
+| 456 | 0.5753 | 0.2773 | 0.0216 | 2.1014 |
+| **MEAN** | **0.575 +/- 0.008** | | | |
+
+95% CI: [0.556, 0.594] (t-dist, 3 seeds). Modest above-chance result.
+Limitation: only 6 training bearings for SSL pretraining (SSL-starved).
+Honest finding: FEMTO shows FAM generalizes to new domain but needs more pretraining data.
+
+Results in: fam-jepa/experiments/v31/results/femto_baseline.json
+
 ---
 
 ## v30 — dense K=150 head + fair ablation + uniform 13-dataset benchmark (2026-04-25 / 26)

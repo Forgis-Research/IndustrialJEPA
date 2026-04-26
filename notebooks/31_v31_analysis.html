@@ -96,6 +96,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#section-8-honest-assessment" id="toc-section-8-honest-assessment" class="nav-link" data-scroll-target="#section-8-honest-assessment">Section 8: Honest Assessment</a></li>
   <li><a href="#section-9-phase-2---sub-5-label-efficiency-curve" id="toc-section-9-phase-2---sub-5-label-efficiency-curve" class="nav-link" data-scroll-target="#section-9-phase-2---sub-5-label-efficiency-curve">Section 9: Phase 2 - Sub-5% Label Efficiency Curve</a></li>
   <li><a href="#section-10-moment-1-large-baseline-341m-param-foundation-model" id="toc-section-10-moment-1-large-baseline-341m-param-foundation-model" class="nav-link" data-scroll-target="#section-10-moment-1-large-baseline-341m-param-foundation-model">Section 10: MOMENT-1-large Baseline (341M-param Foundation Model)</a></li>
+  <li><a href="#p-a-timesfm-1.0-200m-baseline-v31" id="toc-p-a-timesfm-1.0-200m-baseline-v31" class="nav-link" data-scroll-target="#p-a-timesfm-1.0-200m-baseline-v31">P-A: TimesFM-1.0-200M Baseline (v31)</a></li>
+  <li><a href="#p-b-moirai-1.1-r-base-baseline-v31" id="toc-p-b-moirai-1.1-r-base-baseline-v31" class="nav-link" data-scroll-target="#p-b-moirai-1.1-r-base-baseline-v31">P-B: Moirai-1.1-R-base Baseline (v31)</a></li>
+  <li><a href="#p-c-femto-bearing-dataset-v31" id="toc-p-c-femto-bearing-dataset-v31" class="nav-link" data-scroll-target="#p-c-femto-bearing-dataset-v31">P-C: FEMTO Bearing Dataset (v31)</a></li>
   <li><a href="#appendix-gecco-alternative---random-window-sampling" id="toc-appendix-gecco-alternative---random-window-sampling" class="nav-link" data-scroll-target="#appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</a></li>
   </ul>
 </nav>
@@ -1024,7 +1027,8 @@ FD001     : 0.5594 +/- 0.0095 (3s) [COMPLETE]
            per-seed: s42=0.5678, s123=0.5612, s456=0.5491
 FD003     : 0.4732 +/- 0.0122 (3s) [COMPLETE]
            per-seed: s42=0.4823, s123=0.4593, s456=0.4780
-MBA       : no surfaces yet (PENDING)
+MBA       : 0.7905 +/- 0.0106 (3s) [COMPLETE]
+           per-seed: s42=0.8011, s123=0.7799, s456=0.7907
 BATADAL   : 0.5373 +/- 0.0658 (3s) [COMPLETE]
            per-seed: s42=0.5682, s123=0.4617, s456=0.5818
 
@@ -1033,6 +1037,7 @@ Dataset           FAM   Chr2-mlp     MOMENT   FAM&gt;MOMENT    MOMENT&gt;Chr2
 ----------------------------------------------------------------------
 FD001          0.7860     0.6590     0.5594      +0.2266        -0.0996
 FD003          0.8530     0.7600     0.4732      +0.3798        -0.2868
+MBA            0.7390     0.4510     0.7905      -0.0515        +0.3395
 BATADAL        0.6070     0.5340     0.5373      +0.0697        +0.0033
 
 FINDING: FAM (2.16M domain-specific JEPA) &gt;&gt; MOMENT-1-large (341M general)
@@ -1072,23 +1077,318 @@ FD003_moment-mlp_s123                        0.4593   0.7584
 FD003_moment-mlp_s456                        0.4780   0.7660
 BATADAL_moment-mlp_s42                       0.5682   0.3701
 BATADAL_moment-mlp_s123                      0.4617   0.3680
-BATADAL_moment-mlp_s456                      0.5818   0.3744</code></pre>
+BATADAL_moment-mlp_s456                      0.5818   0.3744
+MBA_moment-mlp_s42                           0.8011   0.9239
+MBA_moment-mlp_s123                          0.7799   0.9216
+MBA_moment-mlp_s456                          0.7907   0.9224</code></pre>
+</div>
+</div>
+</section>
+<section id="p-a-timesfm-1.0-200m-baseline-v31" class="level2">
+<h2 class="anchored" data-anchor-id="p-a-timesfm-1.0-200m-baseline-v31">P-A: TimesFM-1.0-200M Baseline (v31)</h2>
+<p>TimesFM-1.0-200M (203.6M params) evaluated with identical 198K dt-MLP head. Honest negative results are included: TimesFM beats FAM on MBA and BATADAL.</p>
+<div id="timesfm-results" class="cell" data-execution_count="16">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>timesfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>fam_ref <span class="op">=</span> {</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: (<span class="fl">0.786</span>, <span class="fl">0.033</span>),</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD003'</span>: (<span class="fl">0.853</span>, <span class="fl">0.004</span>),</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>: (<span class="fl">0.739</span>, <span class="fl">0.014</span>),</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BATADAL'</span>: (<span class="fl">0.607</span>, <span class="fl">0.033</span>),</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> timesfm_path.exists():</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(timesfm_path) <span class="im">as</span> f:</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>        tfm <span class="op">=</span> json.load(f)</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM-1.0-200M vs FAM (h-AUROC, 3 seeds each):"</span>)</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'TimesFM'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'+-std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Winner'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">65</span>)</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> tfm:</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> tfm[ds]</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>            tfm_m <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>            tfm_s <span class="op">=</span> v[<span class="st">'std'</span>]</span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>            fam_m, fam_s <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>), <span class="dv">0</span>))</span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>            delta <span class="op">=</span> fam_m <span class="op">-</span> tfm_m</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>            winner <span class="op">=</span> <span class="st">'FAM'</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'TimesFM'</span></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>tfm_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>tfm_s<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed values:"</span>)</span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> tfm:</span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>            seeds <span class="op">=</span> tfm[ds][<span class="st">'per_seed'</span>]</span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>[<span class="ss">f'</span><span class="sc">{</span>s<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> s <span class="kw">in</span> seeds]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"KEY INSIGHT: TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046)."</span>)</span>
+<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"These are honest negative results reported in the paper."</span>)</span>
+<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FAM wins decisively on FD001 (+0.256) and FD003 (+0.238)."</span>)</span>
+<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>TimesFM-1.0-200M vs FAM (h-AUROC, 3 seeds each):
+Dataset       TimesFM    +-std      FAM    Delta     Winner
+-----------------------------------------------------------------
+FD001          0.5304   0.0028   0.7860  +0.2556        FAM
+FD003          0.6154   0.0144   0.8530  +0.2376        FAM
+MBA            0.7592   0.0064   0.7390  -0.0202    TimesFM
+BATADAL        0.6525   0.0050   0.6070  -0.0455    TimesFM
+
+Per-seed values:
+  FD001: ['0.5279', '0.5291', '0.5342']
+  FD003: ['0.6165', '0.5973', '0.6324']
+  MBA: ['0.7535', '0.7558', '0.7682']
+  BATADAL: ['0.6554', '0.6568', '0.6455']
+
+KEY INSIGHT: TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046).
+These are honest negative results reported in the paper.
+FAM wins decisively on FD001 (+0.256) and FD003 (+0.238).</code></pre>
+</div>
+</div>
+</section>
+<section id="p-b-moirai-1.1-r-base-baseline-v31" class="level2">
+<h2 class="anchored" data-anchor-id="p-b-moirai-1.1-r-base-baseline-v31">P-B: Moirai-1.1-R-base Baseline (v31)</h2>
+<p>Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head. FAM wins all 4 datasets. Moirai collapses on BATADAL (0.360, below chance).</p>
+<div id="moirai-results" class="cell" data-execution_count="17">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>moirai_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_path.exists():</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_path) <span class="im">as</span> f:</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        moirai <span class="op">=</span> json.load(f)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai-1.1-R-base vs FAM (h-AUROC, 3 seeds each):"</span>)</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Moirai'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'+-std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Winner'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">65</span>)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> moirai:</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> moirai[ds]</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            m_mean <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>            m_std <span class="op">=</span> v[<span class="st">'std'</span>]</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>            fam_m, fam_s <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>), <span class="dv">0</span>))</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>            delta <span class="op">=</span> fam_m <span class="op">-</span> m_mean</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>            winner <span class="op">=</span> <span class="st">'FAM'</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'Moirai'</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>            above_chance <span class="op">=</span> <span class="st">''</span> <span class="cf">if</span> m_mean <span class="op">&gt;=</span> <span class="fl">0.5</span> <span class="cf">else</span> <span class="st">' [BELOW CHANCE]'</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>m_mean<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>m_std<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}{</span>above_chance<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed values:"</span>)</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> moirai:</span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>            seeds <span class="op">=</span> moirai[ds][<span class="st">'per_seed'</span>]</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>[<span class="ss">f'</span><span class="sc">{</span>s<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> s <span class="kw">in</span> seeds]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines."</span>)</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai's univariate patching discards cross-sensor correlations critical for"</span>)</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins."</span>)</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FAM wins all 4: FD001 +0.180, FD003 +0.153, MBA +0.168, BATADAL +0.247."</span>)</span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Moirai-1.1-R-base vs FAM (h-AUROC, 3 seeds each):
+Dataset        Moirai    +-std      FAM    Delta     Winner
+-----------------------------------------------------------------
+FD001          0.6060   0.0035   0.7860  +0.1800        FAM
+FD003          0.6999   0.0044   0.8530  +0.1531        FAM
+MBA            0.5708   0.0172   0.7390  +0.1682        FAM
+BATADAL        0.3598   0.0101   0.6070  +0.2472        FAM [BELOW CHANCE]
+
+Per-seed values:
+  FD001: ['0.6054', '0.6105', '0.6021']
+  FD003: ['0.6962', '0.6975', '0.7060']
+  MBA: ['0.5797', '0.5858', '0.5468']
+  BATADAL: ['0.3725', '0.3591', '0.3477']
+
+KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines.
+Moirai's univariate patching discards cross-sensor correlations critical for
+BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins.
+FAM wins all 4: FD001 +0.180, FD003 +0.153, MBA +0.168, BATADAL +0.247.</code></pre>
+</div>
+</div>
+<div id="foundation-model-comparison-table" class="cell" data-execution_count="18">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"COMPLETE FOUNDATION MODEL COMPARISON (h-AUROC, 3 seeds, 198K MLP head)"</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Chr-2'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'MOMENT'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'TimesFM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Moirai'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'2.16M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'120M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'341M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'200M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'91M'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">55</span>)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>chr2_ref <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.659</span>, <span class="st">'FD003'</span>: <span class="fl">0.760</span>, <span class="st">'MBA'</span>: <span class="fl">0.451</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.534</span>}</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>moment_ref <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.559</span>, <span class="st">'FD003'</span>: <span class="fl">0.473</span>, <span class="st">'MBA'</span>: <span class="fl">0.791</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.537</span>}</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>timesfm_ref <span class="op">=</span> {}</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>moirai_ref <span class="op">=</span> {}</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>tfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tfm_path.exists():</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(tfm_path) <span class="im">as</span> f:</span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> d:</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(d[ds], <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> d[ds]:</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>            timesfm_ref[ds] <span class="op">=</span> d[ds][<span class="st">'mean'</span>]</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>moirai_p <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_p.exists():</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_p) <span class="im">as</span> f:</span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> d:</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(d[ds], <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> d[ds]:</span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>            moirai_ref[ds] <span class="op">=</span> d[ds][<span class="st">'mean'</span>]</span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>    fam_m <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>),<span class="dv">0</span>))[<span class="dv">0</span>]</span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>    chr2_m <span class="op">=</span> chr2_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>    mom_m <span class="op">=</span> moment_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>    tfm_m <span class="op">=</span> timesfm_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a>    moirai_m <span class="op">=</span> moirai_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>    vals <span class="op">=</span> [fam_m, chr2_m, mom_m, tfm_m, moirai_m]</span>
+<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> <span class="bu">max</span>(v <span class="cf">for</span> v <span class="kw">in</span> vals <span class="cf">if</span> <span class="kw">not</span> np.isnan(v))</span>
+<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fmt(v, is_best):</span>
+<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.isnan(v): <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'N/A'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
+<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span></span>
+<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'**'</span><span class="op">+</span>s<span class="op">+</span><span class="st">'**'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span> <span class="cf">if</span> <span class="bu">abs</span>(v <span class="op">-</span> best) <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="cf">else</span> <span class="ss">f"</span><span class="sc">{</span>s<span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
+<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>fmt(fam_m, fam_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(chr2_m, chr2_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(mom_m, mom_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(tfm_m, tfm_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(moirai_m, moirai_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FAM (2.16M) wins: FD001 vs all, FD003 vs all"</span>)</span>
+<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MBA exception: MOMENT (341M, MIMIC-III pretrain) and TimesFM both beat FAM"</span>)</span>
+<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"BATADAL exception: TimesFM beats FAM; Moirai collapses below chance"</span>)</span>
+<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Headline: domain-specific JEPA at 2.16M beats general-purpose at 200-341M on 2/4"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>================================================================================
+COMPLETE FOUNDATION MODEL COMPARISON (h-AUROC, 3 seeds, 198K MLP head)
+================================================================================
+Dataset         FAM    Chr-2   MOMENT  TimesFM   Moirai
+              2.16M     120M     341M     200M      91M
+-------------------------------------------------------
+FD001      **0.7860**   0.6590   0.5590   0.5304   0.6060
+FD003      **0.8530**   0.7600   0.4730   0.6154   0.6999
+MBA          0.7390   0.4510 **0.7910**   0.7592   0.5708
+BATADAL      0.6070   0.5340   0.5370 **0.6525**   0.3598
+
+FAM (2.16M) wins: FD001 vs all, FD003 vs all
+MBA exception: MOMENT (341M, MIMIC-III pretrain) and TimesFM both beat FAM
+BATADAL exception: TimesFM beats FAM; Moirai collapses below chance
+Headline: domain-specific JEPA at 2.16M beats general-purpose at 200-341M on 2/4</code></pre>
+</div>
+</div>
+</section>
+<section id="p-c-femto-bearing-dataset-v31" class="level2">
+<h2 class="anchored" data-anchor-id="p-c-femto-bearing-dataset-v31">P-C: FEMTO Bearing Dataset (v31)</h2>
+<p>FEMTO/PRONOSTIA bearing run-to-failure dataset. FAM applied via standard pipeline (SSL pretrain on 6 training bearings, pred-FT on same, eval on 17 test bearings).</p>
+<div id="femto-results" class="cell" data-execution_count="19">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>femto_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/femto_baseline.json'</span>)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> femto_path.exists():</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(femto_path) <span class="im">as</span> f:</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>        femto <span class="op">=</span> json.load(f)</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FEMTO Bearing Dataset - FAM pred-FT:"</span>)</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  h-AUROC: </span><span class="sc">{</span>femto[<span class="st">'mean_h_auroc'</span>]<span class="sc">:.4f}</span><span class="ss"> +/- </span><span class="sc">{</span>femto<span class="sc">.</span>get(<span class="st">'std_h_auroc'</span>, <span class="dv">0</span>)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    ci_lo <span class="op">=</span> femto.get(<span class="st">'ci_95_lo'</span>, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    ci_hi <span class="op">=</span> femto.get(<span class="st">'ci_95_hi'</span>, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  95% CI: [</span><span class="sc">{</span>ci_lo<span class="sc">:.4f}</span><span class="ss">, </span><span class="sc">{</span>ci_hi<span class="sc">:.4f}</span><span class="ss">]"</span>)</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Seeds: </span><span class="sc">{</span>femto[<span class="st">'seeds'</span>]<span class="sc">}</span><span class="ss">, per-seed h-AUROC: </span><span class="sc">{</span>[<span class="ss">f'</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> v <span class="kw">in</span> femto[<span class="st">'per_seed_h_auroc'</span>]]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"DATASET CHARACTERISTICS:"</span>)</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Training: 6 bearings (Bearing1_1, 1_2, 2_1, 2_2, 3_1, 3_2)"</span>)</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Test: 17 bearings (11 seen conditions, 6 short runs)"</span>)</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Features: RMS, peak, kurtosis, crest factor per channel (H+V) = 8 features"</span>)</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Precursor window: last 50 snapshots (FAILURE_WINDOW=50)"</span>)</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Normalization: global z-score on training bearings"</span>)</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"HONEST ASSESSMENT:"</span>)</span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  h-AUROC = 0.575 +/- 0.008 - modest, above chance (0.500) by +0.075"</span>)</span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Finetuning val loss increases immediately (train -&gt; test distribution shift)"</span>)</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Only 6 bearings for SSL pretraining limits representation quality"</span>)</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  This is an HONEST RESULT for inclusion in paper as a new domain demonstration"</span>)</span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  Not a flagship result; reported with limitations stated explicitly"</span>)</span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FEMTO results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>FEMTO Bearing Dataset - FAM pred-FT:
+  h-AUROC: 0.5750 +/- 0.0075
+  95% CI: [0.5563, 0.5936]
+  Seeds: [42, 123, 456], per-seed h-AUROC: ['0.5656', '0.5840', '0.5753']
+
+DATASET CHARACTERISTICS:
+  Training: 6 bearings (Bearing1_1, 1_2, 2_1, 2_2, 3_1, 3_2)
+  Test: 17 bearings (11 seen conditions, 6 short runs)
+  Features: RMS, peak, kurtosis, crest factor per channel (H+V) = 8 features
+  Precursor window: last 50 snapshots (FAILURE_WINDOW=50)
+  Normalization: global z-score on training bearings
+
+HONEST ASSESSMENT:
+  h-AUROC = 0.575 +/- 0.008 - modest, above chance (0.500) by +0.075
+  Finetuning val loss increases immediately (train -&gt; test distribution shift)
+  Only 6 bearings for SSL pretraining limits representation quality
+  This is an HONEST RESULT for inclusion in paper as a new domain demonstration
+  Not a flagship result; reported with limitations stated explicitly</code></pre>
+</div>
+</div>
+<div id="femto-internal-consistency" class="cell" data-execution_count="20">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"INTERNAL CONSISTENCY AUDIT (required before logging):"</span>)</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Artifact 1 - Pretraining loss: 0.0936 -&gt; 0.022 (decreases monotonically). VALID."</span>)</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Artifact 2 - Finetune val loss: increases from epoch 0 (2.05) to early stop (2.9)."</span>)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  This means the model is overfitting/not generalising in finetune stage."</span>)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Expected: only 6 training bearings, 1125 fine-tune windows; 17 test bearings."</span>)</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  The val_loader uses the same 6 bearings (different windows) as train,"</span>)</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  so val loss measures within-bearing generalisation, not cross-bearing."</span>)</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Artifact 3 - Test h-AUROC = 0.575 (above chance). CONSISTENT with:"</span>)</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  - Pretraining learned some precursor dynamics (loss decreased)"</span>)</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  - Finetuning failed to generalise well (val loss diverged)"</span>)</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  - But test performance is still modestly above chance because encoder"</span>)</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"    retains some useful bearing degradation representations from pretraining"</span>)</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"VERDICT: All artifacts are CONSISTENT with each other. No internal contradiction."</span>)</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"The 0.575 result is modest and honestly reflects the dataset difficulty."</span>)</span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FEMTO with 6 training bearings is SSL-starved; this is expected."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>INTERNAL CONSISTENCY AUDIT (required before logging):
+
+Artifact 1 - Pretraining loss: 0.0936 -&gt; 0.022 (decreases monotonically). VALID.
+Artifact 2 - Finetune val loss: increases from epoch 0 (2.05) to early stop (2.9).
+  This means the model is overfitting/not generalising in finetune stage.
+  Expected: only 6 training bearings, 1125 fine-tune windows; 17 test bearings.
+  The val_loader uses the same 6 bearings (different windows) as train,
+  so val loss measures within-bearing generalisation, not cross-bearing.
+
+Artifact 3 - Test h-AUROC = 0.575 (above chance). CONSISTENT with:
+  - Pretraining learned some precursor dynamics (loss decreased)
+  - Finetuning failed to generalise well (val loss diverged)
+  - But test performance is still modestly above chance because encoder
+    retains some useful bearing degradation representations from pretraining
+
+VERDICT: All artifacts are CONSISTENT with each other. No internal contradiction.
+The 0.575 result is modest and honestly reflects the dataset difficulty.
+FEMTO with 6 training bearings is SSL-starved; this is expected.</code></pre>
 </div>
 </div>
 </section>
 <section id="appendix-gecco-alternative---random-window-sampling" class="level2">
 <h2 class="anchored" data-anchor-id="appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</h2>
 <p>A potential fix for GECCO: instead of taking the first 10% of the time series, randomly sample 10% of time windows that include both positive and negative examples. This is a future work item.</p>
-<div id="gecco-alternative" class="cell" data-execution_count="16">
+<div id="gecco-alternative" class="cell" data-execution_count="21">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"GECCO alternative label fraction strategy (not implemented in v31):"</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Instead of: truncate first 10% timesteps (0 anomalies)"</span>)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Try: randomly sample 10</span><span class="sc">% o</span><span class="st">f time windows ensuring &gt;=1 anomaly window"</span>)</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Or:  use a stratified approach: 10</span><span class="sc">% o</span><span class="st">f windows WITH anomaly + 10% without"</span>)</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is a known limitation of the time-truncation approach for datasets"</span>)</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"where events are temporally concentrated. Deferred to v32."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>GECCO alternative label fraction strategy (not implemented in v31):

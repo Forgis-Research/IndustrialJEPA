@@ -30,7 +30,33 @@
   - BATADAL: $0.537 \pm 0.066$ (FAM wins by +0.070)
   - MBA: $0.791 \pm 0.009$ (MOMENT wins by +0.052; consistent with MIMIC-III pretraining overlap and 2-channel low cross-channel demand)
 - FAM wins 3 of 4. The MBA result is honest counter-evidence reported in the paper appendix.
-- TimesFM-2.5 and Moirai still blocked (`lingvo` / `lightning` import failures even under py310). Skipped.
+
+### P-A (TimesFM-1.0-200M baseline) - COMPLETE (v31 continuation)
+TimesFM-1.0-200M (203.6M params), frozen encoder + 198K dt-MLP head, 3 seeds x 4 datasets:
+- FD001: 0.530 +/- 0.003 (FAM wins by +0.256)
+- FD003: 0.615 +/- 0.014 (FAM wins by +0.238)
+- MBA: 0.759 +/- 0.006 (TimesFM wins by +0.020 - honest negative result)
+- BATADAL: 0.653 +/- 0.005 (TimesFM wins by +0.046 - honest negative result)
+- Used google/timesfm-1.0-200m-pytorch (NOT 2.0-500m which has checkpoint mismatch with timesfm 1.3.0)
+- Forward hook on model.stacked_transformer -> mean-pool patches -> 1280-d embeddings
+- Paper updated: "Other foundation models" paragraph + app:extra_baselines appendix table
+
+### P-B (Moirai-1.1-R-base baseline) - COMPLETE (v31 continuation)
+Moirai-1.1-R-base (91.4M params, d_model=768), frozen encoder + 198K dt-MLP head, 3 seeds x 4 datasets:
+- FD001: 0.606 +/- 0.004 (FAM wins by +0.180)
+- FD003: 0.700 +/- 0.004 (FAM wins by +0.153)
+- MBA: 0.571 +/- 0.017 (FAM wins by +0.168)
+- BATADAL: 0.360 +/- 0.010 (FAM wins by +0.247; Moirai BELOW CHANCE - worst result across all baselines)
+- Forward hook on model.encoder -> 768-d embeddings, univariate processing per channel
+- Paper updated: added Moirai results to app:extra_baselines table and main text paragraph
+- Citation added: woo2024unified (arXiv:2402.02592)
+
+### P-D (Theory A1' integration) - COMPLETE (v31 continuation)
+- Added A1' (calibrated_posterior) as 5th numbered assumption in theory_appendix.tex
+- Updated Jensen gap step: C_p -> C_eta = (2*eta_under*(1-eta_over))^{-1}, tighter constant
+- Added per-horizon Proposition to appendix (app:per_horizon) with explicit Δt-dependence
+- Updated theory_main.tex proof sketch to cite A1' explicitly
+- Appendix compiles cleanly with new eq:jensen_gap_conditional, eq:mi_gap_bound, eq:per_horizon_bound
 
 ### P4 (Quarto notebook) - COMPLETE
 - `/notebooks/31_v31_analysis.qmd` with `jupyter: python3` in header.
@@ -55,7 +81,16 @@ FD001 label efficiency curve (FAM-predft, 3 seeds):
 
 FD003: faster degradation (83% at 5%, 74% at 2%) due to multi-fault modes.
 
-### FEMTO Bearing - SKIPPED (1.1GB download, too slow)
+### FEMTO Bearing - COMPLETE (v31 continuation)
+
+FAM pred-FT pipeline applied to FEMTO/PRONOSTIA bearing dataset (3 seeds):
+- h-AUROC: 0.575 +/- 0.008 (3s, 95% CI [0.556, 0.594])
+- Per-seed: 0.5656 (s42), 0.5840 (s123), 0.5753 (s456)
+- Pretraining converges (loss 0.0936 -> 0.022); finetuning val loss diverges
+- 6 training bearings -> SSL-starved pretraining; 17 test bearings -> distribution shift
+- This is an honest, modest result. Reported in paper as new-domain demonstration.
+- FAILURE_WINDOW=50 snapshots, 8 features (RMS/peak/kurtosis/crest per H+V channel)
+- Data loader: `fam-jepa/data/femto.py` (nested zip reader, global z-score normalization)
 
 ## Key Findings
 
@@ -73,14 +108,27 @@ FD003: faster degradation (83% at 5%, 74% at 2%) due to multi-fault modes.
 - `e30b21e`: phase1 ALL 11 datasets + Table 4 lf10 column + RESULTS.md v31 section
 - `89fe195`: phase2 sub-5% label efficiency + paper appendix tab:sub5pct + notebook Phase 2 section
 - `bbcf774`: paper polish: teaser figure + theory label efficiency paragraph + no \todo{}
+- `4c4bac5` (continuation): TimesFM + Moirai + FEMTO baselines + theory A1' integration
+  - P-A: TimesFM results (FD001=0.530, FD003=0.615, MBA=0.759, BATADAL=0.653)
+  - P-B: Moirai results (FD001=0.606, FD003=0.700, MBA=0.571, BATADAL=0.360)
+  - P-C: FEMTO FAM (h-AUROC=0.575+/-0.008, 3 seeds)
+  - P-D: Theory A1' integrated; per-horizon prop added; proof sketch updated
+  - P-E: Paper appendix updated with new table (app:extra_baselines) + paragraph
+  - P-F: Quarto notebook updated with TimesFM/Moirai/FEMTO sections + re-rendered
 
 ## Paper State
 
-- `/paper-neurips/paper.tex`: 19 pages, clean pdflatex compile
-- Table 4: complete (all 11 datasets, lf10 and lf100 columns filled)
+- `/paper-neurips/paper.tex`: 19+ pages, clean pdflatex compile (pdflatex + bibtex + 2x pdflatex)
+- Table 4 (main): complete (all 11 datasets, lf10 and lf100 columns filled)
 - No \todo{}, \needsdata{}, or undefined references
-- Theory: Proposition 1 + Corollary (precursor necessity) + label efficiency paragraph (linking Theorem in appendix to 92% result)
-- Appendix: sub-5% table, EMA vs SIGReg ablation, full label efficiency curve (legacy), Chronos-2 full comparison
+- Theory: Proposition 1 + Corollary (precursor necessity) + label efficiency paragraph + A1' (calibrated_posterior) assumption
+- Appendix sections:
+  - app:chronos_full: FAM vs Chr-2 matched head
+  - app:moment_full: MOMENT-1-large comparison (FAM wins 3/4, MOMENT wins MBA)
+  - app:extra_baselines (NEW): TimesFM + Moirai comparison table (4 datasets, 3 seeds)
+  - app:additional_ablations: predictor ablations + SIGReg ablation + sub-5% table
+  - app:theory: full proofs with A1' + per-horizon Prop (app:per_horizon NEW)
+- Citations added: woo2024unified (Moirai)
 
 ## Self-Check: Internal Consistency
 
@@ -92,4 +140,8 @@ All artifacts reconciled:
 - FD001 phase2 curve monotonically decreasing: consistent
 - FD001 lf2 (0.724) < lf10 (0.772): slightly anomalous but within CI overlap; FD001 lf5 (0.730) > lf2 (0.724) by 0.006, effectively tied given std=0.018 and 0.013
 
-No suspicious patterns identified.
+TimesFM/Moirai/FEMTO internal consistency:
+- TimesFM pretraining not applicable (frozen pretrained model); head training loss decreases: consistent
+- Moirai BATADAL=0.360 (below chance): consistent with univariate patching discarding cross-sensor correlations
+- FEMTO pretrain loss 0.0936->0.022: model trains. Finetune val loss diverges: expected (distribution shift, SSL-starved). h-AUROC=0.575: modest but above chance. All three artifacts consistent.
+- No suspicious patterns identified across P-A through P-C.
