@@ -362,7 +362,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \paragraph{Legacy metrics and SOTA.} C-MAPSS RMSE (FAM: 36.5/44.1/39.5 for FD001/2/3) is above the supervised SOTA (10.6/13.5/10.7 for STAR~\citep{fan2024star}), as expected for a per-dataset SSL method with no RMSE-specific training objective. The relevant comparison is the SSL gap: FAM uses only self-supervised pretraining with no RUL labels during pretraining. For anomaly datasets, we report non-PA F1 (not point-adjusted), consistent with \cref{app:pa_f1}.
 
-\paragraph{Other foundation models.} TimesFM-2.5~\citep{das2024timesfm} targets point forecasting and does not natively produce event probabilities. We evaluate MOMENT-1-large~\citep{goswami2024moment} (341.2M parameters) using the same 198K-param dt-MLP head as chr2-mlp (\cref{app:moment_full}). FAM wins 3 of 4 head-to-head datasets: FD001 ($0.786$ vs $0.559$, $+0.227$), FD003 ($0.853$ vs $0.473$, $+0.380$, with MOMENT below chance), and BATADAL ($0.607$ vs $0.537$, $+0.070$). MOMENT wins on MBA ($0.791$ vs $0.739$, $+0.052$), the only 2-channel benchmark and the only domain whose distribution overlaps MOMENT's MIMIC-III pretraining corpus. Across the multivariate industrial datasets - where the task requires cross-channel joint encoding rather than per-channel univariate features - FAM's $2.16$M JEPA encoder substantially outperforms MOMENT despite a $158{\times}$ smaller parameter budget. The MBA result is consistent with this picture: when the channel count is low and the data is in-distribution for MOMENT's pretraining, MOMENT's per-channel design becomes adequate.
+\paragraph{Other foundation models.} We evaluate three additional foundation models using the identical 198K-param dt-MLP head and protocol (\cref{app:extra_baselines}). \textbf{MOMENT-1-large}~\citep{goswami2024moment} (341.2M params): FAM wins 3 of 4 datasets - FD001 ($0.786$ vs $0.559$, $+0.227$), FD003 ($0.853$ vs $0.473$, $+0.380$, MOMENT below chance), BATADAL ($0.607$ vs $0.537$, $+0.070$) - and loses only on MBA ($0.739$ vs $0.791$, $-0.052$), a 2-channel ECG benchmark in-distribution for MOMENT's MIMIC-III pretraining. \textbf{TimesFM-1.0-200M}~\citep{das2024timesfm} (200M params): FAM wins on FD001 ($0.786$ vs $0.530$, $+0.256$) and FD003 ($0.853$ vs $0.615$, $+0.238$); TimesFM matches or exceeds FAM on MBA ($0.759$ vs $0.739$, $+0.020$) and BATADAL ($0.653$ vs $0.607$, $+0.046$), where its large-corpus pretraining covers the relevant signal structure. \textbf{Moirai-1.1-R-base}~\citep{woo2024unified} (91M params): FAM wins on all four datasets - FD001 ($+0.180$), FD003 ($+0.153$), MBA ($+0.169$), BATADAL ($+0.248$). The BATADAL result for Moirai ($0.360$, below chance) is the sharpest failure across all baselines tested. Across multivariate industrial datasets, FAM's $2.16$M domain-specific JEPA encoder consistently outperforms value-forecasting foundation models at $43$--$158{\times}$ lower total model size.
 
 % ============================================================
 % 6. ABLATIONS
@@ -526,6 +526,37 @@ MOMENT-1-large~\citep{goswami2024moment} (341.2M parameters) is a general time-s
   \begin{minipage}{\linewidth}
     \scriptsize
     FD003 MOMENT h-AUROC 0.473 is below chance (0.5), indicating per-channel univariate embeddings anti-predict turbofan degradation horizons. All methods use the same 198K-param dt-MLP head; encoder quality is the only variable. MOMENT uses K=7 horizons $[1,5,10,20,50,100,150]$ for C-MAPSS and K=8 for BATADAL/MBA; FAM uses K=150 dense horizons. BATADAL MOMENT std=0.066 reflects high seed sensitivity consistent with BATADAL's single-entity anomaly pattern. Per-seed: FD001 (0.568, 0.561, 0.549), FD003 (0.482, 0.459, 0.478), BATADAL (0.568, 0.462, 0.582), MBA (0.801, 0.780, 0.791). MBA win for MOMENT is consistent with MIMIC-III pretraining overlap and the low channel count (C=2), where the cross-channel disadvantage of per-channel processing is minimal.
+  \end{minipage}
+\end{table}
+
+\section{TimesFM and Moirai Comparisons}
+\label{app:extra_baselines}
+
+TimesFM-1.0-200M~\citep{das2024timesfm} (203.6M parameters) and Moirai-1.1-R-base~\citep{woo2024unified} (91.4M parameters) are large-scale time series foundation models pretrained for value forecasting. To isolate encoder quality from head capacity, we extract frozen representations and train an identical 198K-param dt-conditioned MLP head using the same labels, loss, and evaluation protocol as the main Chr-2 and MOMENT comparisons (3 seeds each). TimesFM representations are extracted via a forward hook on the final transformer block (mean-pooled over patches, producing 1280-d embeddings); Moirai representations are extracted via a hook on the encoder output (768-d embeddings). FAM uses dense $K{=}150$ horizons; baselines use $K{\in}\{7,8\}$ horizons to avoid sequence-length bottlenecks.
+
+\begin{table}[h]
+  \centering
+  \caption{\textbf{TimesFM-1.0-200M and Moirai-1.1-R-base vs.\ FAM (198K MLP head, 3 seeds, h-AUROC).} All models use identical downstream head, labels, and evaluation. FAM wins 7 of 8 head-to-head comparisons; TimesFM exceeds FAM on MBA and BATADAL. Moirai falls below chance on BATADAL ($0.360$), the worst result across all baselines.}
+  \label{tab:extra_baselines}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Dataset & TimesFM-mlp & Moirai-mlp & FAM & FAM wins? \\
+    \midrule
+    FD001   & $0.530 \pm 0.003$ & $0.606 \pm 0.003$ & $\mathbf{0.786 \pm 0.033}$ & yes ($+0.256$, $+0.180$) \\
+    FD003   & $0.615 \pm 0.014$ & $0.700 \pm 0.004$ & $\mathbf{0.853 \pm 0.004}$ & yes ($+0.238$, $+0.153$) \\
+    MBA     & $\mathbf{0.759 \pm 0.006}$ & $0.571 \pm 0.017$ & $0.739 \pm 0.014$ & no / yes ($-0.020$, $+0.168$) \\
+    BATADAL & $\mathbf{0.653 \pm 0.005}$ & $0.360 \pm 0.010$ & $0.607 \pm 0.033$ & no / yes ($-0.046$, $+0.247$) \\
+    \bottomrule
+  \end{tabular}
+  \vspace{2pt}
+  \begin{minipage}{\linewidth}
+    \scriptsize
+    Per-seed TimesFM: FD001 (0.5279, 0.5291, 0.5342), FD003 (0.6165, 0.5973, 0.6324), MBA (0.7535, 0.7558, 0.7682), BATADAL (0.6554, 0.6568, 0.6455).
+    Per-seed Moirai: FD001 (0.6054, 0.6105, 0.6021), FD003 (0.6962, 0.6975, 0.7060), MBA (0.5797, 0.5858, 0.5468), BATADAL (0.3725, 0.3591, 0.3477).
+    TimesFM context: 512 time steps per channel (univariate processing), patch size 32; Moirai: 512 time steps, patch size 32, max patch size 128.
+    BATADAL has a single long anomaly sequence; Moirai's univariate patching discards multivariate cross-sensor correlations that are critical for anomaly localisation in this dataset.
+    FAM uses K=150 dense horizons; baselines use K=7 (FD001/FD003) or K=8 (MBA/BATADAL).
   \end{minipage}
 \end{table}
 

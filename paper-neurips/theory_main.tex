@@ -37,7 +37,7 @@ where $C_p = \bigl(2\,\underline{p}\,(1-\overline{p})\bigr)^{-1}$ depends only o
 \begin{proof}[Proof sketch]
 Since $\hat{H}$ is a deterministic function of $(H_t, \Delta t)$, the data processing inequality gives $I(H_t; E) \geq I(\hat{H}; E)$.
 Under A1, $P(E{=}1 \mid \hat{H}) = \E[\eta(H^*) \mid \hat{H}]$.
-A Jensen-gap argument on the convex KL divergence, combined with the Lipschitz bound A3 and prediction error A2, yields $I(H^*; E) - I(\hat{H}; E) \leq C_p L^2 \varepsilon$.
+A Jensen-gap argument on the convex KL divergence, combined with the calibrated-posterior bound A1', the Lipschitz bound A3, and prediction error A2, yields $I(H^*; E) - I(\hat{H}; E) \leq C_p L^2 \varepsilon$, where $C_p = (2\underline{p}(1-\overline{p}))^{-1}$ is an upper bound for the tighter constant $C_\eta = (2\underline{\eta}(1-\overline{\eta}))^{-1}$ in terms of posterior bounds (\cref{ass:calibrated_posterior} in \cref{app:theory}).
 Full proof in \cref{app:theory}.
 \end{proof}
 

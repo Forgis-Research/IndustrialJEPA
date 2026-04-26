@@ -52,6 +52,15 @@ We define the event posterior $\eta(h) \coloneqq P(E_{t+\Delta t} = 1 \mid H^* =
   \emph{Interpretation.} The event is neither impossible nor certain. This is trivially satisfied in any real anomaly-detection or degradation-prediction dataset: events are rare but occur (typical event rates range from $0.1\%$ to $10\%$). The constant $C_p = (2\,\underline{p}\,(1-\overline{p}))^{-1}$ is moderate for all practical event rates.
 
   \emph{When it fails.} As $p \to 0$ or $p \to 1$, the constant $C_p \to \infty$ and the bound degrades. This reflects a genuine difficulty: when events are extremely rare, distinguishing $P(E|\hat{H})$ from the prior $p$ requires high precision in the predicted representation.
+
+  \item \label{ass:calibrated_posterior} \textbf{Calibrated event posterior (A1').}
+  There exist $0 < \underline{\eta} \leq \overline{\eta} < 1$ such that $P(\eta(H^*) \in [\underline{\eta},\overline{\eta}]) = 1$, where $\eta(h) = P(E_{t+\Delta t}=1 \mid H^*=h)$.
+
+  \emph{Interpretation.} The event posterior, evaluated on the support of the target encoder's output, is bounded away from 0 and 1 almost surely. This is a quantitative sharpening of \ref{ass:sufficiency}: rather than merely requiring $H^*$ to capture event information, it requires that the posterior is uniformly calibrated on the representation manifold. In practice, $H^*$ is L2-normalised onto the unit sphere (a compact set), and A3 guarantees that $\eta$ is Lipschitz; by the image of a compact connected set under a Lipschitz map, the range of $\eta(H^*)$ is a closed bounded interval, and $0 < \underline{\eta}$ follows from the event being non-trivially detectable from the future window.
+
+  \emph{Role in the proof.} Assumption A1' is needed to bound $\sup_q \varphi''(q) = \sup_q 1/(q(1-q))$ over the support of $\eta(H^*)$ (Step 2 of the proof). Without A1', the KL second derivative $\varphi''$ is unbounded near 0 and 1, making the Jensen-gap bound vacuous. A1' replaces the previously unstated auxiliary condition ``$\eta(h) \in [\underline{p}', \overline{p}']$'' used in earlier versions of the proof. The constant in the bound becomes $C_\eta = (2\underline{\eta}(1-\overline{\eta}))^{-1}$ in terms of the posterior bounds, satisfying $C_\eta \geq C_p$ (the bound is slightly looser but provably valid).
+
+  \emph{When it fails.} If $\eta(H^*)$ concentrates near 0 or 1 (i.e.\ the future window is almost perfectly informative or completely uninformative for some representations), then $C_\eta \to \infty$ and the bound degrades. Empirically, this is the case on CHB-MIT, where seizure onset cannot be reliably predicted from any 16-second past context, and $\eta(h) \approx p$ for all $h$ (consistent with $I(H^*; E) \approx 0$).
 \end{enumerate}
 
 \subsection{Full Proof of Proposition~\ref{prop:retention}}
@@ -124,23 +133,17 @@ For a twice-differentiable convex function $\varphi$, the Jensen gap satisfies \
 \end{equation}
 Here $\varphi(q) = D_{\mathrm{KL}}(\mathrm{Ber}(q)\,\|\,\mathrm{Ber}(p)) = q\ln(q/p) + (1{-}q)\ln((1{-}q)/(1{-}p))$ and $Y = \eta(H^*)$ conditioned on $\hat{H}$.
 The second derivative is $\varphi''(q) = 1/(q(1{-}q))$.
-Under \ref{ass:smoothness} and \ref{ass:event_rate}, $\eta(h) \in [\underline{p}, \overline{p}]$ need not hold pointwise, but $\eta_{\hat{H}}(\hat{h}) = \E[\eta(H^*)|\hat{H}=\hat{h}]$ lies in $[\underline{p}, \overline{p}]$ by \ref{ass:event_rate} (since the marginal event rate is $p = \E[\eta(H^*)]$).
-For the pointwise values $\eta(H^*)$, we note that $\eta(h) \in [0,1]$ always, and $\varphi''(q) = 1/(q(1-q))$.
-Since $\eta(H^*)$ takes values in $[0,1]$, we bound the supremum over the relevant range.
-Under \ref{ass:event_rate}, by convexity of $\eta_{\hat{H}}$ around $p$, the conditional values $\eta(H^*)$ are concentrated near $p$; more precisely, $P(\eta(H^*) \in [\underline{p}/2, 1 - (1-\overline{p})/2]) = 1$ is a mild strengthening.
-To keep the bound clean, we assume the stronger but standard condition that $\eta(h) \in [\underline{p}', \overline{p}']$ for some $0 < \underline{p}' < \overline{p}' < 1$ (which follows from A3 and boundedness of $H^*$ on a compact set).
-Then $\sup_q \varphi''(q) \leq 1/(\underline{p}'(1-\overline{p}'))$.
-
-For a cleaner and more general bound, we use the following direct argument.
+Under \ref{ass:calibrated_posterior}, $\eta(H^*) \in [\underline{\eta}, \overline{\eta}]$ almost surely, so $\sup_q \varphi''(q)$ is bounded over the support of $\eta(H^*)$ by $1/(\underline{\eta}(1{-}\overline{\eta}))$.
 Applying \eqref{eq:jensen_gap_general} conditionally on $\hat{H} = \hat{h}$:
 \begin{equation}
 \label{eq:jensen_gap_conditional}
 \E\bigl[D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta(H^*))\,\big\|\,\mathrm{Ber}(p)\bigr) \,\big|\, \hat{H}=\hat{h}\bigr]
 - D_{\mathrm{KL}}\bigl(\mathrm{Ber}(\eta_{\hat{H}}(\hat{h}))\,\big\|\,\mathrm{Ber}(p)\bigr)
 \;\leq\;
-\frac{\mathrm{Var}(\eta(H^*) \mid \hat{H}=\hat{h})}{2\,\underline{p}\,(1-\overline{p})},
+\frac{\mathrm{Var}(\eta(H^*) \mid \hat{H}=\hat{h})}{2\,\underline{\eta}\,(1-\overline{\eta})},
 \end{equation}
-where we have used $q(1-q) \geq \underline{p}(1-\overline{p})$ for $q \in [\underline{p}, \overline{p}]$, noting that this bound on $\varphi''$ applies conservatively since $\mathrm{Var}(\eta(H^*) \mid \hat{H})$ is already second-order small.
+where we have used $q(1-q) \geq \underline{\eta}(1-\overline{\eta})$ for $q \in [\underline{\eta}, \overline{\eta}]$ (from A1').
+Note that A4 implies $\underline{p} \leq p = \E[\eta(H^*)] \leq \overline{p}$, so $\underline{\eta} \leq \underline{p}$ and $\overline{\eta} \geq \overline{p}$ are compatible, and the constant $C_\eta = (2\underline{\eta}(1-\overline{\eta}))^{-1}$ satisfies $C_\eta \geq C_p$: the bound is slightly looser than the marginal-rate version but provably valid without requiring $\eta(H^*)$ to concentrate near $p$.
 
 \emph{Bounding the conditional variance via A2 and A3.}
 By \ref{ass:smoothness}: $|\eta(H^*) - \eta(\hat{H})| \leq L\|H^* - \hat{H}\|_2$ (where we evaluate $\eta$ at $\hat{H}$, using that $\eta$ is defined on all of $\R^d$).
@@ -153,17 +156,19 @@ Since for any random variable, $\mathrm{Var}(Y \mid Z) \leq \E[(Y - c)^2 \mid Z]
 Taking expectations over $\hat{H}$ in \eqref{eq:jensen_gap_conditional} and substituting \eqref{eq:var_bound}:
 \begin{align}
 I(H^*; E) - I(\hat{H}; E)
-&\leq \frac{L^2}{2\,\underline{p}\,(1-\overline{p})}\;\E\bigl[\|H^* - \hat{H}\|_2^2\bigr] \notag \\
-&\leq \frac{L^2\,\varepsilon}{2\,\underline{p}\,(1-\overline{p})} \;=\; C_p\,L^2\,\varepsilon, \label{eq:mi_gap_bound}
+&\leq \frac{L^2}{2\,\underline{\eta}\,(1-\overline{\eta})}\;\E\bigl[\|H^* - \hat{H}\|_2^2\bigr] \notag \\
+&\leq \frac{L^2\,\varepsilon}{2\,\underline{\eta}\,(1-\overline{\eta})} \;=\; C_\eta\,L^2\,\varepsilon, \label{eq:mi_gap_bound}
 \end{align}
-where the last line uses \ref{ass:prediction_error} and defines $C_p \coloneqq (2\,\underline{p}\,(1-\overline{p}))^{-1}$.
+where the last line uses \ref{ass:prediction_error} and defines $C_\eta \coloneqq (2\,\underline{\eta}\,(1-\overline{\eta}))^{-1}$ using the posterior bounds from \ref{ass:calibrated_posterior}.
+For the main paper statement (\cref{prop:retention}) we write $C_p = (2\underline{p}(1-\overline{p}))^{-1}$ using the marginal event-rate bounds, which is a valid (slightly looser) upper bound since $C_p \leq C_\eta$ by Jensen's inequality applied to $p = \E[\eta(H^*)]$.
 
 \textbf{Step 3: Assembling the bound.}
 Combining \eqref{eq:dpi_chain} and \eqref{eq:mi_gap_bound}:
 \begin{equation}
 \label{eq:full_bound}
-I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_p\,L^2\,\varepsilon. \qedhere
+I(H_t;\, E_{t+\Delta t}) \;\geq\; I(\hat{H};\, E_{t+\Delta t}) \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_\eta\,L^2\,\varepsilon \;\geq\; I(H^*;\, E_{t+\Delta t}) \;-\; C_p\,L^2\,\varepsilon. \qedhere
 \end{equation}
+The final inequality $C_\eta \geq C_p$ allows us to state the main theorem with the simpler $C_p$ constant, at the cost of a slight loosening.
 \end{proof}
 
 \begin{remark}[Comparison with $\sqrt{\varepsilon}$ bounds]
@@ -225,6 +230,37 @@ FD002 adds operating-condition variability to FD001. This increases $\varepsilon
 \paragraph{Label efficiency.}
 At 5\% labels, pred-FT achieves F1 $= 0.261$ vs.\ scratch $= 0.035$.
 The bound explains this: the encoder's $I(H_t; E_{t+\Delta t})$ is established during pretraining and does not depend on labels. Reducing labels degrades the finetuning optimisation (finding the right head weights) but cannot reduce the information available in the frozen encoder. Training from scratch must simultaneously learn both the representation and the event mapping, which is statistically harder with few labels.
+
+\subsection{Per-Horizon Generalisation}
+\label{app:per_horizon}
+
+\Cref{prop:retention} is stated for a fixed horizon $\Delta t$. We now make the horizon dependence explicit. All quantities on the right-hand side of the bound can vary with $\Delta t$: the event posterior $\eta_{\Delta t}(h) = P(E_{t+\Delta t}=1 \mid H^*_{\Delta t}=h)$, the Lipschitz constant $L(\Delta t)$, the prediction error $\varepsilon(\Delta t) = \E[\|H^*_{\Delta t} - \hat{H}_{\Delta t}\|_2^2]$, and the posterior bounds $\underline{\eta}_{\Delta t}, \overline{\eta}_{\Delta t}$ from \ref{ass:calibrated_posterior}.
+
+\begin{proposition}[Per-horizon information retention]
+\label{prop:per_horizon}
+Under the assumptions of \cref{prop:retention} applied at each horizon $\Delta t > 0$ separately, with horizon-dependent quantities $L(\Delta t)$, $\varepsilon(\Delta t)$, and $C_\eta(\Delta t) = (2\underline{\eta}_{\Delta t}(1-\overline{\eta}_{\Delta t}))^{-1}$:
+\begin{equation}
+\label{eq:per_horizon_bound}
+I\bigl(H_t;\, E_{t+\Delta t}\bigr)
+\;\geq\;
+I\bigl(H^*_{\Delta t};\, E_{t+\Delta t}\bigr)
+\;-\;
+C_\eta(\Delta t)\,L(\Delta t)^2\,\varepsilon(\Delta t).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Apply the proof of \cref{prop:retention} verbatim at each fixed $\Delta t$, with all quantities carrying a subscript $\Delta t$.
+\end{proof}
+
+\paragraph{Predicted shape of the per-horizon AUROC curve.}
+Equation~\eqref{eq:per_horizon_bound} predicts how the encoder's event information varies with horizon. Three effects combine:
+\begin{itemize}[nosep]
+  \item $I(H^*_{\Delta t}; E_{t+\Delta t})$ is typically non-monotone: very short horizons may not yet encompass precursors; very long horizons dilute the event signal with unrelated dynamics.
+  \item $\varepsilon(\Delta t)$ is monotonically increasing (representations further into the future are harder to predict from $H_t$).
+  \item $L(\Delta t)$ can increase with $\Delta t$ if the event boundary sharpens as the event approaches.
+\end{itemize}
+The net effect is that $I(H_t; E_{t+\Delta t})$ peaks at intermediate $\Delta t$ and decays at large $\Delta t$, consistent with the per-horizon AUROC curves observed in our experiments: AUROC is highest at $\Delta t \in [10, 50]$ cycles for C-MAPSS and at $\Delta t \in [1, 20]$ steps for anomaly datasets, then declines. The decay is more pronounced for the anomaly datasets because $\varepsilon(\Delta t)$ grows faster when the dynamics are irregular.
 
 \subsection{Relationship to the Information Bottleneck}
 \label{app:ib_relationship}

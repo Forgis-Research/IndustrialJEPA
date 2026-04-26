@@ -1,0 +1,23 @@
+{
+  "femto": {
+    "dataset": "FEMTO",
+    "model": "FAM-predFT",
+    "seeds": [
+      456
+    ],
+    "results": [
+      {
+        "seed": 456,
+        "h_auroc": 0.5753103257001551,
+        "pooled_auprc": 0.27734918190765323,
+        "pretrain_loss": 0.021554450504481792,
+        "ft_best_val": 2.101374089717865
+      }
+    ],
+    "per_seed_h_auroc": [
+      0.5753103257001551
+    ],
+    "mean_h_auroc": 0.5753103257001551,
+    "status": "COMPLETE"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "dataset": "FEMTO",
+  "model": "FAM-predFT",
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "per_seed_h_auroc": [
+    0.5656,
+    0.584,
+    0.5753
+  ],
+  "mean_h_auroc": 0.5749666666666666,
+  "std_h_auroc": 0.007515465535961299,
+  "ci_95_lo": 0.5562972153067232,
+  "ci_95_hi": 0.5936361180266101,
+  "pooled_auprc": [
+    0.2568,
+    0.2498,
+    0.2773
+  ],
+  "pretrain_losses": [
+    0.0224,
+    0.0218,
+    0.0216
+  ],
+  "notes": "val_loss increases rapidly due to train/test bearing distribution shift; 6 train vs 17 test bearings; FAILURE_WINDOW=50 snapshots",
+  "status": "COMPLETE"
+}
