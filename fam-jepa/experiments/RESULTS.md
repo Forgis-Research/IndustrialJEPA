@@ -8,7 +8,7 @@
 
 ### CRITICAL FIX: Chr2-mlp baseline errors in paper table (v31, 2026-04-26)
 
-Three Chr-2 baseline values were wrong in paper Table 1 (benchmark table). All now corrected
+Five Chr-2 baseline values were wrong in paper Table 1 (benchmark table). All now corrected
 by running chr2-mlp (198K-param MLP head) on cached Chronos-2 features with 3 seeds.
 
 | Dataset | Old (wrong) | New (correct) | Source of error |
@@ -16,12 +16,23 @@ by running chr2-mlp (198K-param MLP head) on cached Chronos-2 features with 3 se
 | FD002   | 0.760±0.003 | 0.734±0.001   | Was FD003's chr2-mlp number |
 | SMAP    | 0.500       | 0.534 (1 seed)| Was v27 linear probe; now chr2-mlp (only 1 seed cached) |
 | PSM     | 0.534±0.032 | 0.506±0.010   | Was BATADAL's chr2-mlp number |
+| GECCO   | 0.503±0.040 | 0.826±0.003   | Was BATADAL's chr2-probe! chr2-mlp actually BEATS FAM |
+| BATADAL | 0.521±0.038 | 0.534±0.026   | Was FAM-probe BATADAL (0.521); now chr2-mlp |
 
-Updated FAM vs Chr-2 deltas in Section 5.1:
-- SMAP: +0.098 -> +0.064 (FAM still wins)
-- PSM: +0.028 -> +0.056 (FAM still wins)
-- FD002: -0.194 -> -0.168 (Chr-2 still wins)
-**7/8 win count is unchanged.**
+**Key impact: win count changes from 7/8 to 6/8.**
+
+Updated FAM vs Chr-2 win/loss:
+- FD001: FAM +0.127 (win)
+- FD002: Chr-2 +0.168 (loss)
+- FD003: FAM +0.093 (win)
+- SMAP: FAM +0.064 (win; delta reduced from +0.098)
+- PSM: FAM +0.056 (win; delta corrected from +0.028)
+- MBA: FAM +0.288 (win)
+- GECCO: Chr-2 +0.007 (loss; near-tie, overlapping CI)
+- BATADAL: FAM +0.073 (win)
+
+Paper updated: abstract and conclusion now say "6 of 8", section 5.1 updated,
+table row 6/2 summary.
 
 These were internal-inconsistency bugs (wrong numbers copied across rows).
 
