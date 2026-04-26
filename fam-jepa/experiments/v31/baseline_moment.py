@@ -115,11 +115,16 @@ def load_dataset(dataset: str):
     if dataset == 'MBA':
         from data.mba import load_mba
         d = load_mba(normalize=False)
-        tr = _build_anomaly(d.get('ft_train', [d.get('train', [])]), stride=4)
-        va = _build_anomaly(d.get('ft_val', []), stride=4)
-        te = _build_anomaly(d.get('ft_test', [d.get('test', [])]), stride=1)
-        n_ch = d.get('n_channels', 2)
-        return tr, va, te, n_ch, ANOMALY_HORIZONS
+        test = np.asarray(d['test'], dtype=np.float32)
+        labels = np.asarray(d['labels'], dtype=np.int32)
+        T = len(test)
+        t1, t2, gap = int(0.6 * T), int(0.7 * T), 200
+        ent_tr = [{'test': test[:t1], 'labels': labels[:t1]}]
+        ent_va = [{'test': test[t1 + gap:t2], 'labels': labels[t1 + gap:t2]}]
+        ent_te = [{'test': test[t2 + gap:], 'labels': labels[t2 + gap:]}]
+        n_ch = int(d.get('n_channels', test.shape[1]))
+        return (_build_anomaly(ent_tr, 4), _build_anomaly(ent_va, 4),
+                _build_anomaly(ent_te, 1), n_ch, ANOMALY_HORIZONS)
 
     if dataset == 'BATADAL':
         from data.batadal import load_batadal

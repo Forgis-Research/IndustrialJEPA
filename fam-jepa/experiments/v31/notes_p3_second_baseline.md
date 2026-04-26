@@ -1,10 +1,12 @@
-# P3: Second Foundation Model Baseline - FAILED
+# P3: Second Foundation Model Baseline - PARTIAL (MOMENT works under py310)
 
 Attempted: MOMENT (momentfm), TimesFM 2.0, Moirai (uni2ts)
 
-## MOMENT
-Error: `pkgutil.ImpImporter` removed in Python 3.12. Package requires numpy<2.0
-which in turn triggers a numpy wheel rebuild that fails on py3.12.
+## MOMENT - WORKS under py310 conda env
+Initial failure under base Python 3.12: `pkgutil.ImpImporter` removed; numpy<2.0
+required by momentfm. Resolved by creating `py310` conda env and running with
+`conda run -n py310 python3 baseline_moment.py`. Full 4-dataset / 3-seed sweep
+completed. Results in `results/moment_baseline.json` (12 runs).
 
 ## TimesFM
 Error: requires `lingvo==0.12.7` (Google JAX framework), not available on PyPI
@@ -14,16 +16,9 @@ for Python 3.12. All timesfm versions require Python <3.12.
 Installed but import fails: `lightning` framework has circular imports in py3.12.
 
 ## Conclusion
-All three foundation model baselines blocked by Python 3.12 dependency conflicts.
-The v30 notes documented this as needing a containerized environment or conda env
-with Python 3.10. This is still the case in v31.
-
-**Workaround options (for future session)**:
-1. Create conda env: `conda create -n py310 python=3.10 && conda activate py310`
-2. Docker container with Python 3.10
-3. Use existing Chronos-2 from v24/v27 (already computed, cached in `experiments/v24/chronos_features/`)
-
-**Decision**: Skip P3 as per session rules (cap at 1h). Chronos-2 alone is
-sufficient for the main paper. Document in SESSION_SUMMARY.md.
+MOMENT-1-large works under the `py310` conda env and is now the second foundation
+model baseline in the paper alongside Chronos-2. TimesFM and Moirai remain blocked
+even under py310 due to `lingvo` / `lightning` import failures; they are documented
+as deferred.
 
 Timestamp: 2026-04-26

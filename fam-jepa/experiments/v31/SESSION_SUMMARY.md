@@ -21,9 +21,16 @@
 - Teaser figure (fig_teaser.pdf) created from v30 surface PNGs; replaces \todo{}.
 - All \todo{} and \needsdata{} macros removed; clean 19-page pdflatex compile.
 
-### P3 (Second foundation model baseline) - BLOCKED
-- MOMENT, TimesFM, Moirai all blocked by Python 3.12 incompatibility (pkgutil.ImpImporter removed).
-- Documented in `notes_p3_second_baseline.md`. Cannot run without Python 3.10 conda env.
+### P3 (Second foundation model baseline) - COMPLETE (post-summary continuation)
+- After this summary was first written, a `py310` conda env was created and MOMENT-1-large was successfully evaluated.
+- 4 datasets, 3 seeds each = 12 runs. Initial run covered FD001/FD003/BATADAL; MBA was added in a follow-up after fixing a data-loading bug in `baseline_moment.py` (`load_mba()` returns flat dict, not entity-dict; fix uses `_single_stream_intra_split` 60/70/100 chronological split, matching v27 runner).
+- Results (h-AUROC, mean +/- std over 3 seeds):
+  - FD001: $0.559 \pm 0.009$ (FAM wins by +0.227)
+  - FD003: $0.473 \pm 0.012$ (below chance; FAM wins by +0.380)
+  - BATADAL: $0.537 \pm 0.066$ (FAM wins by +0.070)
+  - MBA: $0.791 \pm 0.009$ (MOMENT wins by +0.052; consistent with MIMIC-III pretraining overlap and 2-channel low cross-channel demand)
+- FAM wins 3 of 4. The MBA result is honest counter-evidence reported in the paper appendix.
+- TimesFM-2.5 and Moirai still blocked (`lingvo` / `lightning` import failures even under py310). Skipped.
 
 ### P4 (Quarto notebook) - COMPLETE
 - `/notebooks/31_v31_analysis.qmd` with `jupyter: python3` in header.
