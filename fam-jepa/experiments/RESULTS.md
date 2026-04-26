@@ -4,6 +4,29 @@
 
 ---
 
+## v31 - label_fraction bug fix + 10% label table + paper update + chr2-mlp fixes (2026-04-26)
+
+### CRITICAL FIX: Chr2-mlp baseline errors in paper table (v31, 2026-04-26)
+
+Three Chr-2 baseline values were wrong in paper Table 1 (benchmark table). All now corrected
+by running chr2-mlp (198K-param MLP head) on cached Chronos-2 features with 3 seeds.
+
+| Dataset | Old (wrong) | New (correct) | Source of error |
+|---------|-------------|---------------|-----------------|
+| FD002   | 0.760±0.003 | 0.734±0.001   | Was FD003's chr2-mlp number |
+| SMAP    | 0.500       | 0.534 (1 seed)| Was v27 linear probe; now chr2-mlp (only 1 seed cached) |
+| PSM     | 0.534±0.032 | 0.506±0.010   | Was BATADAL's chr2-mlp number |
+
+Updated FAM vs Chr-2 deltas in Section 5.1:
+- SMAP: +0.098 -> +0.064 (FAM still wins)
+- PSM: +0.028 -> +0.056 (FAM still wins)
+- FD002: -0.194 -> -0.168 (Chr-2 still wins)
+**7/8 win count is unchanged.**
+
+These were internal-inconsistency bugs (wrong numbers copied across rows).
+
+---
+
 ## v31 - label_fraction bug fix + 10% label table + paper update (2026-04-26)
 
 ### Bug fixed: label_fraction was a no-op for single-entity datasets
