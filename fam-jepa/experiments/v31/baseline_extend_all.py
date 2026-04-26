@@ -406,86 +406,63 @@ def build_timesfm_extractor():
 
 
 # ---------------------------------------------------------------------------
-# Moirai extractor
+# Moirai extractor (mirrors run_all_baselines.py: MoiraiModule.from_pretrained)
 # ---------------------------------------------------------------------------
 
-def build_moirai_extractor():
-    from uni2ts.model.moirai import MoiraiForecast, MoiraiModule
-    print("Loading Moirai-1.1-R-base...", flush=True)
-    model = MoiraiForecast.load_from_checkpoint(
-        checkpoint_path='hf://Salesforce/moirai-1.1-R-base',
-        prediction_length=1,
-        context_length=512,
-        patch_size='auto',
-        num_samples=1,
-        target_dim=1,
-        feat_dynamic_real_dim=0,
-        past_feat_dynamic_real_dim=0,
-    )
+def build_moirai_extractor(size: str = 'base'):
+    from uni2ts.model.moirai import MoiraiModule
+    hf_id = f'Salesforce/moirai-1.1-R-{size}'
+    print(f"Loading Moirai-1.1-R-{size} from {hf_id}...", flush=True)
+    model = MoiraiModule.from_pretrained(hf_id)
     model.eval()
     model.to(DEVICE)
     n_params = sum(p.numel() for p in model.parameters()) / 1e6
-    print(f"  Moirai loaded: {n_params:.1f}M params", flush=True)
+    print(f"  Moirai loaded: {n_params:.1f}M params, d_model={model.d_model}", flush=True)
 
+    D_MODEL = model.d_model
+    PATCH_SIZE = 32  # fixed from supported patch_sizes
     CONTEXT_LEN = 512
-    _hook_cache = [None]
+    N_PATCHES = CONTEXT_LEN // PATCH_SIZE  # 16
+    MAX_PATCH = model.patch_sizes[-1]  # 128
 
-    def _hook(module, input, output):
-        if isinstance(output, tuple):
-            h = output[0]
-        else:
-            h = output
-        _hook_cache[0] = h.detach().clone()
+    hidden_cache = [None]
 
-    # Hook onto encoder
-    for name, mod in model.named_modules():
-        if 'encoder' in name.lower() and hasattr(mod, 'forward'):
-            mod.register_forward_hook(_hook)
-            print(f"  Moirai hook on: {name}", flush=True)
-            break
+    def hook(module, input, output):
+        hidden_cache[0] = output.detach().clone()
 
-    D_MOIRAI = 768  # Moirai-base model dimension
+    model.encoder.register_forward_hook(hook)
 
     @torch.no_grad()
     def embed(x: torch.Tensor) -> torch.Tensor:
-        """x: (B, T, C) -> (B, 768)"""
-        from einops import rearrange
+        """x: (B, T, C) -> (B, D_MODEL)"""
         B, T, C = x.shape
         if T > CONTEXT_LEN:
             x = x[:, -CONTEXT_LEN:, :]
         elif T < CONTEXT_LEN:
             pad = torch.zeros(B, CONTEXT_LEN - T, C, dtype=x.dtype)
-            x = torch.cat([pad, x.cpu()], dim=1)
+            x = torch.cat([pad, x], dim=1)
 
-        # Process each channel independently
-        all_ch_emb = []
-        for c in range(C):
-            xc = x[:, :, c].unsqueeze(-1)  # (B, T, 1)
-            # Build inputs for Moirai
-            past_target = xc.permute(0, 2, 1).float().to(DEVICE)  # (B, 1, T)
-            past_observed = torch.ones_like(past_target).bool()
-            past_is_pad = torch.zeros(B, T, dtype=torch.bool, device=DEVICE)
+        # Process each channel as a separate univariate sequence
+        x_flat = x.permute(0, 2, 1).reshape(B * C, CONTEXT_LEN).to(DEVICE)
+        N = B * C
 
-            try:
-                _hook_cache[0] = None
-                # Moirai forward pass (triggers hook)
-                _ = model(
-                    past_target=past_target,
-                    past_observed_target=past_observed,
-                    past_is_pad=past_is_pad,
-                )
-                if _hook_cache[0] is not None:
-                    h = _hook_cache[0]  # (B, N_patches, D)
-                    h_pooled = h.mean(dim=1)  # (B, D)
-                    all_ch_emb.append(h_pooled.cpu())
-                else:
-                    all_ch_emb.append(torch.zeros(B, D_MOIRAI))
-            except Exception:
-                all_ch_emb.append(torch.zeros(B, D_MOIRAI))
+        # Build patched input (N, N_patches, MAX_PATCH)
+        target = x_flat.view(N, N_PATCHES, PATCH_SIZE)
+        target_padded = torch.zeros(N, N_PATCHES, MAX_PATCH, device=DEVICE)
+        target_padded[:, :, :PATCH_SIZE] = target
+        observed = torch.zeros(N, N_PATCHES, MAX_PATCH, dtype=torch.bool, device=DEVICE)
+        observed[:, :, :PATCH_SIZE] = True
 
-        if not all_ch_emb:
-            return torch.zeros(B, D_MOIRAI)
-        return torch.stack(all_ch_emb, dim=0).mean(dim=0)  # (B, D)
+        sample_id = torch.arange(N, device=DEVICE).unsqueeze(1).expand(-1, N_PATCHES)
+        time_id = torch.arange(N_PATCHES, device=DEVICE).unsqueeze(0).expand(N, -1)
+        variate_id = torch.zeros(N, N_PATCHES, dtype=torch.long, device=DEVICE)
+        pred_mask = torch.zeros(N, N_PATCHES, dtype=torch.bool, device=DEVICE)
+        ps_tensor = torch.full((N, N_PATCHES), PATCH_SIZE, dtype=torch.long, device=DEVICE)
+
+        model(target_padded, observed, sample_id, time_id, variate_id, pred_mask, ps_tensor)
+        h = hidden_cache[0]  # (N, N_PATCHES, D_MODEL)
+        h_pooled = h.mean(dim=1)  # (N, D_MODEL)
+        return h_pooled.reshape(B, C, D_MODEL).mean(dim=1).cpu()  # (B, D_MODEL)
 
     return embed, n_params * 1e6
 
@@ -495,63 +472,55 @@ def build_moirai_extractor():
 # ---------------------------------------------------------------------------
 
 def get_feat_cache_path(model_name: str, dataset: str) -> Path:
+    """Return path for the unified flat cache file."""
     if model_name == 'moment':
-        return MOMENT_FEAT_DIR / f"{dataset}_flat.npz"
+        return MOMENT_FEAT_DIR / f"{dataset}_v31ext_flat.npz"
     elif model_name == 'timesfm':
-        return TFM_FEAT_DIR / f"{dataset}_flat.npz"
+        return TFM_FEAT_DIR / f"{dataset}_v31ext_flat.npz"
     elif model_name == 'moirai':
-        return MOIRAI_FEAT_DIR / f"{dataset}_flat.npz"
+        return MOIRAI_FEAT_DIR / f"{dataset}_v31ext_flat.npz"
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
 
-def cache_features(model_name: str, dataset: str, embed_fn, bundle: dict):
-    """Extract and cache features for all splits. Returns (tr, va, te) tuples."""
-    cache_path = get_feat_cache_path(model_name, dataset)
-    if cache_path.exists():
-        print(f"  Loading cached features: {cache_path}", flush=True)
-        d = np.load(cache_path, allow_pickle=True)
-        tr = (torch.from_numpy(d['tr_feats']),
-              torch.from_numpy(d['tr_feats_flat']),
-              torch.from_numpy(d['tr_labels_surf']),
-              torch.from_numpy(d['tr_labels_flat']),
-              torch.from_numpy(d['tr_dt_flat']))
-        va = (torch.from_numpy(d['va_feats']),
-              torch.from_numpy(d['va_feats_flat']),
-              torch.from_numpy(d['va_labels_surf']),
-              torch.from_numpy(d['va_labels_flat']),
-              torch.from_numpy(d['va_dt_flat']))
-        te = (torch.from_numpy(d['te_feats']),
-              None, torch.from_numpy(d['te_labels_surf']), None, None)
-        return tr, va, te
+def check_legacy_split_cache(model_name: str, dataset: str):
+    """Check if legacy split-keyed caches exist (timesfm/moirai from run_all_baselines.py).
 
-    print(f"  Extracting {model_name} features for {dataset}...", flush=True)
-    tr_ds, va_ds, te_ds, n_ch, horizons = bundle_to_datasets(bundle, dataset)
+    Legacy format has separate _train.npz, _val.npz, _test.npz files with keys:
+    'feats' (N,D), 'labels' (N,K), 'dt_indices' (N,K)
 
-    tr = extract_features_to_flat(embed_fn, tr_ds, horizons)
-    va = extract_features_to_flat(embed_fn, va_ds, horizons)
-    te = extract_features_to_flat(embed_fn, te_ds, horizons)
+    Returns (tr_data, va_data, te_data) or None if not found.
+    """
+    if model_name == 'moment':
+        return None  # MOMENT used .pt format, skip
+    ds_safe = dataset.replace('/', '_')
+    if model_name == 'timesfm':
+        feat_dir = TFM_FEAT_DIR
+    else:
+        feat_dir = MOIRAI_FEAT_DIR
 
-    np.savez(cache_path,
-             tr_feats=tr[0].numpy(),
-             tr_feats_flat=tr[1].numpy(),
-             tr_labels_surf=tr[2].numpy(),
-             tr_labels_flat=tr[3].numpy(),
-             tr_dt_flat=tr[4].numpy(),
-             va_feats=va[0].numpy(),
-             va_feats_flat=va[1].numpy(),
-             va_labels_surf=va[2].numpy(),
-             va_labels_flat=va[3].numpy(),
-             va_dt_flat=va[4].numpy(),
-             te_feats=te[0].numpy(),
-             te_labels_surf=te[2].numpy(),
-             horizons=np.array(horizons, dtype=np.int32),
-             n_channels=np.array([n_ch], dtype=np.int32))
-    print(f"  Saved features: tr={tr[0].shape}, va={va[0].shape}, te={te[0].shape}",
-          flush=True)
+    tr_path = feat_dir / f"{ds_safe}_train.npz"
+    va_path = feat_dir / f"{ds_safe}_val.npz"
+    te_path = feat_dir / f"{ds_safe}_test.npz"
 
-    te_wrap = (te[0], None, te[2], None, None)
-    return tr, va, te_wrap
+    if tr_path.exists() and va_path.exists() and te_path.exists():
+        tr = np.load(tr_path)
+        va = np.load(va_path)
+        te = np.load(te_path)
+        # Legacy format: feats (N,D), labels (N,K), dt_indices (N,K)
+        return (torch.from_numpy(tr['feats']),
+                torch.from_numpy(tr['labels']),
+                torch.from_numpy(tr['dt_indices']),
+                torch.from_numpy(va['feats']),
+                torch.from_numpy(va['labels']),
+                torch.from_numpy(va['dt_indices']),
+                torch.from_numpy(te['feats']),
+                torch.from_numpy(te['labels']),
+                torch.from_numpy(te['dt_indices']))
+    return None
+
+
+# (cache_features removed; feature caching is inlined in run_one)
 
 
 # ---------------------------------------------------------------------------
@@ -566,8 +535,31 @@ def load_existing_results(json_path: Path) -> list:
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        # MOMENT format: {'results': [...], 'model': ..., 'timestamp': ...}
-        return data.get('results', [])
+        # New format: {'results': [...], 'model': ..., 'timestamp': ...}
+        if 'results' in data:
+            return data['results']
+        # Old format (moirai/timesfm): {'FD001': {dataset, seeds, per_seed, mean}, ...}
+        # Convert to flat result list (one entry per dataset, seeds=[42,123,456])
+        converted = []
+        for key, val in data.items():
+            if key in ('model_info',) or not isinstance(val, dict):
+                continue
+            if 'dataset' not in val:
+                continue
+            # Old format has per_seed list; expand to per-seed records
+            ds = val['dataset']
+            per_seed = val.get('per_seed', [])
+            seeds = val.get('seeds', [42, 123, 456])
+            horizons = val.get('horizons', CMAPSS_HORIZONS)
+            for s, auroc in zip(seeds, per_seed):
+                converted.append({
+                    'dataset': ds,
+                    'seed': s,
+                    'label_fraction': 1.0,
+                    'mean_h_auroc': auroc,
+                    'horizons': horizons,
+                })
+        return converted
     return []
 
 
@@ -606,48 +598,97 @@ def run_one(model_name: str, dataset: str, seed: int,
     bundle_lf = dict(bundle)
     bundle_lf['ft_train'] = ft_train
 
-    # Get features (cache per dataset, not per label_fraction - re-extract train only)
-    # We cache the full-label features and subset at training time
+    # Get features (cache per dataset, not per label_fraction).
+    # Priority: 1) unified flat cache  2) legacy split-keyed cache (timesfm/moirai)  3) extract
     cache_path = get_feat_cache_path(model_name, dataset)
-    if not cache_path.exists():
-        print(f"  Extracting features for {dataset}...", flush=True)
+    legacy = check_legacy_split_cache(model_name, dataset)
+
+    if cache_path.exists():
+        print(f"  Loading unified cache: {cache_path}", flush=True)
+        d = np.load(cache_path, allow_pickle=True)
+        feat_tr_full = torch.from_numpy(d['tr_feats'])
+        feat_tr_flat_full = torch.from_numpy(d['tr_feats_flat'])
+        lbl_tr_surf_full = torch.from_numpy(d['tr_labels_surf'])
+        lbl_tr_flat_full = torch.from_numpy(d['tr_labels_flat'])
+        dt_tr_flat_full = torch.from_numpy(d['tr_dt_flat'])
+        feat_va_flat = torch.from_numpy(d['va_feats_flat'])
+        lbl_va_flat = torch.from_numpy(d['va_labels_flat'])
+        dt_va_flat = torch.from_numpy(d['va_dt_flat'])
+        feat_te = torch.from_numpy(d['te_feats'])
+        lbl_te_surf = torch.from_numpy(d['te_labels_surf'])
+        horizons = list(d['horizons'].tolist())
+        n_ch = int(d['n_channels'][0])
+
+    elif legacy is not None:
+        print(f"  Converting legacy split cache for {model_name}/{dataset}...", flush=True)
+        (feat_tr_full, lbl_tr_surf_l, dt_tr_surf,
+         feat_va_full, lbl_va_surf_l, dt_va_surf,
+         feat_te, lbl_te_surf, _dt_te) = legacy
+        # lbl_tr_surf_l is (N,K) float, dt_tr_surf is (N,K) long
+        lbl_tr_surf_full = lbl_tr_surf_l
+        K = lbl_tr_surf_full.shape[1]
+        N_tr = feat_tr_full.shape[0]
+        feat_tr_flat_full = feat_tr_full.unsqueeze(1).expand(-1, K, -1).reshape(N_tr * K, -1).contiguous()
+        lbl_tr_flat_full = lbl_tr_surf_full.reshape(-1).float()
+        dt_tr_flat_full = dt_tr_surf.reshape(-1).long()
+        N_va = feat_va_full.shape[0]
+        feat_va_flat = feat_va_full.unsqueeze(1).expand(-1, K, -1).reshape(N_va * K, -1).contiguous()
+        lbl_va_flat = lbl_va_surf_l.reshape(-1).float()
+        dt_va_flat = dt_va_surf.reshape(-1).long()
+        horizons = bundle['horizons']
+        n_ch = bundle['n_channels']
+        # Save unified cache for reuse
+        np.savez(cache_path,
+                 tr_feats=feat_tr_full.numpy(),
+                 tr_feats_flat=feat_tr_flat_full.numpy(),
+                 tr_labels_surf=lbl_tr_surf_full.numpy(),
+                 tr_labels_flat=lbl_tr_flat_full.numpy(),
+                 tr_dt_flat=dt_tr_flat_full.numpy(),
+                 va_feats=feat_va_full.numpy(),
+                 va_feats_flat=feat_va_flat.numpy(),
+                 va_labels_surf=lbl_va_surf_l.numpy(),
+                 va_labels_flat=lbl_va_flat.numpy(),
+                 va_dt_flat=dt_va_flat.numpy(),
+                 te_feats=feat_te.numpy(),
+                 te_labels_surf=lbl_te_surf.numpy(),
+                 horizons=np.array(horizons, dtype=np.int32),
+                 n_channels=np.array([n_ch], dtype=np.int32))
+        print(f"  Legacy cache converted and saved: {cache_path}", flush=True)
+
+    else:
+        print(f"  Extracting features for {model_name}/{dataset}...", flush=True)
         tr_ds, va_ds, te_ds, n_ch, horizons = bundle_to_datasets(bundle, dataset)
         tr = extract_features_to_flat(embed_fn, tr_ds, horizons)
         va = extract_features_to_flat(embed_fn, va_ds, horizons)
         te = extract_features_to_flat(embed_fn, te_ds, horizons)
+        feat_tr_full = tr[0]
+        feat_tr_flat_full = tr[1]
+        lbl_tr_surf_full = tr[2]
+        lbl_tr_flat_full = tr[3]
+        dt_tr_flat_full = tr[4]
+        feat_va_flat = va[1]
+        lbl_va_flat = va[3]
+        dt_va_flat = va[4]
+        feat_te = te[0]
+        lbl_te_surf = te[2]
         np.savez(cache_path,
-                 tr_feats=tr[0].numpy(),
-                 tr_feats_flat=tr[1].numpy(),
-                 tr_labels_surf=tr[2].numpy(),
-                 tr_labels_flat=tr[3].numpy(),
-                 tr_dt_flat=tr[4].numpy(),
+                 tr_feats=feat_tr_full.numpy(),
+                 tr_feats_flat=feat_tr_flat_full.numpy(),
+                 tr_labels_surf=lbl_tr_surf_full.numpy(),
+                 tr_labels_flat=lbl_tr_flat_full.numpy(),
+                 tr_dt_flat=dt_tr_flat_full.numpy(),
                  va_feats=va[0].numpy(),
-                 va_feats_flat=va[1].numpy(),
+                 va_feats_flat=feat_va_flat.numpy(),
                  va_labels_surf=va[2].numpy(),
-                 va_labels_flat=va[3].numpy(),
-                 va_dt_flat=va[4].numpy(),
-                 te_feats=te[0].numpy(),
-                 te_labels_surf=te[2].numpy(),
+                 va_labels_flat=lbl_va_flat.numpy(),
+                 va_dt_flat=dt_va_flat.numpy(),
+                 te_feats=feat_te.numpy(),
+                 te_labels_surf=lbl_te_surf.numpy(),
                  horizons=np.array(horizons, dtype=np.int32),
                  n_channels=np.array([n_ch], dtype=np.int32))
-        print(f"  Saved features: tr={tr[0].shape}, va={va[0].shape}, te={te[0].shape}",
+        print(f"  Saved features: tr={feat_tr_full.shape}, va={va[0].shape}, te={feat_te.shape}",
               flush=True)
 
-    d = np.load(cache_path, allow_pickle=True)
-    feat_tr_full = torch.from_numpy(d['tr_feats'])      # (N_tr, D)
-    feat_tr_flat_full = torch.from_numpy(d['tr_feats_flat'])  # (N_tr*K, D)
-    lbl_tr_surf_full = torch.from_numpy(d['tr_labels_surf'])  # (N_tr, K)
-    lbl_tr_flat_full = torch.from_numpy(d['tr_labels_flat'])  # (N_tr*K,)
-    dt_tr_flat_full = torch.from_numpy(d['tr_dt_flat'])  # (N_tr*K,)
-
-    feat_va_flat = torch.from_numpy(d['va_feats_flat'])
-    lbl_va_flat = torch.from_numpy(d['va_labels_flat'])
-    dt_va_flat = torch.from_numpy(d['va_dt_flat'])
-
-    feat_te = torch.from_numpy(d['te_feats'])
-    lbl_te_surf = torch.from_numpy(d['te_labels_surf'])
-    horizons = list(d['horizons'].tolist())
-    n_ch = int(d['n_channels'][0])
     K = len(horizons)
 
     # Apply label fraction: subsample flat training features
