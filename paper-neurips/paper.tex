@@ -688,14 +688,15 @@ PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predict
     \toprule
     Dataset           & Channels                 & Preprocessing      & Context        \\
     \midrule
-    C-MAPSS FD001-004 & 14 sensors (after drop)  & per-subset min-max & cycle-as-patch \\
-    SMAP / MSL        & 25 / 55 (after drop)     & z-score on train   & 100 steps      \\
+    C-MAPSS FD001-003 & 14 sensors (after drop)  & per-subset min-max & cycle-as-patch \\
+    SMAP              & 25 (after drop)          & z-score on train   & 100 steps      \\
     PSM               & 25 (after drop-constant) & pre-normalised     & 100 steps      \\
     SMD               & 38 per-machine           & pre-normalised     & 100 steps      \\
     MBA ECG           & 2 leads                  & z-score on train   & 100 steps      \\
     GECCO water       & 9 quality sensors        & z-score on train   & 512 steps      \\
     BATADAL SCADA     & 43 tank/pump/pressure    & z-score on train   & 512 steps      \\
-    PhysioNet 2012    & 36 clinical (ffill)      & patient-pool stats & 48 steps       \\
+    SKAB hydraulic    & 8 pressure/flow sensors  & z-score on train   & 100 steps      \\
+    ETTm1 power       & 7 load/temperature       & z-score on train   & 512 steps      \\
     \bottomrule
   \end{tabular}
 \end{center}
