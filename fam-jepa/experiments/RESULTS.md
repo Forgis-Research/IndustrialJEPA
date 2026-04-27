@@ -1704,3 +1704,16 @@ turns a sub-chance AUROC (0.59, baseline) into a clearly positive one
 (0.64, +0.053) and slashes seed variance 5x (±0.006 vs ±0.025).  This
 is a cheap architectural change that we should test on MSL / PSM /
 SMD / MBA next session.
+
+
+## v32: Table 4 final pass (2026-04-26)
+
+**Goal**: complete every \placeholder{--} in Table 4 with defensible numbers.
+
+### C-MAPSS MSE-probe RMSE (frozen v30 encoder)
+- FD001 lf100%: RMSE 18.59±0.32, NASA 659
+- FD001 lf10%: RMSE 21.57±0.18, NASA 1351
+- FD002 lf100%: RMSE 32.37±0.18, NASA 12603
+- FD002 lf10%: RMSE 32.36±0.59, NASA 12427
+- FD003 lf100%: RMSE 16.58±0.45, NASA 610
+- FD003 lf10%: RMSE 23.97±4.47, NASA 2321

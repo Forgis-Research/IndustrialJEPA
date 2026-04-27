@@ -1,0 +1,37 @@
+=== Table 4 cell replacements ===
+
+# C-MAPSS RMSE (FAM column)
+FD001 100%: $18.59${\scriptsize$\pm0.32$}
+FD001 10%:  $21.57${\scriptsize$\pm0.18$}
+FD002 100%: $32.37${\scriptsize$\pm0.18$}
+FD002 10%:  $32.36${\scriptsize$\pm0.59$}
+FD003 100%: $16.58${\scriptsize$\pm0.45$}
+FD003 10%:  $23.97${\scriptsize$\pm4.47$}
+
+# Legacy metric — FAM column
+SMAP 100%: PA-F1 $0.86${\scriptsize$\pm0.01$}
+SMAP 10%:  PA-F1 $0.89${\scriptsize$\pm0.08$}
+PSM 100%: PA-F1 $0.95${\scriptsize$\pm0.01$}
+PSM 10%:  PA-F1 $0.95${\scriptsize$\pm0.01$}
+SMD 100%: PA-F1 $0.87${\scriptsize$\pm0.01$}
+SMD 10%:  PA-F1 $0.73${\scriptsize$\pm0.10$}
+MBA 100%: AUROC $0.72${\scriptsize$\pm0.06$}
+MBA 10%:  AUROC $0.66${\scriptsize$\pm0.04$}
+SKAB 100%: F1 $0.73${\scriptsize$\pm0.01$}
+SKAB 10%:  F1 $0.76${\scriptsize$\pm0.03$}
+GECCO 100%: F1 $0.16${\scriptsize$\pm0.04$}
+GECCO 10%:  F1 $0.05${\scriptsize$\pm0.04$}
+BATADAL 100%: F1 $0.52${\scriptsize$\pm0.00$}
+BATADAL 10%:  F1 $0.52${\scriptsize$\pm0.00$}
+
+# Chronos-2 h-AUROC at 10% labels
+FD001: $0.66${\scriptsize$\pm0.01$}
+FD002: $0.71${\scriptsize$\pm0.00$}
+FD003: $0.71${\scriptsize$\pm0.00$}
+SMAP: $0.51${\scriptsize$\pm0.00$}
+PSM: $0.51${\scriptsize$\pm0.01$}
+SMD: ---
+MBA: $0.46${\scriptsize$\pm0.03$}
+GECCO: $0.78${\scriptsize$\pm0.01$}
+BATADAL: $0.53${\scriptsize$\pm0.03$}
+MSL: $0.41${\scriptsize$\pm0.03$}
