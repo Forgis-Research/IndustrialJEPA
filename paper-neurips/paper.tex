@@ -359,7 +359,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \paragraph{Legacy metrics.} C-MAPSS RMSE is derived from $\text{E}[\Delta t]$ of the stored probability surface; this CDF-based estimator differs from the point-prediction protocol of STAR~\citep{fan2024star}, so the gap reflects both protocol and SSL-vs-supervised differences. PA-F1 matches the cited baselines' protocol; see \cref{app:pa_f1} for inflation analysis.
 
-\paragraph{Other foundation models.} Three additional foundation models - MOMENT-1-large (341M), TimesFM-1.0-200M, and Moirai-1.1-R-base (91M) - are evaluated with identical 198K-param head and protocol (\cref{app:moment_full,app:extra_baselines}). Against MOMENT (10 feasible datasets; SMD excluded at ${\approx}10.6$\,h extraction): FAM wins on degradation datasets; MOMENT wins MBA (MIMIC-III pretraining overlap) and FD002 (multi-condition turbofan); full results in \cref{app:moment_full}. Against TimesFM across 11 datasets: FAM wins 4 of 11; TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM, FD002, SMD) where large-corpus pretraining of frequent signal patterns is advantageous; FAM wins decisively on physical-degradation datasets (FD001 $+0.256$, FD003 $+0.238$, ETTm1 $+0.280$, SMAP $+0.093$). On SMD the margin is small ($+0.012$, std $0.019$ vs FAM $0.004$) indicating near-tie on multi-machine server data. Against Moirai (9 feasible datasets; SMAP and SMD infeasible due to $B{\times}C$ univariate patching, $N{\times}C{\geq}4.8$M sequences): FAM wins 5 of 8 evaluated; Moirai wins FD002 ($+0.098$, multi-condition turbofan), SKAB ($+0.116$, periodic sensor patterns), and GECCO ($+0.003$, effectively tied with overlapping CIs); PSM pending. Full table in \cref{app:extra_baselines}.
+\paragraph{Other foundation models.} Three additional foundation models - MOMENT-1-large (341M), TimesFM-1.0-200M, and Moirai-1.1-R-base (91M) - are evaluated with identical 198K-param head and protocol (\cref{app:moment_full,app:extra_baselines}). Against MOMENT (10 feasible datasets; SMD excluded at ${\approx}10.6$\,h extraction): FAM wins on degradation datasets; MOMENT wins MBA (MIMIC-III pretraining overlap) and FD002 (multi-condition turbofan); full results in \cref{app:moment_full}. Against TimesFM across 11 datasets: FAM wins 4 of 11; TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM, FD002, SMD) where large-corpus pretraining of frequent signal patterns is advantageous; FAM wins decisively on physical-degradation datasets (FD001 $+0.256$, FD003 $+0.238$, ETTm1 $+0.280$, SMAP $+0.093$). On SMD the margin is small ($+0.012$, std $0.019$ vs FAM $0.004$) indicating near-tie on multi-machine server data. Against Moirai (9 feasible datasets; SMAP and SMD infeasible due to $B{\times}C$ univariate patching, $N{\times}C{\geq}4.8$M sequences): FAM wins 6 of 9; Moirai wins FD002 ($+0.098$, multi-condition turbofan), SKAB ($+0.116$, periodic sensor patterns), and GECCO ($+0.003$, effectively tied with overlapping CIs). Full table in \cref{app:extra_baselines}.
 
 % ============================================================
 % 6. ABLATIONS
@@ -374,7 +374,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \begin{table}[t]
   \centering
-  \caption{\textbf{Finetuning-mode ablation on C-MAPSS (5 seeds, F1w).} Pred-FT beats scratch by $+0.226$ at 5\% labels ($p{=}0.039$, $d{=}1.35$). Scratch collapses (RMSE $33$), confirming pretraining value.}
+  \caption{\textbf{Finetuning-mode ablation on C-MAPSS (5 seeds, F1w; legacy backbone).} Legacy backbone: pred-FT 790K params, E2E 2.37M. Canonical architecture uses 198K pred-FT, 2.16M E2E (see \cref{sec:method}). Pred-FT beats scratch by $+0.226$ at 5\% labels ($p{=}0.039$, $d{=}1.35$). Scratch collapses (RMSE $33$), confirming pretraining value.}
   \label{tab:finetune_ablation}
   \small
   \begin{tabular}{lcccc}
@@ -535,7 +535,7 @@ TimesFM-1.0-200M~\citep{das2024timesfm} (203.6M parameters) and Moirai-1.1-R-bas
 
 \begin{table}[h]
   \centering
-  \caption{\textbf{TimesFM-1.0-200M and Moirai-1.1-R-base vs.\ FAM (198K MLP head, 3 seeds, h-AUROC, lf=100\%).} All models use identical downstream head, labels, and evaluation. FAM wins on physical-degradation datasets (FD001, FD003, ETTm1, SMAP) by large margins; TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM, FD002, SMD). SMD TimesFM margin is small ($+0.012$, std 0.019 vs FAM 0.004). Moirai evaluated on 9 feasible datasets (SMAP and SMD infeasible: $B{\times}C$ extraction ${\geq}4.8$M sequences). Of 8 completed: FAM wins 5, Moirai wins FD002 ($+0.098$), SKAB ($+0.116$), and GECCO ($+0.003$, effectively tied, overlapping CIs); PSM pending. Moirai falls below chance on BATADAL ($0.360$). ``---'': extraction infeasible or pending.}
+  \caption{\textbf{TimesFM-1.0-200M and Moirai-1.1-R-base vs.\ FAM (198K MLP head, 3 seeds, h-AUROC, lf=100\%).} All models use identical downstream head, labels, and evaluation. FAM wins on physical-degradation datasets (FD001, FD003, ETTm1, SMAP) by large margins; TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM, FD002, SMD). SMD TimesFM margin is small ($+0.012$, std 0.019 vs FAM 0.004). Moirai evaluated on 9 feasible datasets (SMAP and SMD infeasible: $B{\times}C$ extraction ${\geq}4.8$M sequences). FAM wins 6 of 9; Moirai wins FD002 ($+0.098$), SKAB ($+0.116$), and GECCO ($+0.003$, effectively tied, overlapping CIs). Moirai falls below chance on BATADAL ($0.360$). ``---'': extraction infeasible (SMAP, SMD).}
   \label{tab:extra_baselines}
   \small
   \begin{tabular}{lccc}
@@ -546,7 +546,7 @@ TimesFM-1.0-200M~\citep{das2024timesfm} (203.6M parameters) and Moirai-1.1-R-bas
     FD002   & $0.602 \pm 0.008$          & $\mathbf{0.664 \pm 0.004}$ & $0.566 \pm 0.011$ \\
     FD003   & $0.615 \pm 0.014$          & $0.700 \pm 0.004$ & $\mathbf{0.853 \pm 0.004}$ \\
     SMAP    & $0.505 \pm 0.028$          & ---               & $\mathbf{0.598 \pm 0.036}$ \\
-    PSM     & $\mathbf{0.570 \pm 0.007}$ & ---               & $0.562 \pm 0.013$ \\
+    PSM     & $\mathbf{0.570 \pm 0.007}$                   & $0.533 \pm 0.006$    & $0.562 \pm 0.013$ \\
     MBA     & $\mathbf{0.759 \pm 0.006}$ & $0.571 \pm 0.017$ & $0.739 \pm 0.014$ \\
     GECCO   & $\mathbf{0.925 \pm 0.006}$ & $0.822 \pm 0.008$ & $0.819 \pm 0.064$ \\
     BATADAL & $\mathbf{0.653 \pm 0.005}$ & $0.360 \pm 0.010$ & $0.607 \pm 0.033$ \\
@@ -559,7 +559,7 @@ TimesFM-1.0-200M~\citep{das2024timesfm} (203.6M parameters) and Moirai-1.1-R-bas
   \begin{minipage}{\linewidth}
     \scriptsize
     Per-seed TimesFM (lf=100\%): FD001 (0.5279, 0.5291, 0.5342), FD002 (0.5921, 0.6013, 0.6111), FD003 (0.5973, 0.6165, 0.6324), SMAP (0.4834, 0.4865, 0.5441), PSM (0.5637, 0.5659, 0.5791), MBA (0.7535, 0.7558, 0.7682), GECCO (0.9165, 0.9268, 0.9320), BATADAL (0.6455, 0.6554, 0.6568), SKAB (0.7338, 0.7410, 0.7586), ETTm1 (0.5797, 0.5881, 0.5992), SMD (0.6545, 0.6503, 0.6916).
-    Per-seed Moirai (lf=100\%): FD001 (0.6021, 0.6054, 0.6105), FD002 (0.6615, 0.6617, 0.6696), FD003 (0.6962, 0.6975, 0.7060), MBA (0.5468, 0.5797, 0.5858), GECCO (0.8110, 0.8258, 0.8298), BATADAL (0.3477, 0.3591, 0.3725), SKAB (0.8225, 0.8226, 0.8252), ETTm1 (0.5931, 0.5973, 0.5997). PSM pending.
+    Per-seed Moirai (lf=100\%): FD001 (0.6021, 0.6054, 0.6105), FD002 (0.6615, 0.6617, 0.6696), FD003 (0.6962, 0.6975, 0.7060), MBA (0.5468, 0.5797, 0.5858), GECCO (0.8110, 0.8258, 0.8298), BATADAL (0.3477, 0.3591, 0.3725), SKAB (0.8225, 0.8226, 0.8252), ETTm1 (0.5931, 0.5973, 0.5997), PSM (0.5280, 0.5303, 0.5412).
     TimesFM context: 512 time steps per channel (univariate), patch size 32; Moirai: 512 time steps, patch size 32, max patch size 128.
     BATADAL: Moirai's univariate patching discards multivariate cross-sensor correlations critical for this dataset ($0.360$, below chance).
     FD002 TimesFM win: 6 operating conditions; large-corpus pretraining captures cross-condition variation. GECCO TimesFM win: univariate time-of-day patterns well-covered by general pretraining corpus.

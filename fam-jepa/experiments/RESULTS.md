@@ -275,7 +275,7 @@ For FAM vs TimesFM at lf=0.1: FAM still wins on FD001/FD003/ETTm1 by large margi
 
 Results in: fam-jepa/experiments/v31/results/timesfm_baseline.json
 
-#### Phase 7c - Moirai-1.1-R-base extension (TERMINATED 2026-04-27 01:55 UTC; RESTART running PID 142312)
+#### Phase 7c - Moirai-1.1-R-base extension (COMPLETE 2026-04-27 ~03:30 UTC)
 
 Extension attempted: all 11 datasets. Process killed after determining SMAP infeasible.
 RESTART launched for feasible remaining datasets: SKAB ETTm1 GECCO PSM.
@@ -284,7 +284,7 @@ RESTART launched for feasible remaining datasets: SKAB ETTm1 GECCO PSM.
 (193K windows × 25 channels = 75,400 forward calls at ~0.93 sec/call). Similarly: SMD (53.7h).
 SMAP/SMD: INFEASIBLE. PSM/GECCO/SKAB/ETTm1: feasible (0.4h - 4.0h each).
 
-**Moirai results (8 datasets done, lf=1.0; PSM pending)**:
+**Moirai results (9 datasets, lf=1.0; COMPLETE)**:
 | Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
 |---------|----------------|-------------|--------|
 | FD001 | 0.606 +/- 0.004 (3s) | 0.786 +/- 0.033 | FAM (+0.180) |
@@ -295,23 +295,26 @@ SMAP/SMD: INFEASIBLE. PSM/GECCO/SKAB/ETTm1: feasible (0.4h - 4.0h each).
 | BATADAL | 0.360 +/- 0.010 (3s) | 0.607 +/- 0.033 | FAM (+0.247) |
 | SKAB | **0.823 +/- 0.001 (3s)** | 0.707 +/- 0.017 | **Moirai (+0.116)** |
 | ETTm1 | 0.597 +/- 0.003 (3s) | 0.869 +/- 0.002 | FAM (+0.272) |
-| PSM | PENDING | 0.562 +/- 0.013 | ? |
+| PSM | 0.533 +/- 0.006 (3s) | 0.562 +/- 0.013 | FAM (+0.029) |
 
-FAM wins 5/8. Moirai wins FD002 (+0.098) and SKAB (+0.116). GECCO tied (+0.003, both within FAM std=0.064).
+FAM wins 6/9. Moirai wins FD002 (+0.098), SKAB (+0.116), GECCO (effectively tied, +0.003 within FAM CI).
 BATADAL: Moirai 0.360 BELOW CHANCE - univariate patching discards cross-sensor correlations.
 ETTm1: Moirai 0.597 vs FAM 0.869 - large physical-degradation signal needs multivariate encoding.
-SMAP/SMD: INFEASIBLE. PSM: pending (PID 142312 running). GECCO seeds: 0.8110, 0.8258, 0.8298.
+PSM: FAM wins (+0.029). SMAP/SMD: INFEASIBLE.
 
 GECCO note: Moirai 0.822 vs FAM 0.819 (std=0.064) - completely within FAM's confidence interval.
 TimesFM won GECCO by +0.106, but Moirai only +0.003 - Moirai's univariate patching less effective than TimesFM for time-of-day water quality patterns.
+PSM seeds: 0.5280, 0.5303, 0.5412 (mean=0.533±0.006). FAM PSM=0.562. TimesFM PSM=0.570 (winner among the 3).
 
 Moirai lf=0.1 results (also recorded in JSON):
 - FD001 lf=0.1: 0.588 +/- 0.008 (seeds: 0.5946, 0.5764, 0.5925)
 - FD002 lf=0.1: 0.662 +/- 0.018 (seeds: 0.6372, 0.6808, 0.6686)
 - FD003 lf=0.1: 0.620 +/- 0.017 (seeds: 0.6094, 0.6066, 0.6434)
+- ETTm1 lf=0.1: 0.591 +/- 0.004 (seeds from restart run)
+- GECCO lf=0.1: recorded in JSON
 - SKAB lf=0.1: 0.821 +/- 0.004 (seeds: 0.8262, 0.8219, 0.8150)
 
-Paper updated: GECCO added 02:51 UTC. Moirai 0.822 vs FAM 0.819 (tied); GECCO row updated. Per-seed footnote updated. Caption/Section 5.1 updated (8 evaluated, PSM pending).
+Paper updated: PSM complete ~03:30 UTC. FAM wins PSM (+0.029). Section 5.1 and caption now say "FAM wins 6 of 9". All "PSM pending" removed. Per-seed footnote updated with PSM seeds.
 
 #### Phase 7d - MOMENT-1-large extension (RUNNING as of 2026-04-27 00:47 UTC)
 
