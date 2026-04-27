@@ -1,0 +1,63 @@
+{
+  "note": "h-AUROC mean +/- std (n=3 seeds). Winner per row bolded in .md version. Baseline is v33 matched-protocol re-pretrain. v30 reference uses per-dataset tuning (different protocol, not directly comparable). BOLD = best among {baseline, ch-drop, ST-JEPA}.",
+  "comparison_table": [
+    {
+      "dataset": "PSM",
+      "v30_ref": 0.562,
+      "baseline_v33_mean": 0.5545,
+      "baseline_v33_std": 0.0290,
+      "baseline_v33_ci95": [0.4825, 0.6265],
+      "ch_drop_best_mean": 0.5678,
+      "ch_drop_best_std": 0.0037,
+      "ch_drop_best_ci95": [0.5586, 0.5770],
+      "ch_drop_best_rate": 0.5,
+      "stjepa_best_mean": 0.4787,
+      "stjepa_best_std": 0.0117,
+      "stjepa_best_ci95": [0.4496, 0.5077],
+      "stjepa_best_mask_ratio": 0.6,
+      "row_winner": "ch_drop",
+      "note": "ch-drop +0.013 vs baseline, p=0.465 (not significant). ST-JEPA -0.076, p=0.034 (significant regression)."
+    },
+    {
+      "dataset": "SMAP",
+      "v30_ref": 0.598,
+      "baseline_v33_mean": 0.5324,
+      "baseline_v33_std": 0.0966,
+      "baseline_v33_ci95": [0.2924, 0.7723],
+      "ch_drop_best_mean": 0.5767,
+      "ch_drop_best_std": 0.0359,
+      "ch_drop_best_ci95": [0.4875, 0.6660],
+      "ch_drop_best_rate": 0.0,
+      "stjepa_best_mean": 0.4892,
+      "stjepa_best_std": 0.0146,
+      "stjepa_best_ci95": [0.4530, 0.5254],
+      "stjepa_best_mask_ratio": 0.0,
+      "row_winner": "ch_drop",
+      "note": "SMAP best ch-drop rate is 0.0 -- no dropout. Apparent +0.044 is re-run luck under high baseline variance (std=0.097). ST-JEPA -0.043, p=0.520 (not significant but collapses to near-chance). Both below v30 reference."
+    },
+    {
+      "dataset": "FD001",
+      "v30_ref": 0.786,
+      "baseline_v33_mean": 0.7208,
+      "baseline_v33_std": 0.0560,
+      "baseline_v33_ci95": [0.5818, 0.8598],
+      "ch_drop_best_mean": 0.7322,
+      "ch_drop_best_std": 0.0165,
+      "ch_drop_best_ci95": [0.6913, 0.7732],
+      "ch_drop_best_rate": 0.1,
+      "stjepa_best_mean": 0.4940,
+      "stjepa_best_std": 0.0324,
+      "stjepa_best_ci95": [0.4135, 0.5746],
+      "stjepa_best_mask_ratio": 0.0,
+      "row_winner": "ch_drop",
+      "note": "ch-drop +0.011 vs baseline, p=0.803 (not significant). ST-JEPA -0.227, p=0.020 (significant regression). Baseline already 0.065 below v30 reference (protocol mismatch). ST-JEPA absolute 0.494 is near chance for FD001."
+    }
+  ],
+  "summary": {
+    "channel_dropout_wins": 3,
+    "channel_dropout_significant_wins": 0,
+    "stjepa_improvements": 0,
+    "stjepa_significant_regressions": 2,
+    "overall_verdict": "No significant improvement from either channel-dropout or ST-JEPA. ST-JEPA collapses on all three datasets (p<0.05 regression on PSM and FD001). Channel-dropout effects are within seed noise on all datasets."
+  }
+}

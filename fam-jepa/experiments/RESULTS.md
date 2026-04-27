@@ -345,6 +345,38 @@ New dataset results will be appended as they complete:
 
 ---
 
+## v33 - Cross-channel attention ablation: ST-JEPA collapse confirmed (2026-04-27)
+
+**Finding**: Per-channel tokenization with factored spatiotemporal attention (ST-JEPA) collapses on all three test datasets. Channel dropout is within seed noise. No significant improvement from any cross-channel architecture change. This confirms the v14/v22 failure pattern: the channel-fusion design is load-bearing for stable JEPA pretraining.
+
+### Matched-protocol baseline (v33, h-AUROC, 3 seeds)
+
+| Dataset | Baseline v33 | v30 Ref | Delta |
+|---------|-------------|---------|-------|
+| PSM     | 0.5545 +/- 0.0290 | 0.562 | -0.007 (OK) |
+| SMAP    | 0.5324 +/- 0.0966 | 0.598 | -0.066 (protocol mismatch) |
+| FD001   | 0.7208 +/- 0.0560 | 0.786 | -0.065 (protocol mismatch) |
+
+Note: SMAP/FD001 baselines are ~0.065 below v30 due to matched-protocol differences (max_context=512, n_cuts=40 vs per-dataset v30 tuning).
+
+### Ablation results (h-AUROC, 3 seeds)
+
+| Dataset | Baseline v33 | Ch-Drop (best rate) | ST-JEPA (best mask) |
+|---------|-------------|---------------------|---------------------|
+| PSM     | 0.5545 +/- 0.0290 | **0.5678 +/- 0.0037** (rate=0.5) | 0.4787 +/- 0.0117 (mask=0.6) |
+| SMAP    | 0.5324 +/- 0.0966 | **0.5767 +/- 0.0359** (rate=0.0) | 0.4892 +/- 0.0146 (mask=0.0) |
+| FD001   | 0.7208 +/- 0.0560 | **0.7322 +/- 0.0165** (rate=0.1) | 0.4940 +/- 0.0324 (mask=0.0) |
+
+Ch-drop wins numerically but no win is statistically significant (all p > 0.45). SMAP best rate=0.0 (no dropout). ST-JEPA significantly hurts PSM (p=0.034, d=-2.62) and FD001 (p=0.020, d=-4.05).
+
+### Key negative finding
+
+ST-JEPA hit the COLLAPSED guard (h_std < 0.01) within epoch 1 on all three datasets at all mask ratios. Absolute values: h_std ~ 0.003, val_loss ~ 0.005. This is the same collapse mode as v14 (sensor-ID shortcuts) and v22 (per-channel tokenization failure), now demonstrated even with the v14 safeguard (no learnable channel embeddings) active. The shared projection Linear(patch_size, d_model) is insufficient to prevent per-channel mean encoding. Channel-fusion patch embedding is architecturally necessary for stable JEPA pretraining.
+
+Results in: fam-jepa/experiments/v33/results/
+
+---
+
 ## v30 — dense K=150 head + fair ablation + uniform 13-dataset benchmark (2026-04-25 / 26)
 
 V30 locks the canonical FAM head (dense discrete CDF, K=150 horizons),
