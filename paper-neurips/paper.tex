@@ -436,10 +436,10 @@ Foundation models forecast future values; practitioners care about events. FAM b
 
 \input{theory_appendix}
 
-\section{Horizon Interval Sensitivity}
+\section{Horizon Interval Design}
 \label{app:horizon_sensitivity}
 
-This paper fixes $K = 16$ horizon intervals at patch resolution, chosen to match the prediction horizons used in MTS-JEPA (16-token multivariate horizons) and the anomaly detection literature. All per-horizon F1 numbers in \cref{tab:benchmark,tab:finetune_ablation,tab:chronos_full} and the appendix ablation tables are at $K = 16$. A full horizon-interval sweep (varying $K \in \{4, 8, 16, 32\}$) is deferred to a future version; the robustness of the pred-FT recipe to this choice is indirectly supported by the AUROCw $\geq 0.98$ numbers at all budgets in \cref{tab:finetune_ablation}, which are computed over the full 16-interval set and would be stable under coarser or finer quantisation of the same horizon.
+FAM uses $K = 150$ densely-sampled horizon intervals $\Delta t \in \{1, 2, \ldots, 150\}$ during both pretraining and downstream evaluation. This design choice ensures the probability surface $p(t, \Delta t)$ captures fine-grained temporal structure. Foundation model baselines (Chr-2, MOMENT, TimesFM, Moirai) use $K = 7$ horizons $[1, 5, 10, 20, 50, 100, 150]$ for C-MAPSS and $K = 8$ for anomaly datasets to avoid sequence-length bottlenecks in the frozen backbone. The h-AUROC evaluation uses whichever horizons are available, skipping degenerate horizons (event prevalence $< 0.001$ or $> 0.999$). A full horizon-count sweep is deferred to a future version.
 
 \section{Architectural Decision Log}
 \label{app:decisions}
