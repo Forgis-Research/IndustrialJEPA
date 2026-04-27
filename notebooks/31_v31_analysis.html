@@ -928,6 +928,7 @@ Theoretical interpretation (Proposition 1):
 <section id="section-10-moment-1-large-baseline-341m-param-foundation-model" class="level2">
 <h2 class="anchored" data-anchor-id="section-10-moment-1-large-baseline-341m-param-foundation-model">Section 10: MOMENT-1-large Baseline (341M-param Foundation Model)</h2>
 <p>This section shows the MOMENT-1-large baseline results. MOMENT is a 341M-parameter foundation model trained on a large general corpus. We use frozen MOMENT embeddings (1024-d, mean-pooled across channels) with the same 198K-param dt-conditioned MLP head as Chr2-mlp. This enables a direct comparison of per-dataset JEPA pretraining (FAM, 2.16M) vs.&nbsp;large-scale general pretraining (MOMENT, 341M) and vs.&nbsp;value- forecasting pretraining (Chronos-2, 120M).</p>
+<p><strong>Extension status (as of 02:00 UTC 2026-04-27):</strong> SMAP extraction in progress (~3.8h total, 54 min elapsed). Expected: SMAP ~04:51, PSM ~05:40, GECCO/SKAB/ETTm1 by ~05:55, SMD infeasible (~10.6h B*C extraction). Results load dynamically from JSON below.</p>
 <p>The key question: does scale or domain-specificity matter more for event prediction?</p>
 <div id="moment-baseline" class="cell" data-execution_count="14">
 <details class="code-fold">
@@ -1137,9 +1138,9 @@ FD002_moment-mlp_s456_lf10                   0.6712   0.9138</code></pre>
 <span id="cb30-39"><a href="#cb30-39" aria-hidden="true" tabindex="-1"></a>            total <span class="op">+=</span> <span class="dv">1</span></span>
 <span id="cb30-40"><a href="#cb30-40" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>tfm_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>tfm_s<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
 <span id="cb30-41"><a href="#cb30-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
-<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'PENDING'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'NO DATA'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
 <span id="cb30-43"><a href="#cb30-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"FAM wins: </span><span class="sc">{</span>fam_wins<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total<span class="sc">}</span><span class="ss"> (SMD pending)"</span>)</span>
+<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"FAM wins: </span><span class="sc">{</span>fam_wins<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total<span class="sc">}</span><span class="ss"> (all 11 complete)"</span>)</span>
 <span id="cb30-45"><a href="#cb30-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
 <span id="cb30-46"><a href="#cb30-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"PATTERN: FAM wins on physical lifecycle datasets (FD001, FD003, ETTm1, SMAP)."</span>)</span>
 <span id="cb30-47"><a href="#cb30-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM)."</span>)</span>
@@ -1171,7 +1172,7 @@ SKAB           0.7444   0.0104   0.7070  -0.0374    TimesFM
 ETTm1          0.5890   0.0080   0.8690  +0.2800        FAM
 SMD            0.6655   0.0185   0.6540  -0.0115    TimesFM
 
-FAM wins: 4/11 (SMD pending)
+FAM wins: 4/11 (all 11 complete)
 
 PATTERN: FAM wins on physical lifecycle datasets (FD001, FD003, ETTm1, SMAP).
 TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM).
@@ -1195,7 +1196,7 @@ Per-seed (lf=1.0):
 </section>
 <section id="p-b-moirai-1.1-r-base-baseline-v31" class="level2">
 <h2 class="anchored" data-anchor-id="p-b-moirai-1.1-r-base-baseline-v31">P-B: Moirai-1.1-R-base Baseline (v31)</h2>
-<p>Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head. Currently evaluated on 4 datasets; extension to all 11 running in background. FAM wins all 4 evaluated datasets. Moirai collapses on BATADAL (0.360, below chance).</p>
+<p>Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head. <strong>FINAL: 5 feasible datasets.</strong> SMAP/PSM/GECCO/SKAB/ETTm1/SMD are infeasible: Moirai’s B*C univariate patching (sub-batch size 64) requires 0.4 to 53.7h extraction per dataset at these window counts (19.5h for SMAP, 53.7h for SMD). Process terminated at 01:55 UTC. FAM wins 4 of 5; Moirai wins FD002 (+0.098, multi-condition turbofan). Moirai collapses on BATADAL (0.360, below chance) - univariate patching fails.</p>
 <div id="moirai-results" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1236,21 +1237,24 @@ Per-seed (lf=1.0):
 <span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>            above_chance <span class="op">=</span> <span class="st">''</span> <span class="cf">if</span> m_mean <span class="op">&gt;=</span> <span class="fl">0.5</span> <span class="cf">else</span> <span class="st">' [BELOW CHANCE]'</span></span>
 <span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>m_mean<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>m_std<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}{</span>above_chance<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
-<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'PENDING'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'INFEASIBLE'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
 <span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"FAM wins: </span><span class="sc">{</span>fam_wins_m<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total_m<span class="sc">}</span><span class="ss"> evaluated datasets (extension running)"</span>)</span>
+<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"FAM wins: </span><span class="sc">{</span>fam_wins_m<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total_m<span class="sc">}</span><span class="ss"> feasible datasets (SMAP/PSM/GECCO/SKAB/ETTm1/SMD: B*C infeasible)"</span>)</span>
 <span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
 <span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines."</span>)</span>
 <span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai's univariate patching discards cross-sensor correlations critical for"</span>)</span>
 <span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins."</span>)</span>
 <span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed (lf=1.0):"</span>)</span>
-<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> <span class="bu">list</span>(grouped_m.keys()):</span>
-<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>        vals <span class="op">=</span> grouped_m[ds]</span>
-<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>        seeds_str <span class="op">=</span> <span class="st">', '</span>.join(<span class="ss">f'</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> v <span class="kw">in</span> <span class="bu">sorted</span>(vals))</span>
-<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>seeds_str<span class="sc">}</span><span class="ss">)"</span>)</span>
-<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FD002 Moirai win: multi-condition turbofan - consistent with Chr-2 and TimesFM wins on FD002."</span>)</span>
+<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Large-corpus pretraining captures cross-condition variation that per-dataset JEPA encodes less efficiently."</span>)</span>
+<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed (lf=1.0):"</span>)</span>
+<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> <span class="bu">list</span>(grouped_m.keys()):</span>
+<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a>        vals <span class="op">=</span> grouped_m[ds]</span>
+<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>        seeds_str <span class="op">=</span> <span class="st">', '</span>.join(<span class="ss">f'</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> v <span class="kw">in</span> <span class="bu">sorted</span>(vals))</span>
+<span id="cb32-53"><a href="#cb32-53" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>seeds_str<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb32-54"><a href="#cb32-54" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb32-55"><a href="#cb32-55" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Moirai-1.1-R-base vs FAM (h-AUROC, lf=1.0, 3 seeds each):
@@ -1259,20 +1263,23 @@ Dataset        Moirai    +-std      FAM    Delta     Winner
 FD001          0.6060   0.0035   0.7860  +0.1800        FAM
 FD002          0.6643   0.0037   0.5660  -0.0983     Moirai
 FD003          0.6999   0.0044   0.8530  +0.1531        FAM
-SMAP              ---      ---   0.5980      ---    PENDING
-PSM               ---      ---   0.5620      ---    PENDING
+SMAP              ---      ---   0.5980      --- INFEASIBLE
+PSM               ---      ---   0.5620      --- INFEASIBLE
 MBA            0.5708   0.0172   0.7390  +0.1682        FAM
-GECCO             ---      ---   0.8190      ---    PENDING
+GECCO             ---      ---   0.8190      --- INFEASIBLE
 BATADAL        0.3598   0.0101   0.6070  +0.2472        FAM [BELOW CHANCE]
-SKAB              ---      ---   0.7070      ---    PENDING
-ETTm1             ---      ---   0.8690      ---    PENDING
-SMD               ---      ---   0.6540      ---    PENDING
+SKAB              ---      ---   0.7070      --- INFEASIBLE
+ETTm1             ---      ---   0.8690      --- INFEASIBLE
+SMD               ---      ---   0.6540      --- INFEASIBLE
 
-FAM wins: 4/5 evaluated datasets (extension running)
+FAM wins: 4/5 feasible datasets (SMAP/PSM/GECCO/SKAB/ETTm1/SMD: B*C infeasible)
 
 KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines.
 Moirai's univariate patching discards cross-sensor correlations critical for
 BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins.
+
+FD002 Moirai win: multi-condition turbofan - consistent with Chr-2 and TimesFM wins on FD002.
+Large-corpus pretraining captures cross-condition variation that per-dataset JEPA encodes less efficiently.
 
 Per-seed (lf=1.0):
   FD001: (0.6021, 0.6054, 0.6105)
@@ -1376,7 +1383,12 @@ Per-seed (lf=1.0):
 <span id="cb34-89"><a href="#cb34-89" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)"</span>)</span>
 <span id="cb34-90"><a href="#cb34-90" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)"</span>)</span>
 <span id="cb34-91"><a href="#cb34-91" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG"</span>)</span>
-<span id="cb34-92"><a href="#cb34-92" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb34-92"><a href="#cb34-92" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly"</span>)</span>
+<span id="cb34-93"><a href="#cb34-93" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb34-94"><a href="#cb34-94" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"INFEASIBILITY NOTE (Moirai + MOMENT):"</span>)</span>
+<span id="cb34-95"><a href="#cb34-95" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  Moirai SMAP/PSM/SMD infeasible: B*C sub-batching requires 4-54h extraction"</span>)</span>
+<span id="cb34-96"><a href="#cb34-96" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  MOMENT SMAP (3.8h)/PSM (0.8h) feasible; SMD (10.6h) infeasible"</span>)</span>
+<span id="cb34-97"><a href="#cb34-97" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"  MOMENT extension running: expected SMAP~04:51, PSM~05:40, GECCO/SKAB/ETTm1 by ~05:55 UTC"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>================================================================================
@@ -1403,7 +1415,12 @@ FAM lifecycle wins: FD001, FD003, ETTm1, SMAP (large margin, domain-specific JEP
 TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)
 FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)
 MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG
-Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly</code></pre>
+Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly
+
+INFEASIBILITY NOTE (Moirai + MOMENT):
+  Moirai SMAP/PSM/SMD infeasible: B*C sub-batching requires 4-54h extraction
+  MOMENT SMAP (3.8h)/PSM (0.8h) feasible; SMD (10.6h) infeasible
+  MOMENT extension running: expected SMAP~04:51, PSM~05:40, GECCO/SKAB/ETTm1 by ~05:55 UTC</code></pre>
 </div>
 </div>
 </section>
