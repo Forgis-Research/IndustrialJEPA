@@ -284,7 +284,7 @@ RESTART launched for feasible remaining datasets: SKAB ETTm1 GECCO PSM.
 (193K windows × 25 channels = 75,400 forward calls at ~0.93 sec/call). Similarly: SMD (53.7h).
 SMAP/SMD: INFEASIBLE. PSM/GECCO/SKAB/ETTm1: feasible (0.4h - 4.0h each).
 
-**Moirai results (6 datasets done, lf=1.0)**:
+**Moirai results (7 datasets done, lf=1.0)**:
 | Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
 |---------|----------------|-------------|--------|
 | FD001 | 0.606 +/- 0.004 (3s) | 0.786 +/- 0.033 | FAM (+0.180) |
@@ -293,10 +293,12 @@ SMAP/SMD: INFEASIBLE. PSM/GECCO/SKAB/ETTm1: feasible (0.4h - 4.0h each).
 | MBA | 0.571 +/- 0.017 (3s) | 0.739 +/- 0.014 | FAM (+0.168) |
 | BATADAL | 0.360 +/- 0.010 (3s) | 0.607 +/- 0.033 | FAM (+0.247) |
 | SKAB | **0.823 +/- 0.001 (3s)** | 0.707 +/- 0.017 | **Moirai (+0.116)** |
+| ETTm1 | 0.597 +/- 0.003 (3s) | 0.869 +/- 0.002 | FAM (+0.272) |
 
-FAM wins 4/6. Moirai wins FD002 (+0.098) and SKAB (+0.116).
+FAM wins 5/7. Moirai wins FD002 (+0.098) and SKAB (+0.116).
 BATADAL: Moirai 0.360 BELOW CHANCE - univariate patching discards cross-sensor correlations.
-SMAP/SMD: INFEASIBLE. ETTm1/GECCO/PSM: pending (PID 142312 running).
+ETTm1: Moirai 0.597 vs FAM 0.869 - large physical-degradation signal needs multivariate encoding.
+SMAP/SMD: INFEASIBLE. GECCO/PSM: pending (PID 142312 running).
 
 Moirai lf=0.1 results (also recorded in JSON):
 - FD001 lf=0.1: 0.588 +/- 0.008 (seeds: 0.5946, 0.5764, 0.5925)
@@ -304,7 +306,7 @@ Moirai lf=0.1 results (also recorded in JSON):
 - FD003 lf=0.1: 0.620 +/- 0.017 (seeds: 0.6094, 0.6066, 0.6434)
 - SKAB lf=0.1: 0.821 +/- 0.004 (seeds: 0.8262, 0.8219, 0.8150)
 
-Paper updated: caption and Section 5.1 updated to reflect 6 datasets (SKAB added 02:11 UTC).
+Paper updated: caption and Section 5.1 updated to reflect 7 datasets (ETTm1 added 02:17 UTC, FAM wins).
 
 #### Phase 7d - MOMENT-1-large extension (RUNNING as of 2026-04-27 00:47 UTC)
 
