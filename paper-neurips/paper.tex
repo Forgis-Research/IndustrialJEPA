@@ -310,24 +310,24 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     \multirow{2}{*}{SMAP}
     & \multirow{2}{*}{Spacecraft}
     & 100\% & $\mathbf{.60}${\scriptsize$\pm.04$} & $.53^{\S}$   & PA-F1 $\mathbf{.79}$  & $.34^{b}$ \\
-    &            & 10\%  & $.58${\scriptsize$\pm.05$}          & ---          & \placeholder{--}      & \\
+    &            & 10\%  & $.58${\scriptsize$\pm.05$}          & ---          & PA-F1 $.89$           & \\
     \multirow{2}{*}{PSM}
     & \multirow{2}{*}{Server}
     & 100\% & $\mathbf{.56}${\scriptsize$\pm.01$} & $.51${\scriptsize$\pm.01$} & PA-F1 $\mathbf{.81}$ & $.62^{b}$ \\
-    &            & 10\%  & $.52${\scriptsize$\pm.01$}          & ---          & \placeholder{--}      & \\
+    &            & 10\%  & $.52${\scriptsize$\pm.01$}          & ---          & PA-F1 $.95$           & \\
     \multirow{2}{*}{SMD}
     & \multirow{2}{*}{Server}
     & 100\% & $\mathbf{.65}${\scriptsize$\pm.00$} & ---          & PA-F1 $.25$           & $\mathbf{.93}^{c}$ \\
-    &            & 10\%  & $.53${\scriptsize$\pm.05$}$^{\dagger}$ & ---      & \placeholder{--}      & \\
+    &            & 10\%  & $.53${\scriptsize$\pm.05$}$^{\dagger}$ & ---      & PA-F1 $.73$           & \\
     \multirow{2}{*}{MBA}
     & \multirow{2}{*}{Cardiac}
     & 100\% & $\mathbf{.74}${\scriptsize$\pm.01$} & $.45${\scriptsize$\pm.02$} & AUROC $.70$ & --- \\
-    &            & 10\%  & $.55${\scriptsize$\pm.07$}          & ---          & \placeholder{--}      & \\
+    &            & 10\%  & $.55${\scriptsize$\pm.07$}          & ---          & AUROC $.65$           & \\
     \midrule
     \multirow{2}{*}{SKAB}
     & \multirow{2}{*}{Hydraulic}
     & 100\% & $\mathbf{.71}${\scriptsize$\pm.02$} & ---          & F1 $.65$              & --- \\
-    &            & 10\%  & $.73${\scriptsize$\pm.03$}          & ---          & \placeholder{--}      & \\
+    &            & 10\%  & $.73${\scriptsize$\pm.03$}          & ---          & F1 $.69$              & \\
     \multirow{2}{*}{ETTm1}
     & \multirow{2}{*}{Power}
     & 100\% & $\mathbf{.87}${\scriptsize$\pm.00$} & ---          & ---                   & --- \\
@@ -335,11 +335,11 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     \multirow{2}{*}{GECCO}
     & \multirow{2}{*}{Water}
     & 100\% & $.82${\scriptsize$\pm.06$} & $\mathbf{.83}${\scriptsize$\pm.00$} & F1 $.16$            & F1 $\mathbf{.71}^{d}$ \\
-    &            & 10\%  & $.35${\scriptsize$\pm.12$}$^{\ddagger}$ & ---      & \placeholder{--}      & \\
+    &            & 10\%  & $.35${\scriptsize$\pm.12$}$^{\ddagger}$ & ---      & ---                   & \\
     \multirow{2}{*}{BATADAL}
     & \multirow{2}{*}{ICS}
     & 100\% & $\mathbf{.61}${\scriptsize$\pm.03$} & $.53${\scriptsize$\pm.03$} & F1 $.24$            & AUC $\mathbf{.97}^{d}$ \\
-    &            & 10\%  & $.64${\scriptsize$\pm.06$}          & ---          & \placeholder{--}      & \\
+    &            & 10\%  & $.64${\scriptsize$\pm.06$}          & ---          & F1 $.52$              & \\
     \midrule
     \multicolumn{3}{@{}l}{\textit{FAM vs Chr-2 wins (100\%)}} & \multicolumn{2}{c}{\textbf{6\,/\,2 (FD002, GECCO)}} & & \\
     \bottomrule
@@ -347,7 +347,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
   \vspace{2pt}
   \begin{minipage}{\linewidth}
     \scriptsize
-    $^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE: MSE probe on frozen encoder (3s, FD001). Gap to STAR reflects SSL-vs-supervised + protocol differences (\cref{sec:experiments}). $^{b}$\citet{mtsjepa2026}. $^{c}$\citet{xu2022anomalytransformer}. $^{d}$\citet{batadal2018}. $^{\S}$SMAP Chr-2: 1 seed. $^{\dagger}$SMD lf10: 3/28 entities. $^{\ddagger}$GECCO lf10: zero positives (excluded). \placeholder{--}\,= pending. Full probe comparison in \cref{app:chronos_full}.
+    $^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE: MSE probe on frozen encoder (3s, FD001). Gap to STAR reflects SSL-vs-supervised + protocol differences (\cref{sec:experiments}). $^{b}$\citet{mtsjepa2026}. $^{c}$\citet{xu2022anomalytransformer}. $^{d}$\citet{batadal2018}. $^{\S}$SMAP Chr-2: 1 seed. $^{\dagger}$SMD lf10: 3/28 entities. $^{\ddagger}$GECCO lf10: zero positives (excluded). Full probe comparison in \cref{app:chronos_full}.
   \end{minipage}
 \end{table}
 
