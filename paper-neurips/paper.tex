@@ -543,7 +543,7 @@ TimesFM-1.0-200M~\citep{das2024timesfm} (203.6M parameters) and Moirai-1.1-R-bas
     Dataset & TimesFM-mlp                & Moirai-mlp        & FAM \\
     \midrule
     FD001   & $0.530 \pm 0.003$          & $0.606 \pm 0.004$ & $\mathbf{0.786 \pm 0.033}$ \\
-    FD002   & $0.602 \pm 0.008$          & ---               & $0.566 \pm 0.011$ \\
+    FD002   & $0.602 \pm 0.008$          & $\mathbf{0.664 \pm 0.004}$ & $0.566 \pm 0.011$ \\
     FD003   & $0.615 \pm 0.014$          & $0.700 \pm 0.004$ & $\mathbf{0.853 \pm 0.004}$ \\
     SMAP    & $0.505 \pm 0.028$          & ---               & $\mathbf{0.598 \pm 0.036}$ \\
     PSM     & $\mathbf{0.570 \pm 0.007}$ & ---               & $0.562 \pm 0.013$ \\
@@ -559,7 +559,7 @@ TimesFM-1.0-200M~\citep{das2024timesfm} (203.6M parameters) and Moirai-1.1-R-bas
   \begin{minipage}{\linewidth}
     \scriptsize
     Per-seed TimesFM (lf=100\%): FD001 (0.5279, 0.5291, 0.5342), FD002 (0.5921, 0.6013, 0.6111), FD003 (0.5973, 0.6165, 0.6324), SMAP (0.4834, 0.4865, 0.5441), PSM (0.5637, 0.5659, 0.5791), MBA (0.7535, 0.7558, 0.7682), GECCO (0.9165, 0.9268, 0.9320), BATADAL (0.6455, 0.6554, 0.6568), SKAB (0.7338, 0.7410, 0.7586), ETTm1 (0.5797, 0.5881, 0.5992), SMD (0.6545, 0.6503, 0.6916).
-    Per-seed Moirai (lf=100\%): FD001 (0.6021, 0.6054, 0.6105), FD003 (0.6962, 0.6975, 0.7060), MBA (0.5468, 0.5797, 0.5858), BATADAL (0.3477, 0.3591, 0.3725).
+    Per-seed Moirai (lf=100\%): FD001 (0.6021, 0.6054, 0.6105), FD002 (0.6615, 0.6617, 0.6696), FD003 (0.6962, 0.6975, 0.7060), MBA (0.5468, 0.5797, 0.5858), BATADAL (0.3477, 0.3591, 0.3725).
     TimesFM context: 512 time steps per channel (univariate), patch size 32; Moirai: 512 time steps, patch size 32, max patch size 128.
     BATADAL: Moirai's univariate patching discards multivariate cross-sensor correlations critical for this dataset ($0.360$, below chance).
     FD002 TimesFM win: 6 operating conditions; large-corpus pretraining captures cross-condition variation. GECCO TimesFM win: univariate time-of-day patterns well-covered by general pretraining corpus.
