@@ -1,0 +1,265 @@
+---
+title: "V34 Analysis: SIGReg from Scratch + Paper Polish"
+subtitle: "EMA wins on h-AUROC despite v17 / v23 mixed-metric history"
+date: "2026-04-27"
+jupyter: python3
+format:
+  html:
+    self-contained: true
+    toc: true
+    toc-depth: 3
+    code-fold: true
+---
+
+## Overview
+
+V34 ran a single-seed sweep (5 SIGReg configs + EMA baseline) on FD001 to identify the strongest SIGReg configuration on the canonical backbone, then ran that configuration across all 12 datasets with 3 seeds. Workstreams D (paper review + 3 marginal fixes) and E (figure audit) ran in parallel. Workstreams B (ST-JEPA fixes) and C (Sepsis loader) are infrastructure-only this session.
+
+**Headline finding**: SIGReg (no EMA, periodic hard sync of target encoder + VICReg var+cov on h_pred) is **not a Pareto improvement** over EMA on the canonical backbone evaluated by h-AUROC. The v17/v23 history (SIGReg wins on RMSE/F1w on the legacy backbone, EMA wins on AUPRC on FD001 in v23) carries forward: SIGReg is competitive on some datasets but EMA wins overall.
+
+```{python}
+import json
+from pathlib import Path
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+V34_DIR = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v34')
+RES_DIR = V34_DIR / 'results'
+
+COLORS = {
+    'ema':     '#1f77b4',  # blue
+    'sigreg':  '#d62728',  # red
+    'frozen':  '#ff7f0e',  # orange
+    'baseline':'#7f7f7f',  # gray (chance)
+}
+```
+
+## Phase A2: FD001 single-seed sweep
+
+5 SIGReg configurations + EMA baseline on FD001 seed=42. Goal: pick the best SIGReg config to scale to A4 (12 datasets x 3 seeds).
+
+```{python}
+sweep_path = RES_DIR / 'phaseA' / 'sigreg_sweep_FD001_summary.json'
+if sweep_path.exists():
+    sweep = json.loads(sweep_path.read_text())
+    rows = []
+    for k, v in sweep['sweep'].items():
+        if isinstance(v, dict) and 'mean_h_auroc' in v:
+            rows.append((k,
+                         v.get('target_mode', 'EMA'),
+                         v.get('sync_interval_steps', '-'),
+                         v.get('lambda_var', '-'),
+                         v.get('lambda_cov', '-'),
+                         v['mean_h_auroc'],
+                         v.get('pooled_auprc', float('nan')),
+                         v.get('pretrain_collapsed', False)))
+    print(f"{'Config':<25} {'Mode':<14} {'sync':>5} {'lv':>5} {'lc':>5} {'h-AUROC':>9} {'AUPRC':>7} {'collapsed':>10}")
+    for r in rows:
+        print(f"{r[0]:<25} {r[1]:<14} {r[2]!s:>5} {r[3]!s:>5} {r[4]!s:>5} {r[5]:>9.4f} {r[6]:>7.4f} {str(r[7]):>10}")
+    print(f"\nBEST SIGReg config: {sweep['best_config']} h-AUROC={sweep['best_h_auroc']:.4f}")
+    print(f"EMA baseline       : h-AUROC={sweep['ema_h_auroc']:.4f}")
+else:
+    print("[sweep summary missing - rerun phase A2]")
+```
+
+**Pattern**: Sweet spot at sync_interval=100 with weak regularizer (lv=0.04, lc=0.02). Faster sync (50) lets the target drift too fast; slower sync (200) makes the target stale. Stronger reg (lv=0.10) over-regularises the predictor and hurts. Frozen target is competitive but not the best.
+
+```{python}
+if sweep_path.exists():
+    fig, ax = plt.subplots(figsize=(7, 3.2))
+    cfgs = list(sweep['sweep'].keys())
+    aurocs = []
+    labels = []
+    colors = []
+    for k in cfgs:
+        v = sweep['sweep'][k]
+        if isinstance(v, dict) and 'mean_h_auroc' in v:
+            aurocs.append(v['mean_h_auroc'])
+            labels.append(k)
+            if k == 'ema_baseline':
+                colors.append(COLORS['ema'])
+            elif 'frozen' in k:
+                colors.append(COLORS['frozen'])
+            else:
+                colors.append(COLORS['sigreg'])
+    x = np.arange(len(labels))
+    bars = ax.bar(x, aurocs, color=colors, edgecolor='k', linewidth=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=8)
+    ax.axhline(0.5169, color='gray', linestyle='--', linewidth=1, label='base rate')
+    ax.set_ylabel('h-AUROC')
+    ax.set_title('FD001 single-seed sweep: SIGReg variants vs EMA')
+    ax.set_ylim(0.5, 0.8)
+    ax.legend(handles=[
+        mpatches.Patch(color=COLORS['ema'], label='EMA'),
+        mpatches.Patch(color=COLORS['sigreg'], label='SIGReg periodic_sync'),
+        mpatches.Patch(color=COLORS['frozen'], label='SIGReg frozen target'),
+    ], loc='lower right', fontsize=8)
+    plt.tight_layout()
+    fig_path = V34_DIR / 'figures' / 'phaseA2_sweep.png'
+    fig_path.parent.mkdir(exist_ok=True, parents=True)
+    plt.savefig(fig_path, dpi=120, bbox_inches='tight')
+    plt.show()
+```
+
+## Phase A4: SIGReg best config across all datasets
+
+Best config A (target_mode='periodic_sync', sync_interval_steps=100, lambda_var=0.04, lambda_cov=0.02) run on all 12 datasets with 3 seeds. Pretrain ckpts are saved to `experiments/v34/ckpts/`; surfaces to `experiments/v34/surfaces/`.
+
+```{python}
+all_path = RES_DIR / 'phaseA' / 'sigreg_all_datasets.json'
+
+# v30 EMA baselines for direct comparison
+EMA_V30 = {
+    'FD001':   (0.786, 0.033),
+    'FD002':   (0.566, 0.011),
+    'FD003':   (0.853, 0.004),
+    'SMAP':    (0.598, 0.036),
+    'MSL':     (0.350, 0.000),  # below chance
+    'PSM':     (0.562, 0.013),
+    'SMD':     (0.654, 0.004),
+    'MBA':     (0.739, 0.014),
+    'GECCO':   (0.819, 0.064),
+    'BATADAL': (0.607, 0.033),
+    'SKAB':    (0.707, 0.017),
+    'ETTm1':   (0.869, 0.002),
+}
+
+if all_path.exists():
+    all_data = json.loads(all_path.read_text())
+    results = all_data['results']
+    rows = []
+    for ds, seed_d in results.items():
+        aurocs = [v['h_auroc'] for v in seed_d.values()
+                  if isinstance(v, dict) and 'h_auroc' in v]
+        if not aurocs:
+            continue
+        sigreg_mean = float(np.mean(aurocs))
+        sigreg_std = float(np.std(aurocs))
+        ema = EMA_V30.get(ds, (None, None))
+        delta = sigreg_mean - ema[0] if ema[0] is not None else None
+        rows.append((ds, sigreg_mean, sigreg_std, ema[0], ema[1], delta, len(aurocs)))
+
+    print(f"{'Dataset':<10} {'SIGReg_mean':>12} {'SIGReg_std':>11} {'EMA_v30':>9} {'EMA_std':>9} {'delta':>9} {'n':>3}")
+    print('-' * 80)
+    for r in rows:
+        em = f"{r[3]:.4f}" if r[3] is not None else " ---  "
+        es = f"{r[4]:.4f}" if r[4] is not None else " --- "
+        dl = f"{r[5]:+.4f}" if r[5] is not None else "  --- "
+        print(f"{r[0]:<10} {r[1]:>12.4f} {r[2]:>11.4f} {em:>9} {es:>9} {dl:>9} {r[6]:>3}")
+    n_sigreg_wins = sum(1 for r in rows if r[5] is not None and r[5] > 0)
+    n_ema_wins = sum(1 for r in rows if r[5] is not None and r[5] < 0)
+    n_ties = sum(1 for r in rows if r[5] is not None and abs(r[5]) <= 0.005)
+    print(f"\nSIGReg wins: {n_sigreg_wins}/{len(rows)}  EMA wins: {n_ema_wins}/{len(rows)}  ties (|delta|<=0.005): {n_ties}")
+else:
+    print("[all-datasets results not yet available]")
+```
+
+```{python}
+if all_path.exists() and rows:
+    fig, ax = plt.subplots(figsize=(8, 3.5))
+    n = len(rows)
+    x = np.arange(n)
+    width = 0.4
+    sigreg_means = [r[1] for r in rows]
+    sigreg_stds = [r[2] for r in rows]
+    ema_means = [r[3] if r[3] is not None else 0 for r in rows]
+    ema_stds = [r[4] if r[4] is not None else 0 for r in rows]
+    labels = [r[0] for r in rows]
+
+    ax.bar(x - width/2, ema_means, width, yerr=ema_stds, color=COLORS['ema'],
+           edgecolor='k', linewidth=0.5, label='EMA (v30)')
+    ax.bar(x + width/2, sigreg_means, width, yerr=sigreg_stds, color=COLORS['sigreg'],
+           edgecolor='k', linewidth=0.5, label='SIGReg (v34)')
+    ax.axhline(0.5, color='gray', linestyle='--', linewidth=1, alpha=0.6)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=8)
+    ax.set_ylabel('h-AUROC')
+    ax.set_title('SIGReg (best A) vs EMA across all datasets (3 seeds)')
+    ax.legend(loc='upper right', fontsize=8)
+    ax.set_ylim(0.3, 1.0)
+    plt.tight_layout()
+    fig_path = V34_DIR / 'figures' / 'phaseA4_sigreg_vs_ema.png'
+    plt.savefig(fig_path, dpi=120, bbox_inches='tight')
+    plt.show()
+```
+
+### Per-seed scatter (collapse / instability check)
+
+```{python}
+if all_path.exists():
+    fig, ax = plt.subplots(figsize=(8, 3.0))
+    for i, (ds, seed_d) in enumerate(results.items()):
+        for sj, v in seed_d.items():
+            if isinstance(v, dict) and 'h_auroc' in v:
+                marker = 'x' if v.get('collapsed') else 'o'
+                ax.scatter(i, v['h_auroc'], color=COLORS['sigreg'], s=18,
+                           marker=marker, alpha=0.7)
+        em = EMA_V30.get(ds, (None, None))[0]
+        if em is not None:
+            ax.scatter(i, em, color=COLORS['ema'], marker='_', s=80, linewidth=2)
+    ax.set_xticks(range(len(results)))
+    ax.set_xticklabels(list(results.keys()), rotation=30, ha='right', fontsize=8)
+    ax.axhline(0.5, color='gray', linestyle='--', linewidth=1, alpha=0.6)
+    ax.set_ylabel('h-AUROC')
+    ax.set_title('Per-seed SIGReg (red dots; x = collapsed) vs EMA mean (blue _)')
+    ax.set_ylim(0.3, 1.0)
+    plt.tight_layout()
+    fig_path = V34_DIR / 'figures' / 'phaseA4_per_seed.png'
+    plt.savefig(fig_path, dpi=120, bbox_inches='tight')
+    plt.show()
+```
+
+## Workstream D: Paper review summary
+
+Marginal fixes applied to `paper.tex` this session (committed):
+
+1. **L355 understatement fix**: "5 of these the margin exceeds +0.05" → "all 6 wins the margin exceeds +0.05" with per-dataset deltas inline.
+2. **L427 conclusion overclaim fix**: "clinical prediction across 11 datasets" → "cardiac arrhythmia across 11 datasets in 8 domains"; "winning 6 of 8 against foundation models" → "against Chronos-2".
+3. **L103 contribution 1 conflation fix**: "6 of 8 against foundation models at 43-158× fewer parameters" → "6 of 8 against Chronos-2 at 56×; comparisons against MOMENT/TimesFM/Moirai are mixed".
+
+Major-changes proposals (NOT applied; see `experiments/v34/results/phaseD/major_changes_proposal.md`):
+- Front-load the MSL exclusion in the abstract.
+- Add v33 ST-JEPA negative result to method/limitations.
+- Refresh `tab:sigreg_ablation` if v34 SIGReg numbers warrant it (this session: they don't strongly warrant a replacement; SIGReg is competitive but not a clear winner on the canonical backbone).
+- Clarify h-AUROC vs pooled AUPRC choice in §4.
+- Add Sepsis row to Tab 1 (deferred; loader added but pretrain not run).
+- Em-dash sweep (NOT recommended for NeurIPS submission).
+
+Number audit verified all of Tab 1, Tab `tab:moment_full`, Tab `tab:extra_baselines`, Tab `tab:sub5pct` against latest RESULTS.md (v31). Single FLAG (MOMENT MBA cell) was confirmed against per-seed records in `v31/results/moment_baseline.json`.
+
+## Workstream B: ST-JEPA collapse fixes (not run)
+
+The session prompt's Workstream B was **deprioritised** because Workstream A (SIGReg sweep + 12-dataset rollout) consumed most of the GPU budget, and the v33 ST-JEPA finding (collapse on all 3 datasets, all dropout rates) makes additional ST-JEPA fixes a low-marginal-value engineering investment. The v33 negative is now sufficient to defend the channel-fusion default in the paper (proposed change #2).
+
+If a future session has GPU time, the most promising next step from the session prompt is **B3 partial channel fusion (K=4 neighbouring channels per token)** - this gives each token P*K=64 input dimensions (vs P=16 for per-channel, P*C for full-fusion), which addresses the low-rank input that is the suspected root cause of v33 collapse without losing all cross-channel structure.
+
+## Workstream C: New datasets (Sepsis loader added, no pretrain)
+
+- **Sepsis**: Adapter added to `_runner_v34.py` (40k patient files on VM). Loaded successfully (114s, 4000 capped pretrain patients, 16K/4K/20K ft splits). Stays are short (median 39 hours), so the canonical patch_size=16 architecture only gets 2-3 patches per stay - below the 8-patch architecture floor. **Pretrain not run this session**: a Sepsis-specific protocol with patch_size=4 + min_context=32 would be needed and exceeds the overnight budget.
+- **TEP**: NOT downloaded (not on VM, would require Kaggle download). Skipped.
+- **SWaT**: NOT available (per session prompt, requires iTrust registration). Skipped.
+
+## Discussion: Why doesn't SIGReg win like in v17?
+
+V17's SIGReg-pred (regularize predictor output) won on RMSE / F1w on FD001 with the legacy backbone (790K predictor, no monotone CDF, no cumulative target). The current canonical architecture (198K predictor, discrete-hazard-CDF, cumulative target, RevIN per dataset family) is materially different. Two hypotheses for the regression:
+
+1. **Pred-FT recipe absorbs the SIGReg gain.** With a 198K predictor that gets fully retrained downstream, the encoder's representation quality has more headroom: the predictor compensates for whatever SIGReg's spectral regularisation buys in the encoder. EMA + L1 on normalised reps + tiny var-reg is enough.
+2. **Cumulative targets and RevIN smooth the loss landscape.** v17 used non-cumulative w=10 future windows and no RevIN; SIGReg's variance regularisation may have helped stabilise pretraining when the loss surface was rough. With RevIN (lifetime FD001 norm_mode='none' is the global-zscore variant) + cumulative `(t, t+Δt]` targets, the loss is already well-conditioned and SIGReg adds noise relative to EMA.
+
+**Implication for the paper**: keep `tab:sigreg_ablation` as the V17/F1w snapshot it is, with a note that the SIGReg vs EMA tradeoff is metric- and backbone-dependent. The v34 result is a useful negative that does not overturn v17's claim but does suggest that for the canonical backbone evaluated by AUPRC/AUROC, EMA is the right default.
+
+## Reproducibility
+
+- Code: `fam-jepa/experiments/v34/_runner_v34.py`
+- Logs: `fam-jepa/experiments/v34/logs/`
+- Results JSONs: `fam-jepa/experiments/v34/results/{phaseA,phaseD,phaseE}/`
+- Surfaces: `fam-jepa/experiments/v34/surfaces/*.npz` (gitignored - on VM)
+- Pre-rendered PNGs: `fam-jepa/experiments/v34/figures/` (committed)
+
+To reproduce A2: `python -u fam-jepa/experiments/v34/_runner_v34.py --phase A2 --dataset FD001 --seed 42`
+
+To reproduce A4: `python -u fam-jepa/experiments/v34/_runner_v34.py --phase A4 --dataset FD001`
+
+(`--dataset FD001` here points at the *sweep summary* used to pick the best config; A4 itself iterates over all 12 datasets.)

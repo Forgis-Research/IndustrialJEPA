@@ -1,0 +1,167 @@
+{
+  "best_config": {
+    "name": "A_si100_lv04_lc02",
+    "target_mode": "periodic_sync",
+    "sync_interval_steps": 100,
+    "lambda_var": 0.04,
+    "lambda_cov": 0.02
+  },
+  "results": {
+    "FD001": {
+      "42": {
+        "h_auroc": 0.7599422273088806,
+        "h_auprc": 0.9429641857591642,
+        "pooled_auprc": 0.9429641857591642,
+        "collapsed": false,
+        "pretrain_loss": 0.010771101407174553,
+        "ft_val_loss": 0.14091107000907263
+      },
+      "123": {
+        "h_auroc": 0.7047953782992114,
+        "h_auprc": 0.9386502367111098,
+        "pooled_auprc": 0.9386502367111098,
+        "collapsed": false,
+        "pretrain_loss": 0.011904308971549784,
+        "ft_val_loss": 0.12198013563950856
+      },
+      "456": {
+        "h_auroc": 0.7463514027860363,
+        "h_auprc": 0.9423209331721091,
+        "pooled_auprc": 0.9423209331721091,
+        "collapsed": false,
+        "pretrain_loss": 0.01197974816230791,
+        "ft_val_loss": 0.165117546916008
+      }
+    },
+    "FD002": {
+      "42": {
+        "h_auroc": 0.5859740462821854,
+        "h_auprc": 0.9019061169284208,
+        "pooled_auprc": 0.9019061169284208,
+        "collapsed": false,
+        "pretrain_loss": 0.0075887462390320645,
+        "ft_val_loss": 0.4373915493488312
+      },
+      "123": {
+        "h_auroc": 0.5641002065263032,
+        "h_auprc": 0.908103161957565,
+        "pooled_auprc": 0.908103161957565,
+        "collapsed": false,
+        "pretrain_loss": 0.008478343180779899,
+        "ft_val_loss": 0.44275085628032684
+      },
+      "456": {
+        "h_auroc": 0.5903725567944768,
+        "h_auprc": 0.9110967409873845,
+        "pooled_auprc": 0.9110967409873845,
+        "collapsed": false,
+        "pretrain_loss": 0.009097585640847682,
+        "ft_val_loss": 0.4366460641225179
+      }
+    },
+    "FD003": {
+      "42": {
+        "h_auroc": 0.8088333741131484,
+        "h_auprc": 0.9028664033392375,
+        "pooled_auprc": 0.9028664033392375,
+        "collapsed": false,
+        "pretrain_loss": 0.008861089358106256,
+        "ft_val_loss": 0.171977236866951
+      },
+      "123": {
+        "h_auroc": 0.8055545473744863,
+        "h_auprc": 0.9035870400954287,
+        "pooled_auprc": 0.9035870400954287,
+        "collapsed": false,
+        "pretrain_loss": 0.007766212519657399,
+        "ft_val_loss": 0.20832335452238718
+      },
+      "456": {
+        "h_auroc": 0.8111559309475064,
+        "h_auprc": 0.9028849804824128,
+        "pooled_auprc": 0.9028849804824128,
+        "collapsed": false,
+        "pretrain_loss": 0.008078823780774005,
+        "ft_val_loss": 0.24768498043219248
+      }
+    },
+    "SMAP": {
+      "42": {
+        "h_auroc": 0.5182356496975098,
+        "h_auprc": 0.35641542626887274,
+        "pooled_auprc": 0.35641542626887274,
+        "collapsed": false,
+        "pretrain_loss": 0.02218065015040338,
+        "ft_val_loss": 14.415019332889527
+      },
+      "123": {
+        "h_auroc": 0.6842019099559322,
+        "h_auprc": 0.48216360111629936,
+        "pooled_auprc": 0.48216360111629936,
+        "collapsed": false,
+        "pretrain_loss": 0.02290827501565218,
+        "ft_val_loss": 16.633178662449595
+      },
+      "456": {
+        "h_auroc": 0.4785955360999376,
+        "h_auprc": 0.3260345677361746,
+        "pooled_auprc": 0.3260345677361746,
+        "collapsed": false,
+        "pretrain_loss": 0.024038848700001836,
+        "ft_val_loss": 14.849759313322249
+      }
+    },
+    "MSL": {
+      "42": {
+        "h_auroc": 0.4796527200622367,
+        "h_auprc": 0.20603017760334838,
+        "pooled_auprc": 0.20603017760334838,
+        "collapsed": false,
+        "pretrain_loss": 0.023185840342193842,
+        "ft_val_loss": 1.5723470449447632
+      },
+      "123": {
+        "h_auroc": 0.3484196814739102,
+        "h_auprc": 0.17363026100513915,
+        "pooled_auprc": 0.17363026100513915,
+        "collapsed": false,
+        "pretrain_loss": 0.021855289349332452,
+        "ft_val_loss": 1.3377604633569717
+      },
+      "456": {
+        "h_auroc": 0.4113389052026356,
+        "h_auprc": 0.1675392362055986,
+        "pooled_auprc": 0.1675392362055986,
+        "collapsed": false,
+        "pretrain_loss": 0.023134703747928143,
+        "ft_val_loss": 1.1386203914880753
+      }
+    },
+    "PSM": {
+      "42": {
+        "h_auroc": 0.5464845085819897,
+        "h_auprc": 0.43981214927342327,
+        "pooled_auprc": 0.43981214927342327,
+        "collapsed": false,
+        "pretrain_loss": 0.030873287469148636,
+        "ft_val_loss": 1.1763924991383272
+      },
+      "123": {
+        "h_auroc": 0.5875860344737766,
+        "h_auprc": 0.46263115948842004,
+        "pooled_auprc": 0.46263115948842004,
+        "collapsed": false,
+        "pretrain_loss": 0.030952859669923782,
+        "ft_val_loss": 1.1565343386986677
+      },
+      "456": {
+        "h_auroc": 0.5394635262321921,
+        "h_auprc": 0.437970964239633,
+        "pooled_auprc": 0.437970964239633,
+        "collapsed": false,
+        "pretrain_loss": 0.032436396926641464,
+        "ft_val_loss": 1.2146285947631388
+      }
+    }
+  }
+}
