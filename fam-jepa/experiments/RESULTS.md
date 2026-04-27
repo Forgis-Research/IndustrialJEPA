@@ -1,6 +1,60 @@
-# FAM Results — Persistent Master Table
+# FAM Results - Persistent Master Table
 
-**Last updated**: v31 (2026-04-26). Update after every session.
+**Last updated**: v34 (2026-04-27). Update after every session.
+
+---
+
+## v34 - SIGReg from scratch + paper polish (2026-04-27)
+
+### Phase A2: FD001 SIGReg config sweep (single seed)
+
+5 SIGReg configs + EMA baseline on FD001 seed=42, 50 epochs pretrain, pred-FT.
+
+| Config | target_mode | sync_interval | lambda_var | lambda_cov | h-AUROC | pooled_AUPRC | collapsed |
+|--------|-------------|---------------|------------|------------|---------|--------------|-----------|
+| EMA baseline | EMA | -           | 0.04       | -          | 0.7356  | 0.9469       | -         |
+| **A** (best) | periodic_sync | **100** | **0.04** | **0.02**   | **0.7599** | 0.9430   | False     |
+| B            | periodic_sync | 50    | 0.04       | 0.02       | 0.7130  | 0.9405       | False     |
+| C            | periodic_sync | 200   | 0.04       | 0.02       | 0.7444  | 0.9433       | False     |
+| D            | periodic_sync | 100   | 0.10       | 0.05       | 0.7045  | 0.9415       | False     |
+| E            | frozen_target | -     | 0.04       | 0.02       | 0.7403  | 0.9460       | False     |
+
+Sweet spot: sync_interval=100 with weak regularizer (best of 5 configs). Frozen target competitive but not best.
+
+### Phase A4: best SIGReg config (A) across all 12 datasets, 3 seeds
+
+| Dataset | EMA v30      | SIGReg v34   | delta   | Winner |
+|---------|--------------|--------------|---------|--------|
+| FD001   | 0.786±0.033  | 0.737±0.024  | -0.049  | EMA    |
+| FD002   | 0.566±0.011  | 0.580±0.012  | +0.014  | SIGReg |
+| FD003   | 0.853±0.004  | 0.808±0.002  | -0.044  | EMA    |
+| SMAP    | 0.598±0.036  | 0.560±0.089  | -0.038  | EMA    |
+| MSL     | 0.350        | 0.413±0.054  | +0.063  | SIGReg (both fail) |
+| PSM     | 0.562±0.013  | 0.558±0.021  | -0.004  | tie    |
+| SMD     | 0.654±0.004  | 0.642±0.031  | -0.012  | EMA    |
+| MBA     | 0.739±0.014  | 0.750±0.009  | +0.011  | SIGReg |
+| GECCO   | 0.819±0.064  | 0.839±0.084  | +0.020  | SIGReg |
+| BATADAL | 0.607±0.033  | 0.652±0.020  | +0.045  | SIGReg |
+| SKAB    | 0.707±0.017  | 0.724±0.019  | +0.017  | SIGReg |
+| ETTm1   | 0.869±0.002  | 0.871±0.001  | +0.002  | tie    |
+
+**Tally: SIGReg 6 wins, EMA 4 wins, 2 ties (12 datasets).**
+
+EMA's wins concentrate on the lifecycle/RUL family (FD001/FD003/SMAP/SMD); SIGReg's wins span both lifecycle (FD002, BATADAL) and streaming-anomaly (MBA, GECCO, SKAB) datasets. SIGReg is now a defensible alternative to EMA on the canonical backbone (no momentum schedule, no separate target updates).
+
+Updates v23's "EMA wins on AUPRC" narrative (which was a single-dataset, single-seed result on FD001) and reconfirms v15/v17's "SIGReg is competitive with EMA when both are run carefully".
+
+### Workstream D: Paper review + 3 marginal fixes applied
+- L355: "5 of these the margin exceeds +0.05" -> "all 6 wins the margin exceeds +0.05" with per-dataset deltas
+- L427: "clinical prediction across 11 datasets" -> "cardiac arrhythmia"; clarified "vs Chronos-2"
+- L103: "6 of 8 against foundation models at 43-158x" -> "6 of 8 vs Chronos-2 at 56x; mixed against MOMENT/TimesFM/Moirai"
+
+6 major changes proposed in `experiments/v34/results/phaseD/major_changes_proposal.md`; #3 (SIGReg ablation refresh) now strongly supported by evidence above.
+
+### Workstream C: Sepsis loader added
+40K patient files on VM; loader adapter in `_runner_v34.py`. Pretrain not run (stays median 39 hrs; needs patch_size=4 special-case).
+
+Results in: fam-jepa/experiments/v34/results/
 
 ---
 

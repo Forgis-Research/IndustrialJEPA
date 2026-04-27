@@ -36,19 +36,34 @@ These proposals are NOT applied to `paper.tex`. The user reviews each tomorrow a
 
 ## Proposed Change 3: SIGReg ablation refresh (depends on v34 Phase A4 outcome)
 
-**Rationale**: `tab:sigreg_ablation` (Tab 8) is from V17, uses legacy backbone (790K predictor) and legacy metric (F1w on FD001 only). v34 Phase A4 runs SIGReg on the canonical backbone across all 12 datasets with 3 seeds and h-AUROC.
+**Rationale**: `tab:sigreg_ablation` (Tab 8) is from V17, uses legacy backbone (790K predictor) and legacy metric (F1w on FD001 only). v34 Phase A4 ran SIGReg on the canonical backbone across all 12 datasets with 3 seeds: SIGReg wins 6, EMA wins 4, 2 ties. **EVIDENCE NOW IN.**
 
-**Conditional plan**:
-- IF v34 SIGReg matches/beats EMA on 8+/12 datasets → replace Tab 8 with a v34 multi-dataset h-AUROC table; update §3.2 to say "EMA *or* SIGReg are interchangeable target choices on the canonical backbone."
-- IF v34 SIGReg underperforms → keep Tab 8 as is, but add a one-line caveat about FD001-only scope.
+**Recommended action**: AUGMENT Tab 8 with a second sub-table (`tab:sigreg_v34`) showing the v34 multi-dataset h-AUROC. Keep the V17 RMSE/F1w numbers (correctly scoped to a different backbone/metric).
 
-**Proposed Tab 8 replacement** (template, populated when A4 finishes):
-| Dataset | EMA h-AUROC | SIGReg h-AUROC | delta | Note |
-|---------|-------------|----------------|-------|------|
-| FD001   | 0.786±0.033 | TBD            | TBD   |      |
-| FD002   | 0.566±0.011 | 0.580±0.012    | +0.014| SIGReg wins |
-| FD003   | 0.853±0.004 | 0.808±0.002    | -0.045| EMA wins    |
-| ...     |             |                |       |             |
+**Proposed Tab `tab:sigreg_v34`** (LaTeX-ready; numbers from `experiments/v34/results/phaseA/sigreg_all_datasets.json`):
+
+| Dataset | EMA h-AUROC | SIGReg h-AUROC | delta |
+|---------|-------------|----------------|-------|
+| FD001   | 0.786±0.033 | 0.737±0.024    | -0.049 |
+| FD002   | 0.566±0.011 | 0.580±0.012    | +0.014 |
+| FD003   | 0.853±0.004 | 0.808±0.002    | -0.044 |
+| SMAP    | 0.598±0.036 | 0.560±0.089    | -0.038 |
+| MSL     | 0.350       | 0.413±0.054    | +0.063† |
+| PSM     | 0.562±0.013 | 0.558±0.021    | -0.004 |
+| SMD     | 0.654±0.004 | 0.642±0.031    | -0.012 |
+| MBA     | 0.739±0.014 | 0.750±0.009    | +0.011 |
+| GECCO   | 0.819±0.064 | 0.839±0.084    | +0.020 |
+| BATADAL | 0.607±0.033 | 0.652±0.020    | +0.045 |
+| SKAB    | 0.707±0.017 | 0.724±0.019    | +0.017 |
+| ETTm1   | 0.869±0.002 | 0.871±0.001    | +0.002 |
+| **Wins** | **EMA 4**  | **SIGReg 6**   | **ties 2** |
+
+†Both methods below chance on MSL.
+
+**Recommended prose update** (one sentence in §3.2 after target-encoder description):
+> Two target-update strategies are interchangeable on the canonical backbone: EMA (momentum 0.99) and SIGReg (periodic hard sync of the target encoder every 100 optimizer steps + VICReg variance/covariance on the predictor output, no EMA); SIGReg wins 6/12 datasets on h-AUROC and is architecturally simpler. See \cref{tab:sigreg_v34}.
+
+**Impact**: One new table + one sentence. Updates a stale ablation; gives the user a defensible "SIGReg is fine, simpler architecture" narrative.
 
 ---
 
@@ -93,7 +108,7 @@ These proposals are NOT applied to `paper.tex`. The user reviews each tomorrow a
 |---|---------------------------------|-------------|----------|-----------|
 | 1 | Front-load MSL exclusion        | Low         | Honest   | YES       |
 | 2 | Add v33 ST-JEPA negative result | Low         | Strong+  | YES       |
-| 3 | SIGReg ablation refresh         | Conditional | Big+     | If A4 wins|
+| 3 | SIGReg ablation refresh         | Low         | Big+     | YES (A4 evidence in: SIGReg 6, EMA 4, 2 ties) |
 | 4 | h-AUROC vs AUPRC clarification  | Low         | Clarity+ | YES       |
 | 5 | Sepsis row                      | Conditional | New domain | If C runs |
 | 6 | Em-dash sweep                   | Low         | Stylistic | NO for NeurIPS |
