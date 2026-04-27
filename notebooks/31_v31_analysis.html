@@ -96,7 +96,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#section-8-honest-assessment" id="toc-section-8-honest-assessment" class="nav-link" data-scroll-target="#section-8-honest-assessment">Section 8: Honest Assessment</a></li>
   <li><a href="#section-9-phase-2---sub-5-label-efficiency-curve" id="toc-section-9-phase-2---sub-5-label-efficiency-curve" class="nav-link" data-scroll-target="#section-9-phase-2---sub-5-label-efficiency-curve">Section 9: Phase 2 - Sub-5% Label Efficiency Curve</a></li>
   <li><a href="#section-10-moment-1-large-baseline-341m-param-foundation-model" id="toc-section-10-moment-1-large-baseline-341m-param-foundation-model" class="nav-link" data-scroll-target="#section-10-moment-1-large-baseline-341m-param-foundation-model">Section 10: MOMENT-1-large Baseline (341M-param Foundation Model)</a></li>
-  <li><a href="#p-a-timesfm-1.0-200m-baseline-v31" id="toc-p-a-timesfm-1.0-200m-baseline-v31" class="nav-link" data-scroll-target="#p-a-timesfm-1.0-200m-baseline-v31">P-A: TimesFM-1.0-200M Baseline (v31)</a></li>
+  <li><a href="#p-a-timesfm-1.0-200m-baseline-v31---all-11-datasets" id="toc-p-a-timesfm-1.0-200m-baseline-v31---all-11-datasets" class="nav-link" data-scroll-target="#p-a-timesfm-1.0-200m-baseline-v31---all-11-datasets">P-A: TimesFM-1.0-200M Baseline (v31 - All 11 Datasets)</a></li>
   <li><a href="#p-b-moirai-1.1-r-base-baseline-v31" id="toc-p-b-moirai-1.1-r-base-baseline-v31" class="nav-link" data-scroll-target="#p-b-moirai-1.1-r-base-baseline-v31">P-B: Moirai-1.1-R-base Baseline (v31)</a></li>
   <li><a href="#p-c-femto-bearing-dataset-v31" id="toc-p-c-femto-bearing-dataset-v31" class="nav-link" data-scroll-target="#p-c-femto-bearing-dataset-v31">P-C: FEMTO Bearing Dataset (v31)</a></li>
   <li><a href="#appendix-gecco-alternative---random-window-sampling" id="toc-appendix-gecco-alternative---random-window-sampling" class="nav-link" data-scroll-target="#appendix-gecco-alternative---random-window-sampling">Appendix: GECCO Alternative - Random Window Sampling</a></li>
@@ -1080,132 +1080,201 @@ BATADAL_moment-mlp_s123                      0.4617   0.3680
 BATADAL_moment-mlp_s456                      0.5818   0.3744
 MBA_moment-mlp_s42                           0.8011   0.9239
 MBA_moment-mlp_s123                          0.7799   0.9216
-MBA_moment-mlp_s456                          0.7907   0.9224</code></pre>
+MBA_moment-mlp_s456                          0.7907   0.9224
+FD002_moment-mlp_s42_lf100                   0.7000   0.9187
+FD002_moment-mlp_s123_lf100                  0.7067   0.9213
+FD002_moment-mlp_s456_lf100                  0.7038   0.9211</code></pre>
 </div>
 </div>
 </section>
-<section id="p-a-timesfm-1.0-200m-baseline-v31" class="level2">
-<h2 class="anchored" data-anchor-id="p-a-timesfm-1.0-200m-baseline-v31">P-A: TimesFM-1.0-200M Baseline (v31)</h2>
-<p>TimesFM-1.0-200M (203.6M params) evaluated with identical 198K dt-MLP head. Honest negative results are included: TimesFM beats FAM on MBA and BATADAL.</p>
+<section id="p-a-timesfm-1.0-200m-baseline-v31---all-11-datasets" class="level2">
+<h2 class="anchored" data-anchor-id="p-a-timesfm-1.0-200m-baseline-v31---all-11-datasets">P-A: TimesFM-1.0-200M Baseline (v31 - All 11 Datasets)</h2>
+<p>TimesFM-1.0-200M (203.6M params, 1280-d embeddings) evaluated with identical 198K dt-MLP head across all 11 benchmark datasets. Mixed results: FAM wins on lifecycle/physical datasets, TimesFM wins on short-burst anomaly datasets where large-corpus pretraining helps.</p>
 <div id="timesfm-results" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>timesfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>fam_ref <span class="op">=</span> {</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: (<span class="fl">0.786</span>, <span class="fl">0.033</span>),</span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD003'</span>: (<span class="fl">0.853</span>, <span class="fl">0.004</span>),</span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>: (<span class="fl">0.739</span>, <span class="fl">0.014</span>),</span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'BATADAL'</span>: (<span class="fl">0.607</span>, <span class="fl">0.033</span>),</span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> timesfm_path.exists():</span>
-<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(timesfm_path) <span class="im">as</span> f:</span>
-<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>        tfm <span class="op">=</span> json.load(f)</span>
-<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM-1.0-200M vs FAM (h-AUROC, 3 seeds each):"</span>)</span>
-<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'TimesFM'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'+-std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Winner'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
-<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">65</span>)</span>
-<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
-<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> tfm:</span>
-<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> tfm[ds]</span>
-<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>            tfm_m <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
-<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>            tfm_s <span class="op">=</span> v[<span class="st">'std'</span>]</span>
-<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>            fam_m, fam_s <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>), <span class="dv">0</span>))</span>
-<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>            delta <span class="op">=</span> fam_m <span class="op">-</span> tfm_m</span>
-<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>            winner <span class="op">=</span> <span class="st">'FAM'</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'TimesFM'</span></span>
-<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>tfm_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>tfm_s<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
-<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed values:"</span>)</span>
-<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
-<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> tfm:</span>
-<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>            seeds <span class="op">=</span> tfm[ds][<span class="st">'per_seed'</span>]</span>
-<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>[<span class="ss">f'</span><span class="sc">{</span>s<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> s <span class="kw">in</span> seeds]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"KEY INSIGHT: TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046)."</span>)</span>
-<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"These are honest negative results reported in the paper."</span>)</span>
-<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FAM wins decisively on FD001 (+0.256) and FD003 (+0.238)."</span>)</span>
-<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> defaultdict</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>timesfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>FAM_LF100 <span class="op">=</span> {</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: (<span class="fl">0.786</span>, <span class="fl">0.033</span>), <span class="st">'FD002'</span>: (<span class="fl">0.566</span>, <span class="fl">0.011</span>), <span class="st">'FD003'</span>: (<span class="fl">0.853</span>, <span class="fl">0.004</span>),</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SMAP'</span>:  (<span class="fl">0.598</span>, <span class="fl">0.036</span>), <span class="st">'PSM'</span>:   (<span class="fl">0.562</span>, <span class="fl">0.013</span>), <span class="st">'MBA'</span>:   (<span class="fl">0.739</span>, <span class="fl">0.014</span>),</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'GECCO'</span>: (<span class="fl">0.819</span>, <span class="fl">0.064</span>), <span class="st">'BATADAL'</span>: (<span class="fl">0.607</span>, <span class="fl">0.033</span>), <span class="st">'SKAB'</span>: (<span class="fl">0.707</span>, <span class="fl">0.017</span>),</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ETTm1'</span>: (<span class="fl">0.869</span>, <span class="fl">0.002</span>), <span class="st">'SMD'</span>:   (<span class="fl">0.654</span>, <span class="fl">0.004</span>),</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>ALL_11 <span class="op">=</span> [<span class="st">'FD001'</span>, <span class="st">'FD002'</span>, <span class="st">'FD003'</span>, <span class="st">'SMAP'</span>, <span class="st">'PSM'</span>, <span class="st">'MBA'</span>, <span class="st">'GECCO'</span>, <span class="st">'BATADAL'</span>, <span class="st">'SKAB'</span>, <span class="st">'ETTm1'</span>, <span class="st">'SMD'</span>]</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> timesfm_path.exists():</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(timesfm_path) <span class="im">as</span> f:</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> json.load(f)</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> data.get(<span class="st">'results'</span>, data) <span class="cf">if</span> <span class="bu">isinstance</span>(data, <span class="bu">dict</span>) <span class="cf">else</span> data</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Group by dataset, lf=1.0</span></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>    grouped <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> results:</span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">abs</span>(r[<span class="st">'label_fraction'</span>] <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>            grouped[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM-1.0-200M vs FAM (h-AUROC, lf=1.0, 3 seeds each):"</span>)</span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'TimesFM'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'+-std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Winner'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>    fam_wins <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> total <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> ALL_11:</span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>        fam_m, fam_s <span class="op">=</span> FAM_LF100[ds]</span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> grouped:</span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>            vals <span class="op">=</span> grouped[ds]</span>
+<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>            tfm_m <span class="op">=</span> np.mean(vals)</span>
+<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>            tfm_s <span class="op">=</span> np.std(vals)</span>
+<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>            delta <span class="op">=</span> fam_m <span class="op">-</span> tfm_m</span>
+<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a>            winner <span class="op">=</span> <span class="st">'FAM'</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'TimesFM'</span></span>
+<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span>: fam_wins <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb30-39"><a href="#cb30-39" aria-hidden="true" tabindex="-1"></a>            total <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb30-40"><a href="#cb30-40" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>tfm_m<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>tfm_s<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb30-41"><a href="#cb30-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'PENDING'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb30-43"><a href="#cb30-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"FAM wins: </span><span class="sc">{</span>fam_wins<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total<span class="sc">}</span><span class="ss"> (SMD pending)"</span>)</span>
+<span id="cb30-45"><a href="#cb30-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb30-46"><a href="#cb30-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"PATTERN: FAM wins on physical lifecycle datasets (FD001, FD003, ETTm1, SMAP)."</span>)</span>
+<span id="cb30-47"><a href="#cb30-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM)."</span>)</span>
+<span id="cb30-48"><a href="#cb30-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FD002 TimesFM win: multi-condition turbofan, large-corpus pretraining captures"</span>)</span>
+<span id="cb30-49"><a href="#cb30-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"cross-condition variation that per-dataset JEPA does not."</span>)</span>
+<span id="cb30-50"><a href="#cb30-50" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb30-51"><a href="#cb30-51" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed (lf=1.0):"</span>)</span>
+<span id="cb30-52"><a href="#cb30-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> ALL_11:</span>
+<span id="cb30-53"><a href="#cb30-53" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> grouped:</span>
+<span id="cb30-54"><a href="#cb30-54" aria-hidden="true" tabindex="-1"></a>            vals_sorted <span class="op">=</span> <span class="bu">sorted</span>(grouped[ds])</span>
+<span id="cb30-55"><a href="#cb30-55" aria-hidden="true" tabindex="-1"></a>            seeds_str <span class="op">=</span> <span class="st">', '</span>.join(<span class="ss">f'</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> v <span class="kw">in</span> vals_sorted)</span>
+<span id="cb30-56"><a href="#cb30-56" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>seeds_str<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb30-57"><a href="#cb30-57" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb30-58"><a href="#cb30-58" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"TimesFM results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>TimesFM-1.0-200M vs FAM (h-AUROC, 3 seeds each):
+<pre><code>TimesFM-1.0-200M vs FAM (h-AUROC, lf=1.0, 3 seeds each):
 Dataset       TimesFM    +-std      FAM    Delta     Winner
------------------------------------------------------------------
+----------------------------------------------------------------------
 FD001          0.5304   0.0028   0.7860  +0.2556        FAM
+FD002          0.6015   0.0078   0.5660  -0.0355    TimesFM
 FD003          0.6154   0.0144   0.8530  +0.2376        FAM
+SMAP           0.5047   0.0279   0.5980  +0.0933        FAM
+PSM            0.5696   0.0068   0.5620  -0.0076    TimesFM
 MBA            0.7592   0.0064   0.7390  -0.0202    TimesFM
+GECCO          0.9251   0.0065   0.8190  -0.1061    TimesFM
 BATADAL        0.6525   0.0050   0.6070  -0.0455    TimesFM
+SKAB           0.7444   0.0104   0.7070  -0.0374    TimesFM
+ETTm1          0.5890   0.0080   0.8690  +0.2800        FAM
+SMD               ---      ---   0.6540      ---    PENDING
 
-Per-seed values:
-  FD001: ['0.5279', '0.5291', '0.5342']
-  FD003: ['0.6165', '0.5973', '0.6324']
-  MBA: ['0.7535', '0.7558', '0.7682']
-  BATADAL: ['0.6554', '0.6568', '0.6455']
+FAM wins: 4/10 (SMD pending)
 
-KEY INSIGHT: TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046).
-These are honest negative results reported in the paper.
-FAM wins decisively on FD001 (+0.256) and FD003 (+0.238).</code></pre>
+PATTERN: FAM wins on physical lifecycle datasets (FD001, FD003, ETTm1, SMAP).
+TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM).
+FD002 TimesFM win: multi-condition turbofan, large-corpus pretraining captures
+cross-condition variation that per-dataset JEPA does not.
+
+Per-seed (lf=1.0):
+  FD001: (0.5279, 0.5291, 0.5342)
+  FD002: (0.5921, 0.6013, 0.6111)
+  FD003: (0.5973, 0.6165, 0.6324)
+  SMAP: (0.4834, 0.4865, 0.5441)
+  PSM: (0.5637, 0.5659, 0.5791)
+  MBA: (0.7535, 0.7558, 0.7682)
+  GECCO: (0.9165, 0.9268, 0.9320)
+  BATADAL: (0.6455, 0.6554, 0.6568)
+  SKAB: (0.7338, 0.7410, 0.7586)
+  ETTm1: (0.5797, 0.5881, 0.5992)</code></pre>
 </div>
 </div>
 </section>
 <section id="p-b-moirai-1.1-r-base-baseline-v31" class="level2">
 <h2 class="anchored" data-anchor-id="p-b-moirai-1.1-r-base-baseline-v31">P-B: Moirai-1.1-R-base Baseline (v31)</h2>
-<p>Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head. FAM wins all 4 datasets. Moirai collapses on BATADAL (0.360, below chance).</p>
+<p>Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head. Currently evaluated on 4 datasets; extension to all 11 running in background. FAM wins all 4 evaluated datasets. Moirai collapses on BATADAL (0.360, below chance).</p>
 <div id="moirai-results" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>moirai_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_path.exists():</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_path) <span class="im">as</span> f:</span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        moirai <span class="op">=</span> json.load(f)</span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai-1.1-R-base vs FAM (h-AUROC, 3 seeds each):"</span>)</span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Moirai'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'+-std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Winner'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">65</span>)</span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> moirai:</span>
-<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>            v <span class="op">=</span> moirai[ds]</span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            m_mean <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
-<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>            m_std <span class="op">=</span> v[<span class="st">'std'</span>]</span>
-<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>            fam_m, fam_s <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>), <span class="dv">0</span>))</span>
-<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>            delta <span class="op">=</span> fam_m <span class="op">-</span> m_mean</span>
-<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>            winner <span class="op">=</span> <span class="st">'FAM'</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'Moirai'</span></span>
-<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>            above_chance <span class="op">=</span> <span class="st">''</span> <span class="cf">if</span> m_mean <span class="op">&gt;=</span> <span class="fl">0.5</span> <span class="cf">else</span> <span class="st">' [BELOW CHANCE]'</span></span>
-<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>m_mean<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>m_std<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}{</span>above_chance<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed values:"</span>)</span>
-<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
-<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> moirai:</span>
-<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>            seeds <span class="op">=</span> moirai[ds][<span class="st">'per_seed'</span>]</span>
-<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>[<span class="ss">f'</span><span class="sc">{</span>s<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> s <span class="kw">in</span> seeds]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
-<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines."</span>)</span>
-<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai's univariate patching discards cross-sensor correlations critical for"</span>)</span>
-<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins."</span>)</span>
-<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"FAM wins all 4: FD001 +0.180, FD003 +0.153, MBA +0.168, BATADAL +0.247."</span>)</span>
-<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        moirai_data <span class="op">=</span> json.load(f)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Parse - may be old dict format or new list format</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(moirai_data, <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'results'</span> <span class="kw">in</span> moirai_data:</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>        results <span class="op">=</span> moirai_data[<span class="st">'results'</span>]</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>        grouped_m <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> r <span class="kw">in</span> results:</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>                grouped_m[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">isinstance</span>(moirai_data, <span class="bu">dict</span>):</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>        grouped_m <span class="op">=</span> {}</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k, v <span class="kw">in</span> moirai_data.items():</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(v, <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'per_seed'</span> <span class="kw">in</span> v:</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>                grouped_m[v[<span class="st">'dataset'</span>]] <span class="op">=</span> v[<span class="st">'per_seed'</span>]</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>        grouped_m <span class="op">=</span> {}</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai-1.1-R-base vs FAM (h-AUROC, lf=1.0, 3 seeds each):"</span>)</span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Dataset'</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Moirai'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'+-std'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'FAM'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Delta'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Winner'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>    fam_wins_m <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> total_m <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> ALL_11:</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>        fam_m, fam_s <span class="op">=</span> FAM_LF100[ds]</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ds <span class="kw">in</span> grouped_m:</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>            vals <span class="op">=</span> grouped_m[ds]</span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>            m_mean <span class="op">=</span> np.mean(vals)</span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>            m_std <span class="op">=</span> np.std(vals)</span>
+<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>            delta <span class="op">=</span> fam_m <span class="op">-</span> m_mean</span>
+<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>            winner <span class="op">=</span> <span class="st">'FAM'</span> <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'Moirai'</span></span>
+<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> delta <span class="op">&gt;</span> <span class="dv">0</span>: fam_wins_m <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a>            total_m <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>            above_chance <span class="op">=</span> <span class="st">''</span> <span class="cf">if</span> m_mean <span class="op">&gt;=</span> <span class="fl">0.5</span> <span class="cf">else</span> <span class="st">' [BELOW CHANCE]'</span></span>
+<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>m_mean<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>m_std<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span>delta<span class="sc">:&gt;+8.4f}</span><span class="ss"> </span><span class="sc">{</span>winner<span class="sc">:&gt;10s}{</span>above_chance<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span>fam_m<span class="sc">:&gt;8.4f}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'PENDING'</span><span class="sc">:&gt;10s}</span><span class="ss">"</span>)</span>
+<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"FAM wins: </span><span class="sc">{</span>fam_wins_m<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>total_m<span class="sc">}</span><span class="ss"> evaluated datasets (extension running)"</span>)</span>
+<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines."</span>)</span>
+<span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai's univariate patching discards cross-sensor correlations critical for"</span>)</span>
+<span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins."</span>)</span>
+<span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>()</span>
+<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Per-seed (lf=1.0):"</span>)</span>
+<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> <span class="bu">list</span>(grouped_m.keys()):</span>
+<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>        vals <span class="op">=</span> grouped_m[ds]</span>
+<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>        seeds_str <span class="op">=</span> <span class="st">', '</span>.join(<span class="ss">f'</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">'</span> <span class="cf">for</span> v <span class="kw">in</span> <span class="bu">sorted</span>(vals))</span>
+<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>ds<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>seeds_str<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Moirai results not found"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Moirai-1.1-R-base vs FAM (h-AUROC, 3 seeds each):
+<pre><code>Moirai-1.1-R-base vs FAM (h-AUROC, lf=1.0, 3 seeds each):
 Dataset        Moirai    +-std      FAM    Delta     Winner
------------------------------------------------------------------
+----------------------------------------------------------------------
 FD001          0.6060   0.0035   0.7860  +0.1800        FAM
+FD002             ---      ---   0.5660      ---    PENDING
 FD003          0.6999   0.0044   0.8530  +0.1531        FAM
+SMAP              ---      ---   0.5980      ---    PENDING
+PSM               ---      ---   0.5620      ---    PENDING
 MBA            0.5708   0.0172   0.7390  +0.1682        FAM
+GECCO             ---      ---   0.8190      ---    PENDING
 BATADAL        0.3598   0.0101   0.6070  +0.2472        FAM [BELOW CHANCE]
+SKAB              ---      ---   0.7070      ---    PENDING
+ETTm1             ---      ---   0.8690      ---    PENDING
+SMD               ---      ---   0.6540      ---    PENDING
 
-Per-seed values:
-  FD001: ['0.6054', '0.6105', '0.6021']
-  FD003: ['0.6962', '0.6975', '0.7060']
-  MBA: ['0.5797', '0.5858', '0.5468']
-  BATADAL: ['0.3725', '0.3591', '0.3477']
+FAM wins: 4/4 evaluated datasets (extension running)
 
 KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines.
 Moirai's univariate patching discards cross-sensor correlations critical for
 BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins.
-FAM wins all 4: FD001 +0.180, FD003 +0.153, MBA +0.168, BATADAL +0.247.</code></pre>
+
+Per-seed (lf=1.0):
+  FD001: (0.6021, 0.6054, 0.6105)
+  FD003: (0.6962, 0.6975, 0.7060)
+  MBA: (0.5468, 0.5797, 0.5858)
+  BATADAL: (0.3477, 0.3591, 0.3725)</code></pre>
 </div>
 </div>
 <div id="foundation-model-comparison-table" class="cell" data-execution_count="18">
@@ -1218,46 +1287,71 @@ FAM wins all 4: FD001 +0.180, FD003 +0.153, MBA +0.168, BATADAL +0.247.</code></
 <span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">''</span><span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'2.16M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'120M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'341M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'200M'</span><span class="sc">:&gt;8s}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'91M'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span>)</span>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">55</span>)</span>
 <span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>chr2_ref <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.659</span>, <span class="st">'FD003'</span>: <span class="fl">0.760</span>, <span class="st">'MBA'</span>: <span class="fl">0.451</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.534</span>}</span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>moment_ref <span class="op">=</span> {<span class="st">'FD001'</span>: <span class="fl">0.559</span>, <span class="st">'FD003'</span>: <span class="fl">0.473</span>, <span class="st">'MBA'</span>: <span class="fl">0.791</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.537</span>}</span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>timesfm_ref <span class="op">=</span> {}</span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>moirai_ref <span class="op">=</span> {}</span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>tfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
-<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tfm_path.exists():</span>
-<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(tfm_path) <span class="im">as</span> f:</span>
-<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
-<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> d:</span>
-<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(d[ds], <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> d[ds]:</span>
-<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>            timesfm_ref[ds] <span class="op">=</span> d[ds][<span class="st">'mean'</span>]</span>
-<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>moirai_p <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
-<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_p.exists():</span>
-<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_p) <span class="im">as</span> f:</span>
-<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
-<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds <span class="kw">in</span> d:</span>
-<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(d[ds], <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> d[ds]:</span>
-<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>            moirai_ref[ds] <span class="op">=</span> d[ds][<span class="st">'mean'</span>]</span>
-<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> [<span class="st">'FD001'</span>, <span class="st">'FD003'</span>, <span class="st">'MBA'</span>, <span class="st">'BATADAL'</span>]:</span>
-<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>    fam_m <span class="op">=</span> fam_ref.get(ds, (<span class="bu">float</span>(<span class="st">'nan'</span>),<span class="dv">0</span>))[<span class="dv">0</span>]</span>
-<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>    chr2_m <span class="op">=</span> chr2_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>    mom_m <span class="op">=</span> moment_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>    tfm_m <span class="op">=</span> timesfm_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a>    moirai_m <span class="op">=</span> moirai_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>    vals <span class="op">=</span> [fam_m, chr2_m, mom_m, tfm_m, moirai_m]</span>
-<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> <span class="bu">max</span>(v <span class="cf">for</span> v <span class="kw">in</span> vals <span class="cf">if</span> <span class="kw">not</span> np.isnan(v))</span>
-<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fmt(v, is_best):</span>
-<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.isnan(v): <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'N/A'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
-<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span></span>
-<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'**'</span><span class="op">+</span>s<span class="op">+</span><span class="st">'**'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span> <span class="cf">if</span> <span class="bu">abs</span>(v <span class="op">-</span> best) <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="cf">else</span> <span class="ss">f"</span><span class="sc">{</span>s<span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
-<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>fmt(fam_m, fam_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(chr2_m, chr2_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(mom_m, mom_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(tfm_m, tfm_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(moirai_m, moirai_m<span class="op">==</span>best)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FAM (2.16M) wins: FD001 vs all, FD003 vs all"</span>)</span>
-<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MBA exception: MOMENT (341M, MIMIC-III pretrain) and TimesFM both beat FAM"</span>)</span>
-<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"BATADAL exception: TimesFM beats FAM; Moirai collapses below chance"</span>)</span>
-<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Headline: domain-specific JEPA at 2.16M beats general-purpose at 200-341M on 2/4"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Chr-2 lf=1.0 results (from main paper table)</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>chr2_ref <span class="op">=</span> {</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: <span class="fl">0.659</span>, <span class="st">'FD002'</span>: <span class="fl">0.734</span>, <span class="st">'FD003'</span>: <span class="fl">0.760</span>,</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SMAP'</span>: <span class="fl">0.522</span>, <span class="st">'PSM'</span>: <span class="fl">0.548</span>, <span class="st">'MBA'</span>: <span class="fl">0.451</span>,</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'GECCO'</span>: <span class="fl">0.814</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.534</span>, <span class="st">'SKAB'</span>: <span class="fl">0.685</span>,</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ETTm1'</span>: <span class="fl">0.718</span>, <span class="st">'SMD'</span>: <span class="fl">0.651</span>,</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="co"># MOMENT lf=1.0 (5 datasets only)</span></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>moment_ref <span class="op">=</span> {</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: <span class="fl">0.559</span>, <span class="st">'FD002'</span>: <span class="fl">0.704</span>, <span class="st">'FD003'</span>: <span class="fl">0.473</span>,</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>: <span class="fl">0.791</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.537</span>,</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>timesfm_ref <span class="op">=</span> {}</span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>moirai_ref <span class="op">=</span> {}</span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>tfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tfm_path.exists():</span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(tfm_path) <span class="im">as</span> f:</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>    results_tfm <span class="op">=</span> d.get(<span class="st">'results'</span>, d) <span class="cf">if</span> <span class="bu">isinstance</span>(d, <span class="bu">dict</span>) <span class="cf">else</span> d</span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>    grouped_tfm <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> results_tfm:</span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(r, <span class="bu">dict</span>) <span class="kw">and</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>            grouped_tfm[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds, vals <span class="kw">in</span> grouped_tfm.items():</span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>        timesfm_ref[ds] <span class="op">=</span> <span class="bu">float</span>(np.mean(vals))</span>
+<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>moirai_p <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
+<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_p.exists():</span>
+<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_p) <span class="im">as</span> f:</span>
+<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
+<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="st">'results'</span> <span class="kw">in</span> d:</span>
+<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>        grouped_mo <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> r <span class="kw">in</span> d[<span class="st">'results'</span>]:</span>
+<span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a>                grouped_mo[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ds, vals <span class="kw">in</span> grouped_mo.items():</span>
+<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a>            moirai_ref[ds] <span class="op">=</span> <span class="bu">float</span>(np.mean(vals))</span>
+<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k, v <span class="kw">in</span> d.items():</span>
+<span id="cb34-48"><a href="#cb34-48" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(v, <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> v:</span>
+<span id="cb34-49"><a href="#cb34-49" aria-hidden="true" tabindex="-1"></a>                moirai_ref[v[<span class="st">'dataset'</span>]] <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
+<span id="cb34-50"><a href="#cb34-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-51"><a href="#cb34-51" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> ALL_11:</span>
+<span id="cb34-52"><a href="#cb34-52" aria-hidden="true" tabindex="-1"></a>    fam_m <span class="op">=</span> FAM_LF100[ds][<span class="dv">0</span>]</span>
+<span id="cb34-53"><a href="#cb34-53" aria-hidden="true" tabindex="-1"></a>    chr2_m <span class="op">=</span> chr2_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-54"><a href="#cb34-54" aria-hidden="true" tabindex="-1"></a>    mom_m <span class="op">=</span> moment_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-55"><a href="#cb34-55" aria-hidden="true" tabindex="-1"></a>    tfm_m <span class="op">=</span> timesfm_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-56"><a href="#cb34-56" aria-hidden="true" tabindex="-1"></a>    moirai_m <span class="op">=</span> moirai_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-57"><a href="#cb34-57" aria-hidden="true" tabindex="-1"></a>    vals_valid <span class="op">=</span> [v <span class="cf">for</span> v <span class="kw">in</span> [fam_m, chr2_m, mom_m, tfm_m, moirai_m] <span class="cf">if</span> <span class="kw">not</span> np.isnan(v)]</span>
+<span id="cb34-58"><a href="#cb34-58" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> <span class="bu">max</span>(vals_valid) <span class="cf">if</span> vals_valid <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb34-59"><a href="#cb34-59" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fmt(v):</span>
+<span id="cb34-60"><a href="#cb34-60" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.isnan(v): <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
+<span id="cb34-61"><a href="#cb34-61" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span></span>
+<span id="cb34-62"><a href="#cb34-62" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'['</span><span class="op">+</span>s<span class="op">+</span><span class="st">']'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span> <span class="cf">if</span> <span class="bu">abs</span>(v <span class="op">-</span> best) <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="cf">else</span> <span class="ss">f"</span><span class="sc">{</span>s<span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
+<span id="cb34-63"><a href="#cb34-63" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>fmt(fam_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(chr2_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(mom_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(tfm_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(moirai_m)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb34-64"><a href="#cb34-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-65"><a href="#cb34-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb34-66"><a href="#cb34-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Legend: [value] = best for that dataset"</span>)</span>
+<span id="cb34-67"><a href="#cb34-67" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb34-68"><a href="#cb34-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FAM lifecycle wins: FD001, FD003, ETTm1, SMAP (large margin, domain-specific JEPA)"</span>)</span>
+<span id="cb34-69"><a href="#cb34-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)"</span>)</span>
+<span id="cb34-70"><a href="#cb34-70" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)"</span>)</span>
+<span id="cb34-71"><a href="#cb34-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG"</span>)</span>
+<span id="cb34-72"><a href="#cb34-72" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>================================================================================
@@ -1266,15 +1360,25 @@ COMPLETE FOUNDATION MODEL COMPARISON (h-AUROC, 3 seeds, 198K MLP head)
 Dataset         FAM    Chr-2   MOMENT  TimesFM   Moirai
               2.16M     120M     341M     200M      91M
 -------------------------------------------------------
-FD001      **0.7860**   0.6590   0.5590   0.5304   0.6060
-FD003      **0.8530**   0.7600   0.4730   0.6154   0.6999
-MBA          0.7390   0.4510 **0.7910**   0.7592   0.5708
-BATADAL      0.6070   0.5340   0.5370 **0.6525**   0.3598
+FD001      [0.7860]   0.6590   0.5590   0.5304   0.6060
+FD002        0.5660 [0.7340]   0.7040   0.6015      ---
+FD003      [0.8530]   0.7600   0.4730   0.6154   0.6999
+SMAP       [0.5980]   0.5220      ---   0.5047      ---
+PSM          0.5620   0.5480      --- [0.5696]      ---
+MBA          0.7390   0.4510 [0.7910]   0.7592   0.5708
+GECCO        0.8190   0.8140      --- [0.9251]      ---
+BATADAL      0.6070   0.5340   0.5370 [0.6525]   0.3598
+SKAB         0.7070   0.6850      --- [0.7444]      ---
+ETTm1      [0.8690]   0.7180      ---   0.5890      ---
+SMD        [0.6540]   0.6510      ---      ---      ---
 
-FAM (2.16M) wins: FD001 vs all, FD003 vs all
-MBA exception: MOMENT (341M, MIMIC-III pretrain) and TimesFM both beat FAM
-BATADAL exception: TimesFM beats FAM; Moirai collapses below chance
-Headline: domain-specific JEPA at 2.16M beats general-purpose at 200-341M on 2/4</code></pre>
+Legend: [value] = best for that dataset
+
+FAM lifecycle wins: FD001, FD003, ETTm1, SMAP (large margin, domain-specific JEPA)
+TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)
+FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)
+MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG
+Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly</code></pre>
 </div>
 </div>
 </section>
