@@ -143,7 +143,7 @@ We follow standard practice~\citep{nie2023patchtst,ansari2024chronos,goswami2024
     \toprule
     Dataset           & Target event             & Sensors & Rate    & Context \\
     \midrule
-    C-MAPSS FD001-004 & Engine failure           & 14      & 1/cycle & full history (8--23 tok.) \\
+    C-MAPSS FD001-003 & Engine failure           & 14      & 1/cycle & full history (8--23 tok.) \\
     SMAP / MSL        & Spacecraft fault         & 25 / 55 & 1 Hz    & \\
     PSM               & Server fault             & 25      & 1/min   & \\
     SMD               & Server fault             & 38      & 1/min   & \\
@@ -152,7 +152,6 @@ We follow standard practice~\citep{nie2023patchtst,ansari2024chronos,goswami2024
     SKAB              & Hydraulic valve fault     & 8       & 1 Hz    & \\
     ETTm1             & Transformer overheating  & 7       & 15/min  & \\
     BATADAL (ICS)     & Cyber-attack on SCADA    & 43      & 1/hour  & \\
-    PhysioNet 2012    & In-hospital mortality    & 36      & 1/hour  & full stay; $P{=}1$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -507,7 +506,7 @@ MOMENT-1-large~\citep{goswami2024moment} (341.2M parameters) is a general time-s
 
 \begin{table}[h]
   \centering
-  \caption{\textbf{MOMENT-1-large vs.\ FAM and Chronos-2 (198K MLP head, 3 seeds, h-AUROC; SMD excluded: ${\approx}10.6$\,h B${\times}$C extraction).} Results shown for 5 datasets (SMAP, PSM, GECCO, SKAB, ETTm1 extension in progress). FAM wins on 3 of 5 shown datasets. MOMENT wins MBA (MIMIC-III pretraining overlaps cardiac ECG) and FD002 (multi-condition turbofan where large-corpus pretraining helps); Chronos-2 also wins FD002 for the same reason. Per-channel univariate processing discards cross-channel dependencies on high-dimensional industrial datasets (FD001, FD003, BATADAL), where domain-specific JEPA pretraining dominates.}
+  \caption{\textbf{MOMENT-1-large vs.\ FAM and Chronos-2 (198K MLP head, 3 seeds, h-AUROC; SMD excluded: ${\approx}10.6$\,h B${\times}$C extraction).} Results shown for 5 datasets (FD001-FD003, BATADAL, MBA); SMAP, PSM, GECCO, SKAB, ETTm1 extension in progress. FAM wins on 3 of 5 shown datasets. MOMENT wins MBA (MIMIC-III pretraining overlaps cardiac ECG) and FD002 (multi-condition turbofan where large-corpus pretraining helps); Chronos-2 also wins FD002 for the same reason. Per-channel univariate processing discards cross-channel dependencies on high-dimensional industrial datasets (FD001, FD003, BATADAL), where domain-specific JEPA pretraining dominates.}
   \label{tab:moment_full}
   \small
   \begin{tabular}{lccc}
