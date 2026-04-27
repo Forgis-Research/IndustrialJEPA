@@ -227,13 +227,57 @@ Additional dataset: FD002 (lf=1.0)
 
 FAM wins 3/5. MOMENT wins FD002 and MBA. SMAP/PSM/GECCO/SKAB/ETTm1/SMD excluded due to >5h inference time per high-channel dataset (MOMENT architecture limitation: no sub-batching for multi-channel).
 
-#### Phase 7b - TimesFM-1.0-200M extension (RUNNING as of 2026-04-26 21:42)
+#### Phase 7b - TimesFM-1.0-200M extension (10/11 COMPLETE as of 2026-04-27)
 
-TimesFM uses BS=32 mini-batching for channel processing, faster than MOMENT.
-Running: --datasets FD002 SMAP PSM GECCO SKAB ETTm1 SMD --label-fractions 1.0 0.1
-FD002 (lf=1.0): 0.601 +/- 0.008 (3s) - new result [FAM=0.566, TimesFM wins +0.035]
-FD002 (lf=0.1): 0.548 +/- 0.051 (3s) - new result
-Remaining datasets pending...
+TimesFM uses BS=32 mini-batching for channel processing.
+SMD extraction still running (heavy: 28 entities x 37 channels x 209K test windows).
+
+**TimesFM lf=1.0 results (10/11 datasets):**
+| Dataset | TimesFM h-AUROC | FAM h-AUROC | Winner | Delta |
+|---------|----------------|-------------|--------|-------|
+| FD001 | 0.530 +/- 0.003 | 0.786 +/- 0.033 | FAM | +0.256 |
+| FD002 | 0.602 +/- 0.008 | 0.566 +/- 0.011 | TimesFM | -0.036 |
+| FD003 | 0.615 +/- 0.014 | 0.853 +/- 0.004 | FAM | +0.238 |
+| SMAP  | 0.505 +/- 0.028 | 0.598 +/- 0.036 | FAM | +0.093 |
+| PSM   | 0.570 +/- 0.007 | 0.562 +/- 0.013 | TimesFM | -0.008 |
+| MBA   | 0.759 +/- 0.006 | 0.739 +/- 0.014 | TimesFM | -0.020 |
+| GECCO | 0.925 +/- 0.006 | 0.819 +/- 0.064 | TimesFM | -0.106 |
+| BATADAL | 0.653 +/- 0.005 | 0.607 +/- 0.033 | TimesFM | -0.046 |
+| SKAB  | 0.744 +/- 0.010 | 0.707 +/- 0.017 | TimesFM | -0.037 |
+| ETTm1 | 0.589 +/- 0.008 | 0.869 +/- 0.002 | FAM | +0.280 |
+| SMD   | PENDING | 0.654 +/- 0.004 | ? | ? |
+
+FAM wins: 4/10 (FD001, FD003, ETTm1, SMAP). TimesFM wins: 6/10.
+PATTERN: FAM wins on physical-degradation lifecycle datasets (large margins: +0.238 to +0.280).
+TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA) and multi-condition turbofan (FD002).
+PSM is effectively tied (-0.008 margin < std overlap).
+
+**TimesFM lf=0.1 results (available for 6/11 new datasets):**
+ETTm1: 0.557 +/- 0.040 (3s) [lf100=0.589]
+FD002: 0.548 +/- 0.051 (3s) [lf100=0.602]
+GECCO: 0.772 +/- 0.033 (3s) [lf100=0.925]
+PSM: 0.481 +/- 0.024 (3s) [lf100=0.570]
+SKAB: 0.783 +/- 0.001 (3s) [lf100=0.744]
+SMAP: 0.491 +/- 0.017 (3s) [lf100=0.505]
+Old datasets (FD001/FD003/MBA/BATADAL) lf=0.1 PENDING (caches exist, fast).
+
+Results in: fam-jepa/experiments/v31/results/timesfm_baseline.json
+
+#### Phase 7c - Moirai-1.1-R-base extension (PLANNED)
+
+Extension to all 11 datasets with --delete-cache flag (disk management).
+Will run after SMD TimesFM extraction completes.
+Command: conda run -n py310 python3 baseline_extend_all.py --model moirai --datasets FD001 FD002 FD003 SMAP PSM MBA GECCO BATADAL SKAB ETTm1 SMD --seeds 42 123 456 --label-fractions 1.0 0.1 --delete-cache
+
+Existing Moirai results (4 datasets, lf=1.0):
+| Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
+|---------|----------------|-------------|--------|
+| FD001 | 0.606 +/- 0.004 | 0.786 +/- 0.033 | FAM (+0.180) |
+| FD003 | 0.700 +/- 0.004 | 0.853 +/- 0.004 | FAM (+0.153) |
+| MBA | 0.571 +/- 0.017 | 0.739 +/- 0.014 | FAM (+0.168) |
+| BATADAL | 0.360 +/- 0.010 | 0.607 +/- 0.033 | FAM (+0.247) |
+
+7 additional datasets (FD002/SMAP/PSM/GECCO/SKAB/ETTm1/SMD) pending.
 
 ---
 
