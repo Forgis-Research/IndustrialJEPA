@@ -329,8 +329,80 @@
       ],
       "elapsed_s": 2.939499616622925,
       "timestamp": "2026-04-26T19:12:50.693468"
+    },
+    {
+      "tag": "FD002_moment-mlp_s42_lf10",
+      "dataset": "FD002",
+      "seed": 42,
+      "label_fraction": 0.1,
+      "model": "moment",
+      "n_channels": 14,
+      "n_encoder_params": 341248520,
+      "n_head_params": 460289,
+      "mean_h_auroc": 0.6843914315637999,
+      "pooled_auprc": 0.9207088549929945,
+      "n_valid_horizons": 7,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ],
+      "elapsed_s": 4.283468246459961,
+      "timestamp": "2026-04-27T01:01:26.275809"
+    },
+    {
+      "tag": "FD002_moment-mlp_s123_lf10",
+      "dataset": "FD002",
+      "seed": 123,
+      "label_fraction": 0.1,
+      "model": "moment",
+      "n_channels": 14,
+      "n_encoder_params": 341248520,
+      "n_head_params": 460289,
+      "mean_h_auroc": 0.713271208481361,
+      "pooled_auprc": 0.9199328720464226,
+      "n_valid_horizons": 7,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ],
+      "elapsed_s": 3.068131685256958,
+      "timestamp": "2026-04-27T01:01:30.934340"
+    },
+    {
+      "tag": "FD002_moment-mlp_s456_lf10",
+      "dataset": "FD002",
+      "seed": 456,
+      "label_fraction": 0.1,
+      "model": "moment",
+      "n_channels": 14,
+      "n_encoder_params": 341248520,
+      "n_head_params": 460289,
+      "mean_h_auroc": 0.6711755708440512,
+      "pooled_auprc": 0.9137889739321488,
+      "n_valid_horizons": 7,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ],
+      "elapsed_s": 2.8711326122283936,
+      "timestamp": "2026-04-27T01:01:34.874235"
     }
   ],
   "model": "moment",
-  "timestamp": "2026-04-26T19:12:50.707309"
+  "timestamp": "2026-04-27T01:01:34.897839"
 }

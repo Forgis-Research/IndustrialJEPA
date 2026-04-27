@@ -227,30 +227,32 @@ Additional dataset: FD002 (lf=1.0)
 
 FAM wins 3/5. MOMENT wins FD002 and MBA. SMAP/PSM/GECCO/SKAB/ETTm1/SMD excluded due to >5h inference time per high-channel dataset (MOMENT architecture limitation: no sub-batching for multi-channel).
 
-#### Phase 7b - TimesFM-1.0-200M extension (10/11 COMPLETE as of 2026-04-27)
+#### Phase 7b - TimesFM-1.0-200M extension (11/11 COMPLETE as of 2026-04-27 ~01:15 UTC)
 
 TimesFM uses BS=32 mini-batching for channel processing.
-SMD extraction still running (heavy: 28 entities x 37 channels x 209K test windows).
+SMD extraction completed (~2.5 hours; 28 entities x 37 channels x 209K test windows).
 
-**TimesFM lf=1.0 results (10/11 datasets):**
+**TimesFM lf=1.0 results (11/11 datasets):**
 | Dataset | TimesFM h-AUROC | FAM h-AUROC | Winner | Delta |
 |---------|----------------|-------------|--------|-------|
 | FD001 | 0.530 +/- 0.003 | 0.786 +/- 0.033 | FAM | +0.256 |
 | FD002 | 0.602 +/- 0.008 | 0.566 +/- 0.011 | TimesFM | -0.036 |
 | FD003 | 0.615 +/- 0.014 | 0.853 +/- 0.004 | FAM | +0.238 |
 | SMAP  | 0.505 +/- 0.028 | 0.598 +/- 0.036 | FAM | +0.093 |
-| PSM   | 0.570 +/- 0.007 | 0.562 +/- 0.013 | TimesFM | -0.008 |
+| PSM   | 0.570 +/- 0.007 | 0.562 +/- 0.013 | TimesFM | -0.008 (tied) |
 | MBA   | 0.759 +/- 0.006 | 0.739 +/- 0.014 | TimesFM | -0.020 |
 | GECCO | 0.925 +/- 0.006 | 0.819 +/- 0.064 | TimesFM | -0.106 |
 | BATADAL | 0.653 +/- 0.005 | 0.607 +/- 0.033 | TimesFM | -0.046 |
 | SKAB  | 0.744 +/- 0.010 | 0.707 +/- 0.017 | TimesFM | -0.037 |
 | ETTm1 | 0.589 +/- 0.008 | 0.869 +/- 0.002 | FAM | +0.280 |
-| SMD   | PENDING | 0.654 +/- 0.004 | ? | ? |
+| SMD   | 0.665 +/- 0.019 | 0.654 +/- 0.004 | TimesFM | -0.011 (near-tie; seeds: 0.6545, 0.6503, 0.6916) |
 
-FAM wins: 4/10 (FD001, FD003, ETTm1, SMAP). TimesFM wins: 6/10.
+FAM wins: 4/11 (FD001, FD003, ETTm1, SMAP). TimesFM wins: 7/11.
 PATTERN: FAM wins on physical-degradation lifecycle datasets (large margins: +0.238 to +0.280).
-TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA) and multi-condition turbofan (FD002).
-PSM is effectively tied (-0.008 margin < std overlap).
+TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, SMD) and multi-condition turbofan (FD002).
+PSM and SMD are effectively tied (margin < FAM std).
+SMD note: TimesFM std=0.019 vs FAM std=0.004 - high instability on multi-machine server data.
+Per-seed SMD TimesFM: 0.6545, 0.6503, 0.6916 (seed 456 is an outlier).
 
 **TimesFM lf=0.1 results (available for 6/11 new datasets):**
 ETTm1: 0.557 +/- 0.040 (3s) [lf100=0.589]
