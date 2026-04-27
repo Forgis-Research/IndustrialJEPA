@@ -263,10 +263,10 @@ Old datasets (FD001/FD003/MBA/BATADAL) lf=0.1 PENDING (caches exist, fast).
 
 Results in: fam-jepa/experiments/v31/results/timesfm_baseline.json
 
-#### Phase 7c - Moirai-1.1-R-base extension (PLANNED)
+#### Phase 7c - Moirai-1.1-R-base extension (PLANNED - starts after TimesFM SMD completes)
 
 Extension to all 11 datasets with --delete-cache flag (disk management).
-Will run after SMD TimesFM extraction completes.
+Will run after SMD TimesFM extraction completes (~01:20-01:30 UTC Apr 27).
 Command: conda run -n py310 python3 baseline_extend_all.py --model moirai --datasets FD001 FD002 FD003 SMAP PSM MBA GECCO BATADAL SKAB ETTm1 SMD --seeds 42 123 456 --label-fractions 1.0 0.1 --delete-cache
 
 Existing Moirai results (4 datasets, lf=1.0):
@@ -278,6 +278,25 @@ Existing Moirai results (4 datasets, lf=1.0):
 | BATADAL | 0.360 +/- 0.010 | 0.607 +/- 0.033 | FAM (+0.247) |
 
 7 additional datasets (FD002/SMAP/PSM/GECCO/SKAB/ETTm1/SMD) pending.
+
+#### Phase 7d - MOMENT-1-large extension (RUNNING as of 2026-04-27 00:47 UTC)
+
+Extension to 7 additional datasets: FD002 SMAP PSM GECCO SKAB ETTm1 SMD.
+(FD002 already done - will be skipped; net new: SMAP PSM GECCO SKAB ETTm1 SMD = 6 datasets)
+PID 124877. --delete-cache enabled. Both lf=1.0 and lf=0.1.
+
+Existing MOMENT results (5 datasets, lf=1.0):
+| Dataset | MOMENT h-AUROC | FAM h-AUROC | Winner |
+|---------|----------------|-------------|--------|
+| FD001 | 0.559 +/- 0.008 | 0.786 +/- 0.033 | FAM (+0.227) |
+| FD002 | 0.704 +/- 0.003 | 0.566 +/- 0.011 | MOMENT (+0.138) |
+| FD003 | 0.473 +/- 0.010 | 0.853 +/- 0.004 | FAM (+0.380) |
+| BATADAL | 0.537 +/- 0.054 | 0.607 +/- 0.033 | FAM (+0.070) |
+| MBA | 0.791 +/- 0.009 | 0.739 +/- 0.014 | MOMENT (+0.052) |
+
+FAM wins 3/5 currently. Note: SMAP/PSM/SMD have C>10 channels; MOMENT embed sends B*C at once
+(batch_size=64) so 64*25=1600 sequences per forward pass. May complete or OOM for SMD (C=38).
+New results to be added here when Phase 7d completes.
 
 ---
 
