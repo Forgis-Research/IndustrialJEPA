@@ -1299,64 +1299,84 @@ Per-seed (lf=1.0):
 <span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'GECCO'</span>: <span class="fl">0.814</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.534</span>, <span class="st">'SKAB'</span>: <span class="fl">0.685</span>,</span>
 <span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ETTm1'</span>: <span class="fl">0.718</span>, <span class="st">'SMD'</span>: <span class="fl">0.651</span>,</span>
 <span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="co"># MOMENT lf=1.0 (5 datasets only)</span></span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="co"># MOMENT lf=1.0 - load from JSON (extension adds new datasets dynamically)</span></span>
 <span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>moment_ref <span class="op">=</span> {</span>
 <span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FD001'</span>: <span class="fl">0.559</span>, <span class="st">'FD002'</span>: <span class="fl">0.704</span>, <span class="st">'FD003'</span>: <span class="fl">0.473</span>,</span>
 <span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MBA'</span>: <span class="fl">0.791</span>, <span class="st">'BATADAL'</span>: <span class="fl">0.537</span>,</span>
 <span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>timesfm_ref <span class="op">=</span> {}</span>
-<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>moirai_ref <span class="op">=</span> {}</span>
-<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>tfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
-<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tfm_path.exists():</span>
-<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(tfm_path) <span class="im">as</span> f:</span>
-<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
-<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>    results_tfm <span class="op">=</span> d.get(<span class="st">'results'</span>, d) <span class="cf">if</span> <span class="bu">isinstance</span>(d, <span class="bu">dict</span>) <span class="cf">else</span> d</span>
-<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>    grouped_tfm <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
-<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> results_tfm:</span>
-<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(r, <span class="bu">dict</span>) <span class="kw">and</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
-<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>            grouped_tfm[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
-<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds, vals <span class="kw">in</span> grouped_tfm.items():</span>
-<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>        timesfm_ref[ds] <span class="op">=</span> <span class="bu">float</span>(np.mean(vals))</span>
-<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>moirai_p <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
-<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_p.exists():</span>
-<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_p) <span class="im">as</span> f:</span>
-<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
-<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="st">'results'</span> <span class="kw">in</span> d:</span>
-<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>        grouped_mo <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
-<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> r <span class="kw">in</span> d[<span class="st">'results'</span>]:</span>
-<span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
-<span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a>                grouped_mo[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
-<span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ds, vals <span class="kw">in</span> grouped_mo.items():</span>
-<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a>            moirai_ref[ds] <span class="op">=</span> <span class="bu">float</span>(np.mean(vals))</span>
-<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
-<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k, v <span class="kw">in</span> d.items():</span>
-<span id="cb34-48"><a href="#cb34-48" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(v, <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> v:</span>
-<span id="cb34-49"><a href="#cb34-49" aria-hidden="true" tabindex="-1"></a>                moirai_ref[v[<span class="st">'dataset'</span>]] <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
-<span id="cb34-50"><a href="#cb34-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-51"><a href="#cb34-51" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> ALL_11:</span>
-<span id="cb34-52"><a href="#cb34-52" aria-hidden="true" tabindex="-1"></a>    fam_m <span class="op">=</span> FAM_LF100[ds][<span class="dv">0</span>]</span>
-<span id="cb34-53"><a href="#cb34-53" aria-hidden="true" tabindex="-1"></a>    chr2_m <span class="op">=</span> chr2_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-54"><a href="#cb34-54" aria-hidden="true" tabindex="-1"></a>    mom_m <span class="op">=</span> moment_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-55"><a href="#cb34-55" aria-hidden="true" tabindex="-1"></a>    tfm_m <span class="op">=</span> timesfm_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-56"><a href="#cb34-56" aria-hidden="true" tabindex="-1"></a>    moirai_m <span class="op">=</span> moirai_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
-<span id="cb34-57"><a href="#cb34-57" aria-hidden="true" tabindex="-1"></a>    vals_valid <span class="op">=</span> [v <span class="cf">for</span> v <span class="kw">in</span> [fam_m, chr2_m, mom_m, tfm_m, moirai_m] <span class="cf">if</span> <span class="kw">not</span> np.isnan(v)]</span>
-<span id="cb34-58"><a href="#cb34-58" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> <span class="bu">max</span>(vals_valid) <span class="cf">if</span> vals_valid <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
-<span id="cb34-59"><a href="#cb34-59" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fmt(v):</span>
-<span id="cb34-60"><a href="#cb34-60" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.isnan(v): <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
-<span id="cb34-61"><a href="#cb34-61" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span></span>
-<span id="cb34-62"><a href="#cb34-62" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'['</span><span class="op">+</span>s<span class="op">+</span><span class="st">']'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span> <span class="cf">if</span> <span class="bu">abs</span>(v <span class="op">-</span> best) <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="cf">else</span> <span class="ss">f"</span><span class="sc">{</span>s<span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
-<span id="cb34-63"><a href="#cb34-63" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>fmt(fam_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(chr2_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(mom_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(tfm_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(moirai_m)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb34-64"><a href="#cb34-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-65"><a href="#cb34-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb34-66"><a href="#cb34-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Legend: [value] = best for that dataset"</span>)</span>
-<span id="cb34-67"><a href="#cb34-67" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb34-68"><a href="#cb34-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FAM lifecycle wins: FD001, FD003, ETTm1, SMAP (large margin, domain-specific JEPA)"</span>)</span>
-<span id="cb34-69"><a href="#cb34-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)"</span>)</span>
-<span id="cb34-70"><a href="#cb34-70" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)"</span>)</span>
-<span id="cb34-71"><a href="#cb34-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG"</span>)</span>
-<span id="cb34-72"><a href="#cb34-72" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Try to load extended MOMENT results from JSON</span></span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>moment_path2 <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moment_baseline.json'</span>)</span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moment_path2.exists():</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moment_path2) <span class="im">as</span> f:</span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>        d2 <span class="op">=</span> json.load(f)</span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>    results_mom <span class="op">=</span> d2.get(<span class="st">'results'</span>, d2) <span class="cf">if</span> <span class="bu">isinstance</span>(d2, <span class="bu">dict</span>) <span class="cf">else</span> d2</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> results_mom:</span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(r, <span class="bu">dict</span>) <span class="kw">and</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>            ds <span class="op">=</span> r.get(<span class="st">'dataset'</span>)</span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> ds:</span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> ds <span class="kw">not</span> <span class="kw">in</span> moment_ref:</span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>                    moment_ref[ds] <span class="op">=</span> []</span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="bu">isinstance</span>(moment_ref[ds], <span class="bu">list</span>):</span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>                    moment_ref[ds].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Average lists</span></span>
+<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">list</span>(moment_ref.keys()):</span>
+<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(moment_ref[k], <span class="bu">list</span>) <span class="kw">and</span> moment_ref[k]:</span>
+<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>            moment_ref[k] <span class="op">=</span> <span class="bu">float</span>(np.mean(moment_ref[k]))</span>
+<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="bu">isinstance</span>(moment_ref[k], <span class="bu">list</span>):</span>
+<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>            <span class="kw">del</span> moment_ref[k]</span>
+<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>timesfm_ref <span class="op">=</span> {}</span>
+<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>moirai_ref <span class="op">=</span> {}</span>
+<span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a>tfm_path <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json'</span>)</span>
+<span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tfm_path.exists():</span>
+<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(tfm_path) <span class="im">as</span> f:</span>
+<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
+<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a>    results_tfm <span class="op">=</span> d.get(<span class="st">'results'</span>, d) <span class="cf">if</span> <span class="bu">isinstance</span>(d, <span class="bu">dict</span>) <span class="cf">else</span> d</span>
+<span id="cb34-48"><a href="#cb34-48" aria-hidden="true" tabindex="-1"></a>    grouped_tfm <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb34-49"><a href="#cb34-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> results_tfm:</span>
+<span id="cb34-50"><a href="#cb34-50" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(r, <span class="bu">dict</span>) <span class="kw">and</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb34-51"><a href="#cb34-51" aria-hidden="true" tabindex="-1"></a>            grouped_tfm[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb34-52"><a href="#cb34-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ds, vals <span class="kw">in</span> grouped_tfm.items():</span>
+<span id="cb34-53"><a href="#cb34-53" aria-hidden="true" tabindex="-1"></a>        timesfm_ref[ds] <span class="op">=</span> <span class="bu">float</span>(np.mean(vals))</span>
+<span id="cb34-54"><a href="#cb34-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-55"><a href="#cb34-55" aria-hidden="true" tabindex="-1"></a>moirai_p <span class="op">=</span> Path(<span class="st">'/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json'</span>)</span>
+<span id="cb34-56"><a href="#cb34-56" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> moirai_p.exists():</span>
+<span id="cb34-57"><a href="#cb34-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(moirai_p) <span class="im">as</span> f:</span>
+<span id="cb34-58"><a href="#cb34-58" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> json.load(f)</span>
+<span id="cb34-59"><a href="#cb34-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="st">'results'</span> <span class="kw">in</span> d:</span>
+<span id="cb34-60"><a href="#cb34-60" aria-hidden="true" tabindex="-1"></a>        grouped_mo <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb34-61"><a href="#cb34-61" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> r <span class="kw">in</span> d[<span class="st">'results'</span>]:</span>
+<span id="cb34-62"><a href="#cb34-62" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">abs</span>(r.get(<span class="st">'label_fraction'</span>, <span class="fl">1.0</span>) <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">0.01</span>:</span>
+<span id="cb34-63"><a href="#cb34-63" aria-hidden="true" tabindex="-1"></a>                grouped_mo[r[<span class="st">'dataset'</span>]].append(r[<span class="st">'mean_h_auroc'</span>])</span>
+<span id="cb34-64"><a href="#cb34-64" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ds, vals <span class="kw">in</span> grouped_mo.items():</span>
+<span id="cb34-65"><a href="#cb34-65" aria-hidden="true" tabindex="-1"></a>            moirai_ref[ds] <span class="op">=</span> <span class="bu">float</span>(np.mean(vals))</span>
+<span id="cb34-66"><a href="#cb34-66" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb34-67"><a href="#cb34-67" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k, v <span class="kw">in</span> d.items():</span>
+<span id="cb34-68"><a href="#cb34-68" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(v, <span class="bu">dict</span>) <span class="kw">and</span> <span class="st">'mean'</span> <span class="kw">in</span> v:</span>
+<span id="cb34-69"><a href="#cb34-69" aria-hidden="true" tabindex="-1"></a>                moirai_ref[v[<span class="st">'dataset'</span>]] <span class="op">=</span> v[<span class="st">'mean'</span>]</span>
+<span id="cb34-70"><a href="#cb34-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-71"><a href="#cb34-71" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ds <span class="kw">in</span> ALL_11:</span>
+<span id="cb34-72"><a href="#cb34-72" aria-hidden="true" tabindex="-1"></a>    fam_m <span class="op">=</span> FAM_LF100[ds][<span class="dv">0</span>]</span>
+<span id="cb34-73"><a href="#cb34-73" aria-hidden="true" tabindex="-1"></a>    chr2_m <span class="op">=</span> chr2_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-74"><a href="#cb34-74" aria-hidden="true" tabindex="-1"></a>    mom_m <span class="op">=</span> moment_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-75"><a href="#cb34-75" aria-hidden="true" tabindex="-1"></a>    tfm_m <span class="op">=</span> timesfm_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-76"><a href="#cb34-76" aria-hidden="true" tabindex="-1"></a>    moirai_m <span class="op">=</span> moirai_ref.get(ds, <span class="bu">float</span>(<span class="st">'nan'</span>))</span>
+<span id="cb34-77"><a href="#cb34-77" aria-hidden="true" tabindex="-1"></a>    vals_valid <span class="op">=</span> [v <span class="cf">for</span> v <span class="kw">in</span> [fam_m, chr2_m, mom_m, tfm_m, moirai_m] <span class="cf">if</span> <span class="kw">not</span> np.isnan(v)]</span>
+<span id="cb34-78"><a href="#cb34-78" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> <span class="bu">max</span>(vals_valid) <span class="cf">if</span> vals_valid <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb34-79"><a href="#cb34-79" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fmt(v):</span>
+<span id="cb34-80"><a href="#cb34-80" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.isnan(v): <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'---'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
+<span id="cb34-81"><a href="#cb34-81" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span></span>
+<span id="cb34-82"><a href="#cb34-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span><span class="st">'['</span><span class="op">+</span>s<span class="op">+</span><span class="st">']'</span><span class="sc">:&gt;8s}</span><span class="ss">"</span> <span class="cf">if</span> <span class="bu">abs</span>(v <span class="op">-</span> best) <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="cf">else</span> <span class="ss">f"</span><span class="sc">{</span>s<span class="sc">:&gt;8s}</span><span class="ss">"</span></span>
+<span id="cb34-83"><a href="#cb34-83" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>ds<span class="sc">:10s}</span><span class="ss"> </span><span class="sc">{</span>fmt(fam_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(chr2_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(mom_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(tfm_m)<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>fmt(moirai_m)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb34-84"><a href="#cb34-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-85"><a href="#cb34-85" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb34-86"><a href="#cb34-86" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Legend: [value] = best for that dataset"</span>)</span>
+<span id="cb34-87"><a href="#cb34-87" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb34-88"><a href="#cb34-88" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FAM lifecycle wins: FD001, FD003, ETTm1, SMAP (large margin, domain-specific JEPA)"</span>)</span>
+<span id="cb34-89"><a href="#cb34-89" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)"</span>)</span>
+<span id="cb34-90"><a href="#cb34-90" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)"</span>)</span>
+<span id="cb34-91"><a href="#cb34-91" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG"</span>)</span>
+<span id="cb34-92"><a href="#cb34-92" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>================================================================================
