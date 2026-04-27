@@ -1,109 +1,264 @@
 {
-  "FD001": {
-    "dataset": "FD001",
-    "model": "Moirai-1.1-R-base",
-    "seeds": [
-      42,
-      123,
-      456
-    ],
-    "per_seed": [
-      0.6053783519047452,
-      0.6105121977306996,
-      0.6020854161612024
-    ],
-    "mean": 0.6059919885988824,
-    "std": 0.0034674750082539386,
-    "horizons": [
-      1,
-      5,
-      10,
-      20,
-      50,
-      100,
-      150
-    ]
-  },
-  "FD003": {
-    "dataset": "FD003",
-    "model": "Moirai-1.1-R-base",
-    "seeds": [
-      42,
-      123,
-      456
-    ],
-    "per_seed": [
-      0.696198435589767,
-      0.6974627351683227,
-      0.7060096840497836
-    ],
-    "mean": 0.6998902849359577,
-    "std": 0.004357743872831692,
-    "horizons": [
-      1,
-      5,
-      10,
-      20,
-      50,
-      100,
-      150
-    ]
-  },
-  "MBA": {
-    "dataset": "MBA",
-    "model": "Moirai-1.1-R-base",
-    "seeds": [
-      42,
-      123,
-      456
-    ],
-    "per_seed": [
-      0.5797475132714607,
-      0.5858481963392901,
-      0.5467792948466881
-    ],
-    "mean": 0.5707916681524796,
-    "std": 0.017161004968747073,
-    "horizons": [
-      1,
-      5,
-      10,
-      20,
-      50,
-      100,
-      150,
-      200
-    ]
-  },
-  "BATADAL": {
-    "dataset": "BATADAL",
-    "model": "Moirai-1.1-R-base",
-    "seeds": [
-      42,
-      123,
-      456
-    ],
-    "per_seed": [
-      0.37246328837871595,
-      0.3591117350634474,
-      0.3477426734836051
-    ],
-    "mean": 0.35977256564192284,
-    "std": 0.010102960720771582,
-    "horizons": [
-      1,
-      5,
-      10,
-      20,
-      50,
-      100,
-      150,
-      200
-    ]
-  },
-  "model_info": {
-    "name": "Moirai-1.1-R-base",
-    "n_params_M": 91.357728,
-    "hf_id": "Salesforce/moirai-1.1-R-base"
-  }
+  "results": [
+    {
+      "dataset": "FD001",
+      "seed": 42,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.6053783519047452,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "dataset": "FD001",
+      "seed": 123,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.6105121977306996,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "dataset": "FD001",
+      "seed": 456,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.6020854161612024,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "dataset": "FD003",
+      "seed": 42,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.696198435589767,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "dataset": "FD003",
+      "seed": 123,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.6974627351683227,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "dataset": "FD003",
+      "seed": 456,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.7060096840497836,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ]
+    },
+    {
+      "dataset": "MBA",
+      "seed": 42,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.5797475132714607,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "dataset": "MBA",
+      "seed": 123,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.5858481963392901,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "dataset": "MBA",
+      "seed": 456,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.5467792948466881,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "dataset": "BATADAL",
+      "seed": 42,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.37246328837871595,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "dataset": "BATADAL",
+      "seed": 123,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.3591117350634474,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "dataset": "BATADAL",
+      "seed": 456,
+      "label_fraction": 1.0,
+      "mean_h_auroc": 0.3477426734836051,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150,
+        200
+      ]
+    },
+    {
+      "tag": "FD001_moirai-mlp_s42_lf10",
+      "dataset": "FD001",
+      "seed": 42,
+      "label_fraction": 0.1,
+      "model": "moirai",
+      "n_channels": 14,
+      "n_encoder_params": 91357728,
+      "n_head_params": 394753,
+      "mean_h_auroc": 0.5945707234504259,
+      "pooled_auprc": 0.9234862903658817,
+      "n_valid_horizons": 7,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ],
+      "elapsed_s": 7.061817169189453,
+      "timestamp": "2026-04-27T01:07:45.398588"
+    },
+    {
+      "tag": "FD001_moirai-mlp_s123_lf10",
+      "dataset": "FD001",
+      "seed": 123,
+      "label_fraction": 0.1,
+      "model": "moirai",
+      "n_channels": 14,
+      "n_encoder_params": 91357728,
+      "n_head_params": 394753,
+      "mean_h_auroc": 0.5763893902081333,
+      "pooled_auprc": 0.9280365147676826,
+      "n_valid_horizons": 7,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ],
+      "elapsed_s": 1.9372222423553467,
+      "timestamp": "2026-04-27T01:07:48.770530"
+    },
+    {
+      "tag": "FD001_moirai-mlp_s456_lf10",
+      "dataset": "FD001",
+      "seed": 456,
+      "label_fraction": 0.1,
+      "model": "moirai",
+      "n_channels": 14,
+      "n_encoder_params": 91357728,
+      "n_head_params": 394753,
+      "mean_h_auroc": 0.5925419526648795,
+      "pooled_auprc": 0.9239744982135663,
+      "n_valid_horizons": 7,
+      "horizons": [
+        1,
+        5,
+        10,
+        20,
+        50,
+        100,
+        150
+      ],
+      "elapsed_s": 6.431686639785767,
+      "timestamp": "2026-04-27T01:07:56.591138"
+    }
+  ],
+  "model": "moirai",
+  "timestamp": "2026-04-27T01:07:56.595834"
 }
