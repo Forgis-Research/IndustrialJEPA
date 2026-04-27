@@ -252,20 +252,23 @@ PSM and SMD are effectively tied (margin < FAM std).
 SMD note: TimesFM std=0.019 vs FAM std=0.004 - high instability on multi-machine server data.
 Per-seed SMD TimesFM: 0.6545, 0.6503, 0.6916 (seed 456 is an outlier).
 
-**TimesFM lf=0.1 results (11/11 datasets COMPLETE as of ~01:15 UTC):**
+**TimesFM lf=0.1 results (10/11 datasets complete as of ~02:00 UTC; SMD seed 3 pending):**
 | Dataset | TimesFM lf=0.1 | TimesFM lf=1.0 | FAM lf=0.1 | Retention |
 |---------|---------------|---------------|------------|----------|
-| FD001 | 0.430 +/- 0.048 | 0.530 +/- 0.003 | 0.748 +/- 0.061 | 81% |
-| FD003 | 0.570 +/- 0.063 | 0.615 +/- 0.014 | 0.855 +/- 0.001 | 93% |
-| MBA | 0.773 +/- 0.008 | 0.759 +/- 0.006 | 0.550 +/- 0.073 | 102%! |
-| BATADAL | 0.666 +/- 0.039 | 0.653 +/- 0.005 | 0.637 +/- 0.060 | 102%! |
-| ETTm1 | 0.557 +/- 0.040 | 0.589 +/- 0.008 | 0.769 +/- 0.000 | 95% |
-| FD002 | 0.548 +/- 0.051 | 0.602 +/- 0.008 | 0.566 +/- 0.050 | 91% |
-| GECCO | 0.772 +/- 0.033 | 0.925 +/- 0.006 | ~0.35 (near chance) | 84% |
-| PSM | 0.481 +/- 0.024 | 0.570 +/- 0.007 | 0.517 +/- 0.009 | 84% |
-| SKAB | 0.783 +/- 0.001 | 0.744 +/- 0.010 | 0.729 +/- 0.033 | 105%! |
-| SMAP | 0.491 +/- 0.017 | 0.505 +/- 0.028 | 0.577 +/- 0.052 | 97% |
-| SMD | PENDING (lf=0.1 extraction running) | 0.665 +/- 0.019 | 0.527 +/- 0.053 | ? |
+| FD001 | 0.430 +/- 0.059 (3s) | 0.530 +/- 0.003 | 0.748 +/- 0.061 | 81% |
+| FD002 | 0.548 +/- 0.055 (3s) | 0.602 +/- 0.008 | 0.566 +/- 0.050 | 91% |
+| FD003 | 0.570 +/- 0.077 (3s) | 0.615 +/- 0.014 | 0.855 +/- 0.001 | 93% |
+| SMAP | 0.503 +/- 0.021 (3s) | 0.505 +/- 0.028 | 0.577 +/- 0.052 | 100% |
+| PSM | 0.481 +/- 0.027 (3s) | 0.570 +/- 0.007 | 0.517 +/- 0.009 | 84% |
+| MBA | 0.773 +/- 0.010 (3s) | 0.759 +/- 0.006 | 0.550 +/- 0.073 | 102%! |
+| GECCO | 0.772 +/- 0.034 (3s) | 0.925 +/- 0.006 | ~0.35 (near chance) | 84% |
+| BATADAL | 0.666 +/- 0.048 (3s) | 0.653 +/- 0.005 | 0.637 +/- 0.060 | 102%! |
+| SKAB | 0.783 +/- 0.002 (3s) | 0.744 +/- 0.010 | 0.729 +/- 0.033 | 105%! |
+| ETTm1 | 0.556 +/- 0.041 (3s) | 0.589 +/- 0.008 | 0.769 +/- 0.000 | 94% |
+| SMD | 0.634 +/- 0.031 (2s) PENDING | 0.665 +/- 0.019 | 0.527 +/- 0.053 | ? |
+
+NOTABLE: TimesFM MBA/BATADAL/SKAB show slight IMPROVEMENT at 10% labels (noise/head regularization).
+For FAM vs TimesFM at lf=0.1: FAM still wins on FD001/FD003/ETTm1 by large margins.
 
 NOTABLE: TimesFM MBA/BATADAL/SKAB show slight IMPROVEMENT at 10% labels (likely noise + smaller head regularization).
 For FAM vs TimesFM at lf=0.1: FAM still wins on FD001/FD003/ETTm1 by large margins.
