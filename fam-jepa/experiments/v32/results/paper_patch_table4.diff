@@ -1,0 +1,54 @@
+Suggested patch for paper-neurips/paper.tex Table 4 (post-V32 numbers).
+
+Lines 305-352 currently:
+=========================================================================
+\multirow{2}{*}{C-MAPSS}
+& \multirow{2}{*}{Turbofan}
+& 100\% & $\mathbf{.79}${\scriptsize$\pm.03$} & $.66${\scriptsize$\pm.00$} & RMSE \placeholder{--} & $\mathbf{10.61}^{a}$ \\
+&            & 10\%  & $\mathbf{.77}${\scriptsize$\pm.06$} & ---          & RMSE \placeholder{--} & \\
+
+After patch (using FD001 RMSE; add per-FD breakdown to a footnote):
+=========================================================================
+\multirow{2}{*}{C-MAPSS}
+& \multirow{2}{*}{Turbofan}
+& 100\% & $\mathbf{.79}${\scriptsize$\pm.03$} & $.66${\scriptsize$\pm.00$} & RMSE $18.59${\scriptsize$\pm0.32$}$^{e}$ & $\mathbf{10.61}^{a}$ \\
+&            & 10\%  & $\mathbf{.77}${\scriptsize$\pm.06$} & $.66${\scriptsize$\pm.01$} & RMSE $21.57${\scriptsize$\pm0.18$} & \\
+
+Per-subset RMSE (footnote ^{e} or appendix table):
+  FD001 100%/10%: 18.59+/-0.32 / 21.57+/-0.18  (vs STAR 10.61)
+  FD002 100%/10%: 32.37+/-0.18 / 32.36+/-0.59  (vs STAR 13.47)
+  FD003 100%/10%: 16.58+/-0.45 / 23.97+/-4.47  (vs STAR 10.71)
+
+
+Anomaly rows — fill the \placeholder{--} cells:
+=========================================================================
+SMAP 10%:    PA-F1 $.89${\scriptsize$\pm.08$}      Chr-2 lf10: $.51${\scriptsize$\pm.00$}
+PSM  10%:    PA-F1 $.95${\scriptsize$\pm.01$}      Chr-2 lf10: $.51${\scriptsize$\pm.02$}
+SMD  100%:   PA-F1 $.87${\scriptsize$\pm.01$}  (was 0.25 - that was the WRONG horizon)
+SMD  10%:    PA-F1 $.73${\scriptsize$\pm.10$}      Chr-2 lf10: --- (no cache)
+MBA  100%:   AUROC $.72${\scriptsize$\pm.06$}      Chr-2 100%: 0.46+/-0.03
+MBA  10%:    AUROC $.66${\scriptsize$\pm.04$}      Chr-2 lf10: $.54${\scriptsize$\pm.06$}
+SKAB 10%:    F1    $.76${\scriptsize$\pm.03$}
+ETTm1 100%:  F1    $.63${\scriptsize$\pm.00$}      AUROC $.95${\scriptsize$\pm.00$}
+ETTm1 10%:   F1    $.63${\scriptsize$\pm.00$}      AUROC $.82${\scriptsize$\pm.01$}
+GECCO 100%:  F1    $.16${\scriptsize$\pm.04$}  (genuine, but PA-F1 0.73 may be more apt)
+GECCO 10%:   F1    $.05${\scriptsize$\pm.04$}  (head collapse - keep \dagger footnote)
+BATADAL 100%: F1   $.52${\scriptsize$\pm.00$}  (PA-F1 0.97 matches the BATADAL S-score 0.97)
+BATADAL 10%:  F1   $.52${\scriptsize$\pm.00$}      Chr-2 lf10: $.55${\scriptsize$\pm.06$}
+
+
+Footnote changes:
+=========================================================================
+$^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE from a frozen-encoder
+   MSE probe (33K-param head) on the v30 representation. STAR reports
+   13.47 (FD002) and 10.71 (FD003); see appendix.
+$^{c}$\citet{xu2022anomalytransformer} -- PA-F1 inflated; for the
+   protocol-aligned non-PA F1 see appendix.
+$^{d}$\citet{batadal2018} -- *S-score 0.97*, not ROC-AUC. (BATADAL
+   competition asymmetric scoring.) Our PA-F1 0.97 approximates the same
+   segment-level detection target.
+$^{e}$Frozen-encoder MSE probe; head selected by val RMSE over hidden in
+   {64,128,256,512} x layers in {1,2} x loss in {MSE,Huber}.
+
+GECCO ref: switch \texttt{batadal2018} -> \texttt{gecco2018} (zenodo 3884398),
+   F1 0.71-0.80 (winning team in original online-detection task).

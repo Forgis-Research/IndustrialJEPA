@@ -90,7 +90,9 @@ def gen_chr2_lf10_row(chr2_data: Dict, ds: str) -> str:
 def main():
     rmse = load_json('rmse_probe.json')
     legacy = load_json('legacy_metrics_full.json')
-    chr2 = load_json('baseline_lf10.json')
+    # Prefer the fixed Phase 4b results (proper subsampling for non-engine
+    # datasets + working MOMENT path) over the original Phase 4.
+    chr2 = load_json('baseline_lf10_fixed.json') or load_json('baseline_lf10.json')
 
     # Build LaTeX snippets to drop into Table 4 cells
     snippets = []
@@ -120,10 +122,15 @@ def main():
     print(out)
     print(f'\nWrote {RES / "table4_latex.txt"}')
 
-    # Build SESSION_SUMMARY
-    summary = build_summary(rmse, legacy, chr2)
-    (RES / 'SESSION_SUMMARY.md').write_text(summary)
-    print(f'Wrote {RES / "SESSION_SUMMARY.md"}')
+    # Build SESSION_SUMMARY only if it doesn't already exist (preserve hand
+    # curation on re-run).
+    summary_path = RES / 'SESSION_SUMMARY.md'
+    if not summary_path.exists():
+        summary = build_summary(rmse, legacy, chr2)
+        summary_path.write_text(summary)
+        print(f'Wrote {summary_path}')
+    else:
+        print(f'NOTE: {summary_path} already exists; not overwriting.')
 
     # Append to RESULTS.md
     resmd_addition = build_resultsmd_section(rmse, legacy, chr2)

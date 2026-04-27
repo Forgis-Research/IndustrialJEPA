@@ -29,9 +29,9 @@ FD001: $0.66${\scriptsize$\pm0.01$}
 FD002: $0.71${\scriptsize$\pm0.00$}
 FD003: $0.71${\scriptsize$\pm0.00$}
 SMAP: $0.51${\scriptsize$\pm0.00$}
-PSM: $0.51${\scriptsize$\pm0.01$}
+PSM: $0.51${\scriptsize$\pm0.02$}
 SMD: ---
-MBA: $0.46${\scriptsize$\pm0.03$}
-GECCO: $0.78${\scriptsize$\pm0.01$}
-BATADAL: $0.53${\scriptsize$\pm0.03$}
+MBA: $0.54${\scriptsize$\pm0.06$}
+GECCO: $0.84${\scriptsize$\pm0.01$}
+BATADAL: $0.55${\scriptsize$\pm0.06$}
 MSL: $0.41${\scriptsize$\pm0.03$}
