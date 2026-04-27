@@ -1,10 +1,46 @@
 ---
 name: IndustrialJEPA / FAM Project Context
-description: v31 complete (Apr 26): TimesFM, Moirai, FEMTO baselines done; theory A1' integrated; paper 20+ pages clean compile
+description: v33 complete (Apr 27): ST-JEPA collapse confirmed on PSM/SMAP/FD001; channel-fusion design validated; v31 baselines final
 type: project
 ---
 
-## Current State (v31 COMPLETE, 2026-04-26)
+## Current State (v33 COMPLETE, 2026-04-27)
+
+### V33 Result: Cross-channel attention does NOT improve FAM (negative result)
+
+ST-JEPA (per-channel tokenization + factored temporal/cross-channel attention) collapsed within epoch 1 on all 3 test datasets (h_std~0.003, val_loss~0.005). Channel dropout was within seed noise (all p>0.45). This is the third independent failure of per-channel tokenization (v14, v22, v33). The channel-fusion patch embedding (Linear(C*P, d)) is architecturally load-bearing.
+
+Key numbers (h-AUROC, 3 seeds):
+| Dataset | Baseline v33 | Ch-Drop | ST-JEPA | v30 Ref |
+|---------|-------------|---------|---------|---------|
+| PSM     | 0.5545±0.0290 | 0.5678±0.0037 | 0.4787±0.0117* | 0.562 |
+| SMAP    | 0.5324±0.0966 | 0.5767±0.0359 | 0.4892±0.0146 | 0.598 |
+| FD001   | 0.7208±0.0560 | 0.7322±0.0165 | 0.4940±0.0324* | 0.786 |
+*statistically significant regression (p<0.05)
+
+Paper action: negative result goes in appendix ablation, not main table. Framing: confirms channel-fusion inductive bias.
+
+Files: fam-jepa/experiments/v33/results/SESSION_SUMMARY.md, phase4/ablation_table.{json,md}, phase4/stat_tests.json, notebooks/33_v33_analysis.{qmd,html}
+
+## Previous State (v31 Phase 7 in progress, 2026-04-27)
+
+### Ongoing: Foundation Model Extension to All 11 Datasets
+Phase 7b TimesFM: COMPLETE (11/11 datasets, lf=1.0 and lf=0.1). Only SMD lf=0.1 seed 456 pending (~05:20 UTC still extracting, ~4h elapsed).
+Phase 7c Moirai: COMPLETE (9 feasible datasets; SMAP/SMD infeasible B×C). PSM=0.533, FAM wins 6/9.
+Phase 7d MOMENT: RUNNING (PID 124877, ~5h elapsed). SMAP extraction ongoing (~135K×25 channels). Expected 5-10 more datasets to complete if not killed before SMD.
+
+### Auto-update scripts ready (when MOMENT completes):
+- `/tmp/update_moment_full.py` - updates MOMENT table (10 rows), caption, Section 5.1
+- Run when all 10 MOMENT datasets complete (SMAP, PSM, GECCO, SKAB, ETTm1 still pending)
+- Key match strings verified in paper; regex fallback for footnote
+
+### Paper status: 21 pages, clean compile, all "pending" placeholders removed
+- PSM Moirai row: $0.533 \pm 0.006$
+- FAM wins 6/9 Moirai; FAM wins 4/11 TimesFM (wins on FD001/FD003/ETTm1/SMAP)
+- MOMENT section: "Results shown for 5 datasets (FD001-FD003, BATADAL, MBA); SMAP...extension in progress"
+- Paper fixes applied this session: PhysioNet 2012 removed, FD004→FD003, legacy backbone caption, MOMENT caption corrected
+
+## Previous State (v31 COMPLETE, 2026-04-26)
 
 ### Paper: FAM (Forecast-Anything Model)
 - Title: "FAM: Self-Supervised Event Prediction via Causal JEPA for Industrial Time Series"
@@ -37,7 +73,7 @@ type: project
 | SMD     | 0.654 +/- 0.004 | - | - | - | - |
 | FEMTO   | 0.575 +/- 0.008 | - | - | - | - |
 
-FAM wins: 6/8 vs Chr-2 (loses FD002, GECCO near-tie); 3/4 vs MOMENT; 2/4 vs TimesFM; 4/4 vs Moirai.
+FAM wins: 6/8 vs Chr-2 (loses FD002, GECCO near-tie); 3/5 vs MOMENT (5 done); 4/11 vs TimesFM (11/11); 6/9 vs Moirai (9 feasible).
 Honest negatives: TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046). MOMENT beats FAM on MBA (+0.052).
 Moirai BATADAL=0.360 is BELOW CHANCE - worst result across all baselines.
 

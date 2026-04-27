@@ -1,7 +1,7 @@
 - [A2P Replication Findings](project_a2p_replication.md) — 14 claims (Apr 12): LR=1.4x prec/50% recall (8.4 FA/TP); oracle prec=1.0 at 36.7% recall; easy AP+=first-half blocks (calm context); LR fails to exploit calm signal
 - [STAR Replication Progress](project_star_replication.md) — FD001 5-seed COMPLETE: RMSE=12.186+/-0.553 (paper=10.61, +14.9%, GOOD); FD002 running (ETA ~18:15 April 11)
 - [DCSSL Replication Findings](project_dcssl_replication.md) — FPT shift is key failure mode; paper SimCLR avg≈trivial baseline; paper table had swapped columns; RUL-fix applied to cond2/3
-- [IndustrialJEPA Project Context](project_industrialjepa.md) — v31 COMPLETE: TimesFM/Moirai/FEMTO done; A1' theory integrated; train.py API notes; paper clean compile
+- [IndustrialJEPA Project Context](project_industrialjepa.md) — v33 complete (Apr 27): ST-JEPA collapses on all datasets; channel-fusion design confirmed load-bearing; v31 baselines final
 - [Dataset Catalog and Recommendations](datasets_catalog.md) — Paderborn=Tier2, WADI=Brain-JEPA, OXE proprio data verified and used
 - [JEPA + PHM Literature Review 2025-2026](literature_review_2025_2026.md) — Confirmed gaps: no JEPA+RUL, no JEPA+cross-machine, SIGReg not tried on 1D signals; MTS-JEPA/TS-JEPA/LeJEPA/RmGPT are closest work
 - [Bearing RUL SOTA Literature Review (April 2026)](literature_review_rul_sota.md) — FEMTO best nRMSE=0.0443; single-window RUL formulation does NOT exist; DCSSL is only SSL+RUL paper on FEMTO
