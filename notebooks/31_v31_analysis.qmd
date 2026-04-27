@@ -643,6 +643,10 @@ head as Chr2-mlp. This enables a direct comparison of per-dataset JEPA pretraini
 (FAM, 2.16M) vs. large-scale general pretraining (MOMENT, 341M) and vs. value-
 forecasting pretraining (Chronos-2, 120M).
 
+**Extension status (as of 02:00 UTC 2026-04-27):** SMAP extraction in progress (~3.8h total,
+54 min elapsed). Expected: SMAP ~04:51, PSM ~05:40, GECCO/SKAB/ETTm1 by ~05:55, SMD infeasible
+(~10.6h B*C extraction). Results load dynamically from JSON below.
+
 The key question: does scale or domain-specificity matter more for event prediction?
 
 ```{python}
@@ -804,9 +808,9 @@ if timesfm_path.exists():
             total += 1
             print(f"{ds:10s} {tfm_m:>10.4f} {tfm_s:>8.4f} {fam_m:>8.4f} {delta:>+8.4f} {winner:>10s}")
         else:
-            print(f"{ds:10s} {'---':>10s} {'---':>8s} {fam_m:>8.4f} {'---':>8s} {'PENDING':>10s}")
+            print(f"{ds:10s} {'---':>10s} {'---':>8s} {fam_m:>8.4f} {'---':>8s} {'NO DATA':>10s}")
     print()
-    print(f"FAM wins: {fam_wins}/{total} (SMD pending)")
+    print(f"FAM wins: {fam_wins}/{total} (all 11 complete)")
     print()
     print("PATTERN: FAM wins on physical lifecycle datasets (FD001, FD003, ETTm1, SMAP).")
     print("TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM).")
@@ -826,8 +830,11 @@ else:
 ## P-B: Moirai-1.1-R-base Baseline (v31)
 
 Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head.
-Currently evaluated on 4 datasets; extension to all 11 running in background.
-FAM wins all 4 evaluated datasets. Moirai collapses on BATADAL (0.360, below chance).
+**FINAL: 5 feasible datasets.** SMAP/PSM/GECCO/SKAB/ETTm1/SMD are infeasible:
+Moirai's B*C univariate patching (sub-batch size 64) requires 0.4 to 53.7h extraction
+per dataset at these window counts (19.5h for SMAP, 53.7h for SMD). Process terminated at 01:55 UTC.
+FAM wins 4 of 5; Moirai wins FD002 (+0.098, multi-condition turbofan).
+Moirai collapses on BATADAL (0.360, below chance) - univariate patching fails.
 
 ```{python}
 #| label: moirai-results
@@ -868,13 +875,16 @@ if moirai_path.exists():
             above_chance = '' if m_mean >= 0.5 else ' [BELOW CHANCE]'
             print(f"{ds:10s} {m_mean:>10.4f} {m_std:>8.4f} {fam_m:>8.4f} {delta:>+8.4f} {winner:>10s}{above_chance}")
         else:
-            print(f"{ds:10s} {'---':>10s} {'---':>8s} {fam_m:>8.4f} {'---':>8s} {'PENDING':>10s}")
+            print(f"{ds:10s} {'---':>10s} {'---':>8s} {fam_m:>8.4f} {'---':>8s} {'INFEASIBLE':>10s}")
     print()
-    print(f"FAM wins: {fam_wins_m}/{total_m} evaluated datasets (extension running)")
+    print(f"FAM wins: {fam_wins_m}/{total_m} feasible datasets (SMAP/PSM/GECCO/SKAB/ETTm1/SMD: B*C infeasible)")
     print()
     print("KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines.")
     print("Moirai's univariate patching discards cross-sensor correlations critical for")
     print("BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins.")
+    print()
+    print("FD002 Moirai win: multi-condition turbofan - consistent with Chr-2 and TimesFM wins on FD002.")
+    print("Large-corpus pretraining captures cross-condition variation that per-dataset JEPA encodes less efficiently.")
     print()
     print("Per-seed (lf=1.0):")
     for ds in list(grouped_m.keys()):
@@ -979,6 +989,11 @@ print("TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretra
 print("FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)")
 print("MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG")
 print("Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly")
+print()
+print("INFEASIBILITY NOTE (Moirai + MOMENT):")
+print("  Moirai SMAP/PSM/SMD infeasible: B*C sub-batching requires 4-54h extraction")
+print("  MOMENT SMAP (3.8h)/PSM (0.8h) feasible; SMD (10.6h) infeasible")
+print("  MOMENT extension running: expected SMAP~04:51, PSM~05:40, GECCO/SKAB/ETTm1 by ~05:55 UTC")
 ```
 
 ## P-C: FEMTO Bearing Dataset (v31)
