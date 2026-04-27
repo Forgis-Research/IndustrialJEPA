@@ -280,19 +280,24 @@ Extension to all 11 datasets with --delete-cache flag (disk management).
 PID 129847. Started after SMD TimesFM extraction completed.
 Command: conda run -n py310 python3 baseline_extend_all.py --model moirai --datasets FD001 FD002 FD003 SMAP PSM MBA GECCO BATADAL SKAB ETTm1 SMD --seeds 42 123 456 --label-fractions 1.0 0.1 --delete-cache
 
-Moirai results so far (6 datasets completed lf=1.0 as of ~02:00 UTC):
+Moirai results so far (as of ~02:30 UTC - SMAP extraction now running):
 | Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
 |---------|----------------|-------------|--------|
 | FD001 lf=1.0 | 0.606 +/- 0.003 | 0.786 +/- 0.033 | FAM (+0.180) |
 | FD001 lf=0.1 | 0.588 +/- 0.008 | ? | ? |
 | FD002 lf=1.0 | 0.664 +/- 0.004 | 0.566 +/- 0.011 | **Moirai (+0.098)** |
+| FD002 lf=0.1 | 0.662 +/- 0.018 | ? | ? |
 | FD003 lf=1.0 | 0.700 +/- 0.004 | 0.853 +/- 0.004 | FAM (+0.153) |
+| FD003 lf=0.1 | 0.620 +/- 0.017 | ? | ? |
 | MBA lf=1.0 | 0.571 +/- 0.017 | 0.739 +/- 0.014 | FAM (+0.168) |
 | BATADAL lf=1.0 | 0.360 +/- 0.010 | 0.607 +/- 0.033 | FAM (+0.247) |
 
-Per-seed FD002 Moirai: (0.6615, 0.6617, 0.6696) - consistent n=3.
+Per-seed FD002 Moirai lf=1.0: (0.6615, 0.6617, 0.6696).
+Per-seed FD002 Moirai lf=0.1: (0.6372, 0.6808, 0.6686).
+Per-seed FD003 Moirai lf=0.1: (0.6094, 0.6066, 0.6434).
 
-5 additional datasets (SMAP/PSM/GECCO/SKAB/ETTm1/SMD) pending extraction.
+SMAP extraction now running for both Moirai and MOMENT (as of ~02:10 UTC).
+Remaining: SMAP/PSM/GECCO/SKAB/ETTm1/SMD lf=1.0 and lf=0.1 (6 datasets).
 
 #### Phase 7d - MOMENT-1-large extension (RUNNING as of 2026-04-27 00:47 UTC)
 

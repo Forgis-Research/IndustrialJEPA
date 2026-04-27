@@ -901,11 +901,31 @@ chr2_ref = {
     'GECCO': 0.814, 'BATADAL': 0.534, 'SKAB': 0.685,
     'ETTm1': 0.718, 'SMD': 0.651,
 }
-# MOMENT lf=1.0 (5 datasets only)
+# MOMENT lf=1.0 - load from JSON (extension adds new datasets dynamically)
 moment_ref = {
     'FD001': 0.559, 'FD002': 0.704, 'FD003': 0.473,
     'MBA': 0.791, 'BATADAL': 0.537,
 }
+# Try to load extended MOMENT results from JSON
+moment_path2 = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moment_baseline.json')
+if moment_path2.exists():
+    with open(moment_path2) as f:
+        d2 = json.load(f)
+    results_mom = d2.get('results', d2) if isinstance(d2, dict) else d2
+    for r in results_mom:
+        if isinstance(r, dict) and abs(r.get('label_fraction', 1.0) - 1.0) < 0.01:
+            ds = r.get('dataset')
+            if ds:
+                if ds not in moment_ref:
+                    moment_ref[ds] = []
+                if isinstance(moment_ref[ds], list):
+                    moment_ref[ds].append(r['mean_h_auroc'])
+    # Average lists
+    for k in list(moment_ref.keys()):
+        if isinstance(moment_ref[k], list) and moment_ref[k]:
+            moment_ref[k] = float(np.mean(moment_ref[k]))
+        elif isinstance(moment_ref[k], list):
+            del moment_ref[k]
 timesfm_ref = {}
 moirai_ref = {}
 
