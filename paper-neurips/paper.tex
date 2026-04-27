@@ -304,41 +304,41 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     \multirow{2}{*}{C-MAPSS}
     & \multirow{2}{*}{Turbofan}
     & 100\% & $\mathbf{.79}${\scriptsize$\pm.03$} & $.66${\scriptsize$\pm.00$} & RMSE $18.6$           & $\mathbf{10.61}^{a}$ \\
-    &            & 10\%  & $\mathbf{.77}${\scriptsize$\pm.06$} & ---          & RMSE $21.6$           & \\
+    &            & 10\%  & $\mathbf{.77}${\scriptsize$\pm.06$} & $.66${\scriptsize$\pm.01$} & RMSE $21.6$           & \\
     \midrule
     \multirow{2}{*}{SMAP}
     & \multirow{2}{*}{Spacecraft}
-    & 100\% & $\mathbf{.60}${\scriptsize$\pm.04$} & $.53^{\S}$   & PA-F1 $\mathbf{.79}$  & $.34^{b}$ \\
-    &            & 10\%  & $.58${\scriptsize$\pm.05$}          & ---          & PA-F1 $.89$           & \\
+    & 100\% & $\mathbf{.60}${\scriptsize$\pm.04$} & $.53^{\S}$   & PA-F1 $\mathbf{.86}${\scriptsize$\pm.01$}  & $.34^{b}$ \\
+    &            & 10\%  & $.58${\scriptsize$\pm.05$}          & $.51^{\S}$   & PA-F1 $.89${\scriptsize$\pm.08$} & \\
     \multirow{2}{*}{PSM}
     & \multirow{2}{*}{Server}
-    & 100\% & $\mathbf{.56}${\scriptsize$\pm.01$} & $.51${\scriptsize$\pm.01$} & PA-F1 $\mathbf{.81}$ & $.62^{b}$ \\
-    &            & 10\%  & $.52${\scriptsize$\pm.01$}          & ---          & PA-F1 $.95$           & \\
+    & 100\% & $\mathbf{.56}${\scriptsize$\pm.01$} & $.51${\scriptsize$\pm.01$} & PA-F1 $\mathbf{.95}${\scriptsize$\pm.01$} & $.62^{b}$ \\
+    &            & 10\%  & $.52${\scriptsize$\pm.01$}          & $.51${\scriptsize$\pm.02$} & PA-F1 $.95${\scriptsize$\pm.01$} & \\
     \multirow{2}{*}{SMD}
     & \multirow{2}{*}{Server}
-    & 100\% & $\mathbf{.65}${\scriptsize$\pm.00$} & ---          & PA-F1 $.25$           & $\mathbf{.93}^{c}$ \\
-    &            & 10\%  & $.53${\scriptsize$\pm.05$}$^{\dagger}$ & ---      & PA-F1 $.73$           & \\
+    & 100\% & $\mathbf{.65}${\scriptsize$\pm.00$} & ---          & PA-F1 $.87${\scriptsize$\pm.01$} & $\mathbf{.93}^{c}$ \\
+    &            & 10\%  & $.53${\scriptsize$\pm.05$}$^{\dagger}$ & ---      & PA-F1 $.73${\scriptsize$\pm.10$} & \\
     \multirow{2}{*}{MBA}
     & \multirow{2}{*}{Cardiac}
-    & 100\% & $\mathbf{.74}${\scriptsize$\pm.01$} & $.45${\scriptsize$\pm.02$} & AUROC $.70$ & --- \\
-    &            & 10\%  & $.55${\scriptsize$\pm.07$}          & ---          & AUROC $.66$           & \\
+    & 100\% & $\mathbf{.74}${\scriptsize$\pm.01$} & $.45${\scriptsize$\pm.02$} & AUROC $.72${\scriptsize$\pm.06$} & --- \\
+    &            & 10\%  & $.55${\scriptsize$\pm.07$}          & $.54${\scriptsize$\pm.06$} & AUROC $.66${\scriptsize$\pm.04$} & \\
     \midrule
     \multirow{2}{*}{SKAB}
     & \multirow{2}{*}{Hydraulic}
-    & 100\% & $\mathbf{.71}${\scriptsize$\pm.02$} & ---          & F1 $.65$              & --- \\
-    &            & 10\%  & $.73${\scriptsize$\pm.03$}          & ---          & F1 $.69$              & \\
+    & 100\% & $\mathbf{.71}${\scriptsize$\pm.02$} & ---          & F1 $.73${\scriptsize$\pm.01$} & --- \\
+    &            & 10\%  & $.73${\scriptsize$\pm.03$}          & ---          & F1 $.76${\scriptsize$\pm.03$} & \\
     \multirow{2}{*}{ETTm1}
     & \multirow{2}{*}{Power}
     & 100\% & $\mathbf{.87}${\scriptsize$\pm.00$} & ---          & ---                   & --- \\
     &            & 10\%  & $.77${\scriptsize$\pm.00$}          & ---          & ---                   & \\
     \multirow{2}{*}{GECCO}
     & \multirow{2}{*}{Water}
-    & 100\% & $.82${\scriptsize$\pm.06$} & $\mathbf{.83}${\scriptsize$\pm.00$} & F1 $.16$            & F1 $\mathbf{.71}^{d}$ \\
-    &            & 10\%  & $.35${\scriptsize$\pm.12$}$^{\ddagger}$ & ---      & ---                   & \\
+    & 100\% & $.82${\scriptsize$\pm.06$} & $\mathbf{.83}${\scriptsize$\pm.00$} & F1 $.16${\scriptsize$\pm.04$} & F1 $\mathbf{.71}^{d}$ \\
+    &            & 10\%  & $.35${\scriptsize$\pm.12$}$^{\ddagger}$ & $.84${\scriptsize$\pm.01$} & ---                   & \\
     \multirow{2}{*}{BATADAL}
     & \multirow{2}{*}{ICS}
-    & 100\% & $\mathbf{.61}${\scriptsize$\pm.03$} & $.53${\scriptsize$\pm.03$} & F1 $.52$            & AUC $\mathbf{.97}^{d}$ \\
-    &            & 10\%  & $.64${\scriptsize$\pm.06$}          & ---          & F1 $.52$              & \\
+    & 100\% & $\mathbf{.61}${\scriptsize$\pm.03$} & $.53${\scriptsize$\pm.03$} & F1 $.52${\scriptsize$\pm.00$} & S $\mathbf{.970}^{d}$ \\
+    &            & 10\%  & $.64${\scriptsize$\pm.06$}          & $.55${\scriptsize$\pm.06$} & F1 $.52${\scriptsize$\pm.00$} & \\
     \midrule
     \multicolumn{3}{@{}l}{\textit{FAM vs Chr-2 wins (100\%)}} & \multicolumn{2}{c}{\textbf{6\,/\,2 (FD002, GECCO)}} & & \\
     \bottomrule
@@ -346,7 +346,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
   \vspace{2pt}
   \begin{minipage}{\linewidth}
     \scriptsize
-    $^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE: MSE probe on frozen encoder (3s, FD001). Gap to STAR reflects SSL-vs-supervised + protocol differences (\cref{sec:experiments}). $^{b}$\citet{mtsjepa2026}. $^{c}$\citet{xu2022anomalytransformer}. $^{d}$\citet{batadal2018}. $^{\S}$SMAP Chr-2: 1 seed. $^{\dagger}$SMD lf10: 3/28 entities. $^{\ddagger}$GECCO lf10: zero positives (excluded). Full probe comparison in \cref{app:chronos_full}.
+    $^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE: MSE probe on frozen encoder (3s, FD001). Gap to STAR reflects SSL-vs-supervised + protocol differences (\cref{sec:experiments}). $^{b}$\citet{mtsjepa2026}. $^{c}$\citet{xu2022anomalytransformer}. $^{d}$\citet{batadal2018}; BATADAL S-score (competition metric), not ROC-AUC. $^{\S}$SMAP Chr-2: 1 seed. $^{\dagger}$SMD lf10: 3/28 entities. $^{\ddagger}$GECCO lf10: zero positives (excluded). Full probe comparison in \cref{app:chronos_full}.
   \end{minipage}
 \end{table}
 
@@ -676,7 +676,7 @@ Per-seed raw results for each table are available in the code repository as JSON
 \section{PA-F1 Inflation}
 \label{app:pa_f1}
 
-PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predicted if any single timestep within it exceeds the threshold~\citep{xu2022anomalytransformer}. This protocol inflates reported F1 dramatically when anomaly segments are long and prevalence is non-trivial: the TSAD-Eval study~\citep{schmidl2022tsadeval} shows that a random detector can exceed $F_1 = 0.9$ PA on some datasets. We concretely demonstrate this by contrasting PA-F1 and non-PA F1 for FAM+Mahalanobis on our benchmarks: SMAP $0.793$ PA vs.\ $0.038$ non-PA, SMD $0.252$ PA vs.\ $0.144$ non-PA, PSM $0.813$ PA vs.\ $0.085$ non-PA. The gap in PA-F1 between FAM and MTS-JEPA remains large even under a random-baseline sanity check (a random-init encoder + Mahalanobis baseline achieves $0.604 \pm 0.007$ PA-F1 on SMAP; FAM is $0.79$), so the PA-F1 margin is not purely inflation - but any single PA-F1 number should be read in conjunction with the corresponding non-PA number.
+PA-F1 (Point-Adjusted F1) credits an entire anomaly segment as correctly predicted if any single timestep within it exceeds the threshold~\citep{xu2022anomalytransformer}. This protocol inflates reported F1 dramatically when anomaly segments are long and prevalence is non-trivial: the TSAD-Eval study~\citep{schmidl2022tsadeval} shows that a random detector can exceed $F_1 = 0.9$ PA on some datasets. We concretely demonstrate this by contrasting PA-F1 and non-PA F1 for FAM+Mahalanobis on our benchmarks: SMAP $0.862$ PA vs.\ $0.474$ non-PA, SMD $0.870$ PA vs.\ $0.292$ non-PA, PSM $0.950$ PA vs.\ $0.575$ non-PA. The gap in PA-F1 between FAM and MTS-JEPA remains large even under a random-baseline sanity check (a random-init encoder + Mahalanobis baseline achieves $0.604 \pm 0.007$ PA-F1 on SMAP; FAM is $0.79$), so the PA-F1 margin is not purely inflation - but any single PA-F1 number should be read in conjunction with the corresponding non-PA number.
 
 \section{Preprocessing Details}
 \label{app:preprocessing}
