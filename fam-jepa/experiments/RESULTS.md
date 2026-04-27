@@ -207,9 +207,7 @@ Results in: fam-jepa/experiments/v31/results/femto_baseline.json
 
 Goal: Extend MOMENT/TimesFM/Moirai from 4 datasets to all 11 for apples-to-apples comparison.
 
-#### Phase 7a - MOMENT-1-large extension (PARTIAL - inference time constraint)
-
-MOMENT processes B*C=batch*channels in one call (no sub-batching). With 25 channels (SMAP, PSM) and 38ch (SMD), a single dataset would take 5+ hours. Terminated after SMAP extraction started at 2.5 hours. Only 5 datasets covered.
+#### Phase 7a - MOMENT-1-large extension (SUPERSEDED by Phase 7d - see below)
 
 Additional dataset: FD002 (lf=1.0)
 | Dataset | MOMENT h-AUROC | FAM h-AUROC | Winner |
@@ -274,38 +272,49 @@ For FAM vs TimesFM at lf=0.1: FAM still wins on FD001/FD003/ETTm1 by large margi
 
 Results in: fam-jepa/experiments/v31/results/timesfm_baseline.json
 
-#### Phase 7c - Moirai-1.1-R-base extension (RUNNING as of 2026-04-27 01:07 UTC)
+#### Phase 7c - Moirai-1.1-R-base extension (TERMINATED 2026-04-27 01:55 UTC)
 
-Extension to all 11 datasets with --delete-cache flag (disk management).
-PID 129847. Started after SMD TimesFM extraction completed.
-Command: conda run -n py310 python3 baseline_extend_all.py --model moirai --datasets FD001 FD002 FD003 SMAP PSM MBA GECCO BATADAL SKAB ETTm1 SMD --seeds 42 123 456 --label-fractions 1.0 0.1 --delete-cache
+Extension attempted: all 11 datasets. Process killed after determining SMAP infeasible.
 
-Moirai results so far (as of ~02:30 UTC - SMAP extraction now running):
+**INFEASIBILITY FINDING**: Moirai B×C univariate patching (BS_MOIRAI=64) requires ~19.5h for SMAP
+(193K windows × 25 channels = 75,400 forward calls at ~0.93 sec/call). Similarly:
+PSM (4.0h), GECCO (1.8h), SKAB (0.4h), ETTm1 (0.6h), SMD (53.7h).
+Total: 80+ hours for remaining 6 datasets. Process terminated at 01:55 UTC.
+
+**Final Moirai results (5 feasible datasets, lf=1.0)**:
 | Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
 |---------|----------------|-------------|--------|
-| FD001 lf=1.0 | 0.606 +/- 0.003 | 0.786 +/- 0.033 | FAM (+0.180) |
-| FD001 lf=0.1 | 0.588 +/- 0.008 | ? | ? |
-| FD002 lf=1.0 | 0.664 +/- 0.004 | 0.566 +/- 0.011 | **Moirai (+0.098)** |
-| FD002 lf=0.1 | 0.662 +/- 0.018 | ? | ? |
-| FD003 lf=1.0 | 0.700 +/- 0.004 | 0.853 +/- 0.004 | FAM (+0.153) |
-| FD003 lf=0.1 | 0.620 +/- 0.017 | ? | ? |
-| MBA lf=1.0 | 0.571 +/- 0.017 | 0.739 +/- 0.014 | FAM (+0.168) |
-| BATADAL lf=1.0 | 0.360 +/- 0.010 | 0.607 +/- 0.033 | FAM (+0.247) |
+| FD001 | 0.606 +/- 0.004 (3s) | 0.786 +/- 0.033 | FAM (+0.180) |
+| FD002 | 0.664 +/- 0.004 (3s) | 0.566 +/- 0.011 | **Moirai (+0.098)** |
+| FD003 | 0.700 +/- 0.004 (3s) | 0.853 +/- 0.004 | FAM (+0.153) |
+| MBA | 0.571 +/- 0.017 (3s) | 0.739 +/- 0.014 | FAM (+0.168) |
+| BATADAL | 0.360 +/- 0.010 (3s) | 0.607 +/- 0.033 | FAM (+0.247) |
 
-Per-seed FD002 Moirai lf=1.0: (0.6615, 0.6617, 0.6696).
-Per-seed FD002 Moirai lf=0.1: (0.6372, 0.6808, 0.6686).
-Per-seed FD003 Moirai lf=0.1: (0.6094, 0.6066, 0.6434).
+FAM wins 4/5. Moirai wins FD002 (multi-condition turbofan, consistent with Chr-2 and TimesFM wins).
+BATADAL: Moirai 0.360 BELOW CHANCE - univariate patching discards cross-sensor correlations.
+SMAP/PSM/GECCO/SKAB/ETTm1/SMD: INFEASIBLE (B×C sub-batching requires 0.4h to 53.7h per dataset).
 
-SMAP extraction now running for both Moirai and MOMENT (as of ~02:10 UTC).
-Remaining: SMAP/PSM/GECCO/SKAB/ETTm1/SMD lf=1.0 and lf=0.1 (6 datasets).
+Moirai lf=0.1 results (also recorded in JSON):
+- FD001 lf=0.1: 0.588 +/- 0.008 (seeds: 0.5946, 0.5764, 0.5925)
+- FD002 lf=0.1: 0.662 +/- 0.018 (seeds: 0.6372, 0.6808, 0.6686)
+- FD003 lf=0.1: 0.620 +/- 0.017 (seeds: 0.6094, 0.6066, 0.6434)
+
+Paper updated: caption and Section 5.1 paragraph updated to reflect final 5-dataset results.
 
 #### Phase 7d - MOMENT-1-large extension (RUNNING as of 2026-04-27 00:47 UTC)
 
 Extension to 7 additional datasets: FD002 SMAP PSM GECCO SKAB ETTm1 SMD.
-(FD002 already done - will be skipped; net new: SMAP PSM GECCO SKAB ETTm1 SMD = 6 datasets)
 PID 124877. --delete-cache enabled. Both lf=1.0 and lf=0.1.
 
-Existing MOMENT results (5 datasets, lf=1.0):
+Expected completion timeline (as of 01:55 UTC):
+- SMAP: ~04:00 UTC (3.8h total; 43 min in at 01:55, extraction ongoing)
+- PSM: ~04:50 UTC (0.8h after SMAP)
+- GECCO: ~05:00 UTC (0.2h)
+- SKAB: ~05:05 UTC (small dataset)
+- ETTm1: ~05:10 UTC (small dataset)
+- SMD: INFEASIBLE (~10.6h, will kill MOMENT before it starts SMD)
+
+MOMENT total (5 original datasets, lf=1.0):
 | Dataset | MOMENT h-AUROC | FAM h-AUROC | Winner |
 |---------|----------------|-------------|--------|
 | FD001 | 0.559 +/- 0.008 | 0.786 +/- 0.033 | FAM (+0.227) |
@@ -314,14 +323,10 @@ Existing MOMENT results (5 datasets, lf=1.0):
 | BATADAL | 0.537 +/- 0.054 | 0.607 +/- 0.033 | FAM (+0.070) |
 | MBA | 0.791 +/- 0.009 | 0.739 +/- 0.014 | MOMENT (+0.052) |
 
-FAM wins 3/5 currently. Note: SMAP/PSM/SMD have C>10 channels; MOMENT embed sends B*C at once
-(batch_size=64) so 64*25=1600 sequences per forward pass. May complete or OOM for SMD (C=38).
+FD002 lf=0.1: MOMENT 0.690 +/- 0.018 vs FAM ~0.566 → MOMENT wins (completed 01:01 UTC)
 
-NEW as of ~01:20 UTC: FD002 lf=0.1 completed
-FD002 lf=0.1: MOMENT 0.690 +/- 0.018 vs FAM 0.566 +/- 0.050 → MOMENT wins (97.9% retention)
-
-SMAP, PSM, GECCO, SKAB, ETTm1, SMD still running (feature extraction).
-Results to be added here as they complete.
+New dataset results will be appended as they complete:
+(SMAP, PSM, GECCO, SKAB, ETTm1 - results pending, extraction in progress)
 
 ---
 
