@@ -304,8 +304,8 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
     \midrule
     \multirow{2}{*}{C-MAPSS}
     & \multirow{2}{*}{Turbofan}
-    & 100\% & $\mathbf{.79}${\scriptsize$\pm.03$} & $.66${\scriptsize$\pm.00$} & RMSE \placeholder{--} & $\mathbf{10.61}^{a}$ \\
-    &            & 10\%  & $\mathbf{.77}${\scriptsize$\pm.06$} & ---          & RMSE \placeholder{--} & \\
+    & 100\% & $\mathbf{.79}${\scriptsize$\pm.03$} & $.66${\scriptsize$\pm.00$} & RMSE $18.6$           & $\mathbf{10.61}^{a}$ \\
+    &            & 10\%  & $\mathbf{.77}${\scriptsize$\pm.06$} & ---          & RMSE $21.6$           & \\
     \midrule
     \multirow{2}{*}{SMAP}
     & \multirow{2}{*}{Spacecraft}
@@ -347,7 +347,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
   \vspace{2pt}
   \begin{minipage}{\linewidth}
     \scriptsize
-    $^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE from MSE probe on frozen encoder (pending). $^{b}$\citet{mtsjepa2026}. $^{c}$\citet{xu2022anomalytransformer}. $^{d}$\citet{batadal2018}. $^{\S}$SMAP Chr-2: 1 seed. $^{\dagger}$SMD lf10: 3/28 entities. $^{\ddagger}$GECCO lf10: zero positives (excluded). \placeholder{--}\,= pending. Full probe comparison in \cref{app:chronos_full}.
+    $^{a}$\citet{fan2024star} (supervised E2E); FAM RMSE: MSE probe on frozen encoder (3s, FD001). Gap to STAR reflects SSL-vs-supervised + protocol differences (\cref{sec:experiments}). $^{b}$\citet{mtsjepa2026}. $^{c}$\citet{xu2022anomalytransformer}. $^{d}$\citet{batadal2018}. $^{\S}$SMAP Chr-2: 1 seed. $^{\dagger}$SMD lf10: 3/28 entities. $^{\ddagger}$GECCO lf10: zero positives (excluded). \placeholder{--}\,= pending. Full probe comparison in \cref{app:chronos_full}.
   \end{minipage}
 \end{table}
 
