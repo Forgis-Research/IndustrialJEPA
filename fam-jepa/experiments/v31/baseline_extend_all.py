@@ -434,7 +434,7 @@ def build_moirai_extractor(size: str = 'base'):
 
     @torch.no_grad()
     def embed(x: torch.Tensor) -> torch.Tensor:
-        """x: (B, T, C) -> (B, D_MODEL)"""
+        """x: (B, T, C) -> (B, D_MODEL). Sub-batched over B*C for memory safety."""
         B, T, C = x.shape
         if T > CONTEXT_LEN:
             x = x[:, -CONTEXT_LEN:, :]
@@ -443,26 +443,36 @@ def build_moirai_extractor(size: str = 'base'):
             x = torch.cat([pad, x], dim=1)
 
         # Process each channel as a separate univariate sequence
-        x_flat = x.permute(0, 2, 1).reshape(B * C, CONTEXT_LEN).to(DEVICE)
+        x_flat = x.permute(0, 2, 1).reshape(B * C, CONTEXT_LEN)  # (B*C, T)
         N = B * C
 
-        # Build patched input (N, N_patches, MAX_PATCH)
-        target = x_flat.view(N, N_PATCHES, PATCH_SIZE)
-        target_padded = torch.zeros(N, N_PATCHES, MAX_PATCH, device=DEVICE)
-        target_padded[:, :, :PATCH_SIZE] = target
-        observed = torch.zeros(N, N_PATCHES, MAX_PATCH, dtype=torch.bool, device=DEVICE)
-        observed[:, :, :PATCH_SIZE] = True
+        # Sub-batch over N for memory safety (mirrors TimesFM extractor)
+        BS_MOIRAI = 64
+        all_hidden = []
+        for s in range(0, N, BS_MOIRAI):
+            x_sub = x_flat[s:s + BS_MOIRAI].to(DEVICE)  # (bs, T)
+            n_sub = x_sub.shape[0]
 
-        sample_id = torch.arange(N, device=DEVICE).unsqueeze(1).expand(-1, N_PATCHES)
-        time_id = torch.arange(N_PATCHES, device=DEVICE).unsqueeze(0).expand(N, -1)
-        variate_id = torch.zeros(N, N_PATCHES, dtype=torch.long, device=DEVICE)
-        pred_mask = torch.zeros(N, N_PATCHES, dtype=torch.bool, device=DEVICE)
-        ps_tensor = torch.full((N, N_PATCHES), PATCH_SIZE, dtype=torch.long, device=DEVICE)
+            # Build patched input
+            target = x_sub.view(n_sub, N_PATCHES, PATCH_SIZE)
+            target_padded = torch.zeros(n_sub, N_PATCHES, MAX_PATCH, device=DEVICE)
+            target_padded[:, :, :PATCH_SIZE] = target
+            observed = torch.zeros(n_sub, N_PATCHES, MAX_PATCH, dtype=torch.bool, device=DEVICE)
+            observed[:, :, :PATCH_SIZE] = True
 
-        model(target_padded, observed, sample_id, time_id, variate_id, pred_mask, ps_tensor)
-        h = hidden_cache[0]  # (N, N_PATCHES, D_MODEL)
-        h_pooled = h.mean(dim=1)  # (N, D_MODEL)
-        return h_pooled.reshape(B, C, D_MODEL).mean(dim=1).cpu()  # (B, D_MODEL)
+            sample_id = torch.arange(n_sub, device=DEVICE).unsqueeze(1).expand(-1, N_PATCHES)
+            time_id = torch.arange(N_PATCHES, device=DEVICE).unsqueeze(0).expand(n_sub, -1)
+            variate_id = torch.zeros(n_sub, N_PATCHES, dtype=torch.long, device=DEVICE)
+            pred_mask = torch.zeros(n_sub, N_PATCHES, dtype=torch.bool, device=DEVICE)
+            ps_tensor = torch.full((n_sub, N_PATCHES), PATCH_SIZE, dtype=torch.long, device=DEVICE)
+
+            model(target_padded, observed, sample_id, time_id, variate_id, pred_mask, ps_tensor)
+            h = hidden_cache[0]  # (n_sub, N_PATCHES, D_MODEL)
+            h_pooled = h.mean(dim=1)  # (n_sub, D_MODEL)
+            all_hidden.append(h_pooled.cpu())
+
+        hidden = torch.cat(all_hidden, dim=0)  # (N, D_MODEL)
+        return hidden.reshape(B, C, D_MODEL).mean(dim=1)  # (B, D_MODEL)
 
     return embed, n_params * 1e6
 
@@ -785,6 +795,8 @@ def main():
                         help='Label fractions to run (e.g., 1.0 0.1)')
     parser.add_argument('--force', action='store_true',
                         help='Re-run even if already in results JSON')
+    parser.add_argument('--delete-cache', action='store_true',
+                        help='Delete flat feature cache after each dataset (saves disk space)')
     args = parser.parse_args()
 
     model_name = args.model
@@ -862,6 +874,14 @@ def main():
                     print(f"  ERROR [{dataset} s{seed} lf={lf}]: {e}", flush=True)
                     import traceback
                     traceback.print_exc()
+
+        # Delete flat cache for this dataset after all lf/seed runs complete (disk management)
+        if args.delete_cache:
+            cache_p = get_feat_cache_path(model_name, dataset)
+            if cache_p.exists():
+                size_mb = cache_p.stat().st_size / 1e6
+                cache_p.unlink()
+                print(f"  Cache deleted: {cache_p.name} ({size_mb:.0f} MB freed)", flush=True)
 
     # Final summary
     print("\n" + "=" * 60)

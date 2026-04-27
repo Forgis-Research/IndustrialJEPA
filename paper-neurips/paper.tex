@@ -359,7 +359,7 @@ We pretrain a separate FAM encoder per dataset using unlabeled training data. Ar
 
 \paragraph{Legacy metrics.} C-MAPSS RMSE is derived from $\text{E}[\Delta t]$ of the stored probability surface; this CDF-based estimator differs from the point-prediction protocol of STAR~\citep{fan2024star}, so the gap reflects both protocol and SSL-vs-supervised differences. PA-F1 matches the cited baselines' protocol; see \cref{app:pa_f1} for inflation analysis.
 
-\paragraph{Other foundation models.} Three additional foundation models - MOMENT-1-large (341M), TimesFM (200M), and Moirai (91M) - evaluated with identical protocol and 198K-param head (\cref{app:moment_full,app:extra_baselines}). FAM wins 10 of 12 head-to-head comparisons; the two losses are MBA (MOMENT, in-distribution for its MIMIC-III pretraining) and BATADAL (TimesFM).
+\paragraph{Other foundation models.} Three additional foundation models - MOMENT-1-large (341M), TimesFM-1.0-200M, and Moirai-1.1-R-base (91M) - are evaluated with identical 198K-param head and protocol (\cref{app:moment_full,app:extra_baselines}). Against MOMENT (5 feasible datasets; high-channel datasets infeasible due to $B{\times}C$ inference): FAM wins 3 of 5; losses are MBA (MIMIC-III pretraining overlap) and FD002 (multi-condition turbofan, where large-corpus pretraining captures cross-condition variation). Full TimesFM and Moirai comparisons across all 11 datasets are in \cref{app:extra_baselines}.
 
 % ============================================================
 % 6. ABLATIONS
@@ -503,27 +503,28 @@ This paper fixes $K = 16$ horizon intervals at patch resolution, chosen to match
 \section{MOMENT-1-large Comparison}
 \label{app:moment_full}
 
-MOMENT-1-large~\citep{goswami2024moment} (341.2M parameters) is a general time-series foundation model pretrained on MIMIC-III and diverse public datasets. To isolate encoder quality from head capacity, we apply the same 198K-param dt-conditioned MLP head as chr2-mlp, with identical training protocol (100\% labels, 3 seeds). Context windows are processed per-channel (univariate, as MOMENT requires), producing 1024-d embeddings that are mean-pooled across channels for multivariate inputs. Evaluation uses per-horizon mean AUROC, skipping degenerate horizons ($\text{prevalence} < 0.001$ or $> 0.999$).
+MOMENT-1-large~\citep{goswami2024moment} (341.2M parameters) is a general time-series foundation model pretrained on MIMIC-III and diverse public datasets. To isolate encoder quality from head capacity, we apply the same 198K-param dt-conditioned MLP head as chr2-mlp, with identical training protocol (100\% labels, 3 seeds). Context windows are processed per-channel (univariate, as MOMENT requires), producing 1024-d embeddings that are mean-pooled across channels for multivariate inputs. Evaluation uses per-horizon mean AUROC, skipping degenerate horizons ($\text{prevalence} < 0.001$ or $> 0.999$). MOMENT requires per-channel (univariate) processing; at inference time for datasets with $C{>}10$ channels (SMAP, PSM, SMD), each forward pass processes $B{\times}C$ sequences simultaneously, making runtime infeasible ($>5$\,h per dataset). We therefore evaluate only the 5 datasets feasible under this constraint.
 
 \begin{table}[h]
   \centering
-  \caption{\textbf{MOMENT-1-large vs.\ FAM and Chronos-2 (198K MLP head, 3 seeds, h-AUROC).} FAM wins on the multivariate industrial datasets (FD001, FD003, BATADAL), where per-channel univariate processing discards cross-channel dependencies that the domain-specific JEPA encoder captures jointly. MOMENT wins on MBA, a 2-channel cardiac ECG benchmark whose data distribution overlaps with MOMENT's MIMIC-III pretraining corpus, so MOMENT's encoder is essentially in-distribution there.}
+  \caption{\textbf{MOMENT-1-large vs.\ FAM and Chronos-2 (198K MLP head, 3 seeds, h-AUROC, 5 datasets).} FAM wins on 3 of 5 datasets. MOMENT wins MBA (MIMIC-III pretraining overlaps cardiac ECG) and FD002 (multi-condition turbofan where large-corpus pretraining helps); Chronos-2 also wins FD002 for the same reason. Per-channel univariate processing discards cross-channel dependencies on high-dimensional industrial datasets (FD001, FD003, BATADAL), where domain-specific JEPA pretraining dominates.}
   \label{tab:moment_full}
   \small
   \begin{tabular}{lccc}
     \toprule
-    Dataset & MOMENT-mlp                 & Chr2-mlp          & FAM                        \\
+    Dataset & MOMENT-mlp                 & Chr2-mlp                   & FAM                        \\
     \midrule
-    FD001   & $0.559 \pm 0.009$          & $0.659 \pm 0.002$ & $\mathbf{0.786 \pm 0.033}$ \\
-    FD003   & $0.473 \pm 0.012$          & $0.760 \pm 0.003$ & $\mathbf{0.853 \pm 0.004}$ \\
-    BATADAL & $0.537 \pm 0.066$          & $0.534 \pm 0.032$ & $\mathbf{0.607 \pm 0.033}$ \\
-    MBA     & $\mathbf{0.791 \pm 0.009}$ & $0.451 \pm 0.017$ & $0.739 \pm 0.014$          \\
+    FD001   & $0.559 \pm 0.009$          & $0.659 \pm 0.002$          & $\mathbf{0.786 \pm 0.033}$ \\
+    FD002   & $0.704 \pm 0.003$          & $\mathbf{0.734 \pm 0.001}$ & $0.566 \pm 0.011$          \\
+    FD003   & $0.473 \pm 0.012$          & $0.760 \pm 0.003$          & $\mathbf{0.853 \pm 0.004}$ \\
+    BATADAL & $0.537 \pm 0.066$          & $0.534 \pm 0.032$          & $\mathbf{0.607 \pm 0.033}$ \\
+    MBA     & $\mathbf{0.791 \pm 0.009}$ & $0.451 \pm 0.017$          & $0.739 \pm 0.014$          \\
     \bottomrule
   \end{tabular}
   \vspace{2pt}
   \begin{minipage}{\linewidth}
     \scriptsize
-    FD003 MOMENT h-AUROC 0.473 is below chance (0.5), indicating per-channel univariate embeddings anti-predict turbofan degradation horizons. All methods use the same 198K-param dt-MLP head; encoder quality is the only variable. MOMENT uses K=7 horizons $[1,5,10,20,50,100,150]$ for C-MAPSS and K=8 for BATADAL/MBA; FAM uses K=150 dense horizons. BATADAL MOMENT std=0.066 reflects high seed sensitivity consistent with BATADAL's single-entity anomaly pattern. Per-seed: FD001 (0.568, 0.561, 0.549), FD003 (0.482, 0.459, 0.478), BATADAL (0.568, 0.462, 0.582), MBA (0.801, 0.780, 0.791). MBA win for MOMENT is consistent with MIMIC-III pretraining overlap and the low channel count (C=2), where the cross-channel disadvantage of per-channel processing is minimal.
+    FD003 MOMENT h-AUROC 0.473 is below chance (0.5), indicating per-channel univariate embeddings anti-predict turbofan degradation horizons. All methods use the same 198K-param dt-MLP head; encoder quality is the only variable. MOMENT uses K=7 horizons $[1,5,10,20,50,100,150]$ for C-MAPSS and K=8 for BATADAL/MBA; FAM uses K=150 dense horizons. BATADAL MOMENT std=0.066 reflects high seed sensitivity consistent with BATADAL's single-entity anomaly pattern. Per-seed: FD001 (0.568, 0.561, 0.549), FD002 (0.700, 0.707, 0.704), FD003 (0.482, 0.459, 0.478), BATADAL (0.568, 0.462, 0.582), MBA (0.801, 0.780, 0.791). FD002 win for MOMENT and Chr-2: FD002 has 6 operating conditions; large-corpus pretraining captures cross-condition variation that per-dataset JEPA (trained on single-condition data) encodes less efficiently. MBA win for MOMENT is consistent with MIMIC-III pretraining overlap and low channel count (C=2). MOMENT excluded from SMAP, PSM, SMD: $B{\times}C$ inference requires $>5$\,h per dataset.
   \end{minipage}
 \end{table}
 
