@@ -133,3 +133,9 @@ When asked to write theoretical content:
 - Crutchfield & Young (1989) — ε-machines and computational mechanics
 - Cover & Thomas (2006) — Elements of Information Theory (the bible)
 - Bialek et al. (2001) — Predictability, complexity, and learning
+
+---
+
+## Memory
+
+Record reusable insights: which proof strategies worked for this paper's propositions, reviewer feedback on theoretical claims, and connections between the theory and experimental results that should be maintained across drafts.
