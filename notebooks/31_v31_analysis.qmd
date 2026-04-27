@@ -755,49 +755,70 @@ else:
     print("MOMENT results file not found")
 ```
 
-## P-A: TimesFM-1.0-200M Baseline (v31)
+## P-A: TimesFM-1.0-200M Baseline (v31 - All 11 Datasets)
 
-TimesFM-1.0-200M (203.6M params) evaluated with identical 198K dt-MLP head.
-Honest negative results are included: TimesFM beats FAM on MBA and BATADAL.
+TimesFM-1.0-200M (203.6M params, 1280-d embeddings) evaluated with identical 198K dt-MLP head
+across all 11 benchmark datasets. Mixed results: FAM wins on lifecycle/physical datasets,
+TimesFM wins on short-burst anomaly datasets where large-corpus pretraining helps.
 
 ```{python}
 #| label: timesfm-results
 import json
 from pathlib import Path
 import numpy as np
+from collections import defaultdict
 
 timesfm_path = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/timesfm_baseline.json')
-fam_ref = {
-    'FD001': (0.786, 0.033),
-    'FD003': (0.853, 0.004),
-    'MBA': (0.739, 0.014),
-    'BATADAL': (0.607, 0.033),
+FAM_LF100 = {
+    'FD001': (0.786, 0.033), 'FD002': (0.566, 0.011), 'FD003': (0.853, 0.004),
+    'SMAP':  (0.598, 0.036), 'PSM':   (0.562, 0.013), 'MBA':   (0.739, 0.014),
+    'GECCO': (0.819, 0.064), 'BATADAL': (0.607, 0.033), 'SKAB': (0.707, 0.017),
+    'ETTm1': (0.869, 0.002), 'SMD':   (0.654, 0.004),
 }
+ALL_11 = ['FD001', 'FD002', 'FD003', 'SMAP', 'PSM', 'MBA', 'GECCO', 'BATADAL', 'SKAB', 'ETTm1', 'SMD']
+
 if timesfm_path.exists():
     with open(timesfm_path) as f:
-        tfm = json.load(f)
-    print("TimesFM-1.0-200M vs FAM (h-AUROC, 3 seeds each):")
+        data = json.load(f)
+    results = data.get('results', data) if isinstance(data, dict) else data
+
+    # Group by dataset, lf=1.0
+    grouped = defaultdict(list)
+    for r in results:
+        if abs(r['label_fraction'] - 1.0) < 0.01:
+            grouped[r['dataset']].append(r['mean_h_auroc'])
+
+    print("TimesFM-1.0-200M vs FAM (h-AUROC, lf=1.0, 3 seeds each):")
     print(f"{'Dataset':10s} {'TimesFM':>10s} {'+-std':>8s} {'FAM':>8s} {'Delta':>8s} {'Winner':>10s}")
-    print("-" * 65)
-    for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
-        if ds in tfm:
-            v = tfm[ds]
-            tfm_m = v['mean']
-            tfm_s = v['std']
-            fam_m, fam_s = fam_ref.get(ds, (float('nan'), 0))
+    print("-" * 70)
+    fam_wins = 0; total = 0
+    for ds in ALL_11:
+        fam_m, fam_s = FAM_LF100[ds]
+        if ds in grouped:
+            vals = grouped[ds]
+            tfm_m = np.mean(vals)
+            tfm_s = np.std(vals)
             delta = fam_m - tfm_m
             winner = 'FAM' if delta > 0 else 'TimesFM'
+            if delta > 0: fam_wins += 1
+            total += 1
             print(f"{ds:10s} {tfm_m:>10.4f} {tfm_s:>8.4f} {fam_m:>8.4f} {delta:>+8.4f} {winner:>10s}")
+        else:
+            print(f"{ds:10s} {'---':>10s} {'---':>8s} {fam_m:>8.4f} {'---':>8s} {'PENDING':>10s}")
     print()
-    print("Per-seed values:")
-    for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
-        if ds in tfm:
-            seeds = tfm[ds]['per_seed']
-            print(f"  {ds}: {[f'{s:.4f}' for s in seeds]}")
+    print(f"FAM wins: {fam_wins}/{total} (SMD pending)")
     print()
-    print("KEY INSIGHT: TimesFM beats FAM on MBA (+0.020) and BATADAL (+0.046).")
-    print("These are honest negative results reported in the paper.")
-    print("FAM wins decisively on FD001 (+0.256) and FD003 (+0.238).")
+    print("PATTERN: FAM wins on physical lifecycle datasets (FD001, FD003, ETTm1, SMAP).")
+    print("TimesFM wins on short-burst anomaly datasets (GECCO, BATADAL, SKAB, MBA, PSM).")
+    print("FD002 TimesFM win: multi-condition turbofan, large-corpus pretraining captures")
+    print("cross-condition variation that per-dataset JEPA does not.")
+    print()
+    print("Per-seed (lf=1.0):")
+    for ds in ALL_11:
+        if ds in grouped:
+            vals_sorted = sorted(grouped[ds])
+            seeds_str = ', '.join(f'{v:.4f}' for v in vals_sorted)
+            print(f"  {ds}: ({seeds_str})")
 else:
     print("TimesFM results not found")
 ```
@@ -805,38 +826,61 @@ else:
 ## P-B: Moirai-1.1-R-base Baseline (v31)
 
 Moirai-1.1-R-base (91.4M params, d_model=768) with identical 198K dt-MLP head.
-FAM wins all 4 datasets. Moirai collapses on BATADAL (0.360, below chance).
+Currently evaluated on 4 datasets; extension to all 11 running in background.
+FAM wins all 4 evaluated datasets. Moirai collapses on BATADAL (0.360, below chance).
 
 ```{python}
 #| label: moirai-results
 moirai_path = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json')
 if moirai_path.exists():
     with open(moirai_path) as f:
-        moirai = json.load(f)
-    print("Moirai-1.1-R-base vs FAM (h-AUROC, 3 seeds each):")
+        moirai_data = json.load(f)
+
+    # Parse - may be old dict format or new list format
+    if isinstance(moirai_data, dict) and 'results' in moirai_data:
+        results = moirai_data['results']
+        grouped_m = defaultdict(list)
+        for r in results:
+            if abs(r.get('label_fraction', 1.0) - 1.0) < 0.01:
+                grouped_m[r['dataset']].append(r['mean_h_auroc'])
+    elif isinstance(moirai_data, dict):
+        grouped_m = {}
+        for k, v in moirai_data.items():
+            if isinstance(v, dict) and 'per_seed' in v:
+                grouped_m[v['dataset']] = v['per_seed']
+    else:
+        grouped_m = {}
+
+    print("Moirai-1.1-R-base vs FAM (h-AUROC, lf=1.0, 3 seeds each):")
     print(f"{'Dataset':10s} {'Moirai':>10s} {'+-std':>8s} {'FAM':>8s} {'Delta':>8s} {'Winner':>10s}")
-    print("-" * 65)
-    for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
-        if ds in moirai:
-            v = moirai[ds]
-            m_mean = v['mean']
-            m_std = v['std']
-            fam_m, fam_s = fam_ref.get(ds, (float('nan'), 0))
+    print("-" * 70)
+    fam_wins_m = 0; total_m = 0
+    for ds in ALL_11:
+        fam_m, fam_s = FAM_LF100[ds]
+        if ds in grouped_m:
+            vals = grouped_m[ds]
+            m_mean = np.mean(vals)
+            m_std = np.std(vals)
             delta = fam_m - m_mean
             winner = 'FAM' if delta > 0 else 'Moirai'
+            if delta > 0: fam_wins_m += 1
+            total_m += 1
             above_chance = '' if m_mean >= 0.5 else ' [BELOW CHANCE]'
             print(f"{ds:10s} {m_mean:>10.4f} {m_std:>8.4f} {fam_m:>8.4f} {delta:>+8.4f} {winner:>10s}{above_chance}")
+        else:
+            print(f"{ds:10s} {'---':>10s} {'---':>8s} {fam_m:>8.4f} {'---':>8s} {'PENDING':>10s}")
     print()
-    print("Per-seed values:")
-    for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
-        if ds in moirai:
-            seeds = moirai[ds]['per_seed']
-            print(f"  {ds}: {[f'{s:.4f}' for s in seeds]}")
+    print(f"FAM wins: {fam_wins_m}/{total_m} evaluated datasets (extension running)")
     print()
     print("KEY FINDING: Moirai BATADAL=0.360 (below chance) - worst result across ALL baselines.")
     print("Moirai's univariate patching discards cross-sensor correlations critical for")
     print("BATADAL's single long anomaly sequence. FAM's joint multivariate encoding wins.")
-    print("FAM wins all 4: FD001 +0.180, FD003 +0.153, MBA +0.168, BATADAL +0.247.")
+    print()
+    print("Per-seed (lf=1.0):")
+    for ds in list(grouped_m.keys()):
+        vals = grouped_m[ds]
+        seeds_str = ', '.join(f'{v:.4f}' for v in sorted(vals))
+        print(f"  {ds}: ({seeds_str})")
 else:
     print("Moirai results not found")
 ```
@@ -850,8 +894,18 @@ print(f"{'Dataset':10s} {'FAM':>8s} {'Chr-2':>8s} {'MOMENT':>8s} {'TimesFM':>8s}
 print(f"{'':10s} {'2.16M':>8s} {'120M':>8s} {'341M':>8s} {'200M':>8s} {'91M':>8s}")
 print("-" * 55)
 
-chr2_ref = {'FD001': 0.659, 'FD003': 0.760, 'MBA': 0.451, 'BATADAL': 0.534}
-moment_ref = {'FD001': 0.559, 'FD003': 0.473, 'MBA': 0.791, 'BATADAL': 0.537}
+# Chr-2 lf=1.0 results (from main paper table)
+chr2_ref = {
+    'FD001': 0.659, 'FD002': 0.734, 'FD003': 0.760,
+    'SMAP': 0.522, 'PSM': 0.548, 'MBA': 0.451,
+    'GECCO': 0.814, 'BATADAL': 0.534, 'SKAB': 0.685,
+    'ETTm1': 0.718, 'SMD': 0.651,
+}
+# MOMENT lf=1.0 (5 datasets only)
+moment_ref = {
+    'FD001': 0.559, 'FD002': 0.704, 'FD003': 0.473,
+    'MBA': 0.791, 'BATADAL': 0.537,
+}
 timesfm_ref = {}
 moirai_ref = {}
 
@@ -859,37 +913,52 @@ tfm_path = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/re
 if tfm_path.exists():
     with open(tfm_path) as f:
         d = json.load(f)
-    for ds in d:
-        if isinstance(d[ds], dict) and 'mean' in d[ds]:
-            timesfm_ref[ds] = d[ds]['mean']
+    results_tfm = d.get('results', d) if isinstance(d, dict) else d
+    grouped_tfm = defaultdict(list)
+    for r in results_tfm:
+        if isinstance(r, dict) and abs(r.get('label_fraction', 1.0) - 1.0) < 0.01:
+            grouped_tfm[r['dataset']].append(r['mean_h_auroc'])
+    for ds, vals in grouped_tfm.items():
+        timesfm_ref[ds] = float(np.mean(vals))
 
 moirai_p = Path('/home/sagemaker-user/IndustrialJEPA/fam-jepa/experiments/v31/results/moirai_baseline.json')
 if moirai_p.exists():
     with open(moirai_p) as f:
         d = json.load(f)
-    for ds in d:
-        if isinstance(d[ds], dict) and 'mean' in d[ds]:
-            moirai_ref[ds] = d[ds]['mean']
+    if 'results' in d:
+        grouped_mo = defaultdict(list)
+        for r in d['results']:
+            if abs(r.get('label_fraction', 1.0) - 1.0) < 0.01:
+                grouped_mo[r['dataset']].append(r['mean_h_auroc'])
+        for ds, vals in grouped_mo.items():
+            moirai_ref[ds] = float(np.mean(vals))
+    else:
+        for k, v in d.items():
+            if isinstance(v, dict) and 'mean' in v:
+                moirai_ref[v['dataset']] = v['mean']
 
-for ds in ['FD001', 'FD003', 'MBA', 'BATADAL']:
-    fam_m = fam_ref.get(ds, (float('nan'),0))[0]
+for ds in ALL_11:
+    fam_m = FAM_LF100[ds][0]
     chr2_m = chr2_ref.get(ds, float('nan'))
     mom_m = moment_ref.get(ds, float('nan'))
     tfm_m = timesfm_ref.get(ds, float('nan'))
     moirai_m = moirai_ref.get(ds, float('nan'))
-    vals = [fam_m, chr2_m, mom_m, tfm_m, moirai_m]
-    best = max(v for v in vals if not np.isnan(v))
-    def fmt(v, is_best):
-        if np.isnan(v): return f"{'N/A':>8s}"
+    vals_valid = [v for v in [fam_m, chr2_m, mom_m, tfm_m, moirai_m] if not np.isnan(v)]
+    best = max(vals_valid) if vals_valid else float('nan')
+    def fmt(v):
+        if np.isnan(v): return f"{'---':>8s}"
         s = f"{v:.4f}"
-        return f"{'**'+s+'**':>8s}" if abs(v - best) < 1e-5 else f"{s:>8s}"
-    print(f"{ds:10s} {fmt(fam_m, fam_m==best)} {fmt(chr2_m, chr2_m==best)} {fmt(mom_m, mom_m==best)} {fmt(tfm_m, tfm_m==best)} {fmt(moirai_m, moirai_m==best)}")
+        return f"{'['+s+']':>8s}" if abs(v - best) < 1e-5 else f"{s:>8s}"
+    print(f"{ds:10s} {fmt(fam_m)} {fmt(chr2_m)} {fmt(mom_m)} {fmt(tfm_m)} {fmt(moirai_m)}")
 
 print()
-print("FAM (2.16M) wins: FD001 vs all, FD003 vs all")
-print("MBA exception: MOMENT (341M, MIMIC-III pretrain) and TimesFM both beat FAM")
-print("BATADAL exception: TimesFM beats FAM; Moirai collapses below chance")
-print("Headline: domain-specific JEPA at 2.16M beats general-purpose at 200-341M on 2/4")
+print("Legend: [value] = best for that dataset")
+print()
+print("FAM lifecycle wins: FD001, FD003, ETTm1, SMAP (large margin, domain-specific JEPA)")
+print("TimesFM anomaly wins: GECCO, BATADAL, SKAB, MBA, PSM (large-corpus pretraining)")
+print("FD002: Chr-2 and MOMENT and TimesFM all beat FAM (multi-condition turbofan)")
+print("MOMENT MBA win: MIMIC-III pretraining overlap with cardiac ECG")
+print("Moirai BATADAL: 0.360 (BELOW CHANCE) - univariate patching fails on multivariate anomaly")
 ```
 
 ## P-C: FEMTO Bearing Dataset (v31)
