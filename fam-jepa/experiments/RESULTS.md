@@ -275,16 +275,16 @@ For FAM vs TimesFM at lf=0.1: FAM still wins on FD001/FD003/ETTm1 by large margi
 
 Results in: fam-jepa/experiments/v31/results/timesfm_baseline.json
 
-#### Phase 7c - Moirai-1.1-R-base extension (TERMINATED 2026-04-27 01:55 UTC)
+#### Phase 7c - Moirai-1.1-R-base extension (TERMINATED 2026-04-27 01:55 UTC; RESTART running PID 142312)
 
 Extension attempted: all 11 datasets. Process killed after determining SMAP infeasible.
+RESTART launched for feasible remaining datasets: SKAB ETTm1 GECCO PSM.
 
 **INFEASIBILITY FINDING**: Moirai B×C univariate patching (BS_MOIRAI=64) requires ~19.5h for SMAP
-(193K windows × 25 channels = 75,400 forward calls at ~0.93 sec/call). Similarly:
-PSM (4.0h), GECCO (1.8h), SKAB (0.4h), ETTm1 (0.6h), SMD (53.7h).
-Total: 80+ hours for remaining 6 datasets. Process terminated at 01:55 UTC.
+(193K windows × 25 channels = 75,400 forward calls at ~0.93 sec/call). Similarly: SMD (53.7h).
+SMAP/SMD: INFEASIBLE. PSM/GECCO/SKAB/ETTm1: feasible (0.4h - 4.0h each).
 
-**Final Moirai results (5 feasible datasets, lf=1.0)**:
+**Moirai results (6 datasets done, lf=1.0)**:
 | Dataset | Moirai h-AUROC | FAM h-AUROC | Winner |
 |---------|----------------|-------------|--------|
 | FD001 | 0.606 +/- 0.004 (3s) | 0.786 +/- 0.033 | FAM (+0.180) |
@@ -292,17 +292,19 @@ Total: 80+ hours for remaining 6 datasets. Process terminated at 01:55 UTC.
 | FD003 | 0.700 +/- 0.004 (3s) | 0.853 +/- 0.004 | FAM (+0.153) |
 | MBA | 0.571 +/- 0.017 (3s) | 0.739 +/- 0.014 | FAM (+0.168) |
 | BATADAL | 0.360 +/- 0.010 (3s) | 0.607 +/- 0.033 | FAM (+0.247) |
+| SKAB | **0.823 +/- 0.001 (3s)** | 0.707 +/- 0.017 | **Moirai (+0.116)** |
 
-FAM wins 4/5. Moirai wins FD002 (multi-condition turbofan, consistent with Chr-2 and TimesFM wins).
+FAM wins 4/6. Moirai wins FD002 (+0.098) and SKAB (+0.116).
 BATADAL: Moirai 0.360 BELOW CHANCE - univariate patching discards cross-sensor correlations.
-SMAP/PSM/GECCO/SKAB/ETTm1/SMD: INFEASIBLE (B×C sub-batching requires 0.4h to 53.7h per dataset).
+SMAP/SMD: INFEASIBLE. ETTm1/GECCO/PSM: pending (PID 142312 running).
 
 Moirai lf=0.1 results (also recorded in JSON):
 - FD001 lf=0.1: 0.588 +/- 0.008 (seeds: 0.5946, 0.5764, 0.5925)
 - FD002 lf=0.1: 0.662 +/- 0.018 (seeds: 0.6372, 0.6808, 0.6686)
 - FD003 lf=0.1: 0.620 +/- 0.017 (seeds: 0.6094, 0.6066, 0.6434)
+- SKAB lf=0.1: 0.821 +/- 0.004 (seeds: 0.8262, 0.8219, 0.8150)
 
-Paper updated: caption and Section 5.1 paragraph updated to reflect final 5-dataset results.
+Paper updated: caption and Section 5.1 updated to reflect 6 datasets (SKAB added 02:11 UTC).
 
 #### Phase 7d - MOMENT-1-large extension (RUNNING as of 2026-04-27 00:47 UTC)
 
