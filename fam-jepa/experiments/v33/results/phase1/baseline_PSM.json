@@ -1,0 +1,62 @@
+{
+  "dataset": "PSM",
+  "protocol": {
+    "max_context": 512,
+    "patch_size": 16,
+    "d_model": 256,
+    "n_heads": 4,
+    "n_layers": 2,
+    "d_ff": 256,
+    "dropout": 0.1,
+    "ema_momentum": 0.99,
+    "predictor_hidden": 256,
+    "norm_mode": "revin",
+    "predictor_kind": "mlp",
+    "event_head_kind": "discrete_hazard",
+    "pre_epochs": 50,
+    "pre_batch": 64,
+    "pre_lr": 0.0003,
+    "pre_patience": 8,
+    "n_cuts": 40,
+    "delta_t_min": 1,
+    "delta_t_max": 150,
+    "lambda_var": 0.04,
+    "ft_epochs": 40,
+    "ft_batch": 128,
+    "ft_lr": 0.001,
+    "ft_patience": 8,
+    "label_fraction": 1.0,
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  },
+  "seeds": {
+    "42": {
+      "h_auroc": 0.5436499940057241,
+      "h_auprc": 0.4398842115548765,
+      "pretrain_loss": 0.028808971866965294,
+      "ft_val_loss": 1.1662282522986918,
+      "pretrain_epochs": 50
+    },
+    "123": {
+      "h_auroc": 0.5873739469056041,
+      "h_auprc": 0.45272619096191347,
+      "pretrain_loss": 0.028822490945458412,
+      "ft_val_loss": 1.1817095069324268,
+      "pretrain_epochs": 50
+    },
+    "456": {
+      "h_auroc": 0.5325182029474586,
+      "h_auprc": 0.3976962845047016,
+      "pretrain_loss": 0.029910368844866753,
+      "ft_val_loss": 1.2262408382752363,
+      "pretrain_epochs": 50
+    }
+  },
+  "mean_h_auroc": 0.5545140479529289,
+  "std_h_auroc": 0.023675710653554297,
+  "mean_h_auprc": 0.4301022290071639,
+  "std_h_auprc": 0.023506566998680565
+}
