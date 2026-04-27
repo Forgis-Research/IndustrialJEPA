@@ -60,6 +60,53 @@ from _runner import _global_zscore, _build_event_concat
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
+# ===========================================================================
+# New dataset adapters (Workstream C)
+# ===========================================================================
+
+def _sepsis_loader(pretrain_from: str = 'nonseptic_setA',
+                   max_pretrain_patients: int = 4000,
+                   train_frac: float = 0.8, seed: int = 42) -> Dict:
+    """Adapter: converts data/sepsis.load_sepsis() -> v34 bundle format.
+
+    Sepsis returns lists of {entity_id, x, labels, has_sepsis, onset_t}.
+    The v34 (=v27) bundle format wants:
+      pretrain_seqs : Dict[int, np.ndarray]
+      ft_train/val/test : List[{'entity_id', 'test'(T,C), 'labels'(T,)}]
+    """
+    from data.sepsis import load_sepsis
+    d = load_sepsis(train_frac=train_frac, seed=seed,
+                    pretrain_from=pretrain_from, verbose=True)
+    # Cap pretrain cohort for tractability (40k stays * ~50 hours = ~2M tokens)
+    pp = d['pretrain_patients']
+    if max_pretrain_patients and len(pp) > max_pretrain_patients:
+        rng = np.random.default_rng(seed)
+        idx = rng.choice(len(pp), max_pretrain_patients, replace=False)
+        pp = [pp[i] for i in sorted(idx)]
+    pretrain_seqs = {i: p['x'] for i, p in enumerate(pp)}
+
+    def _rename(plist):
+        return [{'entity_id': p['entity_id'],
+                 'test': p['x'], 'labels': p['labels']} for p in plist]
+
+    return {
+        'pretrain_seqs': pretrain_seqs,
+        'ft_train': _rename(d['ft_train']),
+        'ft_val':   _rename(d['ft_val']),
+        'ft_test':  _rename(d['ft_test']),
+        'n_channels': d['n_channels'],
+        'horizons': HORIZONS_BY_DATASET['Sepsis'],
+        'subset': 'Sepsis',
+    }
+
+
+# Register Sepsis (and TEP if added) in the local LOADERS dict.
+LOADERS = dict(LOADERS)  # don't mutate the imported one
+LOADERS['Sepsis'] = _sepsis_loader
+NORM_POLICY = dict(NORM_POLICY)
+NORM_POLICY['Sepsis'] = 'revin'
+
 # ---- Fixed protocol (matches v33 for direct comparability) ----
 PROTOCOL = {
     'max_context': 512,
